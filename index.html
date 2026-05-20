@@ -9104,10 +9104,8 @@ function traceOpsYieldRepairRootcause(row) {
     return mode && mode !== "N/D" ? mode : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["Root Cause", "RootCause", "Root Cause EN", "Rootcause EN", "Rootcause_EN", "Rootcause ESP", "Rootcause", "Causa Raiz", "Causa Raíz", "FailSymptom", "Symptom", "Defect", "Failure", "Failure Mode", "Falla", "Defecto"]));
 }
 function traceOpsYieldRepairFailLocation(row) {
-    var direct = traceOpsYieldDirectRepairFailLocation(row);
-    if (direct) return direct;
     var ref = traceOpsYieldInferRepairRefFromRow(row);
-    return ref && ref !== "N/D" ? ref : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]));
+    return ref && ref !== "N/D" ? ref : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]));
 }
 function traceOpsYieldTopRootcauseFromRepairs(rows) {
     var map = {};
@@ -9876,27 +9874,9 @@ function traceOpsYieldInferRepairModeFromRow(row) {
     return "N/D";
 }
 
-function traceOpsYieldDirectRepairFailLocation(row) {
-    row = row || {};
-    // Repair Record authority: FailLocation is column O in the exported file.
-    // Use this cell directly before any text/refdes inference so defect codes
-    // such as E000/E1005 from Rootcause/Remark cannot be selected as references.
-    var direct = traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["FailLocation", "Fail Location"]));
-    if (direct) return String(direct).trim();
-    // Fallback for exports where the header is missing but column sequence is preserved.
-    // Column O = 15th column = zero-based index 14.
-    var keys = Object.keys(row || {});
-    if (keys.length > 14) {
-        var byPosition = traceOpsYieldMeaningfulText(row[keys[14]]);
-        if (byPosition) return String(byPosition).trim();
-    }
-    return "";
-}
 function traceOpsYieldInferRepairRefFromRow(row) {
     row = row || {};
-    var directFailLocation = traceOpsYieldDirectRepairFailLocation(row);
-    if (directFailLocation) return directFailLocation;
-    var refColumns = ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Repair Location", "RepairLocation"];
+    var refColumns = ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Repair Location", "RepairLocation"];
 
     function cleanRef(v) {
         v = String(v || "").toUpperCase().replace(/[^A-Z0-9_]/g, "").trim();
@@ -10300,8 +10280,8 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         var repairSymptom = traceOpsYieldNormalizeRepairMode(repairSymptomRaw);
         if ((!repairSymptom || repairSymptom === "N/D") && inferredRepairMode !== "N/D") repairSymptom = inferredRepairMode;
         var symptom = traceOpsYieldIsSignalSymptom(rootCause) && rootCause !== "N/D" ? rootCause : (traceOpsYieldIsSignalSymptom(repairSymptom) && repairSymptom !== "N/D" ? repairSymptom : "Sin sintoma");
-        var location = traceOpsYieldDirectRepairFailLocation(row) || traceOpsYieldInferRepairRefFromRow(row);
-        if (!location || location === "N/D") location = String(traceOpsYieldPick(row, ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]) || "N/D").trim();
+        var location = traceOpsYieldInferRepairRefFromRow(row);
+        if (!location || location === "N/D") location = String(traceOpsYieldPick(row, ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]) || "N/D").trim();
         var pn = traceOpsYieldComponentCodeFromRepair(row);
         var componentInfo = traceOpsYieldEnrichComponent(pn);
         var station = traceOpsYieldClassifyStation(traceOpsYieldPick(row, ["Station", "Process", "Area", "Current Event", "Evento"])) || (sfc && sfc.station) || "";
@@ -25356,6 +25336,7 @@ body.traceops-premium-shell [class*="impact"]{
             if (!/^[A-Z]{1,6}[0-9]{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/.test(v)) return;
             if (/^(ND|NA|NULL|NONE|SINREFERENCIA)$/.test(v)) return;
             if (/^(AOI|SMT|PTH|ICT|FT|NGFWBU|CRBU|BU|TOP|BOTTOM|PROCESS|TEST)$/.test(v)) return;
+            if (/^E\d{2,}$/i.test(v)) return;
             if (/^FJZ|^RW|^WO/.test(v)) return;
             if (/^73|^74|^15|^12|^25|^27|^51/.test(v)) return;
             seen[v] = true; out.push(v);
