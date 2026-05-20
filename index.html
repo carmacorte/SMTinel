@@ -12162,6 +12162,45 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
     var weeklyTrend = traceOpsBuildYieldFlowWeeklyTrend(rows, trackerRows);
     var causeSummary = traceOpsBuildYieldFlowCauseSummary(riskRows);
     var failurePatterns = traceOpsYieldBuildFailurePatterns(causeSummary);
+    // V10.3: Pareto fallback.
+    // Some ZIP scopes calculate OJT/risk correctly from Repair Record at WO level,
+    // but TRACEOPS_RISK_SUMMARY_ROWS can be empty after scope/product locks.
+    // In that case, build the 80/20 Pareto from the active WO rows + tracker recovery causes
+    // so Weekly Factory Health does not show 0 modes while Risk Units is > 0.
+    if ((!failurePatterns || !failurePatterns.length) && (rows || []).some(function(r) { return Number(r && r.risk || 0) > 0; })) {
+        var traceOpsYieldRecoveryByWo = {};
+        (trackerRows || []).forEach(function(t) {
+            var rawWo = String(t && (t.wo || t.workOrder) || '').trim();
+            var normWo = rawWo.replace(/^0+/, '') || rawWo;
+            var rq = (t && t.recoveryQueue) || [];
+            var cause = (rq[0] && rq[0].cause) || t.cause || t.symptom || 'Repair records imported';
+            if (rawWo) traceOpsYieldRecoveryByWo[rawWo] = cause;
+            if (normWo) traceOpsYieldRecoveryByWo[normWo] = cause;
+        });
+        var traceOpsYieldParetoFallbackRows = [];
+        (rows || []).forEach(function(r) {
+            var risk = Number(r && r.risk || 0);
+            if (risk <= 0) return;
+            var rawWo = String(r.wo || r.workOrder || '').trim();
+            var normWo = rawWo.replace(/^0+/, '') || rawWo;
+            var cause = traceOpsYieldRecoveryByWo[rawWo] || traceOpsYieldRecoveryByWo[normWo] || r.cause || r.symptom || r.topSymptom || 'Repair records imported';
+            traceOpsYieldParetoFallbackRows.push({
+                symptom: cause,
+                risk: risk,
+                location: r.location || r.refdes || r.failLocation || 'N/D',
+                sku: r.sku || r.skuno || '',
+                family: r.family || r.model || '',
+                wo: rawWo,
+                week: r.week || '',
+                line: r.line || '',
+                station: r.station || ''
+            });
+        });
+        if (traceOpsYieldParetoFallbackRows.length) {
+            causeSummary = traceOpsBuildYieldFlowCauseSummary(traceOpsYieldParetoFallbackRows);
+            failurePatterns = traceOpsYieldBuildFailurePatterns(causeSummary);
+        }
+    }
     var stationFpy = traceOpsBuildYieldFlowStationFpy(rows, trackerRows);
     var ftRows = (TRACEOPS_YIELD_FT_ROWS || []).filter(function (r) {
         var rr = { date: r.recordTime || "", family: r.family, sku: r.sku, week: r.week, line: r.line, wo: r.wo, buLabel: r.bu, testArea: traceOpsYieldCesiumAreaValue(r) };
@@ -37063,7 +37102,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.2 · Fails Restore + Serial Trace Export TSV · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.3 · Pareto Fails Restore + Serial Export · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37107,7 +37146,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.2 · Fails Restore + Serial Trace Export TSV · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.3 · Pareto Fails Restore + Serial Export · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
