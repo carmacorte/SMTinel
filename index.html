@@ -11329,10 +11329,12 @@ function traceOpsYieldBuildWoRepairInsight(item) {
     var scopeFamily = traceOpsYieldCleanFamilyLabel(item.model || item.family || item.ModelName || "").toUpperCase();
     function sameProductScope(row) {
         row = row || {};
-        var rowSku = String(row.skuno || row.sku || row.SKU || row.SkuNo || row.moduleno || "").trim().toUpperCase();
-        var rowFamily = traceOpsYieldCleanFamilyLabel(row.model || row.family || row.ModelName || row.ProductFamily || "").toUpperCase();
-        if (scopeSku) return rowSku === scopeSku;
-        if (scopeFamily) return rowFamily === scopeFamily;
+        var rowSku = String(row.skuno || row.sku || row.SKU || row.SkuNo || row.moduleno || row.partNumber || row.partno || "").trim().toUpperCase();
+        var rowFamily = traceOpsYieldCleanFamilyLabel(row.model || row.family || row.ModelName || row.ProductFamily || row.productFamily || "").toUpperCase();
+        // Do not require SKU/family on every source. Repair Record/SFC/Cesium rows may be partial.
+        // Only reject a row when it contains explicit product evidence that conflicts with the active card scope.
+        if (scopeSku && rowSku && rowSku !== scopeSku) return false;
+        if (!scopeSku && scopeFamily && rowFamily && rowFamily !== scopeFamily) return false;
         return true;
     }
 
@@ -11361,7 +11363,7 @@ function traceOpsYieldBuildWoRepairInsight(item) {
         var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[sn]) || [];
         repairs.forEach(function(rep) {
             if (!rep) return;
-            if (!sameProductScope(rep) && !sameProductScope(sfc)) return;
+            if (!sameProductScope(rep) || !sameProductScope(sfc) || (ft && !sameProductScope(ft))) return;
             var refdes = String(rep.refdes || rep.failLocation || rep.location || "N/D").trim() || "N/D";
             var root = String(rep.rootCause || rep.failureMode || rep.symptom || rep.repairSymptom || "Repair evidence").trim() || "Repair evidence";
             var area = rep.responsibleArea || traceOpsYieldClassifyResponsibleArea(root);
