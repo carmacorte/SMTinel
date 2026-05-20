@@ -8987,6 +8987,99 @@ function traceOpsYieldSetSerialSearch(rawValue, setter) {
     setter(serials.join("\n"));
 }
 
+function traceOpsYieldTsvCell(value) {
+    return String(value == null ? "" : value).replace(/[\r\n]+/g, " ").replace(/\t/g, " ").replace(/\s+/g, " ").trim();
+}
+function traceOpsYieldDownloadTsv(filename, rows) {
+    var text = rows.map(function(row) { return row.map(traceOpsYieldTsvCell).join("\t"); }).join("\n");
+    var blob = new Blob([text], { type: "text/tab-separated-values;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function traceOpsYieldBuildSerialTraceExportRows(query) {
+    var snKeys = traceOpsYieldParseSerialInput(query);
+    var rows = [["SN", "Fuente", "Evento/Area", "WO", "SKU", "Familia", "BU", "Linea", "Cisco Week", "Estado/Resultado", "Sintoma/Test", "FailLocation", "Num. Parte", "Estacion/Maquina", "Fecha"]];
+    snKeys.forEach(function(snKey) {
+        var sfcInfo = TRACEOPS_YIELD_SN_TO_SFC[snKey];
+        var repairs = TRACEOPS_YIELD_REPAIRS_BY_SN[snKey] || [];
+        var cesiumHist = (TRACEOPS_YIELD_FT_ROWS || []).filter(function(r) { return r.sn === snKey; });
+        if (sfcInfo) {
+            rows.push([
+                snKey,
+                "SFC",
+                sfcInfo.event || sfcInfo.station || "N/D",
+                sfcInfo.wo || "N/D",
+                sfcInfo.sku || "N/D",
+                sfcInfo.family || "N/D",
+                sfcInfo.bu || "N/D",
+                sfcInfo.line || "N/D",
+                sfcInfo.week || "N/D",
+                sfcInfo.status || sfcInfo.event || "N/D",
+                "",
+                "",
+                "",
+                sfcInfo.station || "N/D",
+                sfcInfo.eventTime || "N/D"
+            ]);
+        }
+        repairs.forEach(function(rep) {
+            rows.push([
+                snKey,
+                "Repair Record",
+                rep.station || "N/D",
+                rep.wo || (sfcInfo && sfcInfo.wo) || "N/D",
+                rep.sku || rep.repairSku || (sfcInfo && sfcInfo.sku) || "N/D",
+                rep.family || rep.modelName || (sfcInfo && sfcInfo.family) || "N/D",
+                rep.bu || (sfcInfo && sfcInfo.bu) || "N/D",
+                rep.line || (sfcInfo && sfcInfo.line) || "N/D",
+                rep.week || (sfcInfo && sfcInfo.week) || "N/D",
+                rep.action || rep.status || "N/D",
+                rep.symptom || rep.rootCause || rep.failureMode || "N/D",
+                rep.location || rep.failLocation || "N/D",
+                rep.partNumber || rep.componentCode || "N/D",
+                rep.station || "N/D",
+                rep.repairTime || rep.failTime || "N/D"
+            ]);
+        });
+        cesiumHist.forEach(function(row) {
+            var isPass = row.kind === "pass";
+            rows.push([
+                snKey,
+                "Cesium FT",
+                row.testArea || "N/D",
+                row.wo || (sfcInfo && sfcInfo.wo) || "N/D",
+                row.sku || (sfcInfo && sfcInfo.sku) || "N/D",
+                row.family || (sfcInfo && sfcInfo.family) || "N/D",
+                row.bu || (sfcInfo && sfcInfo.bu) || "N/D",
+                row.line || (sfcInfo && sfcInfo.line) || "N/D",
+                row.week || (sfcInfo && sfcInfo.week) || "N/D",
+                isPass ? "PASS" : "FAIL",
+                row.failingTestName || (isPass ? "" : "N/D"),
+                "",
+                "",
+                row.machine || "N/D",
+                row.recordTime || "N/D"
+            ]);
+        });
+        if (!sfcInfo && !repairs.length && !cesiumHist.length) {
+            rows.push([snKey, "No encontrado", "", "", "", "", "", "", "", "SN no encontrado", "", "", "", "", ""]);
+        }
+    });
+    return rows;
+}
+function traceOpsYieldExportSerialTrace(query) {
+    var rows = traceOpsYieldBuildSerialTraceExportRows(query);
+    if (!rows || rows.length <= 1) {
+        try { alert("No hay datos de trazabilidad para exportar."); } catch(e) {}
+        return;
+    }
+    traceOpsYieldDownloadTsv("smtinel_trazabilidad_sn_" + new Date().toISOString().slice(0,10) + ".tsv", rows);
+}
+
 function traceOpsYieldWoKeyVariants(value) {
     var raw = String(value == null ? "" : value).trim().toUpperCase().replace(/\s+/g, "");
     var clean = traceOpsYieldCleanWo(raw) || raw;
@@ -25328,7 +25421,8 @@ body.traceops-premium-shell [class*="impact"]{
                     React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
                         React.createElement("input", { type: "text", value: snSearchInput, onChange: function(e) { setSnSearchInput(e.target.value); }, onKeyDown: function(e) { if (e.key === "Enter") traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, placeholder: "Ingresa uno o varios SN...", title: "Puedes pegar varios SN separados por coma, espacio o salto de línea", style: { border: "1px solid #C8D8F0", borderRadius: 999, padding: "7px 12px", fontSize: 11, width: 260, outline: "none", fontFamily: "monospace" } }),
                         React.createElement("button", { type: "button", onClick: function() { traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 999, padding: "7px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" } }, "Buscar"),
-                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { setSnSearchQuery(""); setSnSearchInput(""); }, style: { background: "#F0EDE9", color: "#5F766C", border: "1px solid #DDD", borderRadius: 999, padding: "7px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "× Limpiar") : null)),
+                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { setSnSearchQuery(""); setSnSearchInput(""); }, style: { background: "#F0EDE9", color: "#5F766C", border: "1px solid #DDD", borderRadius: 999, padding: "7px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "× Limpiar") : null,
+                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { traceOpsYieldExportSerialTrace(snSearchQuery); }, title: "Exporta en TSV la información desplegada para los SN consultados", style: { background: "#FFFFFF", color: "#1F3A5F", border: "1px solid #CFE0FB", borderRadius: 999, padding: "7px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16,42,67,.06)" } }, "Exportar TSV") : null)),
                 React.createElement("div", { style: { padding: "14px 18px" } },
                     snSearchQuery ? (function() {
                         var snKeys = traceOpsYieldParseSerialInput(snSearchQuery);
@@ -37061,7 +37155,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.0 · No RefDes Fallback + Fails Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.1.1 · Serial Trace Export TSV Regex Fix · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37105,7 +37199,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.0 · No RefDes Fallback + Fails Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.1.1 · Serial Trace Export TSV Regex Fix · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
