@@ -8987,6 +8987,103 @@ function traceOpsYieldSetSerialSearch(rawValue, setter) {
     setter(serials.join("\n"));
 }
 
+function traceOpsYieldExportSerialTrace(rawValue) {
+    try {
+        var serials = traceOpsYieldParseSerialInput(rawValue);
+        if (!serials.length) {
+            alert("No hay números de serie para exportar.");
+            return;
+        }
+        function safe(v) {
+            return String(v == null ? "" : v).replace(/\t/g, " ").replace(/\r?\n/g, " ").trim();
+        }
+        var headers = ["SN", "Source", "Event/Process", "WO", "SKU", "Family", "BU", "Line", "Cisco Week", "Station", "Fail/Root Cause", "FailLocation", "Component", "RepairTime", "Tester", "Result/Status", "Extra"];
+        var rows = [headers];
+        serials.forEach(function(sn) {
+            var sfc = (TRACEOPS_YIELD_SN_TO_SFC && TRACEOPS_YIELD_SN_TO_SFC[sn]) || null;
+            var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[sn]) || [];
+            var cesium = (TRACEOPS_YIELD_FT_ROWS || []).filter(function(r) { return String((r && r.sn) || "").toUpperCase() === sn; });
+            if (sfc) {
+                rows.push([
+                    sn,
+                    "SFC",
+                    sfc.event || sfc.process || sfc.station || "",
+                    sfc.wo || "",
+                    sfc.sku || "",
+                    sfc.family || sfc.model || "",
+                    sfc.bu || "",
+                    sfc.line || "",
+                    sfc.week || "",
+                    sfc.station || "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    sfc.status || "",
+                    sfc.eventTime || ""
+                ]);
+            }
+            repairs.forEach(function(r) {
+                rows.push([
+                    sn,
+                    "Repair_Record",
+                    r.action || r.type || "",
+                    r.wo || r.workOrder || "",
+                    r.sku || r.skuNo || r.product || "",
+                    r.family || r.modelName || r.model || "",
+                    r.bu || "",
+                    r.line || "",
+                    r.week || "",
+                    r.station || r.testStation || "",
+                    r.rootCauseEsp || r.rootcauseEsp || r.rootCause || r.failMode || r.failureMode || "",
+                    r.failLocation || r.ref || r.refdes || "",
+                    r.component || r.componentPn || "",
+                    r.repairTime || r.failTime || r.time || "",
+                    r.tester || "",
+                    r.result || r.status || "",
+                    r.remark || r.actiondesc || ""
+                ]);
+            });
+            cesium.forEach(function(c) {
+                rows.push([
+                    sn,
+                    "Cesium_FT",
+                    c.testArea || c.area || "",
+                    c.wo || c.workOrder || "",
+                    c.sku || c.product || "",
+                    c.family || c.model || "",
+                    c.bu || "",
+                    c.line || "",
+                    c.week || "",
+                    c.station || "",
+                    c.failure || c.errorCode || "",
+                    c.failLocation || "",
+                    c.component || "",
+                    c.time || c.testTime || "",
+                    c.tester || "",
+                    c.result || c.status || "",
+                    c.errorMessage || c.remark || ""
+                ]);
+            });
+            if (!sfc && !repairs.length && !cesium.length) {
+                rows.push([sn, "NOT_FOUND", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "SN no encontrado en datos importados"]);
+            }
+        });
+        var tsv = rows.map(function(row) { return row.map(safe).join("\t"); }).join("\n");
+        var blob = new Blob([tsv], { type: "text/tab-separated-values;charset=utf-8" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "smtinel_serial_trace_" + new Date().toISOString().slice(0, 10) + ".tsv";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    } catch (err) {
+        console.error("Serial trace TSV export failed", err);
+        alert("No se pudo exportar el TSV de trazabilidad: " + (err && err.message ? err.message : err));
+    }
+}
+
 function traceOpsYieldWoKeyVariants(value) {
     var raw = String(value == null ? "" : value).trim().toUpperCase().replace(/\s+/g, "");
     var clean = traceOpsYieldCleanWo(raw) || raw;
@@ -37102,7 +37199,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.3 · Pareto Fails Restore + Serial Export · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.4 · Serial Export Function Fix + Pareto Fails Restore · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37146,7 +37243,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.3 · Pareto Fails Restore + Serial Export · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.4 · Serial Export Function Fix + Pareto Fails Restore · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
