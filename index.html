@@ -9104,8 +9104,10 @@ function traceOpsYieldRepairRootcause(row) {
     return mode && mode !== "N/D" ? mode : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["Root Cause", "RootCause", "Root Cause EN", "Rootcause EN", "Rootcause_EN", "Rootcause ESP", "Rootcause", "Causa Raiz", "Causa Raíz", "FailSymptom", "Symptom", "Defect", "Failure", "Failure Mode", "Falla", "Defecto"]));
 }
 function traceOpsYieldRepairFailLocation(row) {
+    var direct = traceOpsYieldDirectRepairFailLocation(row);
+    if (direct) return direct;
     var ref = traceOpsYieldInferRepairRefFromRow(row);
-    return ref && ref !== "N/D" ? ref : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]));
+    return ref && ref !== "N/D" ? ref : traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]));
 }
 function traceOpsYieldTopRootcauseFromRepairs(rows) {
     var map = {};
@@ -9874,9 +9876,27 @@ function traceOpsYieldInferRepairModeFromRow(row) {
     return "N/D";
 }
 
+function traceOpsYieldDirectRepairFailLocation(row) {
+    row = row || {};
+    // Repair Record authority: FailLocation is column O in the exported file.
+    // Use this cell directly before any text/refdes inference so defect codes
+    // such as E000/E1005 from Rootcause/Remark cannot be selected as references.
+    var direct = traceOpsYieldMeaningfulText(traceOpsYieldPick(row, ["FailLocation", "Fail Location"]));
+    if (direct) return String(direct).trim();
+    // Fallback for exports where the header is missing but column sequence is preserved.
+    // Column O = 15th column = zero-based index 14.
+    var keys = Object.keys(row || {});
+    if (keys.length > 14) {
+        var byPosition = traceOpsYieldMeaningfulText(row[keys[14]]);
+        if (byPosition) return String(byPosition).trim();
+    }
+    return "";
+}
 function traceOpsYieldInferRepairRefFromRow(row) {
     row = row || {};
-    var refColumns = ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Repair Location", "RepairLocation"];
+    var directFailLocation = traceOpsYieldDirectRepairFailLocation(row);
+    if (directFailLocation) return directFailLocation;
+    var refColumns = ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Repair Location", "RepairLocation"];
 
     function cleanRef(v) {
         v = String(v || "").toUpperCase().replace(/[^A-Z0-9_]/g, "").trim();
@@ -9886,6 +9906,7 @@ function traceOpsYieldInferRepairRefFromRow(row) {
     function isBadRef(x) {
         if (!x) return true;
         if (/^(AOI|SMT|PTH|ICT|FT|NGFWBU|CRBU|BU|TOP|BOTTOM|PROCESS|TEST|LINE|SHIFT)$/.test(x)) return true;
+        if (/^E\d{2,}$/i.test(x)) return true;
         if (/^FJZ|^RW|^WO/.test(x)) return true;
         if (/^73|^74|^15|^12|^20|^25|^27|^51|^68/.test(x)) return true;
         // Material / item numbers such as M78981 are not board references.
@@ -9897,7 +9918,7 @@ function traceOpsYieldInferRepairRefFromRow(row) {
         x = cleanRef(x);
         if (isBadRef(x)) return -1;
         if (/_/.test(x)) return 100;
-        if (/^(CR|FB|TP|RN|RP|LED|SW|F|J|P|R|C|L|U|Q|D|Y|X)\d/i.test(x)) return 90;
+        if (/^(TR|CR|FB|TP|RN|RP|LED|SW|F|J|P|R|C|L|U|Q|D|Y|X)\d/i.test(x)) return 90;
         return 10;
     }
     function bestRefFromText(value) {
@@ -10279,8 +10300,8 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         var repairSymptom = traceOpsYieldNormalizeRepairMode(repairSymptomRaw);
         if ((!repairSymptom || repairSymptom === "N/D") && inferredRepairMode !== "N/D") repairSymptom = inferredRepairMode;
         var symptom = traceOpsYieldIsSignalSymptom(rootCause) && rootCause !== "N/D" ? rootCause : (traceOpsYieldIsSignalSymptom(repairSymptom) && repairSymptom !== "N/D" ? repairSymptom : "Sin sintoma");
-        var location = traceOpsYieldInferRepairRefFromRow(row);
-        if (!location || location === "N/D") location = String(traceOpsYieldPick(row, ["FailLocation", "Fail Location", "Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]) || "N/D").trim();
+        var location = traceOpsYieldDirectRepairFailLocation(row) || traceOpsYieldInferRepairRefFromRow(row);
+        if (!location || location === "N/D") location = String(traceOpsYieldPick(row, ["Location", "Reference", "Reference Designator", "RefDes", "Referencia", "Area"]) || "N/D").trim();
         var pn = traceOpsYieldComponentCodeFromRepair(row);
         var componentInfo = traceOpsYieldEnrichComponent(pn);
         var station = traceOpsYieldClassifyStation(traceOpsYieldPick(row, ["Station", "Process", "Area", "Current Event", "Evento"])) || (sfc && sfc.station) || "";
