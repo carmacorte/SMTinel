@@ -8557,7 +8557,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v9_5-repair-record-baseline";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v9_6-repair-fixedwidth-parser";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -9453,11 +9453,11 @@ function traceOpsYieldDetectTextRole(name) {
         return "wo";
     return "";
 }
-function traceOpsYieldParseDelimitedText(text) {
+function traceOpsYieldParseDelimitedText(text, role) {
     var raw = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
     var lines = raw.split("\n");
     var first = "";
-    for (var f = 0; f < Math.min(lines.length, 20); f++) {
+    for (var f = 0; f < Math.min(lines.length, 80); f++) {
         if (lines[f] && lines[f].trim()) {
             first = lines[f];
             break;
@@ -9472,7 +9472,14 @@ function traceOpsYieldParseDelimitedText(text) {
         return count;
     }
     var candidates = ["\t", "|", ";", ","];
-    var delimiter = candidates.map(function (ch) { return { ch: ch, count: countDelim(first, ch) }; }).sort(function (a, b) { return b.count - a.count; })[0].ch || ",";
+    var ranked = candidates.map(function (ch) { return { ch: ch, count: countDelim(first, ch) }; }).sort(function (a, b) { return b.count - a.count; });
+    // Repair Record exported from VBA/Sublime can be fixed-width with commas inside product descriptions.
+    // Do not let a comma in free text become the delimiter; use positional slicing from the header instead.
+    if (!ranked.length || ranked[0].count < 2 || (role === "repair" && ranked[0].ch === "," && ranked[0].count < 8)) {
+        var fixed = traceOpsYieldParseFixedWidthText(raw, role);
+        if (fixed && fixed.length) return fixed;
+    }
+    var delimiter = ranked[0].ch || ",";
     var rows = [];
     for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
@@ -9484,6 +9491,50 @@ function traceOpsYieldParseDelimitedText(text) {
             rows.push(traceOpsYieldCsvSplit(line));
         else
             rows.push(line.split(delimiter).map(function (v) { return String(v == null ? "" : v).trim(); }));
+    }
+    return rows;
+}
+function traceOpsYieldParseFixedWidthText(text, role) {
+    var lines = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    var headerIdx = -1, headerLine = "";
+    for (var i = 0; i < Math.min(lines.length, 120); i++) {
+        var ln = String(lines[i] || "");
+        var compact = traceOpsYieldCompact(ln);
+        if ((role === "repair" && compact.indexOf("faillocation") >= 0 && (compact.indexOf("rootcause") >= 0 || compact.indexOf("component") >= 0 || compact.indexOf("replaceid") >= 0)) ||
+            (compact.indexOf("workorder") >= 0 && compact.indexOf("serial") >= 0) ||
+            (compact.indexOf("currentevent") >= 0 && compact.indexOf("serial") >= 0)) {
+            headerIdx = i; headerLine = ln; break;
+        }
+    }
+    if (headerIdx < 0) return [];
+    var headerSpecs = [
+        ["SN", /\bSN\b/i], ["LatestFailTime", /Latest\s*Fail\s*Time/i], ["ModelName", /Model\s*Name/i], ["SkuNo", /Sku\s*No/i],
+        ["Station", /Station/i], ["Test Fail/Symptom", /Test\s*Fail\s*\/\s*Symptom|Fail\s*Symptom/i], ["Rootcause", /Root\s*cause(?!\s*Esp)/i],
+        ["Rootcause Esp", /Root\s*cause\s*Esp/i], ["Type", /\bType\b/i], ["Action", /\bAction\b/i], ["Side", /\bSide\b/i],
+        ["FailLocation", /Fail\s*Location/i], ["ComponentC", /ComponentC|Component\s*C|Component\s*Code/i], ["VendorName", /Vendor\s*Name/i],
+        ["DataCode", /Data\s*Code/i], ["LotCode", /Lot\s*Code/i], ["ReplaceID", /Replace\s*ID/i], ["Remark", /Remark/i],
+        ["Workorderno", /Work\s*Order\s*No|Workorderno|\bWO\b/i], ["Line", /\bLine\b/i], ["Shift", /\bShift\b/i]
+    ];
+    var starts = [];
+    headerSpecs.forEach(function(spec) {
+        var m = spec[1].exec(headerLine);
+        if (m) starts.push({ name: spec[0], start: m.index });
+    });
+    starts.sort(function(a,b){ return a.start - b.start; });
+    var dedup = [], seen = {};
+    starts.forEach(function(x){ if (!seen[x.name]) { seen[x.name] = true; dedup.push(x); } });
+    starts = dedup;
+    if (starts.length < 3) return [];
+    var rows = [starts.map(function(x){ return x.name; })];
+    for (var r = headerIdx + 1; r < lines.length; r++) {
+        if (r - headerIdx > 250000) break;
+        var line = String(lines[r] || "");
+        if (!line.trim()) continue;
+        var arr = starts.map(function(x, idx) {
+            var end = (idx + 1 < starts.length) ? starts[idx + 1].start : line.length;
+            return String(line.slice(x.start, end)).trim();
+        });
+        rows.push(arr);
     }
     return rows;
 }
@@ -9532,7 +9583,7 @@ async function traceOpsYieldTryImportTextZip(file) {
         await traceOpsYieldYieldThread();
         var item = entries[i];
         var text = await item.entry.async("string");
-        var rawRows = traceOpsYieldParseDelimitedText(text);
+        var rawRows = traceOpsYieldParseDelimitedText(text, item.role);
         var objects = traceOpsYieldObjectsFromRawRows(rawRows, item.role);
         if (objects.length) {
             parsed[item.role] = parsed[item.role].concat(objects);
@@ -36993,7 +37044,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.5 · Repair Record Baseline Restore · 2026-05-14';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.6 · Repair Fixed-Width Parser Restore · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37037,7 +37088,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.5 · Repair Record Baseline Restore · 2026-05-14';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.6 · Repair Fixed-Width Parser Restore · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
