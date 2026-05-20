@@ -11321,16 +11321,31 @@ function traceOpsYieldBuildWoRepairInsight(item) {
     item = item || {};
     var rawWo = String(item.workOrder || item.wo || "");
     if (!rawWo) return null;
+
+    // Important: one WO can contain multiple assemblies/SKUs. Board Impact must keep
+    // the selected WO card product scope, otherwise Repair Record rows from another
+    // model sharing the same WO + RefDes are shown under the wrong model.
+    var scopeSku = String(item.skuno || item.sku || item.SKU || "").trim().toUpperCase();
+    var scopeFamily = traceOpsYieldCleanFamilyLabel(item.model || item.family || item.ModelName || "").toUpperCase();
+    function sameProductScope(row) {
+        row = row || {};
+        var rowSku = String(row.skuno || row.sku || row.SKU || row.SkuNo || row.moduleno || "").trim().toUpperCase();
+        var rowFamily = traceOpsYieldCleanFamilyLabel(row.model || row.family || row.ModelName || row.ProductFamily || "").toUpperCase();
+        if (scopeSku) return rowSku === scopeSku;
+        if (scopeFamily) return rowFamily === scopeFamily;
+        return true;
+    }
+
     var snScope = {};
     Object.keys(TRACEOPS_YIELD_SN_TO_SFC || {}).forEach(function(snKey) {
         var sfc = TRACEOPS_YIELD_SN_TO_SFC[snKey] || {};
-        if (traceOpsYieldWoMatches(sfc.wo, rawWo)) {
+        if (traceOpsYieldWoMatches(sfc.wo, rawWo) && sameProductScope(sfc)) {
             var clean = traceOpsYieldCleanSn(snKey || sfc.sn || "");
             if (clean) snScope[clean] = true;
         }
     });
     (TRACEOPS_YIELD_FT_ROWS || []).forEach(function(fr) {
-        if (traceOpsYieldWoMatches(fr.wo, rawWo)) {
+        if (traceOpsYieldWoMatches(fr.wo, rawWo) && sameProductScope(fr)) {
             var k = traceOpsYieldCleanSn(fr.bridgeKey || fr.parentsernum || fr.sn || "");
             if (k) snScope[k] = true;
         }
@@ -11346,6 +11361,7 @@ function traceOpsYieldBuildWoRepairInsight(item) {
         var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[sn]) || [];
         repairs.forEach(function(rep) {
             if (!rep) return;
+            if (!sameProductScope(rep) && !sameProductScope(sfc)) return;
             var refdes = String(rep.refdes || rep.failLocation || rep.location || "N/D").trim() || "N/D";
             var root = String(rep.rootCause || rep.failureMode || rep.symptom || rep.repairSymptom || "Repair evidence").trim() || "Repair evidence";
             var area = rep.responsibleArea || traceOpsYieldClassifyResponsibleArea(root);
@@ -11368,7 +11384,7 @@ function traceOpsYieldBuildWoRepairInsight(item) {
             traceOpsYieldAddCount(g.rootMap, root, 1);
             traceOpsYieldAddCount(g.areaMap, area, 1);
             if (/FAIL/i.test(status)) g.hasFail = true;
-            var row = { sn: sn, sfcSn: sn, cesiumSn: (ft && ft.cesiumSn) || "", repairSn: rep.repairSn || "", parentsernum: (ft && ft.parentsernum) || rep.parentsernum || "", partsernum: (ft && ft.partsernum) || rep.partsernum || "", bridgeKey: (ft && ft.bridgeKey) || rep.bridgeKey || sn, bridgeSource: (ft && ft.bridgeSource) || rep.bridgeSource || "sn", wo: rawWo, sku: item.skuno || item.sku || sfc.sku || rep.sku || "N/A", family: item.model || item.family || sfc.family || rep.family || "N/A", line: item.line || sfc.line || rep.line || "N/D", week: item.week || sfc.week || rep.week || "Imported", station: station, status: status, failingTestName: realFtn || "", displaySignal: displaySignal, symptom: root, failureMode: root, rootCause: root, location: refdes, refdes: refdes, responsibleArea: area, repairTime: rep.repairTime || "", recordTime: (ft && ft.recordTime) || "", source: "Repair_record ↔ Cesium via " + ((ft && ft.bridgeSource) || rep.bridgeSource || "SN") };
+            var row = { sn: sn, sfcSn: sn, cesiumSn: (ft && ft.cesiumSn) || "", repairSn: rep.repairSn || "", parentsernum: (ft && ft.parentsernum) || rep.parentsernum || "", partsernum: (ft && ft.partsernum) || rep.partsernum || "", bridgeKey: (ft && ft.bridgeKey) || rep.bridgeKey || sn, bridgeSource: (ft && ft.bridgeSource) || rep.bridgeSource || "sn", wo: rawWo, sku: rep.sku || sfc.sku || item.skuno || item.sku || "N/A", family: rep.family || sfc.family || item.model || item.family || "N/A", line: rep.line || sfc.line || item.line || "N/D", week: rep.week || sfc.week || item.week || "Imported", station: station, status: status, failingTestName: realFtn || "", displaySignal: displaySignal, symptom: root, failureMode: root, rootCause: root, location: refdes, refdes: refdes, responsibleArea: area, repairTime: rep.repairTime || "", recordTime: (ft && ft.recordTime) || "", source: "Repair_record ↔ Cesium via " + ((ft && ft.bridgeSource) || rep.bridgeSource || "SN") };
             g.rows.push(row);
             allRows.push(row);
         });
