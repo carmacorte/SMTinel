@@ -8557,7 +8557,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v9_6-repair-fixedwidth-parser";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v9_7-repair-product-scope-lock";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -10321,8 +10321,9 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         // SFC is authoritative for product scope. Repair Record SKU columns can be component/fail-SKU
         // and must not reassign the serial to a different model or BU.
         var repairSku = String(traceOpsYieldPick(row, ["SkuNo", "Key_Fail_SKU", "Key Fail SKU", "skuno", "sku", "model", "part number", "pn", "Modelo"]) || "").trim();
+        var repairFamilyRaw = String(traceOpsYieldPick(row, ["ModelName", "Model Name", "Product Family", "Prodcut Family", "Family", "Nombre del Modelo"]) || "").trim();
         var sku = String((sfc && sfc.sku) || repairSku || "").trim();
-        var family = String((sfc && sfc.family) || traceOpsYieldPick(row, ["ModelName", "Model Name", "Product Family", "Prodcut Family", "Family", "Nombre del Modelo"]) || sku || "N/A").trim();
+        var family = String((sfc && sfc.family) || repairFamilyRaw || sku || "N/A").trim();
         var rootCauseRaw = String(traceOpsYieldPick(row, ["Root Cause", "RootCause", "Root Cause EN", "Rootcause EN", "Rootcause_EN", "Rootcause ESP", "Rootcause", "Defect", "Failure", "Failure Mode", "Falla", "Defecto"]) || "").trim();
         var repairSymptomRaw = String(traceOpsYieldPick(row, ["FailSymptom", "Fail Symptom", "Failure Symptom", "Symptom", "Test Symptom", "testinfo", "Failing Test Name", "Fail Test Name", "Failed Test Name", "TESTNAME", "TestName", "Test Name", "Failure Name"]) || "").trim();
         var inferredRepairMode = traceOpsYieldInferRepairModeFromRow(row);
@@ -10345,7 +10346,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         var actionDesc = String(traceOpsYieldPick(row, ["Actiondesc", "Action Desc", "Action Description", "Repair Action", "Accion", "Acción"]) || "").trim();
         var repairType = String(traceOpsYieldPick(row, ["Type", "Repair Type", "Tipo"]) || "").trim();
         var responsibleArea = traceOpsYieldClassifyResponsibleArea(symptom);
-        var clean = { sn: sn, sfcSn: sn, repairSn: repairSn || "", parentsernum: repairParent || (sfc && sfc.parentsernum) || "", partsernum: repairPart || (sfc && sfc.partsernum) || "", bridgeKey: sn, bridgeSource: repairPart ? "partsernum" : (repairParent ? "parentsernum" : "sn"), wo: wo, sku: sku, family: family, symptom: symptom, failureMode: symptom, rootCause: symptom, mode: symptom, repairSymptom: repairSymptom, detectionSymptom: repairSymptom, rawRootCause: rootCauseRaw, rawRepairSymptom: repairSymptomRaw, location: location, refdes: location, failLocation: location, partNumber: componentInfo.partNumber, componentCode: componentInfo.componentCode, componentPn: componentInfo.componentPn, componentType: componentInfo.componentType, componentDescription: componentInfo.componentDescription, station: station, detectionStation: station, responsibleArea: responsibleArea, side: side, actionDesc: actionDesc, repairType: repairType, repairTime: repairTime, eventTime: (sfc && sfc.eventTime) || "", risk: 1, bu: (sfc && sfc.bu) || dbRep.bu, week: (sfc && sfc.week) || traceOpsYieldResolveCiscoWeek(row, ciscoCalendarMap), line: (sfc && sfc.line) || "" };
+        var clean = { sn: sn, sfcSn: sn, repairSn: repairSn || "", parentsernum: repairParent || (sfc && sfc.parentsernum) || "", partsernum: repairPart || (sfc && sfc.partsernum) || "", bridgeKey: sn, bridgeSource: repairPart ? "partsernum" : (repairParent ? "parentsernum" : "sn"), wo: wo, sku: sku, family: family, repairSku: repairSku, rawRepairSku: repairSku, sourceSku: repairSku, repairFamily: repairFamilyRaw, rawRepairFamily: repairFamilyRaw, sourceFamily: repairFamilyRaw, symptom: symptom, failureMode: symptom, rootCause: symptom, mode: symptom, repairSymptom: repairSymptom, detectionSymptom: repairSymptom, rawRootCause: rootCauseRaw, rawRepairSymptom: repairSymptomRaw, location: location, refdes: location, failLocation: location, partNumber: componentInfo.partNumber, componentCode: componentInfo.componentCode, componentPn: componentInfo.componentPn, componentType: componentInfo.componentType, componentDescription: componentInfo.componentDescription, station: station, detectionStation: station, responsibleArea: responsibleArea, side: side, actionDesc: actionDesc, repairType: repairType, repairTime: repairTime, eventTime: (sfc && sfc.eventTime) || "", risk: 1, bu: (sfc && sfc.bu) || dbRep.bu, week: (sfc && sfc.week) || traceOpsYieldResolveCiscoWeek(row, ciscoCalendarMap), line: (sfc && sfc.line) || "" };
         repairsClean.push(clean);
         if (wo) {
             if (!repairsByWo[wo])
@@ -11380,10 +11381,15 @@ function traceOpsYieldBuildWoRepairInsight(item) {
     var scopeFamily = traceOpsYieldCleanFamilyLabel(item.model || item.family || item.ModelName || "").toUpperCase();
     function sameProductScope(row) {
         row = row || {};
+        var explicitRepairSku = String(row.repairSku || row.rawRepairSku || row.sourceSku || row.SkuNo || row.skuno || row.Key_Fail_SKU || row["Key Fail SKU"] || "").trim().toUpperCase();
+        var explicitRepairFamily = traceOpsYieldCleanFamilyLabel(row.repairFamily || row.rawRepairFamily || row.sourceFamily || row.ModelName || row["Model Name"] || "").toUpperCase();
         var rowSku = String(row.skuno || row.sku || row.SKU || row.SkuNo || row.moduleno || row.partNumber || row.partno || "").trim().toUpperCase();
         var rowFamily = traceOpsYieldCleanFamilyLabel(row.model || row.family || row.ModelName || row.ProductFamily || row.productFamily || "").toUpperCase();
-        // Do not require SKU/family on every source. Repair Record/SFC/Cesium rows may be partial.
-        // Only reject a row when it contains explicit product evidence that conflicts with the active card scope.
+        // Product lock: Repair Record's own SkuNo/ModelName is authoritative for excluding mixed assemblies.
+        // SFC may carry a different model for the same/ambiguous serial bridge, so never allow a repair row
+        // with explicit Repair SKU/Family that contradicts the active WO card scope.
+        if (scopeSku && explicitRepairSku && explicitRepairSku !== scopeSku) return false;
+        if (!scopeSku && scopeFamily && explicitRepairFamily && explicitRepairFamily !== scopeFamily) return false;
         if (scopeSku && rowSku && rowSku !== scopeSku) return false;
         if (!scopeSku && scopeFamily && rowFamily && rowFamily !== scopeFamily) return false;
         return true;
@@ -25572,6 +25578,17 @@ body.traceops-premium-shell [class*="impact"]{
     function traceOpsBoardRowMatchesScope(row, scope) {
         row = row || {};
         scope = scope || {};
+        var hasSkuScope = !!(scope.skuMap && Object.keys(scope.skuMap).length);
+        var hasFamilyScope = !!(scope.familyMap && Object.keys(scope.familyMap).length);
+        var explicitRepairSku = traceOpsBoardNormText(row.repairSku || row.rawRepairSku || row.sourceSku || row.SkuNo || row.skuno || row.Key_Fail_SKU || row["Key Fail SKU"] || "");
+        var explicitRepairFamily = traceOpsBoardNormText(traceOpsYieldCleanFamilyLabel(row.repairFamily || row.rawRepairFamily || row.sourceFamily || row.ModelName || row["Model Name"] || ""));
+        // Hard exclusion: WO alone is not enough when Repair Record identifies another assembly/model.
+        if (hasSkuScope && explicitRepairSku && !scope.skuMap[explicitRepairSku]) return false;
+        if (!hasSkuScope && hasFamilyScope && explicitRepairFamily && !scope.familyMap[explicitRepairFamily]) return false;
+        var rowSku = traceOpsBoardNormText(row.sku || row.SKU || row.skuno || row.moduleNo || row.partNumber || row.modelNumber || "");
+        if (hasSkuScope && rowSku && !scope.skuMap[rowSku] && !explicitRepairSku) return false;
+        var rowFamily = traceOpsBoardNormText(traceOpsYieldCleanFamilyLabel(row.family || row.model || row.productFamily || row.product_family || ""));
+        if (!hasSkuScope && hasFamilyScope && rowFamily && !scope.familyMap[rowFamily] && !explicitRepairFamily) return false;
         var rowSn = traceOpsYieldCleanSn(row.sn || row.SN || row.serial || row.serialNumber || "");
         if (rowSn && scope.snMap && scope.snMap[rowSn]) return true;
         var rowWo = row.wo || row.workorderno || row.workOrder || row.woNumber || "";
@@ -25581,9 +25598,7 @@ body.traceops-premium-shell [class*="impact"]{
                 return wo && typeof traceOpsYieldWoMatches === "function" && traceOpsYieldWoMatches(rowWo, wo);
             });
         }
-        var rowSku = traceOpsBoardNormText(row.sku || row.SKU || row.skuno || row.moduleNo || row.partNumber || row.modelNumber || "");
         if (rowSku && scope.skuMap && scope.skuMap[rowSku]) return true;
-        var rowFamily = traceOpsBoardNormText(traceOpsYieldCleanFamilyLabel(row.family || row.model || row.productFamily || row.product_family || ""));
         if (rowFamily && scope.familyMap && scope.familyMap[rowFamily]) return true;
         return false;
     }
@@ -37044,7 +37059,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.6 · Repair Fixed-Width Parser Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.7 · Repair Product Scope Lock · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37088,7 +37103,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.6 · Repair Fixed-Width Parser Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.7 · Repair Product Scope Lock · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
