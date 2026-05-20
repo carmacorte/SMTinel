@@ -10929,7 +10929,32 @@ function traceOpsBuildYieldFlowCauseSummary(rows) {
             var oneSn = traceOpsYieldCleanSn(r.sn || r.SN);
             var oneKey = [oneSn, cause, location || ''].join('|');
             if (oneSn && !map[cause].serialMap[oneKey])
-                map[cause].serialMap[oneKey] = { sn: oneSn, wo: r.wo || '', sku: sku, family: family, symptom: cause, repairSymptom: r.repairSymptom || r.detectionSymptom || '', failingTestName: r.failingTestName || '', location: location, station: r.station || '', week: r.week || '', line: r.line || '' };
+                map[cause].serialMap[oneKey] = {
+                    sn: oneSn,
+                    wo: r.wo || '',
+                    sku: sku,
+                    family: family,
+                    repairSku: r.repairSku || r.rawRepairSku || r.sourceSku || '',
+                    rawRepairSku: r.rawRepairSku || r.repairSku || r.sourceSku || '',
+                    sourceSku: r.sourceSku || r.repairSku || r.rawRepairSku || '',
+                    repairFamily: r.repairFamily || r.rawRepairFamily || r.sourceFamily || '',
+                    rawRepairFamily: r.rawRepairFamily || r.repairFamily || r.sourceFamily || '',
+                    sourceFamily: r.sourceFamily || r.repairFamily || r.rawRepairFamily || '',
+                    symptom: cause,
+                    repairSymptom: r.repairSymptom || r.detectionSymptom || '',
+                    failingTestName: r.failingTestName || '',
+                    location: location,
+                    refdes: r.refdes || r.failLocation || r.location || location,
+                    failLocation: r.failLocation || r.refdes || r.location || location,
+                    componentCode: r.componentCode || r.componentPn || r.partNumber || '',
+                    componentPn: r.componentPn || r.componentCode || r.partNumber || '',
+                    partNumber: r.partNumber || r.componentCode || r.componentPn || '',
+                    componentType: r.componentType || '',
+                    componentDescription: r.componentDescription || '',
+                    station: r.station || '',
+                    week: r.week || '',
+                    line: r.line || ''
+                };
         }
     });
     var list = Object.keys(map).map(function (k) {
@@ -25625,13 +25650,13 @@ body.traceops-premium-shell [class*="impact"]{
             if (v) scope.snMap[v] = true;
         }
         addWo(ctx && ctx.wo);
-        addSku(ctx && ctx.sku);
-        addFamily(ctx && ctx.family);
+        addSku(ctx && (ctx.sku || ctx.skuno || ctx.SkuNo));
+        addFamily(ctx && (ctx.family || ctx.model || ctx.ModelName));
         rows.forEach(function(r) {
             addSn(r && (r.sn || r.SN || r.serial || r.serialNumber));
             addWo(r && (r.wo || r.workorderno || r.workOrder || r.woNumber));
-            addSku(r && (r.sku || r.SKU));
-            addFamily(r && (r.family || r.model || r.productFamily));
+            addSku(r && (r.sku || r.SKU || r.skuno || r.SkuNo));
+            addFamily(r && (r.family || r.model || r.ModelName || r.productFamily));
         });
         var hasScope = Object.keys(scope.snMap).length || scope.woList.length || Object.keys(scope.skuMap).length || Object.keys(scope.familyMap).length;
         if (!hasScope) return rows;
@@ -37059,7 +37084,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.7 · Repair Product Scope Lock · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.8 · Board Impact Repair SKU Lock · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37103,7 +37128,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.7 · Repair Product Scope Lock · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V9.8 · Board Impact Repair SKU Lock · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
