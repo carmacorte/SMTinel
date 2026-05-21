@@ -10909,7 +10909,7 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
     var seqMap = {};
     sequence.forEach(function (s, idx) {
         var code = traceOpsYieldNormalizeSequenceStation(s.station);
-        if (code && !seqMap[code]) seqMap[code] = { no: s.no, station: s.station, qty: 0, idx: idx, age0_30: 0, age31_60: 0, age61_90: 0, age91_365: 0, ageOver365: 0, serials: [], serialsByBucket: { age0_30: [], age31_60: [], age61_90: [], age91_365: [], ageOver365: [] } };
+        if (code && !seqMap[code]) seqMap[code] = { no: s.no, station: s.station, qty: 0, cleanQty: 0, repairQty: 0, idx: idx, age0_30: 0, age31_60: 0, age61_90: 0, age91_365: 0, ageOver365: 0, repairAge0_30: 0, repairAge31_60: 0, repairAge61_90: 0, repairAge91_365: 0, repairAgeOver365: 0, cleanAge0_30: 0, cleanAge31_60: 0, cleanAge61_90: 0, cleanAge91_365: 0, cleanAgeOver365: 0, serials: [], cleanSerials: [], repairSerials: [], serialsByBucket: { age0_30: [], age31_60: [], age61_90: [], age91_365: [], ageOver365: [] }, cleanSerialsByBucket: { age0_30: [], age31_60: [], age61_90: [], age91_365: [], ageOver365: [] }, repairSerialsByBucket: { age0_30: [], age31_60: [], age61_90: [], age91_365: [], ageOver365: [] } };
     });
     function coerceStationBuildDate(value) {
         if (value == null || value === '') return null;
@@ -10959,6 +10959,21 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
         if (snCurrent[sn]) { snCurrent[sn].station = latestFtBySn[sn].station; snCurrent[sn].latestCesium = latestFtBySn[sn].row || null; }
         else if (options.restrictToSfc === false) snCurrent[sn] = { station: latestFtBySn[sn].station, bucket: 'age0_30', sfc: {}, latestCesium: latestFtBySn[sn].row || null };
     });
+    function hasRepairEvidenceForStationSn(sn, sfc) {
+        var key = traceOpsYieldCleanSn(sn || '');
+        var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[key]) || [];
+        if (!repairs || !repairs.length) return false;
+        var sfcWo = String((sfc && sfc.wo) || '').replace(/^0+/, '') || String((sfc && sfc.wo) || '');
+        var sfcSku = String((sfc && sfc.sku) || '').trim().toUpperCase();
+        return repairs.some(function(rep) {
+            var repWoRaw = String((rep && rep.wo) || '');
+            var repWo = repWoRaw.replace(/^0+/, '') || repWoRaw;
+            var repSku = String((rep && rep.sku) || '').trim().toUpperCase();
+            var woOk = !sfcWo || !repWo || repWo === sfcWo;
+            var skuOk = !sfcSku || !repSku || repSku === sfcSku;
+            return woOk && skuOk;
+        });
+    }
     Object.keys(snCurrent).forEach(function (sn) {
         var row = snCurrent[sn] || {};
         var st = row.station;
@@ -10980,10 +10995,25 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
                 failingTestName: traceOpsYieldCleanFailureSignal([ft.failingTestName, ft.testInfo]),
                 buildStartDate: sfc.buildStartDate || ft.buildStartDate || '',
                 ageBucket: bucket,
-                recordTime: ft.recordTime || ''
+                recordTime: ft.recordTime || '',
+                hasRepair: hasRepairEvidenceForStationSn(sn, sfc)
             };
+            var isRepairUnit = !!serialRow.hasRepair;
+            var cleanBucket = 'clean' + bucket.charAt(0).toUpperCase() + bucket.slice(1);
+            var repairBucket = 'repair' + bucket.charAt(0).toUpperCase() + bucket.slice(1);
             seqMap[st].qty += 1;
             seqMap[st][bucket] += 1;
+            if (isRepairUnit) {
+                seqMap[st].repairQty += 1;
+                if (seqMap[st][repairBucket] != null) seqMap[st][repairBucket] += 1;
+                seqMap[st].repairSerials.push(serialRow);
+                if (seqMap[st].repairSerialsByBucket && seqMap[st].repairSerialsByBucket[bucket]) seqMap[st].repairSerialsByBucket[bucket].push(serialRow);
+            } else {
+                seqMap[st].cleanQty += 1;
+                if (seqMap[st][cleanBucket] != null) seqMap[st][cleanBucket] += 1;
+                seqMap[st].cleanSerials.push(serialRow);
+                if (seqMap[st].cleanSerialsByBucket && seqMap[st].cleanSerialsByBucket[bucket]) seqMap[st].cleanSerialsByBucket[bucket].push(serialRow);
+            }
             seqMap[st].serials.push(serialRow);
             if (seqMap[st].serialsByBucket && seqMap[st].serialsByBucket[bucket]) seqMap[st].serialsByBucket[bucket].push(serialRow);
         }
@@ -25191,6 +25221,8 @@ body.traceops-premium-shell [class*="impact"]{
                                     React.createElement("th", { style: { textAlign: "left", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "No"),
                                     React.createElement("th", { style: { textAlign: "left", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "Station"),
                                     React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "Units"),
+                                    React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "Clean"),
+                                    React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#A43B2E", borderBottom: "1px solid #E7EEF9" } }, "Repair"),
                                     React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "0-30d"),
                                     React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "31-60d"),
                                     React.createElement("th", { style: { textAlign: "right", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "61-90d"),
@@ -25208,6 +25240,10 @@ body.traceops-premium-shell [class*="impact"]{
                                                 (heat.isPreStockin || heat.isStockin) ? React.createElement("span", { style: { fontSize: 8.5, fontWeight: 900, padding: "2px 6px", borderRadius: 999, background: heat.chipBg, color: heat.chipText, border: "1px solid " + heat.border, textTransform: "uppercase", letterSpacing: ".04em" } }, heat.label) : null)),
                                         React.createElement("td", { style: { padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #EEF3FA" } },
                                             React.createElement("button", { type: "button", onClick: function () { openStationSequenceSerials(st, 'all', 'Total units'); }, style: { display: "inline-flex", minWidth: 74, justifyContent: "center", alignItems: "center", padding: "5px 8px", borderRadius: 10, background: heat.bg, border: "1px solid " + heat.border, color: heat.text, fontSize: 11, fontWeight: 900, cursor: "pointer" } }, traceOpsYieldFlowFmt(st.qty))),
+                                        React.createElement("td", { style: { padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #EEF3FA" } },
+                                            React.createElement("button", { type: "button", onClick: function () { setYieldSerialModal({ title: (st.station || 'Station') + ' · Clean', subtitle: 'SN sin evidencia de Repair Record en la estacion actual', rows: st.cleanSerials || [] }); }, style: { display: "inline-flex", minWidth: 62, justifyContent: "center", alignItems: "center", padding: "5px 8px", borderRadius: 10, background: "#F8FBFF", border: "1px solid #D9E6F7", color: "#1F3A5F", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, traceOpsYieldFlowFmt(st.cleanQty || 0))),
+                                        React.createElement("td", { style: { padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #EEF3FA" } },
+                                            React.createElement("button", { type: "button", onClick: function () { setYieldSerialModal({ title: (st.station || 'Station') + ' · Repair', subtitle: 'SN con evidencia de intervencion en Repair Record', rows: st.repairSerials || [] }); }, style: { display: "inline-flex", minWidth: 62, justifyContent: "center", alignItems: "center", padding: "5px 8px", borderRadius: 10, background: (st.repairQty || 0) ? "#FFF7F5" : "#FBFDFF", border: "1px solid " + ((st.repairQty || 0) ? "#F1B5AE" : "#E7EEF9"), color: (st.repairQty || 0) ? "#A43B2E" : "#5F766C", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, traceOpsYieldFlowFmt(st.repairQty || 0))),
                                         renderStationAgingCell(st, 'age0_30', '0-30d'),
                                         renderStationAgingCell(st, 'age31_60', '31-60d'),
                                         renderStationAgingCell(st, 'age61_90', '61-90d'),
@@ -25215,7 +25251,7 @@ body.traceops-premium-shell [class*="impact"]{
                                         renderStationAgingCell(st, 'ageOver365', '>1y'),
                                         React.createElement("td", { style: { padding: "8px 10px", fontSize: 10.5, color: heat.isPreStockin ? heat.text : "#2F6FB3", fontWeight: 800, textAlign: "right", borderBottom: "1px solid #EEF3FA" } }, traceOpsYieldFlowFmt(st.flowPct, 1) + "%"));
                                 })))),
-                        React.createElement("div", { style: { marginTop: 8, fontSize: 10, color: "#5F766C" } }, "Source: SFC current event + latest Cesium status by SN. One serial is counted in one current station only. Pre-Stockin heatmap emphasizes the highest active unit counts before Stockin."))
+                        React.createElement("div", { style: { marginTop: 8, fontSize: 10, color: "#5F766C" } }, "Source: SFC current event + latest Cesium status by SN. Clean = SN without Repair Record evidence; Repair = SN with at least one linked repair intervention. One serial is counted in one current station only."))
                     : React.createElement("div", { style: { border: "1px dashed #D9E6F7", borderRadius: 12, padding: "14px", fontSize: 11.5, color: "#5F766C", background: "#FBFDFF" } }, "No station-sequence data for the active scope."))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
@@ -37201,7 +37237,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.5 · Station Qty Scope Fix · Serial Export · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.6 · Station Clean/Repair Aging Breakdown · 2026-05-21';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37245,7 +37281,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.5 · Station Qty Scope Fix · Serial Export · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.6 · Station Clean/Repair Aging Breakdown · 2026-05-21';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
