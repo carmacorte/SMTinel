@@ -11355,7 +11355,7 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
         n = n || "UNKNOWN";
         var node = ensureNode(n);
         var key = traceOpsYieldCleanSn(sn || "") || (n + "_row_" + node.examples.length);
-        node.snMap[key] = true;
+        if (opts.countUnit !== false) node.snMap[key] = true;
         if (opts.fail) node.failMap[key] = true;
         if (opts.repair) node.repairMap[key] = true;
         if (time && (!node.timeMap[key] || String(time) < String(node.timeMap[key]))) node.timeMap[key] = time;
@@ -11374,7 +11374,9 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     (repairList || []).forEach(function(rep){
         var node = traceOpsYieldProcessNode(rep.station || rep.detectionStation || rep.responsibleArea || "Repair");
         if (node === "UNKNOWN") node = rep.responsibleArea === "PTH" ? "PTH" : (rep.responsibleArea === "FT" ? "FT" : "SMT");
-        addRow(node, rep.sn || rep.sfcSn || rep.bridgeKey, rep.repairTime || rep.eventTime || "", { event: rep.rootCause || rep.failureMode || rep.symptom || "Repair evidence", status: "Repair", repair: true, fail: true });
+        // Repair evidence must not inflate station WIP/unit counts.
+        // Units in the WO timeline come from current SFC position only; repair rows only mark risk/repair evidence.
+        addRow(node, rep.sn || rep.sfcSn || rep.bridgeKey, rep.repairTime || rep.eventTime || "", { event: rep.rootCause || rep.failureMode || rep.symptom || "Repair evidence", status: "Repair", repair: true, fail: true, countUnit: false });
     });
     var list = order.map(function(n){
         var node = nodes[n] || ensureNode(n);
@@ -11453,7 +11455,7 @@ function traceOpsYieldRenderWoProcessTimeline(item, woInsight, setYieldSerialMod
             return React.createElement("div", { key: n.node, style: { flex: compact ? "0 0 112px" : "1 0 92px", minWidth: compact ? 112 : 92, border: "1px solid " + border, borderRadius: 12, padding: "8px 9px", background: bg, minHeight: 64 } },
                 React.createElement("div", { style: { fontSize: 9, fontWeight: 900, color: text, textTransform: "uppercase", letterSpacing: ".04em", whiteSpace: "nowrap" } }, n.node),
                 React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: "#102A43", marginTop: 4 } }, traceOpsYieldFlowFmt(n.units || 0)),
-                React.createElement("div", { style: { fontSize: 9.5, color: risk ? "#A43B2E" : "#5F766C", marginTop: 2, lineHeight: 1.25 } }, risk ? ((n.fails || n.repairs || 0) + " risk / repair") : (active ? "units in flow" : "no movement"))
+                React.createElement("div", { style: { fontSize: 9.5, color: risk ? "#A43B2E" : "#5F766C", marginTop: 2, lineHeight: 1.25 } }, risk ? ((n.fails || n.repairs || 0) + " risk / repair") : (active ? "current SFC units" : "no movement"))
             );
         })),
         React.createElement("div", { style: { display: "grid", gridTemplateColumns: compact ? "repeat(2,minmax(0,1fr))" : "repeat(4,minmax(0,1fr))", gap: 7, marginTop: 8 } }, kpis.map(function(m){ return React.createElement("div", { key: m[0], style: { border: "1px solid #E7EEF9", borderRadius: 10, background: "#fff", padding: "7px 8px" } },
@@ -37199,7 +37201,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.4 · Serial Export Function Fix + Pareto Fails Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.5 · Station Qty Scope Fix · Serial Export · 2026-05-20';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37243,7 +37245,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.4 · Serial Export Function Fix + Pareto Fails Restore · 2026-05-20';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.5 · Station Qty Scope Fix · Serial Export · 2026-05-20';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
