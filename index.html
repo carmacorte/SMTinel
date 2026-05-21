@@ -24860,8 +24860,33 @@ body.traceops-premium-shell [class*="impact"]{
         }
         function renderStationAgingCell(st, bucket, label) {
             var value = Number(st[bucket] || 0);
+            var cleanBucket = "clean" + bucket.charAt(0).toUpperCase() + bucket.slice(1);
+            var repairBucket = "repair" + bucket.charAt(0).toUpperCase() + bucket.slice(1);
+            var cleanValue = Number(st[cleanBucket] || 0);
+            var repairValue = Number(st[repairBucket] || 0);
             var cellStyle = traceOpsYieldStationCellStyle(value, st.qty, st.no, bucket);
-            return React.createElement("td", { style: cellStyle }, value ? React.createElement("button", { type: "button", onClick: function () { openStationSequenceSerials(st, bucket, label); }, style: { border: "none", background: "transparent", color: "inherit", font: "inherit", fontWeight: 900, cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: 2 } }, traceOpsYieldFlowFmt(value)) : traceOpsYieldFlowFmt(value));
+            function openAgingSplit(kind, count, rows) {
+                setYieldSerialModal({
+                    title: (st.station || 'Station') + ' · ' + label + ' · ' + kind,
+                    subtitle: (kind === 'Clean' ? 'SN sin Repair Record en este bucket de aging' : 'SN con al menos una intervencion de Repair Record en este bucket de aging'),
+                    rows: rows || []
+                });
+            }
+            var cleanRows = ((st.cleanSerialsByBucket || {})[bucket]) || [];
+            var repairRows = ((st.repairSerialsByBucket || {})[bucket]) || [];
+            var totalRows = ((st.serialsByBucket || {})[bucket]) || [];
+            if (!value) {
+                return React.createElement("td", { style: cellStyle }, traceOpsYieldFlowFmt(value));
+            }
+            return React.createElement("td", { style: Object.assign({}, cellStyle, { minWidth: 104 }) },
+                React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 } },
+                    React.createElement("button", { type: "button", title: label + " total", onClick: function () { setYieldSerialModal({ title: (st.station || 'Station') + ' · ' + label + ' · Total', subtitle: 'SN totales en bucket de aging', rows: totalRows }); }, style: { border: "none", background: "transparent", color: "inherit", font: "inherit", fontWeight: 900, cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: 2 } }, traceOpsYieldFlowFmt(value)),
+                    React.createElement("div", { style: { display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 5, flexWrap: "nowrap", whiteSpace: "nowrap", fontSize: 10.5, lineHeight: 1.1 } },
+                        React.createElement("button", { type: "button", title: "Clean · sin Repair Record", onClick: function () { openAgingSplit('Clean', cleanValue, cleanRows); }, style: { border: "1px solid #CFE0FB", background: "#F8FBFF", color: "#1F3A5F", borderRadius: 999, padding: "2px 5px", fontSize: 10, fontWeight: 900, cursor: cleanValue ? "pointer" : "default", opacity: cleanValue ? 1 : .55 } }, "🧼", traceOpsYieldFlowFmt(cleanValue)),
+                        React.createElement("button", { type: "button", title: "Repair · con intervencion", onClick: function () { openAgingSplit('Repair', repairValue, repairRows); }, style: { border: "1px solid " + (repairValue ? "#F1B5AE" : "#E7EEF9"), background: repairValue ? "#FFF7F5" : "#FBFDFF", color: repairValue ? "#A43B2E" : "#5F766C", borderRadius: 999, padding: "2px 5px", fontSize: 10, fontWeight: 900, cursor: repairValue ? "pointer" : "default", opacity: repairValue ? 1 : .55 } }, "🔧", traceOpsYieldFlowFmt(repairValue))
+                    )
+                )
+            );
         }
         var totalManufacturedUnits = Number((yieldFlowModel.kpi && yieldFlowModel.kpi.units) || 0);
         var totalBuiltUnits = Number((yieldFlowModel.kpi && yieldFlowModel.kpi.builtUnits) || stationSequenceBreakdown.totalUnits || 0);
@@ -25216,7 +25241,7 @@ body.traceops-premium-shell [class*="impact"]{
                             React.createElement("span", { style: { fontSize: 9.5, fontWeight: 800, padding: "4px 8px", borderRadius: 999, background: "#FFFBEF", color: "#8A6D1D", border: "1px solid #F5E4A0" } }, "Medium"),
                             React.createElement("span", { style: { fontSize: 9.5, fontWeight: 800, padding: "4px 8px", borderRadius: 999, background: "#EEF6FF", color: "#1F3A5F", border: "1px solid #CFE0FB" } }, "Stockin")),
                         React.createElement("div", { style: { overflowX: "auto", border: "1px solid #E7EEF9", borderRadius: 12 } },
-                            React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", minWidth: 760 } },
+                            React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", minWidth: 980 } },
                                 React.createElement("thead", null, React.createElement("tr", { style: { background: "#F7FAFF" } },
                                     React.createElement("th", { style: { textAlign: "left", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "No"),
                                     React.createElement("th", { style: { textAlign: "left", padding: "9px 10px", fontSize: 10, color: "#5F766C", borderBottom: "1px solid #E7EEF9" } }, "Station"),
@@ -37237,7 +37262,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.6 · Station Clean/Repair Aging Breakdown · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.7 · Aging Bucket Clean/Repair Icons · 2026-05-21';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37281,7 +37306,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.6 · Station Clean/Repair Aging Breakdown · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.7 · Aging Bucket Clean/Repair Icons · 2026-05-21';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
