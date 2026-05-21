@@ -24318,9 +24318,8 @@ body.traceops-premium-shell [class*="impact"]{
         return String(value || "").toUpperCase().replace(/[^A-Z0-9_]+/g, "").trim();
     }
     function traceOpsBoardPickFirstRefFromText(value) {
-        var txt = String(value || "").toUpperCase();
-        var matches = txt.match(/\b[A-Z]{1,6}[0-9]{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
-        return matches.length ? matches[0] : "";
+        var refs = traceOpsBoardSplitRefs(value);
+        return refs.length ? refs[0] : "";
     }
     function openBoardImpactFromYield(seed) {
         var pattern = null;
@@ -25595,23 +25594,30 @@ body.traceops-premium-shell [class*="impact"]{
                         }));
                     })() : React.createElement("div", { style: { fontSize: 12, color: "#8A8580", padding: "4px 0" } }, "Ingresa uno o varios números de serie para consultar su estado: proceso actual (SFC), historial de reparación y resultados Cesium. Puedes separar los SN por coma, espacio o salto de línea.")))));
     }
+    function traceOpsBoardIsValidRefDes(value) {
+        var v = traceOpsBoardNormalizeRef(value);
+        if (!v) return false;
+        if (/^(ND|NA|NULL|NONE|SINREFERENCIA|NOREFDES|NOLOCATION|NOBOMREFERENCE)$/.test(v)) return false;
+        if (/^(AOI|AOI2|AOI4|SMT|PTH|ICT|FT|VI|VI1|VI2|ROUTER|STOCKIN|PCBA|PROCESS|TEST|TOP|BOTTOM)$/.test(v)) return false;
+        if (/^(NGFWBU|CVE\w*|OCTAVIO|VICTORIA|WARWICK|MILLENNIUM|LANCER|LC\d+|LC\d+[A-Z0-9_]*|CSF\d+[A-Z0-9_]*|CASE\d+[A-Z0-9_]*|COMP\d+[A-Z0-9_]*)$/.test(v)) return false;
+        if (/^E\d{2,}$/.test(v)) return false;
+        if (/^(FJZ|RW|WO)\w*/.test(v)) return false;
+        if (/^(73|74|15|12|25|27|51|08|01)-?\d+/.test(v)) return false;
+        return /^(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/.test(v);
+    }
     function traceOpsBoardSplitRefs(value) {
         var txt = String(value == null ? "" : value).toUpperCase().trim();
-        if (!txt || /^(N\/D|NA|N\/A|NULL|0|SIN REFERENCIA)$/i.test(txt)) return [];
+        if (!txt || /^(N\/D|NA|N\/A|NULL|0|SIN REFERENCIA|NO REFDES|NO LOCATION|NO BOM REFERENCE)$/i.test(txt)) return [];
+        var searchTxt = txt.replace(/\b[A-Z]{1,3}\d{2,6}(?:\.\d+){1,}\b/g, " ");
         var out = [], seen = {};
         function add(v) {
             v = traceOpsBoardNormalizeRef(v);
             if (!v || seen[v]) return;
-            if (!/^[A-Z]{1,6}[0-9]{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/.test(v)) return;
-            if (/^(ND|NA|NULL|NONE|SINREFERENCIA)$/.test(v)) return;
-            if (/^(AOI|SMT|PTH|ICT|FT|NGFWBU|CRBU|BU|TOP|BOTTOM|PROCESS|TEST)$/.test(v)) return;
-            if (/^E\d{2,}$/i.test(v)) return;
-            if (/^FJZ|^RW|^WO/.test(v)) return;
-            if (/^73|^74|^15|^12|^25|^27|^51/.test(v)) return;
+            if (!traceOpsBoardIsValidRefDes(v)) return;
             seen[v] = true; out.push(v);
         }
-        txt.split(/[;,|\/\n\r\t ]+/).forEach(add);
-        var matches = txt.match(/\b[A-Z]{1,6}[0-9]{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
+        searchTxt.split(/[;,|\/\n\r\t ]+/).forEach(add);
+        var matches = searchTxt.match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
         matches.forEach(add);
         var hasExtendedBase = {};
         out.forEach(function(r) {
@@ -37262,7 +37268,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.7 · Aging Bucket Clean/Repair Icons · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.8 · RefDes Parser Cleanup · 2026-05-21';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37306,7 +37312,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.7 · Aging Bucket Clean/Repair Icons · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.8 · RefDes Parser Cleanup · 2026-05-21';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
