@@ -4388,32 +4388,47 @@ html body .sidebar .admin-mode{
 <script id="smtinel-zip-wait-screen-js-v1">
 (function(){
   var hideTimer=null;
-  function clampPercent(value){
-    var n=Number(value);
-    if(!isFinite(n)) n=0;
-    return Math.max(0,Math.min(100,Math.round(n)));
-  }
+  var startMs=0;
+  var ticker=null;
+  function clampPercent(value){ var n=Number(value); if(!isFinite(n)) n=0; return Math.max(0,Math.min(100,Math.round(n))); }
   function getScreen(){ return document.getElementById('smtinelZipWaitScreen'); }
   function setText(id,value){ var el=document.getElementById(id); if(el) el.textContent=value; }
+  function fmt(ms){ var sec=Math.max(0,Math.floor((Date.now()-(ms||Date.now()))/1000)); var m=Math.floor(sec/60), s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+  function tick(){
+    if(!startMs) return;
+    var v=fmt(startMs);
+    setText('smtinelZipWaitElapsed',v);
+    setText('smtinelImportElapsed',v);
+  }
+  window.smtinelImportAbortRequested=false;
+  window.smtinelImportAbortRequest=function(){
+    window.smtinelImportAbortRequested=true;
+    setText('smtinelZipWaitPhase','ABORT_REQUESTED');
+    setText('smtinelZipWaitMessage','Cancelando importación local. Espera a que termine la etapa actual...');
+    try{ window.dispatchEvent(new CustomEvent('smtinel-import-abort-requested')); }catch(_){ }
+  };
+  window.smtinelImportAbortReset=function(){ window.smtinelImportAbortRequested=false; startMs=Date.now(); if(ticker) clearInterval(ticker); ticker=setInterval(tick,1000); tick(); };
+  window.smtinelImportAbortAssert=function(){ if(window.smtinelImportAbortRequested) throw new Error('Importación cancelada por el usuario. No se actualizó el dataset.'); };
   window.smtinelZipWaitShow=function(progress,phase,message){
-    var screen=getScreen();
-    if(!screen) return;
+    var screen=getScreen(); if(!screen) return;
+    if(!startMs || progress<=2 || phase==='CHECKING_SOURCE' || phase==='READING_ZIP') startMs=Date.now();
+    if(!ticker){ ticker=setInterval(tick,1000); }
     if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; }
     var pct=clampPercent(progress);
-    var fill=document.getElementById('smtinelZipWaitFill');
-    if(fill) fill.style.width=pct+'%';
+    var fill=document.getElementById('smtinelZipWaitFill'); if(fill) fill.style.width=pct+'%';
     setText('smtinelZipWaitPct',pct+'%');
     setText('smtinelZipWaitPhase',phase||'READING_ZIP');
     setText('smtinelZipWaitMessage',message||'Cargando archivos ZIP y construyendo trazabilidad operacional...');
+    tick();
     screen.style.display='flex';
     requestAnimationFrame(function(){ screen.classList.add('is-active'); });
   };
   window.smtinelZipWaitHide=function(delay){
-    var screen=getScreen();
-    if(!screen) return;
+    var screen=getScreen(); if(!screen) return;
     if(hideTimer) clearTimeout(hideTimer);
     hideTimer=setTimeout(function(){
       screen.classList.remove('is-active');
+      if(ticker){ clearInterval(ticker); ticker=null; }
       setTimeout(function(){ if(!screen.classList.contains('is-active')) screen.style.display='none'; },420);
     }, typeof delay==='number'?delay:450);
   };
@@ -5627,6 +5642,7 @@ gl_FragColor=vec4(bg+totalGlow+pulse,1.0);}`;
       <p class="smtinel-zip-wait-message" id="smtinelZipWaitMessage">Validando paquete local y preparando extracción de datos...</p>
       <div class="smtinel-zip-wait-bar"><div class="smtinel-zip-wait-fill" id="smtinelZipWaitFill"></div></div>
       <div class="smtinel-zip-wait-phase"><span id="smtinelZipWaitPhase">IDLE</span><span>TRACE · MONITOR · PROTECT</span></div>
+      <div class="smtinel-zip-wait-control"><span class="smtinel-zip-wait-elapsed">Tiempo <b id="smtinelZipWaitElapsed">00:00</b></span><button type="button" class="smtinel-zip-wait-abort" onclick="window.smtinelImportAbortRequest&&window.smtinelImportAbortRequest()">Abortar</button></div>
     </div>
   </div>
 </div>
@@ -8680,7 +8696,7 @@ function traceOpsYieldSaveLocalCache(file, summary) {
             cachedAt: new Date().toISOString(),
             storage: "IndexedDB local browser only",
             privacy: "local-only-no-cloud",
-            engine: "V11.2 Import Performance Engine"
+            engine: "V11.3 Import Timer + Abort Control"
         };
         var record = {
             id: TRACEOPS_LOCAL_CACHE_KEY,
@@ -8886,8 +8902,8 @@ function traceOpsDownloadCsv(filename, rows) {
     a.click();
     URL.revokeObjectURL(a.href);
 }
-var TRACEOPS_YIELD_FLOW_STATIONS = ["SMT", "PTH", "STOCKIN", "FT"];
-var TRACEOPS_YIELD_STATION_BLOCKS = { SMT: "SMT Loading / AOI 2 / AOI 4", PTH: "Router / VI / VI2 / ICT", STOCKIN: "Preparacion hacia FT", FT: "Cesium: PCBASSY / PCBP2 / PCB2C" };
+var TRACEOPS_YIELD_FLOW_STATIONS = ["SMTLOADING", "AOI2", "AOI4", "AOI", "ICT", "VI", "VI2", "WAVE", "ROUTER", "STOCKIN", "PCBASSY", "PCBP2", "PCB2C", "PCBFT", "PCBFT*", "MRB"];
+var TRACEOPS_YIELD_STATION_BLOCKS = { STOCKIN: "SFC current event", PCBASSY: "Cesium after Stockin", PCBP2: "Cesium after Stockin", PCB2C: "Cesium after Stockin", PCBFT: "Cesium after Stockin" };
 var TRACEOPS_YIELD_STATION_SEQUENCE = [
     { no: "001", station: "SMTLOADING" }, { no: "002", station: "PASTE" }, { no: "003", station: "AOI" }, { no: "004", station: "AOI2" }, { no: "005", station: "AOI4" },
     { no: "006", station: "XRAY" }, { no: "007", station: "FIVE_DX" }, { no: "008", station: "5DX" }, { no: "009", station: "VI" }, { no: "010", station: "VI2" },
@@ -8924,7 +8940,7 @@ var TRACEOPS_YIELD_ACTION_TRACKER_ROWS = [];
 var TRACEOPS_YIELD_SN_TO_SFC = {};
 var TRACEOPS_YIELD_REPAIRS_BY_SN = {};
 var TRACEOPS_YIELD_SFC_EVENTS = [];
-var TRACEOPS_YIELD_STATION_ORDER = { SMT: 0, PTH: 1, STOCKIN: 2, FT: 3 };
+var TRACEOPS_YIELD_STATION_ORDER = {}; TRACEOPS_YIELD_STATION_SEQUENCE.forEach(function(x, i){ TRACEOPS_YIELD_STATION_ORDER[x.station] = i; });
 function traceOpsYieldNorm(value) {
     return String(value == null ? "" : value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -9732,7 +9748,7 @@ async function traceOpsYieldTryImportTextZip(file, options) {
         workbookName: "TXT/TSV lightweight package",
         container: file.name,
         sheets: pulledSheets,
-        notes: "Import ligero V11.2: procesa SFC/Repair primero, libera UI por etapas y usa cache IndexedDB por fingerprint exacto. No se cargo XLSM, PowerPivot, pivots, macros, estilos ni dashboards pesados. Evidencia visible solo durante esta sesion."
+        notes: "Import ligero V11.3: procesa SFC/Repair primero, libera UI por etapas y usa cache IndexedDB por fingerprint exacto. No se cargo XLSM, PowerPivot, pivots, macros, estilos ni dashboards pesados. Evidencia visible solo durante esta sesion."
     }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
 }
 function traceOpsYieldObjectsFromRawRows(rawRows, role) {
@@ -10507,37 +10523,30 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     }).filter(function (x) { return x.total || x.risk; }).sort(function (a, b) { return b.total - a.total; });
     var topWos = rows.map(function (row) {
         var wo = row.wo, meta = woMap[wo] || {}, sfcList = sfcByWo[wo] || [], repairList = repairsByWo[wo] || [], completedByStation = {}, defectsByStation = {};
-        TRACEOPS_YIELD_FLOW_STATIONS.forEach(function (st) { completedByStation[st] = 0; defectsByStation[st] = 0; });
-        // Breakdown rule: station volume comes from SFC[currentevent].
-        // Count each SN only in its CURRENT station bucket, not cumulatively across previous stations.
-        var currentEventSeenByStation = {};
-        TRACEOPS_YIELD_FLOW_STATIONS.forEach(function (st) { currentEventSeenByStation[st] = {}; });
+        // V11.4: station volume comes only from exact SFC currentevent/station, not from residual buckets.
+        var currentEventSeenByStation = {}, sfcStationBySn = {};
         sfcList.forEach(function (sfc) {
-            var st = traceOpsYieldClassifyStation(sfc.event || sfc.currentEvent || sfc.station || "");
-            if (!st || !Object.prototype.hasOwnProperty.call(TRACEOPS_YIELD_STATION_ORDER, st))
-                return;
-            var snKey = sfc.sn || (st + "_row_" + completedByStation[st]);
+            var st = traceOpsYieldExactStationFromEvent(sfc.event || sfc.currentEvent || sfc.station || sfc.testStation || "");
+            if (!st) return;
+            var snKey = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || "") || (st + "_row_" + Object.keys(currentEventSeenByStation).length);
+            if (!currentEventSeenByStation[st]) currentEventSeenByStation[st] = {};
             if (!currentEventSeenByStation[st][snKey]) {
                 currentEventSeenByStation[st][snKey] = true;
-                completedByStation[st] += 1;
+                completedByStation[st] = (completedByStation[st] || 0) + 1;
+                if (snKey) sfcStationBySn[snKey] = st;
             }
         });
+        // Repair evidence marks risk at the SN current SFC station only; it must not create PTH/FT/SMT pseudo-stations.
         var defectSeenByStation = {};
-        repairList.forEach(function (rep) { var st = rep.responsibleArea || traceOpsYieldClassifyResponsibleArea(rep.rootCause || rep.failureMode || rep.symptom || ""); if (!st || st === "UNCLASSIFIED") st = rep.station || "SMT"; if (!defectSeenByStation[st])
-            defectSeenByStation[st] = {}; if (rep.sn && !defectSeenByStation[st][rep.sn]) {
-            defectSeenByStation[st][rep.sn] = true;
-            if (!defectsByStation[st])
-                defectsByStation[st] = 0;
-            defectsByStation[st] += 1;
-        } });
-        var ftSeenBySn = {};
-        (TRACEOPS_YIELD_FT_ROWS || []).forEach(function (fr) {
-            var frWo = String(fr.wo || "");
-            var frNormWo = frWo.replace(/^0+/, "") || frWo;
-            var thisNormWo = String(wo || "").replace(/^0+/, "") || String(wo || "");
-            if (!(frWo === String(wo || "") || frNormWo === thisNormWo)) return;
-            var snKey = traceOpsYieldCleanSn(fr.sn || ("ft_row_" + Object.keys(ftSeenBySn).length));
-            if (!ftSeenBySn[snKey]) { ftSeenBySn[snKey] = true; if (completedByStation.FT != null) completedByStation.FT += 1; }
+        repairList.forEach(function (rep) {
+            var snKey = traceOpsYieldCleanSn(rep.sn || rep.sfcSn || rep.bridgeKey || "");
+            var st = sfcStationBySn[snKey] || "";
+            if (!st) return;
+            if (!defectSeenByStation[st]) defectSeenByStation[st] = {};
+            if (snKey && !defectSeenByStation[st][snKey]) {
+                defectSeenByStation[st][snKey] = true;
+                defectsByStation[st] = (defectsByStation[st] || 0) + 1;
+            }
         });
         var ftTimes = (TRACEOPS_YIELD_FT_ROWS || []).filter(function (fr) {
             var frWo = String(fr.wo || "");
@@ -10599,7 +10608,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     repairsClean.forEach(function(r) { traceOpsYieldPushByBridge(_repBySn, r); });
     TRACEOPS_YIELD_REPAIRS_BY_SN = _repBySn;
     TRACEOPS_YIELD_IMPORT_META = Object.assign({ source: "ZIP/Excel" }, sourceMeta || {}, { mode: "imported", importMs: (sourceMeta && sourceMeta.importStartMs ? Date.now() - sourceMeta.importStartMs : null), rows: { workOrders: workRows.length, sfc: sfcRows.length, repairs: repairRows.length, sfcWorkOrders: Object.keys(sfcByWo).length, calendar: (calendarRows || []).length, dbModel: (dbModelRows || []).length, cesium: (cesiumRows || []).length, bom: (bomRows || []).length, bomParts: Object.keys(TRACEOPS_YIELD_BOM_MAP || {}).length, cesiumInScope: (TRACEOPS_YIELD_FT_ROWS || []).length, validRepairs: validRepairRawRows, validRepairSn: (function () { var m = {}; repairsClean.forEach(function (r) { if (r.sn)
-                m[r.sn] = true; }); return Object.keys(m).length; })(), storySn: sfcStoryRows.length, rejectedRepairs: rejectedRepairRows }, daxRule: "Risk/OJT = DISTINCTCOUNT(SFC[SN]) where SFC[SN] matches RepairRecord[partsernum] first, then parentsernum, then SN.", storyRule: "Symptom = top Root Cause per SFC[SN] from RepairRecord; Root Cause is prioritized over Rootcause ESP to use the English typo-normalized failure mode. Fail Location = distinct RepairRecord[FailLocation] for that SN. Used for the story of why units left the flow.", stationRule: "Breakdown station counts = DISTINCTCOUNT(SFC[SN]) grouped by SFC[currentevent] bucket; non cumulative. Repair defects are attributed to responsible process from Root Cause, not detection station.", calendarRule: "Cisco Week/FY/Qtr resolved from Cisco Calendary.txt by matching Build Start Date or event date to calendar Date/WFCSY." });
+                m[r.sn] = true; }); return Object.keys(m).length; })(), storySn: sfcStoryRows.length, rejectedRepairs: rejectedRepairRows }, daxRule: "Risk/OJT = DISTINCTCOUNT(SFC[SN]) where SFC[SN] matches RepairRecord[partsernum] first, then parentsernum, then SN.", storyRule: "Symptom = top Root Cause per SFC[SN] from RepairRecord; Root Cause is prioritized over Rootcause ESP to use the English typo-normalized failure mode. Fail Location = distinct RepairRecord[FailLocation] for that SN. Used for the story of why units left the flow.", stationRule: "Breakdown station counts = DISTINCTCOUNT(SFC[SN]) grouped by exact SFC[currentevent]/station. Generic SMT/PTH/FT residual groups are suppressed; repair evidence is attached only to the SN current SFC station.", calendarRule: "Cisco Week/FY/Qtr resolved from Cisco Calendary.txt by matching Build Start Date or event date to calendar Date/WFCSY." });
     return TRACEOPS_YIELD_IMPORT_META;
 }
 function traceOpsYieldIsMobileDevice() {
@@ -10640,8 +10649,9 @@ function traceOpsYieldPreflightLocalFile(file) {
         throw new Error("Import local detenido: archivo de " + mb.toFixed(1) + " MB. Usa una extraccion ligera; el navegador no debe cargar el libro completo.");
     }
 }
-function traceOpsYieldYieldThread() { return new Promise(function (resolve) { setTimeout(resolve, 0); }); }
+function traceOpsYieldYieldThread() { return new Promise(function (resolve, reject) { setTimeout(function(){ try { if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert(); resolve(); } catch(err) { reject(err); } }, 0); }); }
 function traceOpsYieldImportProgress(options, progress, phase, message) {
+    if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
     try {
         if (options && typeof options.onProgress === 'function') options.onProgress(progress, phase, message);
         if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(progress, phase, message);
@@ -10687,6 +10697,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
     if (!file)
         throw new Error("No se selecciono archivo.");
     options = options || {};
+    if (window.smtinelImportAbortReset) window.smtinelImportAbortReset();
     var __traceOpsImportStart = Date.now();
     options.importStartMs = __traceOpsImportStart;
     await window.ensureZipTools();
@@ -10766,7 +10777,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
         throw new Error("No se detectaron filas utiles. Revisa encabezados: SN/current event, WO/time start, defecto/referencia/PN.");
     traceOpsYieldImportProgress(options, 82, "BUILDING_INDEX", "Construyendo indices Yield Flow por WO, SN, SKU, modelo y semana...");
     await traceOpsYieldYieldThread();
-    var built = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, { fileName: file.name, importStartMs: __traceOpsImportStart, workbookName: wbFile.name, container: wbFile.container, sheets: pulledSheets, notes: "Import Performance Engine V11.2: SFC/Repair priorizados, parsing por etapas, cache por fingerprint e indices reutilizables para SN/WO/Ref." }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
+    var built = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, { fileName: file.name, importStartMs: __traceOpsImportStart, workbookName: wbFile.name, container: wbFile.container, sheets: pulledSheets, notes: "Import Performance Engine V11.3: SFC/Repair priorizados, parsing por etapas, cache por fingerprint e indices reutilizables para SN/WO/Ref." }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
     traceOpsYieldImportProgress(options, 94, "FINALIZING", "Finalizando cache local y dashboard Yield Flow...");
     await traceOpsYieldYieldThread();
     return built;
@@ -11411,7 +11422,47 @@ function traceOpsYieldProcessNode(rawEvent) {
     return traceOpsYieldClassifyStation(e) || "UNKNOWN";
 }
 function traceOpsYieldProcessNodeOrder() {
-    return ["SMT", "AOI2", "AOI4", "AOI", "ICT", "VI1", "VI2", "WAVE", "PTH", "PCBP2", "PCB2C", "STOCKIN", "FT"];
+    // V11.4: no generic residual groups (SMT/PTH/FT). Display only stations from station.txt/SFC sequence.
+    return (TRACEOPS_YIELD_STATION_SEQUENCE || []).map(function(x){ return x.station; });
+}
+function traceOpsYieldExactStationFromEvent(value) {
+    var raw = String(value == null ? "" : value).toUpperCase().trim();
+    if (!raw) return "";
+    var compact = raw.replace(/[^A-Z0-9*]+/g, "");
+    var seq = (TRACEOPS_YIELD_STATION_SEQUENCE || []).slice().sort(function(a,b){ return String(b.station).length - String(a.station).length; });
+    for (var i = 0; i < seq.length; i++) {
+        var st = String(seq[i].station || "").toUpperCase();
+        var sc = st.replace(/[^A-Z0-9*]+/g, "");
+        if (sc && (compact === sc || compact.indexOf(sc) >= 0)) return st;
+    }
+    if (/STOCK\s*IN|STOCKIN|FINISH|COMPLETE/.test(raw)) return "STOCKIN";
+    if (/SMT\s*LOAD|SMTLOADING|LOAD\s*BOARD|LOADER/.test(raw)) return "SMTLOADING";
+    if (/AOI\s*4/.test(raw)) return "AOI4";
+    if (/AOI\s*2/.test(raw)) return "AOI2";
+    if (/VI\s*1/.test(raw)) return "VI";
+    if (/VI\s*2/.test(raw)) return "VI2";
+    if (/WAVE/.test(raw)) return "WAVE";
+    if (/ROUT/.test(raw)) return "ROUTER";
+    if (/PCB\s*ASSY/.test(raw)) return "PCBASSY";
+    if (/PCB\s*P2|PCBP2/.test(raw)) return "PCBP2";
+    if (/PCB\s*2C|PCB2C/.test(raw)) return "PCB2C";
+    if (/PCB\s*FT|PCBFT|FINAL\s*TEST|FUNCTIONAL/.test(raw)) return "PCBFT";
+    // Do not return generic SMT/PTH/FT anymore. If SFC has no exact station, leave it out.
+    return "";
+}
+function traceOpsYieldCesiumRowsForSfc(sfc, ftRows) {
+    sfc = sfc || {};
+    var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || "");
+    var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || "");
+    var bySn = [], byBox = [];
+    (ftRows || []).forEach(function(fr){
+        if (!fr) return;
+        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
+        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
+        if (sn && keys.indexOf(sn) >= 0) bySn.push(fr);
+        else if (box && (keys.indexOf(box) >= 0 || bridgeKeys.indexOf(box) >= 0)) byBox.push(fr);
+    });
+    return bySn.length ? bySn : byBox;
 }
 function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     var nodes = {}, order = traceOpsYieldProcessNodeOrder(), rawWo = String(wo || ""), normWo = rawWo.replace(/^0+/, "") || rawWo;
@@ -11419,7 +11470,8 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     function ensureNode(n) { if (!nodes[n]) nodes[n] = { node: n, snMap: {}, failMap: {}, repairMap: {}, timeMap: {}, examples: [] }; return nodes[n]; }
     function addRow(n, sn, time, opts) {
         opts = opts || {};
-        n = n || "UNKNOWN";
+        n = traceOpsYieldExactStationFromEvent(n) || n || "UNKNOWN";
+        if (!n || /^(SMT|PTH|FT|UNKNOWN)$/i.test(n)) return;
         var node = ensureNode(n);
         var key = traceOpsYieldCleanSn(sn || "") || (n + "_row_" + node.examples.length);
         if (opts.countUnit !== false) node.snMap[key] = true;
@@ -11428,21 +11480,27 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
         if (time && (!node.timeMap[key] || String(time) < String(node.timeMap[key]))) node.timeMap[key] = time;
         if (node.examples.length < 4) node.examples.push({ sn: key, time: time || "", event: opts.event || n, status: opts.status || "" });
     }
+    var sfcStationBySn = {};
     (sfcList || []).forEach(function(r){
-        var node = traceOpsYieldProcessNode(r.event || r.currentEvent || r.station || "");
+        var node = traceOpsYieldExactStationFromEvent(r.event || r.currentEvent || r.station || r.testStation || "");
+        if (!node) return;
+        var snKey = traceOpsYieldCleanSn(r.sn || r.sfcSn || "");
+        if (snKey) sfcStationBySn[snKey] = node;
         addRow(node, r.sn || r.sfcSn, r.eventTime || "", { event: r.event || r.station || node, status: r.status || r.result || "" });
+        // After STOCKIN, check Cesium using SFC SN first; if no hit, use BOXSN as fallback.
+        if (node === "STOCKIN") {
+            traceOpsYieldCesiumRowsForSfc(r, ftRows || []).forEach(function(fr){
+                var ftNode = traceOpsYieldExactStationFromEvent(fr.testArea || fr.station || "");
+                if (!ftNode) ftNode = "PCBFT";
+                addRow(ftNode, r.sn || r.sfcSn, fr.recordTime || "", { event: fr.testArea || ftNode, status: fr.status || fr.rawStatus || "", fail: /fail/i.test(String(fr.status || fr.rawStatus || fr.kind || "")) });
+            });
+        }
     });
-    (ftRows || []).forEach(function(fr){
-        var frWo = String(fr.wo || ""), frNorm = frWo.replace(/^0+/, "") || frWo;
-        if (!(frWo === rawWo || frNorm === normWo)) return;
-        var node = traceOpsYieldProcessNode(fr.testArea || fr.station || "FT");
-        addRow(node, fr.sn || fr.bridgeKey || fr.parentsernum, fr.recordTime || "", { event: fr.testArea || node, status: fr.status || fr.rawStatus || "", fail: /fail/i.test(String(fr.status || fr.rawStatus || fr.kind || "")) });
-    });
+    // Repair evidence must not create generic pseudo-stations. Attach it only to the SN current SFC station.
     (repairList || []).forEach(function(rep){
-        var node = traceOpsYieldProcessNode(rep.station || rep.detectionStation || rep.responsibleArea || "Repair");
-        if (node === "UNKNOWN") node = rep.responsibleArea === "PTH" ? "PTH" : (rep.responsibleArea === "FT" ? "FT" : "SMT");
-        // Repair evidence must not inflate station WIP/unit counts.
-        // Units in the WO timeline come from current SFC position only; repair rows only mark risk/repair evidence.
+        var snKey = traceOpsYieldCleanSn(rep.sn || rep.sfcSn || rep.bridgeKey || "");
+        var node = sfcStationBySn[snKey] || "";
+        if (!node) return;
         addRow(node, rep.sn || rep.sfcSn || rep.bridgeKey, rep.repairTime || rep.eventTime || "", { event: rep.rootCause || rep.failureMode || rep.symptom || "Repair evidence", status: "Repair", repair: true, fail: true, countUnit: false });
     });
     var list = order.map(function(n){
@@ -11452,7 +11510,7 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
         var repairs = Object.keys(node.repairMap || {}).length;
         var tone = fails || repairs ? "risk" : (units ? "active" : "empty");
         return Object.assign(node, { units: units, fails: fails, repairs: repairs, tone: tone });
-    });
+    }).filter(function(n){ return n.units || n.fails || n.repairs; });
     function nodeTimeBySn(name, sn) { var n = nodes[name] || {}; return n.timeMap ? n.timeMap[sn] : ""; }
     function deltaBetween(a, b) {
         var start = nodes[a] || {}, out = [];
@@ -12174,7 +12232,6 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
             var normWo = rawWo.replace(/^0+/, "") || rawWo;
             var completedByStation = {};
             var defectsByStation = {};
-            TRACEOPS_YIELD_FLOW_STATIONS.forEach(function(st) { completedByStation[st] = 0; defectsByStation[st] = 0; });
             var firstStockin = "N/D";
             var firstFunctional = "N/D";
             var startSmt = "N/D";
@@ -12184,19 +12241,17 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
                 var sfcWo = String(sfc.wo || "");
                 var sfcNormWo = sfcWo.replace(/^0+/, "") || sfcWo;
                 if (!(sfcWo === rawWo || sfcNormWo === normWo)) return;
-                var st = traceOpsYieldClassifyStation(sfc.event || sfc.currentEvent || sfc.station || "");
-                if (st && completedByStation[st] != null) completedByStation[st] += 1;
+                var st = traceOpsYieldExactStationFromEvent(sfc.event || sfc.currentEvent || sfc.station || sfc.testStation || "");
+                if (st) completedByStation[st] = (completedByStation[st] || 0) + 1;
                 if (sfc.eventTime && startSmt === "N/D") startSmt = sfc.eventTime;
                 if (st === "STOCKIN" && sfc.eventTime && firstStockin === "N/D") firstStockin = sfc.eventTime;
-                var ftSnSeen = false;
-                (TRACEOPS_YIELD_FT_ROWS || []).filter(function(fr) { return traceOpsYieldCleanSn(fr.sn) === snKey; }).forEach(function(fr) {
-                    if (!ftSnSeen && completedByStation.FT != null) { completedByStation.FT += 1; ftSnSeen = true; }
+                traceOpsYieldCesiumRowsForSfc(sfc, TRACEOPS_YIELD_FT_ROWS || []).forEach(function(fr) {
                     if (fr.recordTime && firstFunctional === "N/D") firstFunctional = fr.recordTime;
                 });
                 (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[snKey] || []).forEach(function(rep) {
-                    var rst = rep.station || "Repair";
-                    if (defectsByStation[rst] == null) defectsByStation[rst] = 0;
-                    defectsByStation[rst] += 1;
+                    var rst = st || traceOpsYieldExactStationFromEvent(sfc.station || sfc.event || "");
+                    if (!rst) return;
+                    defectsByStation[rst] = (defectsByStation[rst] || 0) + 1;
                     if (!recoveryMap[rst]) recoveryMap[rst] = { station: rst, qty: 0, totalHours: 0, countHours: 0, cause: rep.symptom || "Repair / debug" };
                     recoveryMap[rst].qty += 1;
                     var outOfFlowTime = rep.eventTime || sfc.eventTime || startSmt;
@@ -13260,7 +13315,7 @@ function App() {
         setCriticalModelDetail(null);
         setCriticalModelAnalysisState({ status: "loading", message: "Calculating critical models from imported rows...", result: null });
         setYieldImportState({ status: "loading", message: "Optimizing ZIP/XLSX import and extracting target sheets...", summary: null, progress: 34, phase: "EXTRACTING_XLSX" });
-        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Import Performance Engine V11.2: cache exacto, SFC/Repair primero e indices por SN/WO/Ref...");
+        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Import Performance Engine V11.3: cache exacto, SFC/Repair primero e indices por SN/WO/Ref...");
         setTimeout(function () {
             traceOpsYieldTryApplySameFileCache(file).then(function(cachedSummary) {
                 if (cachedSummary) {
@@ -27718,6 +27773,10 @@ body.traceops-premium-shell [class*="impact"]{
                         h("span", { key: "phase" }, labels[1]),
                         h("span", { key: "timer", id: "smtinelImportElapsed", style: { fontWeight: 900, letterSpacing: ".08em" } }, "00:00"),
                         h("span", { key: "tag" }, "TRACE · MONITOR · PROTECT")
+                    ]),
+                    h("div", { key: "control", className: "smtinel-wait-control-row" }, [
+                        h("span", { key: "hint", className: "smtinel-wait-elapsed-pill" }, "Cronómetro activo"),
+                        h("button", { key: "abort", type: "button", className: "smtinel-wait-abort-btn", onClick: function(){ if (window.smtinelImportAbortRequest) window.smtinelImportAbortRequest(); } }, "Abortar carga")
                     ])
                 ])
             ])
@@ -37511,7 +37570,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.2 · Import Performance Engine · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.4 · SFC Station Scope Fix · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37555,7 +37614,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.2 · Import Performance Engine · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.4 · SFC Station Scope Fix · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
