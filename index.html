@@ -26411,6 +26411,160 @@ body.traceops-premium-shell [class*="impact"]{
             else { throw new Error('PptxGenJS no expone write/writeFile/save en este navegador.'); }
         }).catch(function(err) { console.error('[SMTinel Quality Alert PPT]', err); alert('No se pudo generar el Quality Alert PPT. ' + (err && (err.message || String(err)) || 'Error desconocido')); });
     }
+    function exportBoardImpactModelTrendPpt(payload) {
+        payload = payload || {};
+        var ctx = payload.ctx || {};
+        var modeOptions = Array.isArray(payload.modeOptions) ? payload.modeOptions : [];
+        var refStats = Array.isArray(payload.refStats) ? payload.refStats : [];
+        var rows = Array.isArray(payload.rows) ? payload.rows : [];
+        var activeMode = payload.activeMode || ctx.mode || "Board Impact";
+        var modelName = ctx.family || ctx.model || (payload.filters && payload.filters.family) || "Model scope";
+        var sku = ctx.sku || ctx.skuno || ctx.moduleno || (payload.filters && payload.filters.sku) || "SKU scope";
+        var totalBuilt = Number(payload.totalBuiltUnits || 0);
+        var totalMfg = Number(payload.totalManufacturedUnits || 0);
+        var now = new Date();
+        var issueDate = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+        function safe(v, max) {
+            var t = String(v == null ? "" : v).replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+            return max && t.length > max ? t.slice(0, max - 1) + "…" : t;
+        }
+        function nfmt(n) {
+            n = Number(n || 0);
+            try { return n.toLocaleString("en-US"); } catch (_) { return String(n); }
+        }
+        function rowSn(row, idx) { return traceOpsBoardSnValue(row, idx || 0); }
+        function rowRefs(row) { try { return traceOpsBoardExtractRefsFromRow(row); } catch (_) { return []; } }
+        function rowWeek(row) { try { return traceOpsBoardWeekKey(row); } catch (_) { return "Imported"; } }
+        function weekSort(a, b) { try { return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); } catch (_) { return String(a).localeCompare(String(b)); } }
+        function buildModeMatrix(mode) {
+            var modeRows = (mode && Array.isArray(mode.serials) && mode.serials.length) ? mode.serials : rows;
+            var weekMap = {}, refMap = {}, allSn = {};
+            modeRows.forEach(function(row, idx) {
+                var wk = rowWeek(row);
+                var sn = rowSn(row, idx);
+                var refs = rowRefs(row);
+                if (!refs.length) refs = ["NO REFDES"];
+                weekMap[wk] = true;
+                allSn[sn] = true;
+                refs.forEach(function(ref) {
+                    ref = safe(ref || "NO REFDES", 24) || "NO REFDES";
+                    if (!refMap[ref]) refMap[ref] = { ref: ref, weekSn: {}, totalSn: {}, rows: [] };
+                    if (!refMap[ref].weekSn[wk]) refMap[ref].weekSn[wk] = {};
+                    refMap[ref].weekSn[wk][sn] = true;
+                    refMap[ref].totalSn[sn] = true;
+                    refMap[ref].rows.push(row);
+                });
+            });
+            var weeks = Object.keys(weekMap).sort(weekSort).slice(-8);
+            var refs = Object.keys(refMap).map(function(ref) {
+                var item = refMap[ref];
+                var counts = weeks.map(function(wk) { return Object.keys(item.weekSn[wk] || {}).length; });
+                var total = Object.keys(item.totalSn || {}).length;
+                var prev = counts.length > 1 ? counts[counts.length - 2] : (counts[0] || 0);
+                var last = counts.length ? counts[counts.length - 1] : 0;
+                var stat = (refStats || []).find(function(x){ return traceOpsBoardNormalizeRef(x.ref) === traceOpsBoardNormalizeRef(ref); }) || {};
+                return { ref: ref, counts: counts, total: total, delta: last - prev, rows: item.rows, part: stat.componentCode || stat.partNumber || (item.rows[0] && (item.rows[0].componentCode || item.rows[0].partNumber)) || "", desc: stat.componentDescription || stat.description || "" };
+            }).sort(function(a,b){ return b.total - a.total || b.delta - a.delta || a.ref.localeCompare(b.ref); });
+            var cumulative = weeks.map(function(wk, i) {
+                var seen = {};
+                modeRows.forEach(function(row, idx) {
+                    var rw = rowWeek(row);
+                    if (weeks.indexOf(rw) >= 0 && weeks.indexOf(rw) <= i) seen[rowSn(row, idx)] = true;
+                });
+                return Object.keys(seen).length;
+            });
+            return { weeks: weeks, refs: refs, totalSn: Object.keys(allSn).length, cumulative: cumulative };
+        }
+        function lineChartDataUri(values, labels) {
+            values = values && values.length ? values : [0,0];
+            var w = 780, h = 245, padL = 50, padR = 22, padT = 20, padB = 38;
+            var c = document.createElement("canvas"); c.width = w * 2; c.height = h * 2;
+            var g = c.getContext("2d"); g.scale(2,2);
+            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,w,h);
+            var max = Math.max.apply(null, values.concat([1]));
+            var baselineStart = Math.max(1, Math.round(max * .48));
+            var baselineEnd = Math.max(baselineStart + 1, Math.round(max * .82));
+            function xy(i, v) {
+                var x = padL + (w - padL - padR) * (i / Math.max(1, values.length - 1));
+                var y = h - padB - (v / Math.max(1,max)) * (h - padT - padB);
+                return [x,y];
+            }
+            g.strokeStyle = "#E6EDF7"; g.lineWidth = 1;
+            g.font = "12px Segoe UI, Arial"; g.fillStyle = "#6B7A90";
+            for (var k=0;k<=4;k++) { var yy = padT + (h-padT-padB)*k/4; g.beginPath(); g.moveTo(padL,yy); g.lineTo(w-padR,yy); g.stroke(); var val = Math.round(max*(1-k/4)); g.fillText(String(val), 10, yy+4); }
+            g.beginPath(); g.strokeStyle = "#2F9AC2"; g.lineWidth = 4; g.setLineDash([12,10]);
+            values.forEach(function(_,i){ var bv = baselineStart + (baselineEnd-baselineStart)*(i/Math.max(1, values.length-1)); var p = xy(i,bv); if(i===0) g.moveTo(p[0],p[1]); else g.lineTo(p[0],p[1]); }); g.stroke(); g.setLineDash([]);
+            g.beginPath(); g.strokeStyle = "#B92B3A"; g.lineWidth = 5;
+            values.forEach(function(v,i){ var p = xy(i,v); if(i===0) g.moveTo(p[0],p[1]); else g.lineTo(p[0],p[1]); }); g.stroke();
+            var cross = values.findIndex(function(v,i){ var bv = baselineStart + (baselineEnd-baselineStart)*(i/Math.max(1, values.length-1)); return v >= bv; });
+            if (cross >= 0) { var cp = xy(cross, values[cross]); g.strokeStyle = "#1E8A64"; g.lineWidth = 2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(cp[0], padT); g.lineTo(cp[0], h-padB); g.stroke(); g.setLineDash([]); g.fillStyle = "#E7F7F0"; g.strokeStyle = "#1E8A64"; g.lineWidth = 3; g.beginPath(); g.arc(cp[0],cp[1],13,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle = "#1E8A64"; g.font = "bold 15px Segoe UI, Arial"; g.fillText("punto de cruce", Math.min(w-150, cp[0]+14), Math.max(28, cp[1]-16)); }
+            g.fillStyle = "#102A43"; g.font = "bold 12px Segoe UI, Arial";
+            labels.forEach(function(l,i){ var p = xy(i,0); g.fillText(String(l).replace(/^.*?(W\d+)/,"$1"), p[0]-14, h-13); });
+            return c.toDataURL("image/png");
+        }
+        function addFooter(slide, text) {
+            slide.addShape(pptx.ShapeType.rect || "rect", { x:0, y:7.08, w:13.333, h:.42, line:{color:"102A43", pt:0}, fill:{color:"102A43"} });
+            slide.addText(safe(text, 120), { x:.42, y:7.20, w:8.5, h:.12, fontFace:"Segoe UI", fontSize:7.5, bold:true, color:"D6E3DD", margin:0 });
+            slide.addText("Generated by SMTinel · Board Impact Intelligence", { x:9.0, y:7.20, w:3.8, h:.12, fontFace:"Segoe UI", fontSize:7.5, color:"D6E3DD", align:"right", margin:0 });
+        }
+        function addRefTrendTable(slide, matrix, x, y, w, h) {
+            var weeks = matrix.weeks.slice(-5);
+            var refs = matrix.refs.slice(0, 9);
+            var headers = ["Fail Location"].concat(weeks.map(function(w){ return String(w).replace(/^.*?(W\d+)/,"$1"); }), ["Total", "Trend"]);
+            var rowsOut = [headers].concat(refs.map(function(r){
+                var vals = weeks.map(function(w){ var ix = matrix.weeks.indexOf(w); return ix >= 0 ? r.counts[ix] : 0; });
+                return [r.ref].concat(vals.map(String), [String(r.total), vals.join("-")]);
+            }));
+            slide.addTable(rowsOut, { x:x, y:y, w:w, h:h, margin:.03, border:{ color:"D9E6F7", pt:.5 }, fill:"FFFFFF", color:"102A43", fontFace:"Segoe UI", fontSize:7.5, valign:"mid", fit:"shrink", autoFit:false, colW:[1.45].concat(weeks.map(function(){return .55;}), [.55,1.05]) });
+            refs.forEach(function(r, i){
+                try { var img = traceOpsBoardSparklinePng(r.counts, r.delta > 0 ? "bad" : "neutral", 96, 28); slide.addImage({ data: img, x:x+w-1.02, y:y+.40+(i*.265), w:.88, h:.20 }); } catch(_) {}
+            });
+        }
+        var modes = modeOptions.length ? modeOptions : [{ mode: activeMode, risk: rows.length, serials: rows, refs: [] }];
+        modes = modes.slice().sort(function(a,b){ return Number(b.risk || (b.serials||[]).length || 0) - Number(a.risk || (a.serials||[]).length || 0); }).slice(0, 8);
+        window.ensurePptxTools().then(async function(){
+            var pptx = new PptxGenJS();
+            try { pptx.layout = "LAYOUT_WIDE"; } catch(_) {}
+            try { if (typeof pptx.defineLayout === "function") { pptx.defineLayout({ name:"TRACEOPS_BOARD_INTEL", width:13.333, height:7.5 }); pptx.layout = "TRACEOPS_BOARD_INTEL"; } } catch(_) {}
+            try { pptx.author = "SMTinel"; pptx.company = "TraceOps"; pptx.subject = "Board Impact Intelligence"; pptx.title = "Board Impact - " + modelName; pptx.theme = { headFontFace:"Segoe UI", bodyFontFace:"Segoe UI", lang:"en-US" }; } catch(_) {}
+            var slide = pptx.addSlide(); slide.background = { color:"FFFFFF" };
+            var ST = pptx.ShapeType || {};
+            function rect(s,x,y,w,h,fill,line){ s.addShape(ST.rect || "rect", { x:x,y:y,w:w,h:h,rectRadius:.06,line:{color:line||fill,pt:line?1:0},fill:{color:fill||"FFFFFF"} }); }
+            function txt(s,t,x,y,w,h,opt){ s.addText(safe(t, opt && opt.max || 0), Object.assign({ x:x,y:y,w:w,h:h,fontFace:"Segoe UI",fontSize:10,color:"102A43",margin:.02,fit:"shrink" }, opt||{})); }
+            rect(slide,0,0,13.333,.86,"102A43");
+            txt(slide,"Board Impact Intelligence",.42,.18,4.7,.24,{fontSize:22,bold:true,color:"FFFFFF"});
+            txt(slide,safe(modelName,40)+" · SKU "+safe(sku,28)+" · "+issueDate,7.2,.32,5.5,.16,{fontSize:9.5,color:"D6E3DD",align:"right"});
+            var totalSn = modes.reduce(function(a,m){ var mm=buildModeMatrix(m); return a + Number(mm.totalSn||0); },0);
+            var uniqueRefs = {}; modes.forEach(function(m){ (m.refs||[]).forEach(function(r){ uniqueRefs[traceOpsBoardNormalizeRef(r)]=true; }); });
+            [["Failure modes",modes.length],["Impacted SN",totalSn],["Unique refs",Object.keys(uniqueRefs).length],["Built units",totalBuilt||"N/D"]].forEach(function(k,i){ rect(slide,.55+i*3.05,1.25,2.72,.82,"F7FAFF","D9E6F7"); txt(slide,k[0],.72+i*3.05,1.40,1.7,.12,{fontSize:8.2,bold:true,color:"5F766C"}); txt(slide,nfmt(k[1]),.72+i*3.05,1.62,1.8,.22,{fontSize:20,bold:true,color:i===1?"B92B3A":"102A43"}); });
+            var topRows = [["Failure mode","SN","Refs","Last week","Delta"]].concat(modes.slice(0,6).map(function(m){ var mat=buildModeMatrix(m); var counts=mat.cumulative; var last=counts.length?counts[counts.length-1]:0; var prev=counts.length>1?counts[counts.length-2]:last; return [safe(m.mode,42), String(mat.totalSn), String(mat.refs.length), mat.weeks[mat.weeks.length-1]||"N/D", String(last-prev)]; }));
+            slide.addTable(topRows, { x:.55,y:2.45,w:6.1,h:2.18,margin:.04,border:{color:"D9E6F7",pt:.6},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:8.3,color:"102A43",fit:"shrink" });
+            var topMat = buildModeMatrix(modes[0] || {});
+            if (topMat.cumulative.length) slide.addImage({ data: lineChartDataUri(topMat.cumulative, topMat.weeks), x:7.0, y:2.20, w:5.70, h:1.95 });
+            txt(slide,"Executive readout",.55,4.96,2.2,.16,{fontSize:12,bold:true,color:"102A43"});
+            txt(slide,"Deck generated from current Board Impact scope. Each failure-mode slide includes accumulated weekly trend, FailLocation x week matrix, and mini sparkline by reference. Use this to identify runaway modes, recurrent RefDes and recovery candidates.",.55,5.22,11.6,.55,{fontSize:9.2,color:"5F766C"});
+            addFooter(slide,"SMTinel Board Impact Intelligence · Executive Summary");
+            for (var mi=0; mi<modes.length; mi++) {
+                var mode = modes[mi]; var matrix = buildModeMatrix(mode);
+                var s = pptx.addSlide(); s.background = { color:"FFFFFF" };
+                rect(s,0,0,13.333,.62,"102A43");
+                txt(s,safe(mode.mode || "Failure Mode",58),.42,.16,6.6,.22,{fontSize:18,bold:true,color:"FFFFFF"});
+                txt(s,safe(modelName,38)+" · "+safe(sku,24)+" · "+matrix.weeks.length+" weeks",8.2,.22,4.5,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
+                if (matrix.cumulative.length) s.addImage({ data: lineChartDataUri(matrix.cumulative, matrix.weeks), x:.55, y:1.00, w:6.25, h:2.05 });
+                rect(s,7.05,1.00,5.75,2.05,"F7FAFF","D9E6F7");
+                txt(s,"Failure-location heatmap",7.28,1.18,2.4,.16,{fontSize:12,bold:true,color:"102A43"});
+                txt(s,"Top references are ranked by unique affected SN. Trend column contains weekly mini-sparkline for rapid escalation readout.",7.28,1.45,4.95,.35,{fontSize:8.3,color:"5F766C"});
+                [["Affected SN",matrix.totalSn],["Fail locations",matrix.refs.length],["Last week",matrix.weeks[matrix.weeks.length-1]||"N/D"]].forEach(function(k,i){ rect(s,7.28+i*1.75,2.00,1.45,.55,"FFFFFF","D9E6F7"); txt(s,k[0],7.38+i*1.75,2.11,1.2,.09,{fontSize:6.8,bold:true,color:"5F766C"}); txt(s,nfmt(k[1]),7.38+i*1.75,2.29,1.1,.14,{fontSize:12,bold:true,color:i===0?"B92B3A":"102A43"}); });
+                addRefTrendTable(s, matrix, .55, 3.45, 12.05, 2.55);
+                addFooter(s,"SMTinel Board Impact Intelligence · " + safe(mode.mode, 72));
+            }
+            var fileName = "SMTinel_Board_Impact_Intelligence_" + safe(modelName,28).replace(/[^A-Za-z0-9_-]+/g,"_") + "_" + issueDate + ".pptx";
+            if (typeof pptx.write === "function") { var arr = await pptx.write({ outputType:"arraybuffer", compression:true }); traceOpsDownloadBlob(fileName, new Blob([arr], { type:"application/vnd.openxmlformats-officedocument.presentationml.presentation" })); }
+            else if (typeof pptx.writeFile === "function") await pptx.writeFile({ fileName:fileName, compression:true });
+            else if (typeof pptx.save === "function") pptx.save(fileName);
+            else throw new Error("PptxGenJS no expone write/writeFile/save en este navegador.");
+        }).catch(function(err){ console.error("[SMTinel Board Impact Intelligence PPT]", err); alert("No se pudo generar el Board Impact Intelligence PPT. " + ((err && (err.message || String(err))) || "Error desconocido")); });
+    }
     function traceOpsQualityAlertInferComponentType(desc) {
         desc = String(desc || '').toUpperCase();
         if (/CAP|CAPACITOR|UF|PF|NF/.test(desc)) return 'Capacitor';
@@ -26855,6 +27009,7 @@ body.traceops-premium-shell [class*="impact"]{
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
                     h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Regresar a Yield Flow"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #B7CBEA", background: "#102A43", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
+                    h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #F1C04E", background: "linear-gradient(135deg,#FFF7D8,#FFFFFF)", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
                     h("button", { type: "button", onClick: function () { var v = prompt("Buscar RefDes en PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Buscar RefDes"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } },
@@ -37268,7 +37423,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.8 · RefDes Parser Cleanup · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.9 · Board Impact Intelligence PPT · 2026-05-21';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37312,7 +37467,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.8 · RefDes Parser Cleanup · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V10.9 · Board Impact Intelligence PPT · 2026-05-21';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
