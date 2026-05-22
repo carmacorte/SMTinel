@@ -9950,15 +9950,21 @@ function traceOpsYieldBuildCesiumRows(cesiumRows, snToSfc, ciscoCalendarMap) {
         var parent = traceOpsYieldPickParentSn(row);
         var partsernum = traceOpsYieldPickPartSn(row);
         var cesiumBoxSn = traceOpsYieldPickBoxSn(row);
-        // Current bridge rule:
-        // Cesium.syserialno must first resolve against SFC.BOXSN extracted FJZ serial.
-        // Parent/part serials are kept only as legacy fallbacks.
-        var bridgeKey = traceOpsYieldBridgeKeyFromParts(sn, parent, partsernum, cesiumBoxSn);
+        // V11.5 bridge rule for post-STOCKIN validation:
+        // 1) Match Cesium.sysserialno/SN against SFC SN first.
+        // 2) If not found, fallback to SFC BOXSN/FJZ bridge.
+        // 3) Parent/part serials remain only as legacy fallbacks.
+        var snKey = traceOpsYieldCleanSn(sn);
+        var boxKey = traceOpsYieldCleanSn(cesiumBoxSn);
+        var parentKey = traceOpsYieldCleanSn(parent);
+        var partKey = traceOpsYieldCleanSn(partsernum);
+        var bridgeKey = snKey || boxKey || parentKey || partKey;
         if (!bridgeKey)
             return;
-        var sfc = snToSfc[bridgeKey] || (cesiumBoxSn ? snToSfc[cesiumBoxSn] : null) || (sn ? snToSfc[sn] : null) || (parent ? snToSfc[parent] : null) || (partsernum ? snToSfc[partsernum] : null);
+        var sfc = (snKey ? snToSfc[snKey] : null) || (boxKey ? snToSfc[boxKey] : null) || (parentKey ? snToSfc[parentKey] : null) || (partKey ? snToSfc[partKey] : null);
         if (!sfc)
             return;
+        bridgeKey = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || snKey || boxKey || parentKey || partKey);
         var attrs = traceOpsYieldParseAttributes(traceOpsYieldPick(row, ["Attributes", "attributes", "Attr", "Atributos"]));
         var boardPn = String(attrs["Board_P/N"] || attrs.Board_PN || attrs.BoardPN || "").trim();
         var testArea = String(traceOpsYieldPick(row, ["station", "Station", "AREA", "Area", "Test Area", "TestArea", "Area de Prueba", "Test Station"]) || "N/D").trim() || "N/D";
@@ -10608,7 +10614,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     repairsClean.forEach(function(r) { traceOpsYieldPushByBridge(_repBySn, r); });
     TRACEOPS_YIELD_REPAIRS_BY_SN = _repBySn;
     TRACEOPS_YIELD_IMPORT_META = Object.assign({ source: "ZIP/Excel" }, sourceMeta || {}, { mode: "imported", importMs: (sourceMeta && sourceMeta.importStartMs ? Date.now() - sourceMeta.importStartMs : null), rows: { workOrders: workRows.length, sfc: sfcRows.length, repairs: repairRows.length, sfcWorkOrders: Object.keys(sfcByWo).length, calendar: (calendarRows || []).length, dbModel: (dbModelRows || []).length, cesium: (cesiumRows || []).length, bom: (bomRows || []).length, bomParts: Object.keys(TRACEOPS_YIELD_BOM_MAP || {}).length, cesiumInScope: (TRACEOPS_YIELD_FT_ROWS || []).length, validRepairs: validRepairRawRows, validRepairSn: (function () { var m = {}; repairsClean.forEach(function (r) { if (r.sn)
-                m[r.sn] = true; }); return Object.keys(m).length; })(), storySn: sfcStoryRows.length, rejectedRepairs: rejectedRepairRows }, daxRule: "Risk/OJT = DISTINCTCOUNT(SFC[SN]) where SFC[SN] matches RepairRecord[partsernum] first, then parentsernum, then SN.", storyRule: "Symptom = top Root Cause per SFC[SN] from RepairRecord; Root Cause is prioritized over Rootcause ESP to use the English typo-normalized failure mode. Fail Location = distinct RepairRecord[FailLocation] for that SN. Used for the story of why units left the flow.", stationRule: "Breakdown station counts = DISTINCTCOUNT(SFC[SN]) grouped by exact SFC[currentevent]/station. Generic SMT/PTH/FT residual groups are suppressed; repair evidence is attached only to the SN current SFC station.", calendarRule: "Cisco Week/FY/Qtr resolved from Cisco Calendary.txt by matching Build Start Date or event date to calendar Date/WFCSY." });
+                m[r.sn] = true; }); return Object.keys(m).length; })(), storySn: sfcStoryRows.length, rejectedRepairs: rejectedRepairRows }, daxRule: "Risk/OJT = DISTINCTCOUNT(SFC[SN]) where SFC[SN] matches RepairRecord[partsernum] first, then parentsernum, then SN.", storyRule: "Symptom = top Root Cause per SFC[SN] from RepairRecord; Root Cause is prioritized over Rootcause ESP to use the English typo-normalized failure mode. Fail Location = distinct RepairRecord[FailLocation] for that SN. Used for the story of why units left the flow.", stationRule: "Breakdown station counts = DISTINCTCOUNT(SFC[SN]) grouped by exact SFC[currentevent]/station. Generic SMT/PTH/FT residual groups are suppressed. Cesium test area is applied only after STOCKIN, matching SN first and BOXSN fallback.", calendarRule: "Cisco Week/FY/Qtr resolved from Cisco Calendary.txt by matching Build Start Date or event date to calendar Date/WFCSY." });
     return TRACEOPS_YIELD_IMPORT_META;
 }
 function traceOpsYieldIsMobileDevice() {
@@ -10929,6 +10935,12 @@ function traceOpsYieldStationCellStyle(value, stationTotal, stationNo, agingFiel
     return { padding: '8px 10px', fontSize: 11, fontWeight: 900, color: tone.text, textAlign: 'right', borderBottom: '1px solid #EEF3FA', background: tone.bg, boxShadow: tone.border !== 'transparent' ? ('inset 0 0 0 1px ' + tone.border) : 'none' };
 }
 
+
+function traceOpsYieldIsConsolidatedPseudoStation(station) {
+    var n = String(station || '').trim().toUpperCase();
+    return /^(SMT|PTH|FT|UNKNOWN|REPAIR|DEBUG|RETEST)$/i.test(n);
+}
+
 function traceOpsYieldNormalizeSequenceStation(value) {
     var raw = String(value || "").trim().toUpperCase().replace(/\s+/g, "");
     if (!raw) return "";
@@ -11004,7 +11016,15 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
         if (!prev || t >= prev.t) latestFtBySn[sn] = { station: st, t: t, row: r };
     });
     Object.keys(latestFtBySn).forEach(function (sn) {
-        if (snCurrent[sn]) { snCurrent[sn].station = latestFtBySn[sn].station; snCurrent[sn].latestCesium = latestFtBySn[sn].row || null; }
+        if (snCurrent[sn]) {
+            var currentStation = traceOpsYieldNormalizeSequenceStation(snCurrent[sn].station || '');
+            // Cesium test area is a downstream location only after the unit is already at STOCKIN.
+            // Do not let Cesium/FT overwrite active pre-STOCKIN SFC stations.
+            if (currentStation === 'STOCKIN') {
+                snCurrent[sn].station = latestFtBySn[sn].station;
+                snCurrent[sn].latestCesium = latestFtBySn[sn].row || null;
+            }
+        }
         else if (options.restrictToSfc === false) snCurrent[sn] = { station: latestFtBySn[sn].station, bucket: 'age0_30', sfc: {}, latestCesium: latestFtBySn[sn].row || null };
     });
     function hasRepairEvidenceForStationSn(sn, sfc) {
@@ -11069,7 +11089,7 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
     var total = Object.keys(snCurrent).length;
     var rows = Object.keys(seqMap).map(function (k) { return seqMap[k]; }).sort(function (a, b) { return a.idx - b.idx; });
     rows.forEach(function (r) { r.flowPct = total ? (r.qty / total * 100) : 0; });
-    return { totalUnits: total, rows: rows.filter(function (r) { return r.qty > 0; }), allRows: rows };
+    return { totalUnits: total, rows: rows.filter(function (r) { return r.qty > 0 && !traceOpsYieldIsConsolidatedPseudoStation(r.station); }), allRows: rows };
 }
 
 function traceOpsBuildYieldFlowCauseSummary(rows) {
@@ -11471,7 +11491,7 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     function addRow(n, sn, time, opts) {
         opts = opts || {};
         n = traceOpsYieldExactStationFromEvent(n) || n || "UNKNOWN";
-        if (!n || /^(SMT|PTH|FT|UNKNOWN)$/i.test(n)) return;
+        if (!n || traceOpsYieldIsConsolidatedPseudoStation(n)) return;
         var node = ensureNode(n);
         var key = traceOpsYieldCleanSn(sn || "") || (n + "_row_" + node.examples.length);
         if (opts.countUnit !== false) node.snMap[key] = true;
@@ -11510,7 +11530,11 @@ function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
         var repairs = Object.keys(node.repairMap || {}).length;
         var tone = fails || repairs ? "risk" : (units ? "active" : "empty");
         return Object.assign(node, { units: units, fails: fails, repairs: repairs, tone: tone });
-    }).filter(function(n){ return n.units || n.fails || n.repairs; });
+    }).filter(function(n){
+        var nodeName = String(n.node || '').toUpperCase();
+        if (/^(SMT|PTH|FT|UNKNOWN)$/i.test(nodeName)) return false;
+        return n.units || n.fails || n.repairs;
+    });
     function nodeTimeBySn(name, sn) { var n = nodes[name] || {}; return n.timeMap ? n.timeMap[sn] : ""; }
     function deltaBetween(a, b) {
         var start = nodes[a] || {}, out = [];
@@ -37570,7 +37594,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.4 · SFC Station Scope Fix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.5 · Cesium Test Area Scope Fix · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37614,7 +37638,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.4 · SFC Station Scope Fix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.5 · Cesium Test Area Scope Fix · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
