@@ -26548,31 +26548,28 @@ body.traceops-premium-shell [class*="impact"]{
         }
         function nfmt(n) {
             n = Number(n || 0);
+            if (!Number.isFinite(n)) return "N/A";
             try { return n.toLocaleString("en-US"); } catch (_) { return String(n); }
         }
-        function pct(part,total){ part=Number(part||0); total=Number(total||0); return total ? (part*100/total) : 0; }
         function rowSn(row, idx) { return traceOpsBoardSnValue(row, idx || 0); }
         function rowRefs(row) { try { return traceOpsBoardExtractRefsFromRow(row); } catch (_) { return []; } }
         function rowWeek(row) { try { return traceOpsBoardWeekKey(row) || "Imported"; } catch (_) { return "Imported"; } }
-        function weekLabel(w) { var t = safe(w || "N/D", 24); var m = t.match(/(FY\d{4})\s+(Q\d)\s+(W-?\d+)/i); if (m) return m[2].toUpperCase() + " " + m[3].toUpperCase().replace("W-","W"); var m2 = t.match(/(W-?\d+)/i); return m2 ? m2[1].toUpperCase().replace("W-","W") : t; }
+        function weekLabel(w) { var t = safe(w || "N/D", 24); var m = t.match(/(FY\d{4})\s+(Q\d)\s+(W-?\d+)/i); if (m) return m[2].toUpperCase() + " " + m[3].toUpperCase().replace("W-","W"); var m2 = t.match(/(Q\d)\s+(W-?\d+)/i); if (m2) return m2[1].toUpperCase()+" "+m2[2].toUpperCase().replace("W-","W"); var m3 = t.match(/(W-?\d+)/i); return m3 ? m3[1].toUpperCase().replace("W-","W") : t; }
         function weekSort(a, b) { try { return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); } catch (_) { return String(a).localeCompare(String(b)); } }
         function severityFor(total, delta, weeksActive) {
             total = Number(total || 0); delta = Number(delta || 0); weeksActive = Number(weeksActive || 0);
             var score = total + Math.max(0, delta) * 2 + Math.max(0, weeksActive - 1) * 1.5;
-            if (score >= 18 || delta >= 8) return { label:"Critical", color:"B92B3A", bg:"FFF1F1" };
-            if (score >= 8 || delta >= 3) return { label:"High", color:"B87820", bg:"FFF7E0" };
-            if (score >= 3) return { label:"Medium", color:"8A7119", bg:"FFFBEA" };
-            return { label:"Low", color:"1F3A5F", bg:"F7FAFF" };
+            if (score >= 18 || delta >= 8) return { label:"CRITICAL", color:"C44141", bg:"FFF1F1" };
+            if (score >= 8 || delta >= 3) return { label:"HIGH", color:"B87820", bg:"FFF7E0" };
+            if (score >= 3) return { label:"MEDIUM", color:"8A7119", bg:"FFFBEA" };
+            return { label:"LOW", color:"1F3A5F", bg:"F7FAFF" };
         }
-        function traceOpsBoardPptRowText(row) {
+        function rowText(row) {
             row = row || {};
-            return [
-                row.failureMode, row.mode, row.rootCause, row.rootcause, row.rootCauseEsp, row.Rootcause_Esp,
-                row.actiondesc, row.Actiondesc, row.description, row.desc, row.remark, row.Remark
-            ].map(function(v){ return String(v || ''); }).join(' ').toUpperCase();
+            return [row.failureMode, row.mode, row.rootCause, row.rootcause, row.rootCauseEsp, row.Rootcause_Esp, row.actiondesc, row.Actiondesc, row.description, row.desc, row.remark, row.Remark].map(function(v){ return String(v || ''); }).join(' ').toUpperCase();
         }
-        function traceOpsBoardPptGenericFailureMode(row, fallbackMode) {
-            var t = (traceOpsBoardPptRowText(row) + ' ' + String(fallbackMode || '')).toUpperCase();
+        function genericFailureMode(row, fallbackMode) {
+            var t = (rowText(row) + ' ' + String(fallbackMode || '')).toUpperCase();
             if (/TOMBSTONE|TOMB STONE/.test(t)) return 'TOMBSTONE';
             if (/REVERSE|REVERSED|POLARITY|INVERT/.test(t)) return 'REVERSED COMPONENT';
             if (/MISALIGN|SKEW|SHIFT|OFFSET|ALINE/.test(t)) return 'MISALIGNMENT';
@@ -26588,17 +26585,14 @@ body.traceops-premium-shell [class*="impact"]{
             if (/SUPPLIER|VENDOR|LOT|DISTRIBUTOR|PURCHAS/.test(t)) return 'SUPPLIER / MATERIAL';
             return safe(fallbackMode || 'OTHER', 34).toUpperCase() || 'OTHER';
         }
-        function traceOpsBoardPptBomText(row) {
+        function bomText(row) {
             row = row || {};
             return [row.componentDescription, row.description, row.desc, row.package, row.Package, row.componentType, row.partDescription, row.partNumber, row.componentCode, row.componentPn].map(function(v){ return String(v || ''); }).join(' ').toUpperCase();
         }
-        function traceOpsBoardPptIsThroughHole(row) {
-            var t = traceOpsBoardPptBomText(row);
-            return /\b(TH|THT|PTH|THROUGH[-\s]*HOLE|DIP|SIP)\b|CONNECTOR|HEADER|TERMINAL|JACK|PIN\s*HEADER|PRESS[-\s]*FIT/.test(t);
-        }
-        function traceOpsBoardPptProcessCategory(row, genericMode) {
+        function isThroughHole(row) { return /\b(TH|THT|PTH|THROUGH[-\s]*HOLE|DIP|SIP)\b|CONNECTOR|HEADER|TERMINAL|JACK|PIN\s*HEADER|PRESS[-\s]*FIT/.test(bomText(row)); }
+        function processCategory(row, genericMode) {
             genericMode = String(genericMode || '').toUpperCase();
-            if ((genericMode === 'SOLDER BRIDGE' || genericMode === 'INSUFFICIENT SOLDER' || genericMode === 'EXCESS SOLDER') && traceOpsBoardPptIsThroughHole(row)) return 'PTH / WAVE';
+            if ((genericMode === 'SOLDER BRIDGE' || genericMode === 'INSUFFICIENT SOLDER' || genericMode === 'EXCESS SOLDER') && isThroughHole(row)) return 'PTH / WAVE';
             if (/TOMBSTONE|REVERSED COMPONENT|MISALIGNMENT|MISSING COMPONENT|WRONG COMPONENT/.test(genericMode)) return 'PICK & PLACE';
             if (/SOLDER BRIDGE|INSUFFICIENT SOLDER|EXCESS SOLDER/.test(genericMode)) return 'SCREEN PRINTER';
             if (/PROGRAMMING|RETEST/.test(genericMode)) return 'PROGRAMMING / ICT';
@@ -26607,122 +26601,100 @@ body.traceops-premium-shell [class*="impact"]{
             return 'OTHER / REVIEW';
         }
         function buildProcessDefectMatrix() {
-            var weekMap = {};
-            var procMap = {};
-            var sourceRows = rows && rows.length ? rows : [];
+            var weekMap = {}, procMap = {}, sourceRows = rows && rows.length ? rows : [];
             sourceRows.forEach(function(row, idx){
-                var wk = rowWeek(row);
-                weekMap[wk] = true;
-                var gen = traceOpsBoardPptGenericFailureMode(row, activeMode);
-                var proc = traceOpsBoardPptProcessCategory(row, gen);
-                var key = proc + '|' + gen;
+                var wk = rowWeek(row); weekMap[wk] = true;
+                var gen = genericFailureMode(row, activeMode), proc = processCategory(row, gen), key = proc + '|' + gen;
                 var sn = rowSn(row, idx) || ('SN-' + idx);
                 if (!procMap[key]) procMap[key] = { process: proc, mode: gen, weekSn: {}, totalSn: {} };
                 if (!procMap[key].weekSn[wk]) procMap[key].weekSn[wk] = {};
-                procMap[key].weekSn[wk][sn] = true;
-                procMap[key].totalSn[sn] = true;
+                procMap[key].weekSn[wk][sn] = true; procMap[key].totalSn[sn] = true;
             });
             var weeks = Object.keys(weekMap).sort(weekSort).slice(-12);
-            var items = Object.keys(procMap).map(function(k){
-                var it = procMap[k];
-                var counts = weeks.map(function(wk){ return Object.keys(it.weekSn[wk] || {}).length; });
-                var total = Object.keys(it.totalSn || {}).length;
-                return { process: it.process, mode: it.mode, counts: counts, total: total };
-            }).sort(function(a,b){ return a.process.localeCompare(b.process) || b.total - a.total || a.mode.localeCompare(b.mode); });
+            var items = Object.keys(procMap).map(function(k){ var it = procMap[k]; var counts = weeks.map(function(wk){ return Object.keys(it.weekSn[wk] || {}).length; }); return { process: it.process, mode: it.mode, counts: counts, total: Object.keys(it.totalSn || {}).length }; }).sort(function(a,b){ return a.process.localeCompare(b.process) || b.total - a.total || a.mode.localeCompare(b.mode); });
             return { weeks: weeks, items: items };
         }
         function buildModeMatrix(mode) {
             var modeRows = (mode && Array.isArray(mode.serials) && mode.serials.length) ? mode.serials : rows;
             var weekMap = {}, refMap = {}, allSn = {};
             modeRows.forEach(function(row, idx) {
-                var wk = rowWeek(row);
-                var sn = rowSn(row, idx) || ("SN-" + idx);
-                var refs = rowRefs(row);
+                var wk = rowWeek(row), sn = rowSn(row, idx) || ("SN-" + idx), refs = rowRefs(row);
                 if (!refs.length) refs = ["NO REFDES"];
-                weekMap[wk] = true;
-                allSn[sn] = true;
+                weekMap[wk] = true; allSn[sn] = true;
                 refs.forEach(function(ref) {
                     ref = safe(ref || "NO REFDES", 28) || "NO REFDES";
                     if (!refMap[ref]) refMap[ref] = { ref: ref, weekSn: {}, totalSn: {}, rows: [] };
                     if (!refMap[ref].weekSn[wk]) refMap[ref].weekSn[wk] = {};
-                    refMap[ref].weekSn[wk][sn] = true;
-                    refMap[ref].totalSn[sn] = true;
-                    refMap[ref].rows.push(row);
+                    refMap[ref].weekSn[wk][sn] = true; refMap[ref].totalSn[sn] = true; refMap[ref].rows.push(row);
                 });
             });
-            var weeks = Object.keys(weekMap).sort(weekSort).slice(-8);
-            if (!weeks.length) weeks = ["Imported"];
+            var weeks = Object.keys(weekMap).sort(weekSort).slice(-8); if (!weeks.length) weeks = ["Imported"];
             var refs = Object.keys(refMap).map(function(ref) {
-                var item = refMap[ref];
-                var counts = weeks.map(function(wk) { return Object.keys(item.weekSn[wk] || {}).length; });
-                var total = Object.keys(item.totalSn || {}).length;
-                var prev = counts.length > 1 ? counts[counts.length - 2] : 0;
-                var last = counts.length ? counts[counts.length - 1] : 0;
+                var item = refMap[ref], counts = weeks.map(function(wk) { return Object.keys(item.weekSn[wk] || {}).length; });
+                var total = Object.keys(item.totalSn || {}).length, prev = counts.length > 1 ? counts[counts.length - 2] : 0, last = counts.length ? counts[counts.length - 1] : 0;
                 var stat = (refStats || []).find(function(x){ return traceOpsBoardNormalizeRef(x.ref) === traceOpsBoardNormalizeRef(ref); }) || {};
-                var activeWeeks = counts.filter(function(v){ return v > 0; }).length;
-                var sev = severityFor(total, last - prev, activeWeeks);
+                var activeWeeks = counts.filter(function(v){ return v > 0; }).length, sev = severityFor(total, last - prev, activeWeeks);
                 return { ref: ref, counts: counts, total: total, delta: last - prev, last: last, prev: prev, activeWeeks: activeWeeks, severity: sev, rows: item.rows, part: stat.componentCode || stat.partNumber || (item.rows[0] && (item.rows[0].componentCode || item.rows[0].partNumber)) || "", desc: stat.componentDescription || stat.description || "" };
             }).sort(function(a,b){ return b.total - a.total || b.delta - a.delta || a.ref.localeCompare(b.ref); });
-            var weekly = weeks.map(function(wk){
-                var seen = {};
-                modeRows.forEach(function(row, idx){ if (rowWeek(row) === wk) seen[rowSn(row, idx) || ("SN-" + idx)] = true; });
-                return Object.keys(seen).length;
-            });
-            var cumulative = [];
-            var seenCum = {};
-            weeks.forEach(function(wk){
-                modeRows.forEach(function(row, idx){ if (weeks.indexOf(rowWeek(row)) <= weeks.indexOf(wk)) seenCum[rowSn(row, idx) || ("SN-" + idx)] = true; });
-                cumulative.push(Object.keys(seenCum).length);
-            });
-            var last = weekly.length ? weekly[weekly.length - 1] : 0;
-            var prev = weekly.length > 1 ? weekly[weekly.length - 2] : 0;
-            var sevMode = severityFor(Object.keys(allSn).length, last - prev, weekly.filter(function(v){return v>0;}).length);
-            return { weeks: weeks, refs: refs, weekly: weekly, cumulative: cumulative, totalSn: Object.keys(allSn).length, last: last, prev: prev, delta: last - prev, severity: sevMode };
+            var weekly = weeks.map(function(wk){ var seen = {}; modeRows.forEach(function(row, idx){ if (rowWeek(row) === wk) seen[rowSn(row, idx) || ("SN-" + idx)] = true; }); return Object.keys(seen).length; });
+            var cumulative = [], seenCum = {};
+            weeks.forEach(function(wk){ modeRows.forEach(function(row, idx){ if (weeks.indexOf(rowWeek(row)) <= weeks.indexOf(wk)) seenCum[rowSn(row, idx) || ("SN-" + idx)] = true; }); cumulative.push(Object.keys(seenCum).length); });
+            var last = weekly.length ? weekly[weekly.length - 1] : 0, prev = weekly.length > 1 ? weekly[weekly.length - 2] : 0;
+            return { mode: (mode && mode.mode) || activeMode, weeks: weeks, refs: refs, weekly: weekly, cumulative: cumulative, totalSn: Object.keys(allSn).length, last: last, prev: prev, delta: last - prev, severity: severityFor(Object.keys(allSn).length, last - prev, weekly.filter(function(v){return v>0;}).length) };
         }
         function chartDataUri(weekly, cumulative, labels) {
-            var c = document.createElement("canvas"), w = 980, h = 330; c.width = w; c.height = h;
-            var g = c.getContext("2d"), padL = 62, padR = 30, padT = 28, padB = 48;
+            var c = document.createElement("canvas"), cw = 900, ch = 300; c.width = cw; c.height = ch;
+            var g = c.getContext("2d"), padL = 58, padR = 36, padT = 34, padB = 46;
             weekly = weekly && weekly.length ? weekly : [0]; cumulative = cumulative && cumulative.length ? cumulative : weekly.slice(); labels = labels && labels.length ? labels : ["N/D"];
             var max = Math.max(1, Math.max.apply(null, weekly.concat(cumulative)));
-            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,w,h);
+            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,cw,ch);
             g.strokeStyle = "#E5EDF7"; g.lineWidth = 1;
-            for (var i=0;i<5;i++){ var gridY=padT + i*(h-padT-padB)/4; g.beginPath(); g.moveTo(padL,gridY); g.lineTo(w-padR,gridY); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.fillText(String(Math.round(max - max*i/4)), 12, gridY+4); }
-            function xScale(i){ return labels.length === 1 ? padL + (w-padL-padR)/2 : padL + i*(w-padL-padR)/(labels.length-1); }
-            function yScale(v){ return h-padB - (Number(v||0)/max)*(h-padT-padB); }
-            var barW = Math.max(28, Math.min(70, (w-padL-padR)/(labels.length*1.7)));
-            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,h-padB); grd.addColorStop(0,"#F2B84B"); grd.addColorStop(1,"#FFF3D8"); g.fillStyle=grd; g.fillRect(xx,yy,barW,h-padB-yy); g.strokeStyle="#D99523"; g.strokeRect(xx,yy,barW,h-padB-yy); g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; if(v>0) g.fillText(String(v), xScale(i), yy-6); });
-            g.textAlign="left";
+            for (var i=0;i<5;i++){ var gridY=padT + i*(ch-padT-padB)/4; g.beginPath(); g.moveTo(padL,gridY); g.lineTo(cw-padR,gridY); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.fillText(String(Math.round(max - max*i/4)), 14, gridY+4); }
+            function xScale(i){ return labels.length === 1 ? padL + (cw-padL-padR)/2 : padL + i*(cw-padL-padR)/(labels.length-1); }
+            function yScale(v){ return ch-padB - (Number(v||0)/max)*(ch-padT-padB); }
+            var barW = Math.max(26, Math.min(66, (cw-padL-padR)/(labels.length*1.8)));
+            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,ch-padB); grd.addColorStop(0,"#F2B84B"); grd.addColorStop(1,"#FFF3D8"); g.fillStyle=grd; g.fillRect(xx,yy,barW,ch-padB-yy); g.strokeStyle="#D99523"; g.strokeRect(xx,yy,barW,ch-padB-yy); g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; if(v>0) g.fillText(String(v), xScale(i), yy-6); });
             g.strokeStyle="#B92B3A"; g.lineWidth=4; g.beginPath(); cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke();
             cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); g.fillStyle="#FFFFFF"; g.strokeStyle="#B92B3A"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,5,0,Math.PI*2); g.fill(); g.stroke(); });
             var baseline = cumulative.map(function(v,i){ return cumulative[0] + ((max * .72 - cumulative[0]) * (labels.length<=1 ? 0 : i/(labels.length-1))); });
             g.strokeStyle="#4FA0CF"; g.lineWidth=3; g.setLineDash([10,8]); g.beginPath(); baseline.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke(); g.setLineDash([]);
             var last = weekly[weekly.length-1]||0, prev = weekly.length>1 ? weekly[weekly.length-2]||0 : 0;
-            if (last >= Math.max(2, prev*1.5)) { var xx=xScale(weekly.length-1), yy=yScale(cumulative[cumulative.length-1]); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(xx,padT); g.lineTo(xx,h-padB); g.stroke(); g.setLineDash([]); g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,13,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.fillText("RUNAWAY", Math.min(w-95, xx+16), Math.max(30, yy-16)); }
-            g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; g.textAlign="center"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), h-16); });
+            if (last >= Math.max(2, prev*1.5)) { var xx=xScale(weekly.length-1), yy=yScale(cumulative[cumulative.length-1]); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(xx,padT); g.lineTo(xx,ch-padB); g.stroke(); g.setLineDash([]); g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,13,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.fillText("RUNAWAY", Math.min(cw-95, xx+16), Math.max(30, yy-16)); }
+            g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; g.textAlign="center"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), ch-16); });
             g.textAlign="left"; g.fillStyle="#5F766C"; g.font="bold 12px Segoe UI, Arial"; g.fillText("Bars = weekly fails   Red = cumulative   Blue = baseline", padL, 18);
             return c.toDataURL("image/png");
         }
         function boardHeatmapDataUri(matrix, title) {
-            var c = document.createElement("canvas"), w = 1100, h = 520; c.width=w; c.height=h;
+            var c = document.createElement("canvas"), cw = 1100, ch = 560; c.width=cw; c.height=ch;
             var g=c.getContext("2d");
-            g.fillStyle="#F7FAFF"; g.fillRect(0,0,w,h);
-            g.fillStyle="#172333"; g.strokeStyle="#D7A04B"; g.lineWidth=7;
-            var bx=95, by=78, bw=760, bh=360; g.beginPath(); if(g.roundRect) g.roundRect(bx,by,bw,bh,28); else g.rect(bx,by,bw,bh); g.fill(); g.stroke();
-            g.fillStyle="#22354A"; for(var i=0;i<12;i++){ g.fillRect(bx+60+i*55, by+36, 32, 50); g.fillRect(bx+50+i*58, by+275, 40, 48); }
-            g.fillStyle="#0D1724"; g.fillRect(bx+310,by+105,190,150); g.strokeStyle="#465C75"; g.strokeRect(bx+310,by+105,190,150);
-            g.fillStyle="#FFFFFF"; g.font="bold 25px Segoe UI, Arial"; g.fillText(safe(title,38), 40, 42);
+            g.fillStyle="#F2F5F8"; g.fillRect(0,0,cw,ch);
+            g.fillStyle="#1C2D3D"; g.strokeStyle="#C9D4E2"; g.lineWidth=2;
+            var bx=82, by=72, bw=705, bh=360; g.beginPath(); if(g.roundRect) g.roundRect(bx,by,bw,bh,22); else g.rect(bx,by,bw,bh); g.fill(); g.stroke();
+            g.strokeStyle="#30475F"; g.lineWidth=1; for(var gx=0;gx<12;gx++){ g.beginPath(); g.moveTo(bx+gx*bw/11,by); g.lineTo(bx+gx*bw/11,by+bh); g.stroke(); } for(var gy=0;gy<7;gy++){ g.beginPath(); g.moveTo(bx,by+gy*bh/6); g.lineTo(bx+bw,by+gy*bh/6); g.stroke(); }
+            g.fillStyle="#0F1F30"; g.fillRect(bx+285,by+95,170,145); g.strokeStyle="#6D7C8D"; g.strokeRect(bx+285,by+95,170,145);
+            g.fillStyle="#D6E3DD"; g.font="bold 20px Segoe UI, Arial"; g.fillText("BOARD HOTSPOT MAP", 40, 38);
+            g.fillStyle="#5F766C"; g.font="13px Segoe UI, Arial"; g.fillText(safe(title,54), 255, 38);
             var refs = (matrix.refs || []).slice(0,12);
-            var pos = [[.57,.48],[.23,.36],[.77,.36],[.38,.66],[.70,.70],[.18,.73],[.52,.24],[.84,.62],[.32,.28],[.61,.78],[.46,.42],[.72,.22]];
-            refs.forEach(function(r,i){ var p=pos[i%pos.length]; var x=bx+p[0]*bw, y=by+p[1]*bh; var sev=r.severity||{}; var color=sev.color|| (r.delta>0?"B92B3A":"F2B84B"); var radius=Math.max(18, Math.min(48, 16+Math.sqrt(Number(r.total||1))*8));
-                g.save(); g.globalAlpha=.24; g.fillStyle="#"+color; g.beginPath(); g.arc(x,y,radius*1.7,0,Math.PI*2); g.fill(); g.restore();
+            var pos = [[.58,.49],[.25,.35],[.77,.36],[.39,.66],[.70,.70],[.18,.72],[.52,.24],[.84,.62],[.32,.28],[.61,.78],[.46,.42],[.72,.22]];
+            refs.forEach(function(r,i){ var p=pos[i%pos.length]; var x=bx+p[0]*bw, y=by+p[1]*bh; var sev=r.severity||{}; var color=sev.color|| (r.delta>0?"B92B3A":"F2B84B"); var radius=Math.max(16, Math.min(44, 15+Math.sqrt(Number(r.total||1))*8));
+                g.save(); g.globalAlpha=.20; g.fillStyle="#"+color; g.beginPath(); g.arc(x,y,radius*1.8,0,Math.PI*2); g.fill(); g.restore();
                 g.fillStyle="#"+color; g.beginPath(); g.arc(x,y,radius,0,Math.PI*2); g.fill(); g.strokeStyle="#FFFFFF"; g.lineWidth=3; g.stroke();
-                g.fillStyle="#FFFFFF"; g.font="bold 17px Segoe UI, Arial"; g.textAlign="center"; g.fillText(safe(r.ref,10),x,y+5);
-                g.fillStyle="#102A43"; g.strokeStyle="#D9E6F7"; g.lineWidth=1; var lx=Math.min(w-150, Math.max(15,x-55)), ly=Math.max(22,y+radius+25); g.fillStyle="#FFFFFF"; if(g.roundRect){ g.beginPath(); g.roundRect(lx,ly-18,110,25,8); g.fill(); g.stroke(); } else { g.fillRect(lx,ly-18,110,25); g.strokeRect(lx,ly-18,110,25); }
-                g.fillStyle="#102A43"; g.font="bold 14px Segoe UI, Arial"; g.fillText(nfmt(r.total)+" SN",lx+55,ly);
+                g.fillStyle="#FFFFFF"; g.font="bold 16px Segoe UI, Arial"; g.textAlign="center"; g.fillText(safe(r.ref,10),x,y+5);
             });
-            g.textAlign="left"; g.fillStyle="#102A43"; g.font="bold 20px Segoe UI, Arial"; g.fillText("Top fail locations",895,95); g.font="14px Segoe UI, Arial"; g.fillStyle="#5F766C"; g.fillText("Bubble size = impacted SN",895,122); g.fillText("Color = severity / growth",895,144);
-            refs.slice(0,8).forEach(function(r,i){ var y=178+i*35; var sev=r.severity||{}; g.fillStyle="#"+(sev.color||"1F3A5F"); g.beginPath(); g.arc(905,y-4,6,0,Math.PI*2); g.fill(); g.fillStyle="#102A43"; g.font="bold 14px Segoe UI, Arial"; g.fillText(safe(r.ref,12),922,y); g.fillStyle="#5F766C"; g.font="13px Segoe UI, Arial"; g.fillText(nfmt(r.total)+" SN · "+(sev.label||"Review"),995,y); });
+            g.textAlign="left"; g.fillStyle="#102A43"; g.font="bold 19px Segoe UI, Arial"; g.fillText("Top fail locations",830,88); g.font="13px Segoe UI, Arial"; g.fillStyle="#5F766C"; g.fillText("Size = impacted SN",830,112); g.fillText("Color = severity/growth",830,134);
+            refs.slice(0,8).forEach(function(r,i){ var y=170+i*36; var sev=r.severity||{}; g.fillStyle="#"+(sev.color||"1F3A5F"); g.beginPath(); g.arc(842,y-5,7,0,Math.PI*2); g.fill(); g.fillStyle="#102A43"; g.font="bold 15px Segoe UI, Arial"; g.fillText(safe(r.ref,12),858,y); g.fillStyle="#5F766C"; g.font="13px Segoe UI, Arial"; g.fillText(nfmt(r.total)+" SN · "+(sev.label||"REVIEW"),950,y); });
             return c.toDataURL("image/png");
+        }
+        function processNarrative(matrix) {
+            var topRef = (matrix.refs && matrix.refs[0]) || {};
+            var sev = (matrix.severity && matrix.severity.label) || "REVIEW";
+            var mode = safe(matrix.mode || activeMode, 48);
+            var ref = topRef.ref || "N/D";
+            var problem = mode + " trend detected in the active board-impact scope. Top contributor: " + ref + ".";
+            var cause = "Likely process family is inferred from the generic taxonomy and BOM package evidence. Validate feeder/program/stencil/PTH ownership before containment release.";
+            var impact = nfmt(matrix.totalSn) + " affected SN across " + nfmt(matrix.refs.length) + " fail locations. Latest week: " + nfmt(matrix.last) + ", WoW delta: " + (matrix.delta > 0 ? "+" : "") + nfmt(matrix.delta) + ".";
+            var action = sev === "CRITICAL" ? "Contain immediately. Review top refs, linked WOs, repair history and current station aging before releasing recovery." : "Track trend and validate top offender refs during daily quality review.";
+            return { problem: problem, cause: cause, impact: impact, action: action };
         }
         function addFooter(slide, text) {
             slide.addShape("rect", { x:0, y:7.08, w:13.333, h:.42, line:{color:"102A43", pt:0}, fill:{color:"102A43"} });
@@ -26730,20 +26702,12 @@ body.traceops-premium-shell [class*="impact"]{
             slide.addText("Generated by SMTinel · Board Impact Intelligence", { x:9.0, y:7.20, w:3.8, h:.12, fontFace:"Segoe UI", fontSize:7.5, color:"D6E3DD", align:"right", margin:0 });
         }
         function addRefTrendTable(slide, matrix, x, y, w, h) {
-            var weeks = matrix.weeks.slice(-5);
-            var refs = matrix.refs.slice(0, 10);
+            var weeks = matrix.weeks.slice(-5), refs = matrix.refs.slice(0, 9);
             var headers = ["Fail Location"].concat(weeks.map(weekLabel), ["Total", "Severity", "Trend"]);
-            var rowsOut = [headers].concat(refs.map(function(r){
-                var vals = weeks.map(function(w){ var ix = matrix.weeks.indexOf(w); return ix >= 0 ? r.counts[ix] : 0; });
-                return [r.ref].concat(vals.map(String), [String(r.total), (r.severity && r.severity.label) || "Review", vals.join("-")]);
-            }));
-            slide.addTable(rowsOut, { x:x, y:y, w:w, h:h, margin:.03, border:{ color:"D9E6F7", pt:.5 }, fill:"FFFFFF", color:"102A43", fontFace:"Segoe UI", fontSize:7.1, valign:"mid", fit:"shrink", autoFit:false, colW:[1.35].concat(weeks.map(function(){return .50;}), [.48,.72,.88]) });
-            refs.forEach(function(r, i){
-                try { var img = traceOpsBoardSparklinePng(r.counts, r.delta > 0 ? "bad" : "neutral", 120, 24); slide.addImage({ data: img, x:x+w-.82, y:y+.36+(i*.215), w:.68, h:.14 }); } catch(_) {}
-                if (r.delta >= Math.max(2, r.prev * 1.5)) slide.addText("RUNAWAY", { x:x+w-1.65, y:y+.36+(i*.215), w:.72, h:.10, fontFace:"Segoe UI", fontSize:5.5, bold:true, color:"B92B3A", margin:0 });
-            });
+            var data = [headers].concat(refs.map(function(r) { var counts = weeks.map(function(wk) { var ix = matrix.weeks.indexOf(wk); return ix >= 0 ? String(r.counts[ix] || 0) : "0"; }); return [safe(r.ref,18)].concat(counts, [String(r.total), (r.severity && r.severity.label) || "REVIEW", r.counts.join("-")]); }));
+            slide.addTable(data, { x:x, y:y, w:w, h:h, margin:.035, border:{color:"D9E6F7",pt:.55}, fill:"FFFFFF", fontFace:"Segoe UI", fontSize:7.4, color:"102A43", fit:"shrink", autoFit:false });
         }
-        var modes = modeOptions.length ? modeOptions : [{ mode: activeMode, risk: rows.length, serials: rows, refs: [] }];
+        var modes = modeOptions && modeOptions.length ? modeOptions : [{ mode: activeMode, serials: rows, risk: rows.length, refs: refStats }];
         modes = modes.slice().sort(function(a,b){ return Number(b.risk || (b.serials||[]).length || 0) - Number(a.risk || (a.serials||[]).length || 0); }).slice(0, 8);
         window.ensurePptxTools().then(async function(){
             var pptx = new PptxGenJS();
@@ -26751,7 +26715,7 @@ body.traceops-premium-shell [class*="impact"]{
             try { if (typeof pptx.defineLayout === "function") { pptx.defineLayout({ name:"TRACEOPS_BOARD_INTEL", width:13.333, height:7.5 }); pptx.layout = "TRACEOPS_BOARD_INTEL"; } } catch(_) {}
             try { pptx.author = "SMTinel"; pptx.company = "TraceOps"; pptx.subject = "Board Impact Intelligence"; pptx.title = "Board Impact - " + modelName; pptx.theme = { headFontFace:"Segoe UI", bodyFontFace:"Segoe UI", lang:"en-US" }; } catch(_) {}
             var ST = pptx.ShapeType || {};
-            function rect(s,x,y,w,h,fill,line){ s.addShape(ST.rect || "rect", { x:x,y:y,w:w,h:h,rectRadius:.06,line:{color:line||fill,pt:line?1:0},fill:{color:fill||"FFFFFF"} }); }
+            function rect(s,x,y,w,h,fill,line){ s.addShape(ST.rect || "rect", { x:x,y:y,w:w,h:h,rectRadius:.04,line:{color:line||fill,pt:line?1:0},fill:{color:fill||"FFFFFF"} }); }
             function txt(s,t,x,y,w,h,opt){ s.addText(safe(t, opt && opt.max || 0), Object.assign({ x:x,y:y,w:w,h:h,fontFace:"Segoe UI",fontSize:10,color:"102A43",margin:.02,fit:"shrink" }, opt||{})); }
             var matrices = modes.map(function(m){ var mat=buildModeMatrix(m); mat.mode=m.mode||activeMode||"Failure mode"; return mat; });
             var totalSn = matrices.reduce(function(a,m){ return a + Number(m.totalSn||0); },0);
@@ -26759,53 +26723,72 @@ body.traceops-premium-shell [class*="impact"]{
             var topMat = matrices[0] || buildModeMatrix({});
             var slide = pptx.addSlide(); slide.background = { color:"FFFFFF" };
             rect(slide,0,0,13.333,.86,"102A43");
-            txt(slide,"Board Impact Intelligence",.42,.18,4.7,.24,{fontSize:22,bold:true,color:"FFFFFF"});
+            txt(slide,"BOARD IMPACT / EXECUTIVE QUALITY ALERT",.42,.16,6.3,.24,{fontSize:20,bold:true,color:"FFFFFF",charSpace:.4});
             txt(slide,safe(modelName,40)+" · SKU "+safe(sku,28)+" · "+issueDate,7.2,.32,5.5,.16,{fontSize:9.5,color:"D6E3DD",align:"right"});
-            [["Failure modes",modes.length],["Impacted SN",totalSn],["Unique refs",Object.keys(uniqueRefs).length],["Built units",totalBuilt||"N/D"]].forEach(function(k,i){ rect(slide,.55+i*3.05,1.05,2.72,.68,"F7FAFF","D9E6F7"); txt(slide,k[0],.72+i*3.05,1.18,1.7,.10,{fontSize:7.8,bold:true,color:"5F766C"}); txt(slide,nfmt(k[1]),.72+i*3.05,1.38,1.8,.19,{fontSize:18,bold:true,color:i===1?"B92B3A":"102A43"}); });
-            var imgSummary = boardCanvasData || boardHeatmapDataUri(topMat, "Board heatmap · " + safe(modelName,20));
-            slide.addImage({ data: imgSummary, x:.55, y:1.95, w:5.95, h:2.78, sizing:{ type:"contain", x:.55, y:1.95, w:5.95, h:2.78 } });
-            if (topMat.cumulative.length) slide.addImage({ data: chartDataUri(topMat.weekly, topMat.cumulative, topMat.weeks), x:6.85, y:1.95, w:5.95, h:2.45 });
+            var kpis = [["Failure modes",modes.length,"102A43"],["Impacted SN",totalSn,"C44141"],["Unique refs",Object.keys(uniqueRefs).length,"102A43"],["Built units",totalBuilt||"N/D","102A43"]];
+            kpis.forEach(function(k,i){ rect(slide,.55+i*3.05,1.05,2.72,.68,"F7FAFF","D9E6F7"); txt(slide,k[0],.72+i*3.05,1.18,1.7,.10,{fontSize:7.8,bold:true,color:"5F766C"}); txt(slide,nfmt(k[1]),.72+i*3.05,1.38,1.8,.19,{fontSize:18,bold:true,color:k[2]}); });
+            slide.addImage({ data: boardCanvasData || boardHeatmapDataUri(topMat, "Executive board hotspot"), x:.55, y:1.95, w:5.85, h:2.55, sizing:{ type:"contain", x:.55, y:1.95, w:5.85, h:2.55 } });
+            rect(slide,6.65,1.95,5.95,2.55,"F7FAFF","D9E6F7");
+            txt(slide,"EXECUTIVE READOUT / RESUMEN",6.88,2.15,2.9,.18,{fontSize:13,bold:true,color:"102A43",charSpace:.5});
+            var n0 = processNarrative(topMat);
+            txt(slide,"PROBLEM: "+n0.problem,6.88,2.52,5.28,.34,{fontSize:9.2,bold:true,color:"C44141"});
+            txt(slide,"IMPACT: "+n0.impact,6.88,2.98,5.28,.30,{fontSize:9.2,bold:true,color:"102A43"});
+            txt(slide,"ACTION: "+n0.action,6.88,3.38,5.28,.38,{fontSize:9.2,bold:true,color:"1E8A64"});
+            txt(slide,"Top process signal: "+safe(topMat.mode,42),6.88,3.92,5.28,.16,{fontSize:8.5,bold:true,color:"5F766C"});
             var topRows = [["Failure mode","SN","Refs","Last week","Delta","Severity"]].concat(matrices.slice(0,6).map(function(mat){ return [safe(mat.mode,34), String(mat.totalSn), String(mat.refs.length), mat.weeks[mat.weeks.length-1]||"N/D", mat.delta > 0 ? "+"+mat.delta : String(mat.delta), mat.severity.label]; }));
-            slide.addTable(topRows, { x:.55,y:5.02,w:12.1,h:1.55,margin:.035,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:7.8,color:"102A43",fit:"shrink" });
-            txt(slide,"Readout: prioritize red RUNAWAY references and high clean-aging candidates before long-cycle repair loops.",.55,6.74,11.8,.16,{fontSize:8.2,color:"5F766C"});
-            addFooter(slide,"SMTinel Board Impact Intelligence · Executive Summary");
+            slide.addTable(topRows, { x:.55,y:4.85,w:12.1,h:1.68,margin:.035,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:7.9,color:"102A43",fit:"shrink" });
+            addFooter(slide,"SMTinel Board Impact Intelligence · Executive Quality Alert");
             for (var mi=0; mi<matrices.length; mi++) {
                 var matrix = matrices[mi];
                 var s = pptx.addSlide(); s.background = { color:"FFFFFF" };
-                rect(s,0,0,13.333,.62,"102A43");
-                txt(s,safe(matrix.mode || "Failure Mode",58),.42,.16,6.6,.22,{fontSize:18,bold:true,color:"FFFFFF"});
-                txt(s,safe(modelName,38)+" · "+safe(sku,24)+" · "+matrix.weeks.length+" weeks",8.2,.22,4.5,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
-                s.addImage({ data: boardCanvasData || boardHeatmapDataUri(matrix, matrix.mode), x:.50, y:.92, w:5.9, h:2.72, sizing:{ type:"contain", x:.50, y:.92, w:5.9, h:2.72 } });
-                if (matrix.cumulative.length) s.addImage({ data: chartDataUri(matrix.weekly, matrix.cumulative, matrix.weeks), x:6.65, y:.98, w:6.1, h:2.30 });
-                rect(s,.55,3.82,2.0,.55,(matrix.severity && matrix.severity.bg)||"F7FAFF","D9E6F7"); txt(s,"Severity",.70,3.94,.75,.09,{fontSize:6.8,bold:true,color:"5F766C"}); txt(s,(matrix.severity&&matrix.severity.label)||"Review",1.48,3.91,.80,.14,{fontSize:11,bold:true,color:(matrix.severity&&matrix.severity.color)||"102A43"});
-                [["Affected SN",matrix.totalSn],["Fail locations",matrix.refs.length],["Last week",matrix.last],["WoW delta",matrix.delta>0?"+"+matrix.delta:String(matrix.delta)]].forEach(function(k,i){ rect(s,2.78+i*1.43,3.82,1.20,.55,"F7FAFF","D9E6F7"); txt(s,k[0],2.88+i*1.43,3.94,.96,.08,{fontSize:6.2,bold:true,color:"5F766C"}); txt(s,nfmt(k[1]),2.88+i*1.43,4.11,.80,.14,{fontSize:11,bold:true,color:i===0?"B92B3A":"102A43"}); });
-                txt(s,"FailLocation × Cisco Week",.55,4.62,2.7,.16,{fontSize:11,bold:true,color:"102A43"});
-                addRefTrendTable(s, matrix, .55, 4.88, 12.15, 1.70);
+                var sev = matrix.severity || { label:"REVIEW", color:"102A43", bg:"F7FAFF" };
+                rect(s,0,0,13.333,.72,"102A43");
+                txt(s,(processCategory((matrix.refs[0] && matrix.refs[0].rows && matrix.refs[0].rows[0]) || {}, genericFailureMode((matrix.refs[0] && matrix.refs[0].rows && matrix.refs[0].rows[0]) || {}, matrix.mode)).replace(" / ","/")+" / QUALITY ALERT"),.42,.15,5.1,.22,{fontSize:18,bold:true,color:"FFFFFF",charSpace:.4});
+                txt(s,safe(matrix.mode || "Failure Mode",48),.42,.43,4.8,.14,{fontSize:9.5,bold:true,color:"D6E3DD"});
+                txt(s,safe(modelName,38)+" · "+safe(sku,24)+" · "+matrix.weeks.length+" weeks",8.2,.27,4.5,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
+                rect(s,.55,1.0,2.05,.74,"F7FAFF","D9E6F7"); txt(s,"FAILURE MODE",.70,1.12,.9,.10,{fontSize:7,bold:true,color:"5F766C"}); txt(s,safe(matrix.mode,22),.70,1.30,1.65,.22,{fontSize:12,bold:true,color:"C44141"});
+                rect(s,2.75,1.0,1.4,.74,"F7FAFF","D9E6F7"); txt(s,"REFDES",2.90,1.12,.7,.10,{fontSize:7,bold:true,color:"5F766C"}); txt(s,(matrix.refs[0]&&matrix.refs[0].ref)||"N/D",2.90,1.30,.90,.22,{fontSize:14,bold:true,color:"102A43"});
+                rect(s,4.30,1.0,1.4,.74,"FFF5F3","F4B7B0"); txt(s,"AFFECTED SN",4.45,1.12,.85,.10,{fontSize:7,bold:true,color:"7A2E28"}); txt(s,nfmt(matrix.totalSn),4.45,1.30,.80,.24,{fontSize:18,bold:true,color:"C44141"});
+                rect(s,5.85,1.0,1.55,.74,sev.bg||"F7FAFF","D9E6F7"); txt(s,"CRITICALITY",6.0,1.12,.85,.10,{fontSize:7,bold:true,color:"5F766C"}); txt(s,sev.label,6.0,1.30,.95,.22,{fontSize:13,bold:true,color:sev.color||"102A43"});
+                rect(s,7.55,1.0,2.05,.74,"F7FAFF","D9E6F7"); txt(s,"LAST WEEK / DELTA",7.70,1.12,1.1,.10,{fontSize:7,bold:true,color:"5F766C"}); txt(s,nfmt(matrix.last)+" / "+(matrix.delta>0?"+":"")+nfmt(matrix.delta),7.70,1.30,1.15,.22,{fontSize:13,bold:true,color:"102A43"});
+                rect(s,9.75,1.0,2.95,.74,"F7FAFF","D9E6F7"); txt(s,"SKU / MODEL",9.90,1.12,.85,.10,{fontSize:7,bold:true,color:"5F766C"}); txt(s,safe(sku,20),9.90,1.30,1.25,.16,{fontSize:10.5,bold:true,color:"102A43"}); txt(s,safe(modelName,28),9.90,1.52,1.95,.10,{fontSize:7.5,color:"5F766C"});
+                s.addImage({ data: boardCanvasData || boardHeatmapDataUri(matrix, matrix.mode), x:.55, y:1.95, w:4.05, h:2.7, sizing:{ type:"contain", x:.55, y:1.95, w:4.05, h:2.7 } });
+                rect(s,4.85,1.95,4.0,2.7,"FFFFFF","D9E6F7");
+                txt(s,"ALERT SUMMARY / RESUMEN DE ALERTA",5.05,2.10,2.55,.14,{fontSize:11.5,bold:true,color:"102A43",charSpace:.5});
+                var narr = processNarrative(matrix);
+                txt(s,"PROBLEM: "+narr.problem,5.05,2.42,3.45,.28,{fontSize:8.6,bold:true,color:"C44141"});
+                txt(s,"ROOT CAUSE: "+narr.cause,5.05,2.83,3.45,.40,{fontSize:8.3,bold:true,color:"102A43"});
+                txt(s,"IMPACT: "+narr.impact,5.05,3.36,3.45,.33,{fontSize:8.3,bold:true,color:"102A43"});
+                txt(s,"ACTION: "+narr.action,5.05,3.82,3.45,.42,{fontSize:8.3,bold:true,color:"1E8A64"});
+                if (matrix.cumulative.length) s.addImage({ data: chartDataUri(matrix.weekly, matrix.cumulative, matrix.weeks), x:9.05, y:1.95, w:3.75, h:2.65 });
+                txt(s,"FailLocation × Cisco Week",.55,4.88,2.7,.16,{fontSize:11,bold:true,color:"102A43"});
+                addRefTrendTable(s, matrix, .55, 5.14, 8.05, 1.55);
+                var topOff = matrix.refs.slice(0,5);
+                rect(s,8.85,5.14,3.95,1.55,"F7FAFF","D9E6F7");
+                txt(s,"TOP OFFENDER REFS",9.02,5.28,1.8,.12,{fontSize:8.4,bold:true,color:"102A43"});
+                topOff.forEach(function(r,i){ txt(s,safe(r.ref,12)+"  "+nfmt(r.total)+" SN  "+((r.severity&&r.severity.label)||"REVIEW"),9.02,5.54+i*.20,3.1,.10,{fontSize:7.8,bold:true,color:(r.severity&&r.severity.color)||"102A43"}); });
                 addFooter(s,"SMTinel Board Impact Intelligence · " + safe(matrix.mode, 72));
             }
             var topRefs = [];
             matrices.forEach(function(mat){ (mat.refs||[]).forEach(function(r){ topRefs.push({ mode:mat.mode, ref:r.ref, total:r.total, delta:r.delta, severity:r.severity, weeks:r.activeWeeks }); }); });
             topRefs.sort(function(a,b){ return b.total-a.total || b.delta-a.delta; });
             if (topRefs.length) {
-                var a = pptx.addSlide(); a.background = { color:"FFFFFF" }; rect(a,0,0,13.333,.62,"102A43"); txt(a,"Top Offender References",.42,.16,6,.22,{fontSize:18,bold:true,color:"FFFFFF"});
-                var offenderRows = [["RefDes","Failure mode","SN","Weeks active","Delta","Severity"]].concat(topRefs.slice(0,18).map(function(r){ return [r.ref, safe(r.mode,30), String(r.total), String(r.weeks), r.delta>0?"+"+r.delta:String(r.delta), (r.severity&&r.severity.label)||"Review"]; }));
+                var a = pptx.addSlide(); a.background = { color:"FFFFFF" }; rect(a,0,0,13.333,.72,"102A43"); txt(a,"TOP OFFENDER REFERENCES",.42,.18,6,.22,{fontSize:18,bold:true,color:"FFFFFF"});
+                var offenderRows = [["RefDes","Failure mode","SN","Weeks active","Delta","Severity"]].concat(topRefs.slice(0,18).map(function(r){ return [r.ref, safe(r.mode,30), String(r.total), String(r.weeks), r.delta>0?"+"+r.delta:String(r.delta), (r.severity&&r.severity.label)||"REVIEW"]; }));
                 a.addTable(offenderRows, { x:.55,y:1.05,w:12.15,h:5.75,margin:.04,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:8.2,color:"102A43",fit:"shrink" });
                 addFooter(a,"SMTinel Board Impact Intelligence · Top Offenders");
             }
             var procMatrix = buildProcessDefectMatrix();
             if (procMatrix.items.length) {
                 var pslide = pptx.addSlide(); pslide.background = { color:"FFFFFF" };
-                rect(pslide,0,0,13.333,.62,"102A43");
-                txt(pslide,"Weekly Defect Traceability by Process",.42,.16,7.2,.22,{fontSize:18,bold:true,color:"FFFFFF"});
-                txt(pslide,safe(modelName,38)+" · "+safe(sku,24)+" · Generic failure taxonomy",7.3,.22,5.2,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
+                rect(pslide,0,0,13.333,.72,"102A43");
+                txt(pslide,"WEEKLY DEFECT TRACEABILITY BY PROCESS",.42,.18,7.2,.22,{fontSize:18,bold:true,color:"FFFFFF"});
+                txt(pslide,safe(modelName,38)+" · "+safe(sku,24)+" · Generic failure taxonomy",7.3,.27,5.2,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
                 var pWeeks = procMatrix.weeks.slice(-10);
                 var procHeaders = ["Process","Generic failure mode"].concat(pWeeks.map(weekLabel), ["Total"]);
-                var procRows = [procHeaders].concat(procMatrix.items.slice(0,22).map(function(it){
-                    var vals = pWeeks.map(function(w){ var ix = procMatrix.weeks.indexOf(w); return ix >= 0 ? String(it.counts[ix] || 0) : "0"; });
-                    return [it.process, it.mode].concat(vals, [String(it.total)]);
-                }));
-                pslide.addTable(procRows, { x:.45,y:1.02,w:12.45,h:4.85,margin:.035,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:7.4,color:"102A43",fit:"shrink",autoFit:false,colW:[1.45,2.15].concat(pWeeks.map(function(){return .63;}), [.58]) });
-                txt(pslide,"Mapping: Tombstone/Reversed/Misalignment/Missing/Wrong Component → Pick & Place. Solder Bridge/Insufficient/Excess → Screen Printer unless BOM description/package indicates TH/THT/PTH/Through-Hole/Header/Connector/Terminal, then PTH/Wave.",.55,6.10,12.0,.35,{fontSize:8.2,color:"5F766C",fit:"shrink"});
+                var procRows = [procHeaders].concat(procMatrix.items.slice(0,22).map(function(it){ var vals = pWeeks.map(function(w){ var ix = procMatrix.weeks.indexOf(w); return ix >= 0 ? String(it.counts[ix] || 0) : "0"; }); return [it.process, it.mode].concat(vals, [String(it.total)]); }));
+                pslide.addTable(procRows, { x:.45,y:1.05,w:12.45,h:4.85,margin:.035,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:7.4,color:"102A43",fit:"shrink",autoFit:false,colW:[1.55,2.15].concat(pWeeks.map(function(){return .63;}), [.58]) });
+                txt(pslide,"Mapping: Pick & Place = Tombstone/Reversed/Misalignment/Missing/Wrong Component. Screen Printer = Solder Bridge/Insufficient/Excess unless BOM indicates TH/THT/PTH/Through-Hole/Header/Connector/Terminal; then PTH/Wave.",.55,6.10,12.0,.35,{fontSize:8.2,color:"5F766C",fit:"shrink"});
                 addFooter(pslide,"SMTinel Board Impact Intelligence · Weekly Defect Traceability by Process");
             }
             var fileName = "SMTinel_Board_Impact_Intelligence_" + safe(modelName,28).replace(/[^A-Za-z0-9_-]+/g,"_") + "_" + issueDate + ".pptx";
@@ -37677,7 +37660,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.6 · Process Category Defect Matrix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37721,7 +37704,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.6 · Process Category Defect Matrix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
