@@ -26564,6 +26564,73 @@ body.traceops-premium-shell [class*="impact"]{
             if (score >= 3) return { label:"Medium", color:"8A7119", bg:"FFFBEA" };
             return { label:"Low", color:"1F3A5F", bg:"F7FAFF" };
         }
+        function traceOpsBoardPptRowText(row) {
+            row = row || {};
+            return [
+                row.failureMode, row.mode, row.rootCause, row.rootcause, row.rootCauseEsp, row.Rootcause_Esp,
+                row.actiondesc, row.Actiondesc, row.description, row.desc, row.remark, row.Remark
+            ].map(function(v){ return String(v || ''); }).join(' ').toUpperCase();
+        }
+        function traceOpsBoardPptGenericFailureMode(row, fallbackMode) {
+            var t = (traceOpsBoardPptRowText(row) + ' ' + String(fallbackMode || '')).toUpperCase();
+            if (/TOMBSTONE|TOMB STONE/.test(t)) return 'TOMBSTONE';
+            if (/REVERSE|REVERSED|POLARITY|INVERT/.test(t)) return 'REVERSED COMPONENT';
+            if (/MISALIGN|SKEW|SHIFT|OFFSET|ALINE/.test(t)) return 'MISALIGNMENT';
+            if (/MISSING|NO\s+COMP|NO\s+MOUNT/.test(t)) return 'MISSING COMPONENT';
+            if (/WRONG|INCORRECT|MIX\s*REEL|MIXED\s*REEL|BAD\s*REEL|PART\s*CHANGE|VALUE/.test(t)) return 'WRONG COMPONENT';
+            if (/SOLDER\s*BRIDGE|SHORT|BRIDGE/.test(t)) return 'SOLDER BRIDGE';
+            if (/INSUFFICIENT|OPEN\s*SOLDER|LOW\s*SOLDER|COLD|POROUS/.test(t)) return 'INSUFFICIENT SOLDER';
+            if (/EXCESS|TOO\s+MUCH|SOLDER\s+BALL/.test(t)) return 'EXCESS SOLDER';
+            if (/DAMAGE|DAMAGED|CRACK|BROKEN|BURN/.test(t)) return 'COMPONENT DAMAGE';
+            if (/FLASH|ROM|PROGRAM|PROGRAMMING|IC\s*PROGRAM/.test(t)) return 'PROGRAMMING';
+            if (/RETEST|RE-TEST/.test(t)) return 'RETEST';
+            if (/SETUP|FEEDER|NOZZLE|VACUUM|WI\s+NOT|SCAN|LABEL/.test(t)) return 'PROCESS CONTROL';
+            if (/SUPPLIER|VENDOR|LOT|DISTRIBUTOR|PURCHAS/.test(t)) return 'SUPPLIER / MATERIAL';
+            return safe(fallbackMode || 'OTHER', 34).toUpperCase() || 'OTHER';
+        }
+        function traceOpsBoardPptBomText(row) {
+            row = row || {};
+            return [row.componentDescription, row.description, row.desc, row.package, row.Package, row.componentType, row.partDescription, row.partNumber, row.componentCode, row.componentPn].map(function(v){ return String(v || ''); }).join(' ').toUpperCase();
+        }
+        function traceOpsBoardPptIsThroughHole(row) {
+            var t = traceOpsBoardPptBomText(row);
+            return /\b(TH|THT|PTH|THROUGH[-\s]*HOLE|DIP|SIP)\b|CONNECTOR|HEADER|TERMINAL|JACK|PIN\s*HEADER|PRESS[-\s]*FIT/.test(t);
+        }
+        function traceOpsBoardPptProcessCategory(row, genericMode) {
+            genericMode = String(genericMode || '').toUpperCase();
+            if ((genericMode === 'SOLDER BRIDGE' || genericMode === 'INSUFFICIENT SOLDER' || genericMode === 'EXCESS SOLDER') && traceOpsBoardPptIsThroughHole(row)) return 'PTH / WAVE';
+            if (/TOMBSTONE|REVERSED COMPONENT|MISALIGNMENT|MISSING COMPONENT|WRONG COMPONENT/.test(genericMode)) return 'PICK & PLACE';
+            if (/SOLDER BRIDGE|INSUFFICIENT SOLDER|EXCESS SOLDER/.test(genericMode)) return 'SCREEN PRINTER';
+            if (/PROGRAMMING|RETEST/.test(genericMode)) return 'PROGRAMMING / ICT';
+            if (/COMPONENT DAMAGE|SUPPLIER/.test(genericMode)) return 'MATERIAL / SUPPLIER';
+            if (/PROCESS CONTROL/.test(genericMode)) return 'PROCESS CONTROL';
+            return 'OTHER / REVIEW';
+        }
+        function buildProcessDefectMatrix() {
+            var weekMap = {};
+            var procMap = {};
+            var sourceRows = rows && rows.length ? rows : [];
+            sourceRows.forEach(function(row, idx){
+                var wk = rowWeek(row);
+                weekMap[wk] = true;
+                var gen = traceOpsBoardPptGenericFailureMode(row, activeMode);
+                var proc = traceOpsBoardPptProcessCategory(row, gen);
+                var key = proc + '|' + gen;
+                var sn = rowSn(row, idx) || ('SN-' + idx);
+                if (!procMap[key]) procMap[key] = { process: proc, mode: gen, weekSn: {}, totalSn: {} };
+                if (!procMap[key].weekSn[wk]) procMap[key].weekSn[wk] = {};
+                procMap[key].weekSn[wk][sn] = true;
+                procMap[key].totalSn[sn] = true;
+            });
+            var weeks = Object.keys(weekMap).sort(weekSort).slice(-12);
+            var items = Object.keys(procMap).map(function(k){
+                var it = procMap[k];
+                var counts = weeks.map(function(wk){ return Object.keys(it.weekSn[wk] || {}).length; });
+                var total = Object.keys(it.totalSn || {}).length;
+                return { process: it.process, mode: it.mode, counts: counts, total: total };
+            }).sort(function(a,b){ return a.process.localeCompare(b.process) || b.total - a.total || a.mode.localeCompare(b.mode); });
+            return { weeks: weeks, items: items };
+        }
         function buildModeMatrix(mode) {
             var modeRows = (mode && Array.isArray(mode.serials) && mode.serials.length) ? mode.serials : rows;
             var weekMap = {}, refMap = {}, allSn = {};
@@ -26724,6 +26791,22 @@ body.traceops-premium-shell [class*="impact"]{
                 var offenderRows = [["RefDes","Failure mode","SN","Weeks active","Delta","Severity"]].concat(topRefs.slice(0,18).map(function(r){ return [r.ref, safe(r.mode,30), String(r.total), String(r.weeks), r.delta>0?"+"+r.delta:String(r.delta), (r.severity&&r.severity.label)||"Review"]; }));
                 a.addTable(offenderRows, { x:.55,y:1.05,w:12.15,h:5.75,margin:.04,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:8.2,color:"102A43",fit:"shrink" });
                 addFooter(a,"SMTinel Board Impact Intelligence · Top Offenders");
+            }
+            var procMatrix = buildProcessDefectMatrix();
+            if (procMatrix.items.length) {
+                var pslide = pptx.addSlide(); pslide.background = { color:"FFFFFF" };
+                rect(pslide,0,0,13.333,.62,"102A43");
+                txt(pslide,"Weekly Defect Traceability by Process",.42,.16,7.2,.22,{fontSize:18,bold:true,color:"FFFFFF"});
+                txt(pslide,safe(modelName,38)+" · "+safe(sku,24)+" · Generic failure taxonomy",7.3,.22,5.2,.12,{fontSize:8.5,color:"D6E3DD",align:"right"});
+                var pWeeks = procMatrix.weeks.slice(-10);
+                var procHeaders = ["Process","Generic failure mode"].concat(pWeeks.map(weekLabel), ["Total"]);
+                var procRows = [procHeaders].concat(procMatrix.items.slice(0,22).map(function(it){
+                    var vals = pWeeks.map(function(w){ var ix = procMatrix.weeks.indexOf(w); return ix >= 0 ? String(it.counts[ix] || 0) : "0"; });
+                    return [it.process, it.mode].concat(vals, [String(it.total)]);
+                }));
+                pslide.addTable(procRows, { x:.45,y:1.02,w:12.45,h:4.85,margin:.035,border:{color:"D9E6F7",pt:.55},fill:"FFFFFF",fontFace:"Segoe UI",fontSize:7.4,color:"102A43",fit:"shrink",autoFit:false,colW:[1.45,2.15].concat(pWeeks.map(function(){return .63;}), [.58]) });
+                txt(pslide,"Mapping: Tombstone/Reversed/Misalignment/Missing/Wrong Component → Pick & Place. Solder Bridge/Insufficient/Excess → Screen Printer unless BOM description/package indicates TH/THT/PTH/Through-Hole/Header/Connector/Terminal, then PTH/Wave.",.55,6.10,12.0,.35,{fontSize:8.2,color:"5F766C",fit:"shrink"});
+                addFooter(pslide,"SMTinel Board Impact Intelligence · Weekly Defect Traceability by Process");
             }
             var fileName = "SMTinel_Board_Impact_Intelligence_" + safe(modelName,28).replace(/[^A-Za-z0-9_-]+/g,"_") + "_" + issueDate + ".pptx";
             if (typeof pptx.write === "function") { var arr = await pptx.write({ outputType:"arraybuffer", compression:true }); traceOpsDownloadBlob(fileName, new Blob([arr], { type:"application/vnd.openxmlformats-officedocument.presentationml.presentation" })); }
@@ -37594,7 +37677,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.5 · Cesium Test Area Scope Fix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.6 · Process Category Defect Matrix · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37638,7 +37721,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.5 · Cesium Test Area Scope Fix · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.6 · Process Category Defect Matrix · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
