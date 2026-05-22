@@ -8557,7 +8557,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v9_6-repair-fixedwidth-parser";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_2-import-performance-engine";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -8610,6 +8610,25 @@ function traceOpsLocalCacheDelete(id) {
         });
     });
 }
+function traceOpsYieldFileFingerprint(file) {
+    try {
+        if (!file) return "";
+        return [String(file.name || ""), Number(file.size || 0), Number(file.lastModified || 0)].join("::");
+    } catch (_) {
+        return "";
+    }
+}
+function traceOpsYieldFastRoleRank(role) {
+    var r = String(role || "").toLowerCase();
+    var rank = { sfc: 1, repair: 2, wo: 3, dbmodel: 4, bom: 5, calendar: 6, cesium: 7 };
+    return rank[r] || 99;
+}
+function traceOpsYieldEstimateEntryMb(entry) {
+    try {
+        return traceOpsYieldMb(entry && entry._data && (entry._data.uncompressedSize || entry._data.compressedSize));
+    } catch (_) { return 0; }
+}
+
 function traceOpsYieldCacheSnapshot() {
     return {
         flowStations: TRACEOPS_YIELD_FLOW_STATIONS || [],
@@ -8657,9 +8676,11 @@ function traceOpsYieldSaveLocalCache(file, summary) {
             fileName: file && file.name || (summary && summary.fileName) || "local import",
             fileSize: file && file.size || 0,
             lastModified: file && file.lastModified || 0,
+            fingerprint: traceOpsYieldFileFingerprint(file),
             cachedAt: new Date().toISOString(),
             storage: "IndexedDB local browser only",
-            privacy: "local-only-no-cloud"
+            privacy: "local-only-no-cloud",
+            engine: "V11.2 Import Performance Engine"
         };
         var record = {
             id: TRACEOPS_LOCAL_CACHE_KEY,
@@ -8692,10 +8713,12 @@ function traceOpsYieldTryApplySameFileCache(file) {
         return traceOpsLocalCacheGet(TRACEOPS_LOCAL_CACHE_KEY).then(function(record) {
             if (!record || !record.meta) return null;
             var m = record.meta || {};
+            var fp = traceOpsYieldFileFingerprint(file);
+            var sameFingerprint = fp && String(m.fingerprint || '') === fp;
             var sameName = String(m.fileName || '') === String(file.name || '');
             var sameSize = Number(m.fileSize || 0) === Number(file.size || 0);
             var sameModified = !m.lastModified || !file.lastModified || Number(m.lastModified || 0) === Number(file.lastModified || 0);
-            if (!(sameName && sameSize && sameModified)) return null;
+            if (!(sameFingerprint || (sameName && sameSize && sameModified))) return null;
             return traceOpsYieldApplyLocalCache(record);
         }).catch(function(){ return null; });
     } catch (_) {
@@ -9657,7 +9680,7 @@ function traceOpsYieldCsvSplit(line) {
     out.push(cur.trim());
     return out;
 }
-async function traceOpsYieldTryImportTextZip(file) {
+async function traceOpsYieldTryImportTextZip(file, options) {
     if (!file || !/\.zip$/i.test(file.name || ""))
         return null;
     await window.ensureZipTools();
@@ -9674,30 +9697,42 @@ async function traceOpsYieldTryImportTextZip(file) {
     });
     if (!entries.length)
         return null;
+    entries.sort(function(a, b) {
+        return traceOpsYieldFastRoleRank(a.role) - traceOpsYieldFastRoleRank(b.role) || traceOpsYieldEstimateEntryMb(b.entry) - traceOpsYieldEstimateEntryMb(a.entry);
+    });
+    traceOpsYieldImportProgress(options, 22, "TXT_MANIFEST", "ZIP ligero detectado: procesando SFC/Repair primero y difiriendo auxiliares...");
     var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] };
     var pulledSheets = [];
     for (var i = 0; i < entries.length; i++) {
         await traceOpsYieldYieldThread();
         var item = entries[i];
+        var entryPct = 24 + Math.round((i / Math.max(1, entries.length)) * 44);
+        traceOpsYieldImportProgress(options, entryPct, "PARSING_" + String(item.role || '').toUpperCase(), "Procesando " + item.path.split('/').pop() + " (" + item.role + ")...");
         var text = await item.entry.async("string");
+        await traceOpsYieldYieldThread();
         var rawRows = traceOpsYieldParseDelimitedText(text, item.role);
+        await traceOpsYieldYieldThread();
         var objects = traceOpsYieldObjectsFromRawRows(rawRows, item.role);
         if (objects.length) {
             parsed[item.role] = parsed[item.role].concat(objects);
             pulledSheets.push({ name: item.path.split('/').pop(), role: item.role, rows: objects.length });
         }
+        text = null; rawRows = null;
     }
     if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length) {
         throw new Error("El ZIP ligero contiene TXT/CSV, pero no se reconocieron encabezados utiles. Revisa que SFC tenga SN/currentevent, Station On Line tenga WO/Date/Line/SKU, y Repair Record tenga SN/FailTime/FailSymptom/FailLocation.");
     }
+    traceOpsYieldImportProgress(options, 72, "BUILDING_INDEX", "Construyendo indices SN/WO/Repair una sola vez...");
+    await traceOpsYieldYieldThread();
     return traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, {
         source: "ZIP TXT local",
         mode: "text-import",
         fileName: file.name,
+        importStartMs: (options && options.importStartMs) || Date.now(),
         workbookName: "TXT/TSV lightweight package",
         container: file.name,
         sheets: pulledSheets,
-        notes: "Import ligero: se procesaron archivos TXT/TSV/CSV locales. No se cargo XLSM, PowerPivot, pivots, macros, estilos ni dashboards pesados. Evidencia visible solo durante esta sesion."
+        notes: "Import ligero V11.2: procesa SFC/Repair primero, libera UI por etapas y usa cache IndexedDB por fingerprint exacto. No se cargo XLSM, PowerPivot, pivots, macros, estilos ni dashboards pesados. Evidencia visible solo durante esta sesion."
     }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
 }
 function traceOpsYieldObjectsFromRawRows(rawRows, role) {
@@ -10563,7 +10598,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     var _repBySn = {};
     repairsClean.forEach(function(r) { traceOpsYieldPushByBridge(_repBySn, r); });
     TRACEOPS_YIELD_REPAIRS_BY_SN = _repBySn;
-    TRACEOPS_YIELD_IMPORT_META = Object.assign({ source: "ZIP/Excel" }, sourceMeta || {}, { mode: "imported", rows: { workOrders: workRows.length, sfc: sfcRows.length, repairs: repairRows.length, sfcWorkOrders: Object.keys(sfcByWo).length, calendar: (calendarRows || []).length, dbModel: (dbModelRows || []).length, cesium: (cesiumRows || []).length, bom: (bomRows || []).length, bomParts: Object.keys(TRACEOPS_YIELD_BOM_MAP || {}).length, cesiumInScope: (TRACEOPS_YIELD_FT_ROWS || []).length, validRepairs: validRepairRawRows, validRepairSn: (function () { var m = {}; repairsClean.forEach(function (r) { if (r.sn)
+    TRACEOPS_YIELD_IMPORT_META = Object.assign({ source: "ZIP/Excel" }, sourceMeta || {}, { mode: "imported", importMs: (sourceMeta && sourceMeta.importStartMs ? Date.now() - sourceMeta.importStartMs : null), rows: { workOrders: workRows.length, sfc: sfcRows.length, repairs: repairRows.length, sfcWorkOrders: Object.keys(sfcByWo).length, calendar: (calendarRows || []).length, dbModel: (dbModelRows || []).length, cesium: (cesiumRows || []).length, bom: (bomRows || []).length, bomParts: Object.keys(TRACEOPS_YIELD_BOM_MAP || {}).length, cesiumInScope: (TRACEOPS_YIELD_FT_ROWS || []).length, validRepairs: validRepairRawRows, validRepairSn: (function () { var m = {}; repairsClean.forEach(function (r) { if (r.sn)
                 m[r.sn] = true; }); return Object.keys(m).length; })(), storySn: sfcStoryRows.length, rejectedRepairs: rejectedRepairRows }, daxRule: "Risk/OJT = DISTINCTCOUNT(SFC[SN]) where SFC[SN] matches RepairRecord[partsernum] first, then parentsernum, then SN.", storyRule: "Symptom = top Root Cause per SFC[SN] from RepairRecord; Root Cause is prioritized over Rootcause ESP to use the English typo-normalized failure mode. Fail Location = distinct RepairRecord[FailLocation] for that SN. Used for the story of why units left the flow.", stationRule: "Breakdown station counts = DISTINCTCOUNT(SFC[SN]) grouped by SFC[currentevent] bucket; non cumulative. Repair defects are attributed to responsible process from Root Cause, not detection station.", calendarRule: "Cisco Week/FY/Qtr resolved from Cisco Calendary.txt by matching Build Start Date or event date to calendar Date/WFCSY." });
     return TRACEOPS_YIELD_IMPORT_META;
 }
@@ -10652,10 +10687,12 @@ async function traceOpsYieldImportExcelZip(file, options) {
     if (!file)
         throw new Error("No se selecciono archivo.");
     options = options || {};
+    var __traceOpsImportStart = Date.now();
+    options.importStartMs = __traceOpsImportStart;
     await window.ensureZipTools();
     traceOpsYieldImportProgress(options, 16, "CHECKING_SOURCE", "Validando ZIP/XLSX y cache local de Yield Flow...");
     await traceOpsYieldYieldThread();
-    var lightweight = await traceOpsYieldTryImportTextZip(file);
+    var lightweight = await traceOpsYieldTryImportTextZip(file, options);
     if (lightweight)
         return lightweight;
     traceOpsYieldImportProgress(options, 24, "LOCATING_WORKBOOK", "Localizando workbook objetivo dentro del ZIP...");
@@ -10729,7 +10766,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
         throw new Error("No se detectaron filas utiles. Revisa encabezados: SN/current event, WO/time start, defecto/referencia/PN.");
     traceOpsYieldImportProgress(options, 82, "BUILDING_INDEX", "Construyendo indices Yield Flow por WO, SN, SKU, modelo y semana...");
     await traceOpsYieldYieldThread();
-    var built = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, { fileName: file.name, workbookName: wbFile.name, container: wbFile.container, sheets: pulledSheets, notes: "Import optimizado V8.2: se preserva Repair Record completo para fallas/Board Impact; hojas parseadas por limite dinamico y cache renovado." }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
+    var built = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, { fileName: file.name, importStartMs: __traceOpsImportStart, workbookName: wbFile.name, container: wbFile.container, sheets: pulledSheets, notes: "Import Performance Engine V11.2: SFC/Repair priorizados, parsing por etapas, cache por fingerprint e indices reutilizables para SN/WO/Ref." }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
     traceOpsYieldImportProgress(options, 94, "FINALIZING", "Finalizando cache local y dashboard Yield Flow...");
     await traceOpsYieldYieldThread();
     return built;
@@ -13223,7 +13260,7 @@ function App() {
         setCriticalModelDetail(null);
         setCriticalModelAnalysisState({ status: "loading", message: "Calculating critical models from imported rows...", result: null });
         setYieldImportState({ status: "loading", message: "Optimizing ZIP/XLSX import and extracting target sheets...", summary: null, progress: 34, phase: "EXTRACTING_XLSX" });
-        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Import optimizado: leyendo solo hojas objetivo y liberando UI por bloques...");
+        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Import Performance Engine V11.2: cache exacto, SFC/Repair primero e indices por SN/WO/Ref...");
         setTimeout(function () {
             traceOpsYieldTryApplySameFileCache(file).then(function(cachedSummary) {
                 if (cachedSummary) {
@@ -37474,7 +37511,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.1 · PPT Chart Scale Fix · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.2 · Import Performance Engine · 2026-05-21';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37518,7 +37555,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.1 · PPT Chart Scale Fix · 2026-05-21';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.2 · Import Performance Engine · 2026-05-21';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
