@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bonepile v0.4 Alpha</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+      <div id="crt-overlay"></div>
+      <div id="hud">
+        <div class="hud-panel brand-panel">
+          <div class="eyebrow">BONEPILE v0.4 ALPHA</div>
+          <div class="title">MRB VAULT // Protocolos de Supervivencia SMT</div>
+          <div class="subtitle">R3-W0RK field test</div>
+        </div>
+        <div class="hud-panel status-panel">
+          <div class="row"><span>Mode</span><strong id="hud-mode">Boot</strong></div>
+          <div class="row"><span>Detection</span><strong id="hud-detection">0%</strong></div>
+          <div class="meter"><div id="detection-bar"></div></div>
+          <div class="row"><span>Scrap</span><strong id="hud-scrap">0</strong></div>
+          <div class="row"><span>Repaired NPCs</span><strong id="hud-repaired">0</strong></div>
+          <div class="row"><span>Flux Smoke</span><strong id="hud-flux">Ready</strong></div>
+        </div>
+        <div class="hud-panel prompt-panel" id="hud-prompt">WASD move · Mouse drag/QE camera · Shift dash · Space flux smoke · E repair</div>
+      </div>
+      <div id="start-screen">
+        <div class="start-card">
+          <div class="eyebrow">Bonepile</div>
+          <h1>MRB VAULT</h1>
+          <p>First playable Three.js prototype: third-person movement, AOI drone stealth, PCB world and repair loop.</p>
+          <button id="start-button">Enter the Vault</button>
+          <div class="help">Controls: WASD · Mouse drag/QE rotate · Wheel zoom · Shift dash · Space smoke · E interact</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
