@@ -26446,36 +26446,39 @@ body.traceops-premium-shell [class*="impact"]{
             try { pptx.theme = { headFontFace: 'Inter', bodyFontFace: 'Inter', lang: 'en-US', color: '0F2A44' }; } catch (_) {}
 
             var slide = pptx.addSlide();
-            slide.background = { color: 'F8F6F0' };
+            slide.background = { color: 'F4F3F0' };
             var ST = (pptx.ShapeType || {});
 
-            // === PALETA PREMIUM SMTINEL ===
+            // === PALETA PREMIUM SMTINEL v2.2 ===
             var C = {
                 ink:      '1A1714',
                 ink2:     '102A43',
                 primary:  '1F3A5F',
                 accent:   '4A90E2',
                 surface:  'FFFFFF',
-                surface2: 'F7FAFF',
+                surface2: 'F8F7F5',
                 border:   'E5E2DC',
                 border2:  'D9E6F7',
                 muted:    '6A6560',
-                muted2:   '5F766C',
+                muted2:   '8A8580',
                 crit:     'C0392B',
                 critBg:   'FFF5F3',
-                critBorder:'F4B7B0',
+                critLight:'FDF0EE',
                 high:     'B87820',
-                highBg:   'FFF7D8',
+                highBg:   'FBF5E6',
                 med:      '2F6FB3',
+                medBg:    'EAF2FF',
                 low:      '1A7A3C',
+                lowBg:    'EEF6FF',
                 teal:     '1E8A64',
                 purple:   '6B2DA8',
                 olive:    '2F3A24',
                 wine:     '7A1023',
-                gold:     'D9A441'
+                gold:     'D9A441',
+                gray:     'B8B4AE'
             };
 
-            // === HELPERS VISUALES PREMIUM ===
+            // === HELPERS VISUALES PREMIUM v2.2 ===
             function rect(x,y,w,h,fill,line,radius,shadow){
                 if (shadow) {
                     slide.addShape(ST.rect || 'rect', { x:x+0.015, y:y+0.015, w:w, h:h, rectRadius: radius || 0.08, line:{ color: '000000', pt: 0 }, fill:{ color: '000000', transparency: 94 } });
@@ -26494,34 +26497,41 @@ body.traceops-premium-shell [class*="impact"]{
                     slide.addShape(ST.rect || 'rect', { x:x, y:y+0.10, w:0.05, h:h-0.20, rectRadius:0, line:{color:accentColor,pt:0}, fill:{color:accentColor} });
                 }
                 if (title) {
-                    text(title, x+0.18, y+0.12, w-0.30, 0.16, { fontSize:8, bold:true, color:titleColor || C.muted2, charSpace:0.5 });
+                    text(title, x+0.18, y+0.12, w-0.30, 0.16, { fontSize:9, bold:true, color:titleColor || C.muted2, charSpace:0.5 });
                 }
             }
-            function kpiValue(t,x,y,w,h,color,fontSize){
-                text(t,x,y,w,h,{ fontSize:fontSize||24, bold:true, color:color||C.ink, fontFace:'Inter' });
+            function chip(t,x,y,w,color,bg){
+                rect(x,y,w,0.22,bg || C.surface2,color || C.border2,0.11);
+                text(t,x+0.06,y+0.06,w-0.12,0.10,{ fontSize:8, bold:true, color:color || C.ink, align:'center' });
+            }
+            function badge(t,x,y,w,color,bg){
+                rect(x,y,w,0.24,bg || 'EEF5FF',null,0.12);
+                text(t,x+0.05,y+0.06,w-0.10,0.12,{ fontSize:8, bold:true, color:color || C.primary, align:'center' });
+            }
+            function kpiBig(t,x,y,w,h,color,fontSize){
+                text(t,x,y,w,h,{ fontSize:fontSize||20, bold:true, color:color||C.ink, fontFace:'Inter', align:'center', valign:'middle' });
+            }
+            function kpiLabel(t,x,y,w,h,color){
+                text(t,x,y,w,h,{ fontSize:8, color:color||C.muted2, fontFace:'Inter', align:'center', valign:'top' });
             }
 
-            // === HEADER PREMIUM ===
-            // Fondo header con gradiente simulado
+            // === HEADER PREMIUM v2.2 ===
             rect(0,0,13.333,0.85,C.primary,C.primary,0);
-            // Línea de acento dorada en la parte inferior del header
             slide.addShape(ST.rect || 'rect', { x:0, y:0.82, w:13.333, h:0.03, rectRadius:0, line:{color:C.accent,pt:0}, fill:{color:C.accent} });
 
-            // Logo/texto FOXCONN
             text('FOXCONN',0.42,0.18,1.55,0.18,{ fontSize:11, bold:true, color:'A6D7C9', charSpace:1.5, fontFace:'Inter' });
             text('Quality Alert',0.42,0.38,3.5,0.38,{ fontSize:26, bold:true, color:'FFFFFF', fontFace:'Inter' });
             text('SMTinel Board Impact · Production floor posting',3.65,0.50,4.2,0.18,{ fontSize:10, color:'D6E3DD', fontFace:'Inter' });
 
-            // Pills premium
             pill('Issued ' + issueDate, 8.0, 0.24, 1.30, 'FFFFFF', '1F6FEB', true);
             pill('Owner: ' + owner, 9.40, 0.24, 2.10, 'FFFFFF', '173E67', true);
             var sevColor = selectedSeverity.key === 'critical' ? C.crit : (selectedSeverity.key === 'high' ? C.high : C.med);
             pill(String(selectedSeverity.label || 'Review'), 11.60, 0.24, 1.10, 'FFFFFF', sevColor, true);
 
             // === CARD 1: Failure Mode + RefDes ===
-            card(0.35, 1.05, 4.40, 1.05, C.surface2, C.accent, 'Failure Mode', C.muted2);
+            card(0.35, 1.05, 4.40, 1.05, C.surface, C.accent, 'Failure Mode', C.muted2);
             text(failureMode, 0.55, 1.34, 2.50, 0.32, { fontSize:14, bold:true, color:C.ink2, fontFace:'Inter', fit:'shrink' });
-            text('RefDes', 3.15, 1.18, 0.8, 0.15, { fontSize:8, bold:true, color:C.muted2, charSpace:0.5 });
+            text('RefDes', 3.15, 1.18, 0.8, 0.15, { fontSize:9, bold:true, color:C.muted2, charSpace:0.5 });
             text(selectedRef, 3.15, 1.36, 1.40, 0.36, { fontSize:24, bold:true, color:C.crit, fontFace:'Inter' });
             text('SKU / Model: ' + sku + ' - ' + modelName, 0.55, 1.75, 3.90, 0.16, { fontSize:9, bold:true, color:C.primary });
 
@@ -26531,17 +26541,19 @@ body.traceops-premium-shell [class*="impact"]{
             text(String(affectedSerials), 5.15, 1.36, 0.70, 0.38, { fontSize:26, bold:true, color:C.crit, fontFace:'Inter' });
             text('WOs: ' + affectedWos + '\nStation: ' + station, 5.90, 1.34, 0.95, 0.36, { fontSize:8.5, bold:true, color:C.ink2, fontFace:'Inter' });
 
-            // === CARD 3: Failure Rate ===
-            card(7.15, 1.05, 2.10, 1.05, C.surface2, C.gold, 'Failure Rate', C.muted2);
-            text('MFG', 7.35, 1.20, 0.40, 0.14, { fontSize:8, bold:true, color:C.wine });
-            text(frMfg, 7.80, 1.16, 0.80, 0.20, { fontSize:13, bold:true, color:C.crit, fit:'shrink' });
-            text(frMfgBase, 7.35, 1.40, 1.70, 0.12, { fontSize:6.5, bold:true, color:C.wine, fit:'shrink' });
-            text('BUILT', 7.35, 1.58, 0.50, 0.14, { fontSize:8, bold:true, color:C.purple });
-            text(frBuilt, 7.85, 1.54, 0.80, 0.20, { fontSize:13, bold:true, color:C.purple, fit:'shrink' });
-            text(frBuiltBase, 7.35, 1.78, 1.70, 0.12, { fontSize:6.5, bold:true, color:C.purple, fit:'shrink' });
+            // === CARD 3: Failure Rate v2.2 — Valor grande centrado ===
+            card(7.15, 1.05, 2.10, 1.05, C.surface, C.gold, 'Failure Rate', C.muted2);
+            // MFG rate
+            kpiBig(frMfg, 7.35, 1.22, 0.90, 0.28, C.crit, 18);
+            kpiLabel(frMfgBase, 7.35, 1.50, 0.90, 0.12, C.muted2);
+            // Separador vertical
+            slide.addShape(ST.rect || 'rect', { x:8.30, y:1.22, w:0.01, h:0.40, rectRadius:0, line:{color:C.border,pt:0}, fill:{color:C.border} });
+            // BUILT rate
+            kpiBig(frBuilt, 8.35, 1.22, 0.90, 0.28, C.purple, 18);
+            kpiLabel(frBuiltBase, 8.35, 1.50, 0.90, 0.12, C.muted2);
 
             // === CARD 4: Component Profile ===
-            card(9.40, 1.05, 3.78, 1.05, C.surface2, C.teal, 'Component profile from BOM', C.muted2);
+            card(9.40, 1.05, 3.78, 1.05, C.surface, C.teal, 'Component profile from BOM', C.muted2);
             text(traceOpsBoardPptComponentTitle(componentType, componentDescription), 9.60, 1.34, 1.55, 0.24, { fontSize:12, bold:true, color:C.ink2, fit:'shrink' });
             text(traceOpsBoardPptCleanText(componentCode, 26), 11.20, 1.34, 1.60, 0.20, { fontSize:9.5, bold:true, color:C.accent, fit:'shrink' });
             text(traceOpsBoardPptComponentDetails(componentDescription), 9.60, 1.62, 3.30, 0.26, { fontSize:7.5, bold:true, color:C.muted2, fit:'shrink', breakLine:false });
@@ -26552,7 +26564,7 @@ body.traceops-premium-shell [class*="impact"]{
 
             // === BOARD LOCATION CARD ===
             card(0.35, 2.25, 5.15, 4.55, C.surface, C.accent, 'Board location', C.ink2);
-            text('PDF page ' + pageLabel + ' - ' + boardSideLabel + ' side', 3.95, 2.40, 1.30, 0.16, { fontSize:8.5, bold:true, color:C.muted2, align:'right' });
+            text('PDF page ' + pageLabel + ' - ' + boardSideLabel + ' side', 3.95, 2.40, 1.30, 0.16, { fontSize:9, bold:true, color:C.muted2, align:'right' });
             if (canvasData) {
                 slide.addImage({ data: canvasData, x:0.60, y:2.70, w:4.65, h:3.75, sizing:{ type:'contain', x:0.60, y:2.70, w:4.65, h:3.75 } });
             } else {
@@ -26561,28 +26573,34 @@ body.traceops-premium-shell [class*="impact"]{
             }
             text('Reference: ' + selectedRef, 0.64, 6.48, 2.30, 0.18, { fontSize:9, bold:true, color:C.primary });
 
-            // === WEEKLY SIGNALS CARD ===
+            // === WEEKLY SIGNALS v2.2 — Pills redondeados ===
             card(5.70, 2.25, 3.40, 2.15, C.surface, C.gold, 'Weekly signals', C.ink2);
             trends.slice(0,5).forEach(function(tr, ti) {
                 var ty = 2.48 + ti * 0.36;
                 var tcolor = tr.delta > 0 ? C.crit : (tr.delta < 0 ? C.low : C.muted2);
+                var tbg = tr.delta > 0 ? C.critLight : (tr.delta < 0 ? C.lowBg : C.surface2);
                 var tdelta = (tr.delta > 0 ? '+' : '') + tr.delta;
-                rect(5.90, ty, 0.22, 0.22, tcolor, tcolor, 0.04);
-                text(tr.mode, 6.20, ty, 1.45, 0.16, { fontSize:8, bold:true, color:C.ink2 });
+
+                // Pill redondeado para el modo
+                badge(tr.mode, 5.90, ty, 1.45, C.ink2, C.surface2);
+                // Valor
                 text(String(tr.risk || 0), 7.70, ty, 0.40, 0.16, { fontSize:9, bold:true, color:C.ink2, align:'right' });
+                // Delta con color
                 text(tdelta, 8.15, ty, 0.50, 0.16, { fontSize:8, bold:true, color:tcolor, align:'right' });
             });
 
-            // === TREND CHART ===
+            // === TREND CHART v2.2 — Condicional ===
+            var hasEnoughData = trends.length > 0 && trends[0].points && trends[0].points.length >= 4;
             card(5.70, 4.55, 3.40, 2.25, C.surface, null, 'Trend (last 6 weeks)', C.ink2);
-            var chartData = trends.slice(0,1).map(function(tr) {
-                return {
-                    name: tr.mode || "Trend",
-                    labels: tr.points.map(function(p, i) { return "W" + (i + 1); }),
-                    values: tr.points.map(function(p) { return Number(p.value || 0); })
-                };
-            });
-            if (chartData.length && chartData[0].values.length > 1) {
+
+            if (hasEnoughData) {
+                var chartData = trends.slice(0,1).map(function(tr) {
+                    return {
+                        name: tr.mode || "Trend",
+                        labels: tr.points.map(function(p, i) { return "W" + (i + 1); }),
+                        values: tr.points.map(function(p) { return Number(p.value || 0); })
+                    };
+                });
                 slide.addChart(pptx.ChartType.line, chartData, {
                     x: 5.85, y: 4.85, w: 3.10, h: 1.75,
                     lineSize: 2.5,
@@ -26599,25 +26617,57 @@ body.traceops-premium-shell [class*="impact"]{
                     lineSmooth: true
                 });
             } else {
-                text('Insufficient trend data', 6.5, 5.5, 1.8, 0.3, { fontSize:10, color:C.muted2, align:'center' });
+                // KPI visual grande cuando no hay suficientes datos
+                var mainTrend = trends[0] || { delta: 0 };
+                var deltaColor = mainTrend.delta > 0 ? C.crit : (mainTrend.delta < 0 ? C.low : C.muted2);
+                var deltaArrow = mainTrend.delta > 0 ? '↑' : (mainTrend.delta < 0 ? '↓' : '→');
+                var deltaText = deltaArrow + ' ' + (mainTrend.delta > 0 ? '+' : '') + mainTrend.delta;
+
+                text(deltaText, 6.0, 5.0, 2.8, 0.50, { fontSize:32, bold:true, color:deltaColor, align:'center', valign:'middle' });
+                text('WoW Delta', 6.0, 5.55, 2.8, 0.20, { fontSize:9, color:C.muted2, align:'center' });
+
+                if (mainTrend.points && mainTrend.points.length >= 2) {
+                    var lastVal = mainTrend.points[mainTrend.points.length - 1].value || 0;
+                    var prevVal = mainTrend.points[mainTrend.points.length - 2].value || 0;
+                    text('Current: ' + lastVal + ' | Previous: ' + prevVal, 6.0, 5.85, 2.8, 0.20, { fontSize:8, color:C.muted2, align:'center' });
+                }
             }
 
-            // === AFFECTED SERIALS CARD ===
+            // === AFFECTED SERIALS v2.2 — Grid de chips ===
             card(9.30, 2.25, 3.88, 4.55, C.surface, C.crit, 'Affected serial numbers', C.wine);
-            var serialsText = snList.slice(0, 18).map(function(s) {
-                return (s.serial || s.sn || s.SN || s.SerialNumber || "");
-            }).filter(Boolean).join("\n");
-            if (!serialsText) serialsText = "No serial numbers available";
-            text(serialsText, 9.50, 2.50, 3.50, 3.80, { fontSize:7.5, bold:true, color:C.ink2, fontFace:'Courier New' });
-            if (snList.length > 18) {
-                text("... and " + (snList.length - 18) + " more", 9.50, 6.40, 3.50, 0.18, { fontSize:7, bold:true, color:C.muted2 });
+
+            if (snList.length === 0) {
+                text('No serial numbers available', 9.50, 4.0, 3.50, 0.30, { fontSize:10, color:C.muted2, align:'center' });
+            } else {
+                // Grid de chips en 2 columnas
+                var chipW = 1.60;
+                var chipH = 0.22;
+                var chipGapX = 0.10;
+                var chipGapY = 0.08;
+                var maxChips = 24; // Mostrar hasta 24 chips
+                var displayList = snList.slice(0, maxChips);
+
+                displayList.forEach(function(s, idx) {
+                    var serial = s.serial || s.sn || s.SN || s.SerialNumber || "";
+                    if (!serial) return;
+                    var col = idx % 2;
+                    var row = Math.floor(idx / 2);
+                    var cx = 9.50 + col * (chipW + chipGapX);
+                    var cy = 2.50 + row * (chipH + chipGapY);
+
+                    chip(serial, cx, cy, chipW, C.primary, C.surface2);
+                });
+
+                if (snList.length > maxChips) {
+                    text("... and " + (snList.length - maxChips) + " more", 9.50, 6.40, 3.50, 0.18, { fontSize:8, bold:true, color:C.muted2 });
+                }
             }
-            text("Total: " + snList.length + " serial(s)", 9.50, 6.60, 3.50, 0.18, { fontSize:8, bold:true, color:C.primary });
+            text("Total: " + snList.length + " serial(s)", 9.50, 6.60, 3.50, 0.18, { fontSize:9, bold:true, color:C.primary });
 
             // === FOOTER ===
             rect(0, 7.15, 13.333, 0.35, C.surface, C.border, 0);
-            text('SMTinel Board Impact Intelligence · Quality Alert · ' + issueDate, 0.42, 7.22, 5, 0.20, { fontSize:7.5, color:C.muted2 });
-            text('Confidential · Foxconn / SMTinel', 10.5, 7.22, 2.5, 0.20, { fontSize:7.5, color:C.muted2, align:'right' });
+            text('SMTinel Board Impact Intelligence · Quality Alert · ' + issueDate, 0.42, 7.22, 5, 0.20, { fontSize:8, color:C.muted2 });
+            text('Confidential · Foxconn / SMTinel', 10.5, 7.22, 2.5, 0.20, { fontSize:8, color:C.muted2, align:'right' });
 
             var fileName = "SMTinel_QualityAlert_" + selectedRef + "_" + sku.replace(/\s+/g, "_") + "_" + issueDate + ".pptx";
             pptx.writeFile({ fileName: fileName });
