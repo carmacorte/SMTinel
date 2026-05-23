@@ -9,7 +9,7 @@ window.TRACEOPS_SUPABASE = {
   anonKey: "sb_publishable_FRi9eaXD-6TYVXLCCUCWkg_1VuvcIhV"
 };
 </script>
-<meta charset="UTF-8"/><!-- SMTinel v2026-03-22 | FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
+<meta charset="UTF-8"/><!-- SMTinel v2026-05-23 V11.9.1 | FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
 <script>
 window.__traceopsZipReady = null;
 window.__traceopsExcelReady = null;
@@ -177,6 +177,8 @@ window.addEventListener("error", function(ev) {
 
 
 window.__TRACEOPS_BOOT_OK__ = true;
+window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true; // V11.9 guard: prevents 100% import deadlock on large ZIPs
+
 window.addEventListener("unhandledrejection", function(ev) {
   try {
     var reason = ev && ev.reason ? (ev.reason.stack || ev.reason.message || String(ev.reason)) : "Unhandled promise rejection";
@@ -2519,6 +2521,123 @@ button.danger,.btn-danger,.rcca-critical-action{
 .ri-tracker-edit-plan{min-width:240px;min-height:92px!important;}
 .ri-tracker-table td{vertical-align:top;}
 
+
+
+/* ==== SMTinel V12.1 Board Impact View UI Refresh ==== */
+:root{
+  --smt-bg:#FAFAF9;
+  --smt-panel:rgba(255,255,255,.78);
+  --smt-panel-solid:#FFFFFF;
+  --smt-olive-900:#3D4A36;
+  --smt-olive-700:#56664B;
+  --smt-olive-600:#6B7A61;
+  --smt-text:#1C1917;
+  --smt-muted:#78716C;
+  --smt-line:#E7E5E4;
+  --smt-crimson:#9B2335;
+  --smt-crimson-rgb:155,35,53;
+  --smt-blue:#2563EB;
+  --smt-orange:#D97706;
+  --smt-green:#059669;
+  --smt-purple:#7C3AED;
+  --smt-red:#DC2626;
+  --smt-gray:#4B5563;
+}
+#boardimpact-section{
+  width:100% !important;
+  max-width:1920px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  padding:0 clamp(10px,1.2vw,24px) !important;
+  gap:18px !important;
+  background:transparent !important;
+}
+#boardimpact-section *{font-feature-settings:"tnum" 1, "lnum" 1;}
+#boardimpact-section > div:first-child,
+#boardimpact-section > section{
+  border-radius:18px !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.04) !important;
+}
+#boardimpact-section > div:nth-child(2){
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  gap:14px !important;
+}
+#boardimpact-section > div:nth-child(2) > div{
+  background:var(--smt-panel) !important;
+  backdrop-filter:blur(10px) !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+  border:1px solid rgba(var(--smt-crimson-rgb),.15) !important;
+  border-radius:12px !important;
+  padding:16px !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.04) !important;
+  min-height:104px !important;
+}
+#boardimpact-section > div:nth-child(2) > div > div:first-child{
+  width:42px !important;height:42px !important;border-radius:12px !important;
+}
+#boardimpact-section > div:nth-child(2) > div > div:last-child > div:first-child{
+  color:var(--smt-olive-600) !important;
+  font-size:.75rem !important;
+  letter-spacing:.05em !important;
+  text-transform:uppercase !important;
+}
+#boardimpact-section > div:nth-child(2) > div > div:last-child > div:nth-child(2){
+  font-size:clamp(1.5rem,2.5vw,2.5rem) !important;
+  font-weight:800 !important;
+  line-height:.95 !important;
+  color:var(--smt-text) !important;
+}
+.smt-bi-filter-panel{
+  background:var(--smt-panel-solid);
+  border:1px solid #D9E6F7;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.smt-bi-filter-head{
+  padding:14px 18px;
+  background:#F7FAFF;
+  border-bottom:1px solid #ECF3FF;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.smt-bi-filter-title{font-size:15px;font-weight:900;color:#102A43;}
+.smt-bi-filter-sub{font-size:10.5px;color:#5F766C;margin-top:4px;}
+.smt-bi-filter-counter{display:inline-flex;border-radius:999px;background:#EEF5FF;border:1px solid #C9DAF5;color:#1F3A5F;padding:7px 10px;font-size:11px;font-weight:900;}
+.smt-bi-smartbar{padding:14px 16px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.smt-bi-smart-input{flex:1 1 420px;height:48px;border:1px solid #C9DAF5;border-radius:999px;padding:0 16px;font-size:13px;font-weight:800;color:#102A43;outline:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.smt-bi-smart-input:focus{border-color:var(--smt-crimson);box-shadow:0 0 0 3px rgba(var(--smt-crimson-rgb),.12);}
+.smt-bi-smart-clear{height:48px;border:1px solid #C9DAF5;background:#fff;color:#1F3A5F;border-radius:999px;padding:0 14px;font-size:11px;font-weight:900;cursor:pointer;}
+.smt-bi-smart-count{font-size:10.5px;font-weight:900;color:#5F766C;white-space:nowrap;}
+.smt-bi-pill-rail{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 14px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+.smt-bi-option-pill{height:48px;flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;border:1px solid #D9E6F7;background:#fff;color:#102A43;border-radius:999px;padding:0 12px;cursor:pointer;max-width:340px;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.smt-bi-option-pill.active{border-color:var(--smt-crimson);background:#FFF5F6;box-shadow:0 0 0 2px rgba(var(--smt-crimson-rgb),.08);}
+.smt-bi-option-kind{font-size:9px;font-weight:950;letter-spacing:.08em;color:#fff;background:#1F3A5F;border-radius:999px;padding:4px 6px;}
+.smt-bi-option-pill.kind-pn .smt-bi-option-kind{background:var(--smt-orange);}
+.smt-bi-option-pill.kind-ref .smt-bi-option-kind{background:var(--smt-crimson);}
+.smt-bi-option-pill.kind-sn .smt-bi-option-kind{background:var(--smt-blue);}
+.smt-bi-option-label{font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
+.smt-bi-option-meta{font-size:10px;color:#5F766C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px;}
+.smt-bi-active-filters{padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.smt-bi-filter-chip{border:1px solid #C9DAF5;background:#EEF5FF;color:#1F3A5F;border-radius:999px;padding:7px 10px;font-size:10.5px;font-weight:900;cursor:pointer;}
+.smt-bi-filter-clear{border:1px solid #F3B6B0;background:#FDEEEE;color:#C44141;border-radius:999px;padding:7px 10px;font-size:10.5px;font-weight:900;cursor:pointer;}
+#boardimpact-section section:has(#traceops-board-pdf-stage){min-height:780px;}
+#traceops-board-pdf-stage{min-height:680px !important;}
+#boardimpact-section table tr:nth-child(even) td{background:rgba(250,250,249,.55);}
+#boardimpact-section table tr:hover td{background:#FFF5F6 !important;}
+#boardimpact-section button:focus-visible,
+#boardimpact-section input:focus-visible,
+#boardimpact-section select:focus-visible{outline:3px solid rgba(var(--smt-crimson-rgb),.28) !important;outline-offset:2px !important;}
+@media (min-width:1366px){#boardimpact-section{padding-left:clamp(16px,1.4vw,28px) !important;padding-right:clamp(16px,1.4vw,28px) !important;}}
+@media (min-width:1600px){#boardimpact-section{max-width:1880px !important;}#traceops-board-pdf-stage{min-height:720px !important;}}
+@media (min-width:1920px){#boardimpact-section{max-width:1920px !important;}#traceops-board-pdf-stage{min-height:760px !important;}}
+@media (max-width:1440px){#boardimpact-section > div:nth-child(2){grid-template-columns:repeat(3,minmax(0,1fr)) !important;}}
+@media (max-width:720px){#boardimpact-section > div:nth-child(2){grid-template-columns:repeat(2,minmax(0,1fr)) !important;} .smt-bi-smart-input{flex-basis:100%;} .smt-bi-smart-count{width:100%;} .smt-bi-option-meta{display:none;} #traceops-board-pdf-stage{min-height:72svh !important;}}
+/* ==== End SMTinel V12.1 Board Impact View UI Refresh ==== */
 </style>
 
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4422,6 +4541,11 @@ html body .sidebar .admin-mode{
     tick();
     screen.style.display='flex';
     requestAnimationFrame(function(){ screen.classList.add('is-active'); });
+    // V11.9: READY must not keep the modal open if post-import rendering/cache work continues.
+    if (pct >= 100 && /READY|CACHE_HIT|RESTORED/i.test(String(phase || ''))) {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function(){ try { window.smtinelZipWaitHide(0); } catch(_){} }, 900);
+    }
   };
   window.smtinelZipWaitHide=function(delay){
     var screen=getScreen(); if(!screen) return;
@@ -8573,7 +8697,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_8-fast-import-crossover-chart";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_2-import-performance-engine";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -8687,6 +8811,25 @@ function traceOpsYieldApplyLocalCache(record) {
 }
 function traceOpsYieldSaveLocalCache(file, summary) {
     try {
+        // V11.9: avoid IndexedDB structured-clone deadlocks on large Yield ZIPs.
+        // The dataset is already in memory after import; saving 40-150 MB snapshots can
+        // freeze Chrome/Safari at 100% for several minutes. Keep only lightweight meta.
+        var fileSizeMb = traceOpsYieldMb(file && file.size || 0);
+        var rowCount = Number(summary && summary.rows && ((summary.rows.sfc || 0) + (summary.rows.repairs || 0) + (summary.rows.cesium || summary.rows.cesiumInScope || 0)) || 0);
+        if (fileSizeMb >= 2 || rowCount >= 15000 || window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE === true) {
+            var lightMeta = {
+                fileName: file && file.name || (summary && summary.fileName) || "local import",
+                fileSize: file && file.size || 0,
+                lastModified: file && file.lastModified || 0,
+                fingerprint: traceOpsYieldFileFingerprint(file),
+                cachedAt: new Date().toISOString(),
+                storage: "metadata-only",
+                privacy: "local-only-no-cloud",
+                engine: "V11.9 Import Deadlock Guard"
+            };
+            try { localStorage.setItem("traceops_yieldflow_cache_meta", JSON.stringify(lightMeta)); } catch(_) {}
+            return Promise.resolve(null);
+        }
         if (!traceOpsLocalCacheSupported()) return Promise.resolve(null);
         var meta = {
             fileName: file && file.name || (summary && summary.fileName) || "local import",
@@ -9618,7 +9761,6 @@ function traceOpsYieldParseDelimitedText(text, role) {
     var delimiter = ranked[0].ch || ",";
     var rows = [];
     for (var i = 0; i < lines.length; i++) {
-        if ((i % 2048) === 0 && window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
         var line = lines[i];
         if (i > 250000)
             break;
@@ -10342,19 +10484,6 @@ function traceOpsYieldEnrichComponent(componentCode) {
     };
 }
 
-function traceOpsYieldBuildFtTimesByWo(ftRows) {
-    var idx = {};
-    (ftRows || []).forEach(function(fr) {
-        if (!fr || !fr.recordTime) return;
-        var wo = String(fr.wo || "");
-        var nwo = wo.replace(/^0+/, "") || wo;
-        if (wo) { if (!idx[wo]) idx[wo] = []; idx[wo].push(fr.recordTime); }
-        if (nwo && nwo !== wo) { if (!idx[nwo]) idx[nwo] = []; idx[nwo].push(fr.recordTime); }
-    });
-    Object.keys(idx).forEach(function(k){ idx[k].sort(); });
-    return idx;
-}
-
 function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows) {
     var woMap = {}, snToSfc = {}, sfcByWo = {}, repairsByWo = {}, repairsClean = [], repairRowsBySnRaw = {};
     var allSfcEvents = [];
@@ -10429,9 +10558,6 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     TRACEOPS_YIELD_SFC_EVENTS = allSfcEvents;
     TRACEOPS_YIELD_FT_ROWS = traceOpsYieldBuildCesiumRows(cesiumRows || [], snToSfc, ciscoCalendarMap);
     TRACEOPS_YIELD_FT_AREA_ROWS = traceOpsYieldBuildFtAreaRows(TRACEOPS_YIELD_FT_ROWS);
-    TRACEOPS_YIELD_FT_TIMES_BY_WO = traceOpsYieldBuildFtTimesByWo(TRACEOPS_YIELD_FT_ROWS || []);
-    TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = null;
-    traceOpsYieldBuildCesiumSnIndex(TRACEOPS_YIELD_FT_ROWS || []);
     // SFC is the commanding data source for Yield Flow scope.
     // DB Model is used only to enrich BU/model by SKU, and Station On Line only supplies WO start/time.
     Object.keys(sfcByWo).forEach(function (wo) {
@@ -10571,9 +10697,12 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
                 defectsByStation[st] = (defectsByStation[st] || 0) + 1;
             }
         });
-        var __woKey = String(wo || "");
-        var __woNorm = __woKey.replace(/^0+/, "") || __woKey;
-        var ftTimes = ((TRACEOPS_YIELD_FT_TIMES_BY_WO || {})[__woKey] || (TRACEOPS_YIELD_FT_TIMES_BY_WO || {})[__woNorm] || []);
+        var ftTimes = (TRACEOPS_YIELD_FT_ROWS || []).filter(function (fr) {
+            var frWo = String(fr.wo || "");
+            var frNormWo = frWo.replace(/^0+/, "") || frWo;
+            var thisNormWo = String(wo || "").replace(/^0+/, "") || String(wo || "");
+            return (frWo === String(wo || "") || frNormWo === thisNormWo) && fr.recordTime;
+        }).map(function (fr) { return fr.recordTime; }).sort();
         var stockinTimes = sfcList.filter(function (x) { return (x.station === "STOCKIN") && x.eventTime; }).map(function (x) { return x.eventTime; }).sort();
         var recoveryMap = {};
         var recoverySeen = {};
@@ -11484,31 +11613,19 @@ function traceOpsYieldExactStationFromEvent(value) {
     // Do not return generic SMT/PTH/FT anymore. If SFC has no exact station, leave it out.
     return "";
 }
-var TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = null;
-function traceOpsYieldBuildCesiumSnIndex(ftRows) {
-    ftRows = ftRows || [];
-    if (TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE && TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE.rows === ftRows) return TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE.index;
-    var idx = { byPrimary: {}, byBridge: {} };
-    for (var i = 0; i < ftRows.length; i++) {
-        var fr = ftRows[i];
-        if (!fr) continue;
-        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
-        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
-        keys.forEach(function(k){ if (!idx.byPrimary[k]) idx.byPrimary[k] = []; idx.byPrimary[k].push(fr); });
-        bridgeKeys.forEach(function(k){ if (!idx.byBridge[k]) idx.byBridge[k] = []; idx.byBridge[k].push(fr); });
-    }
-    TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = { rows: ftRows, index: idx };
-    return idx;
-}
 function traceOpsYieldCesiumRowsForSfc(sfc, ftRows) {
     sfc = sfc || {};
     var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || "");
     var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || "");
-    var idx = traceOpsYieldBuildCesiumSnIndex(ftRows || []);
-    var bySn = sn ? (idx.byPrimary[sn] || []) : [];
-    if (bySn.length) return bySn;
-    if (!box) return [];
-    return (idx.byPrimary[box] || idx.byBridge[box] || []);
+    var bySn = [], byBox = [];
+    (ftRows || []).forEach(function(fr){
+        if (!fr) return;
+        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
+        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
+        if (sn && keys.indexOf(sn) >= 0) bySn.push(fr);
+        else if (box && (keys.indexOf(box) >= 0 || bridgeKeys.indexOf(box) >= 0)) byBox.push(fr);
+    });
+    return bySn.length ? bySn : byBox;
 }
 function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     var nodes = {}, order = traceOpsYieldProcessNodeOrder(), rawWo = String(wo || ""), normWo = rawWo.replace(/^0+/, "") || rawWo;
@@ -13296,6 +13413,9 @@ function App() {
     var boardRefMultiFilterArr = _useState([]);
     var boardRefMultiFilter = boardRefMultiFilterArr[0];
     var setBoardRefMultiFilter = boardRefMultiFilterArr[1];
+    var boardMultiSearchArr = _useState("");
+    var boardMultiSearch = boardMultiSearchArr[0];
+    var setBoardMultiSearch = boardMultiSearchArr[1];
     var boardDetailZoomArr = _useState(false);
     var boardDetailZoom = boardDetailZoomArr[0];
     var setBoardDetailZoom = boardDetailZoomArr[1];
@@ -13335,6 +13455,12 @@ function App() {
     }
     function resetYieldFilters() { setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" }); }
     function traceOpsScheduleCriticalModelAnalysis() {
+        // V11.9: do not let optional critical-model analysis block the first dashboard render.
+        var heavyRows = Number((TRACEOPS_YIELD_SFC_EVENTS && TRACEOPS_YIELD_SFC_EVENTS.length) || 0) + Number((TRACEOPS_YIELD_FT_ROWS && TRACEOPS_YIELD_FT_ROWS.length) || 0);
+        if (heavyRows > 25000) {
+            setCriticalModelAnalysisState({ status: "idle", message: "Critical Model Analysis deferred for large import. Use Statistical Analysis / Board Impact on demand.", result: null });
+            return;
+        }
         setCriticalModelAnalysisState({ status: "loading", message: "Calculating critical models...", result: null });
         var run = function () {
             try {
@@ -13383,15 +13509,12 @@ function App() {
                 setYieldImportState({ status: "loading", message: "Tracing valid sheets and building Yield Flow model...", summary: summary, progress: 78, phase: "BUILDING_FLOW" });
                 if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(78, "BUILDING_FLOW", "Construyendo modelo Yield Flow, trazabilidad y análisis crítico...");
                 setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" });
+                if (traceOpsYieldMb(file && file.size || 0) >= 2) { try { setActiveModule("sentinelux"); } catch(_) {} }
                 setYieldImportState({ status: "ok", progress: 100, phase: "READY", message: "Import local completado: " + ((summary.rows && summary.rows.workOrders) || 0) + " WO · " + ((summary.rows && summary.rows.sfcWorkOrders) || 0) + " WO en SFC · " + ((summary.rows && summary.rows.sfc) || 0) + " SFC · " + ((summary.rows && summary.rows.repairs) || 0) + " repair rows · " + ((summary.rows && summary.rows.validRepairSn) || 0) + " SN reparados validos · " + ((summary.rows && summary.rows.calendar) || 0) + " calendar rows · " + ((summary.rows && summary.rows.dbModel) || 0) + " DB model rows · " + ((summary.rows && summary.rows.cesiumInScope) || 0) + " Cesium FT rows in scope. Regla puente: SFC[BOXSN] extrae el serial FJZ y se conecta contra Cesium[syserialno]. Parent/part serial quedan como fallback legacy; Repair conserva compatibilidad por SN/parentsernum. Scope/filtros salen de SFC; DB Model solo enriquece BU/modelo. Cache local IndexedDB habilitado: el dataset se conserva solo en este navegador, sin nube.", summary: summary });
-                traceOpsYieldSaveLocalCache(file, summary).then(function () {
-                    setYieldImportState(function(prev) {
-                        if (!prev || prev.status !== "ok") return prev;
-                        return Object.assign({}, prev, { message: prev.message + " Sesion guardada localmente; en refresh se restaura sin recargar ZIP." });
-                    });
-                });
-                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, "READY", "Import local completado. Preparando dashboard...");
-                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(650);
+                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, "READY", "Import local completado. Dashboard disponible. Cache pesado omitido para evitar bloqueo.");
+                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(250);
+                // V11.9: defer/skip heavy cache persistence until after UI is released.
+                setTimeout(function(){ try { traceOpsYieldSaveLocalCache(file, summary); } catch(_) {} }, 1200);
                 traceOpsScheduleCriticalModelAnalysis();
             }).catch(function (err) {
                 setYieldImportState({ status: "error", message: err && err.message ? err.message : String(err), summary: null, progress: 0, phase: "ERROR" });
@@ -24935,7 +25058,11 @@ body.traceops-premium-shell [class*="impact"]{
         return { serials: serials, failureRows: failureRows, kpi: { failurePool: failurePool, activePool: activePool, freshFailures: freshFailures, reentryUnits: reentryUnits, recoveredUnits: recoveredUnits, pendingUnits: pendingUnits, netBleeding: netBleeding, topFailure: failureRows[0] ? failureRows[0].failureMode : 'N/D', topStation: failureRows[0] ? failureRows[0].station : 'N/D', topLocation: failureRows[0] ? failureRows[0].location : 'N/D' } };
     }
 
-    var yieldFlowModel = traceOpsBuildYieldFlowModelLocal(yieldFilters);
+    function traceOpsYieldEmptyRuntimeModel() {
+        return { filters: yieldFilters, options: {}, kpi: { orders: 0, units: 0, clean: 0, risk: 0, builtUnits: 0, failureRateManufactured: 0, failureRateBuilt: 0, yield: 0, touch: 0, avgLeadHours: 0, avgFtHours: null, avgStockinHours: null, weeklyCount: 0, bgaUnits: 0, stockinUnits: 0, ftUnits: 0, reintegrationCandidates: 0, avgReintegrationProxy: null, recoveryAvgHours: null, reintegrationFlowLabel: 'N/D' }, rows: [], trackerRows: [], topRiskSku: [], weeklyTrend: [], causeSummary: [], failurePatterns: [], stationFpy: [], ftRows: [], ftAreaRows: [], stationSequenceBreakdown: { totalUnits: 0, rows: [], allRows: [] }, cesiumCurrentBreakdown: { rows: [] }, actionTracker: [], processBreakdown: [], topPainCases: [] };
+    }
+    var traceOpsYieldCanBuildRuntimeModel = !!(yieldImportState && yieldImportState.status === "ok" && (activeModule === "yieldflow" || activeModule === "boardimpact" || activeModule === "criticalmodel"));
+    var yieldFlowModel = traceOpsYieldCanBuildRuntimeModel ? traceOpsBuildYieldFlowModelLocal(yieldFilters) : traceOpsYieldEmptyRuntimeModel();
     async function exportYieldFlowXlsx() {
         await window.ensureExcelTools();
         var model = traceOpsBuildYieldFlowModelLocal(yieldFilters);
@@ -26818,65 +26945,25 @@ body.traceops-premium-shell [class*="impact"]{
             return { mode: (mode && mode.mode) || activeMode, weeks: weeks, refs: refs, weekly: weekly, cumulative: cumulative, totalSn: Object.keys(allSn).length, last: last, prev: prev, delta: last - prev, severity: severityFor(Object.keys(allSn).length, last - prev, weekly.filter(function(v){return v>0;}).length) };
         }
         function chartDataUri(weekly, cumulative, labels) {
-            var c = document.createElement("canvas"), cw = 980, ch = 330; c.width = cw; c.height = ch;
-            var g = c.getContext("2d"), padL = 64, padR = 42, padT = 32, padB = 52;
-            weekly = weekly && weekly.length ? weekly : [0];
-            cumulative = cumulative && cumulative.length ? cumulative : weekly.slice();
-            labels = labels && labels.length ? labels : ["N/D"];
-            var lastCum = cumulative[cumulative.length - 1] || 0;
-            var max = Math.max(1, Math.max.apply(null, weekly.concat(cumulative)) * 1.18);
+            var c = document.createElement("canvas"), cw = 900, ch = 300; c.width = cw; c.height = ch;
+            var g = c.getContext("2d"), padL = 58, padR = 36, padT = 34, padB = 46;
+            weekly = weekly && weekly.length ? weekly : [0]; cumulative = cumulative && cumulative.length ? cumulative : weekly.slice(); labels = labels && labels.length ? labels : ["N/D"];
+            var max = Math.max(1, Math.max.apply(null, weekly.concat(cumulative)));
+            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,cw,ch);
+            g.strokeStyle = "#E5EDF7"; g.lineWidth = 1;
+            for (var i=0;i<5;i++){ var gridY=padT + i*(ch-padT-padB)/4; g.beginPath(); g.moveTo(padL,gridY); g.lineTo(cw-padR,gridY); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.fillText(String(Math.round(max - max*i/4)), 14, gridY+4); }
             function xScale(i){ return labels.length === 1 ? padL + (cw-padL-padR)/2 : padL + i*(cw-padL-padR)/(labels.length-1); }
             function yScale(v){ return ch-padB - (Number(v||0)/max)*(ch-padT-padB); }
-            function pathFrom(vals){
-                if (!vals.length) return [];
-                var pts = vals.map(function(v,i){ return { x:xScale(i), y:yScale(v) }; });
-                return pts;
-            }
-            function drawSmooth(vals, color, width, dash){
-                var pts = pathFrom(vals); if (!pts.length) return;
-                g.save(); g.strokeStyle=color; g.lineWidth=width||4; g.lineCap="round"; g.lineJoin="round"; if (dash) g.setLineDash(dash);
-                g.beginPath(); g.moveTo(pts[0].x, pts[0].y);
-                for (var i=1;i<pts.length;i++) { var midX=(pts[i-1].x+pts[i].x)/2; g.quadraticCurveTo(pts[i-1].x, pts[i-1].y, midX, (pts[i-1].y+pts[i].y)/2); g.quadraticCurveTo(pts[i].x, pts[i].y, pts[i].x, pts[i].y); }
-                g.stroke(); g.restore();
-            }
-            function fillBetween(aVals, bVals, color, fromIdx){
-                var a=pathFrom(aVals), b=pathFrom(bVals); if (!a.length || !b.length) return;
-                fromIdx = Math.max(0, fromIdx || 0);
-                g.save(); g.fillStyle=color; g.beginPath();
-                g.moveTo(a[fromIdx].x, a[fromIdx].y);
-                for (var i=fromIdx+1;i<a.length;i++) g.lineTo(a[i].x,a[i].y);
-                for (var j=b.length-1;j>=fromIdx;j--) g.lineTo(b[j].x,b[j].y);
-                g.closePath(); g.fill(); g.restore();
-            }
-            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,cw,ch);
-            var plotH = ch-padT-padB, plotW = cw-padL-padR;
-            var bg = g.createLinearGradient(0,padT,0,ch-padB); bg.addColorStop(0,"#F9FBFD"); bg.addColorStop(1,"#FFFFFF"); g.fillStyle=bg; g.fillRect(padL,padT,plotW,plotH);
-            g.strokeStyle = "#E4EBF3"; g.lineWidth = 1;
-            for (var gi=0;gi<5;gi++){ var gy=padT + gi*plotH/4; g.beginPath(); g.moveTo(padL,gy); g.lineTo(cw-padR,gy); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.textAlign="right"; g.fillText(String(Math.round(max - max*gi/4)), padL-12, gy+4); }
-            var baseline = cumulative.map(function(v,i){
-                if (labels.length <= 1) return Math.max(1, lastCum * .72);
-                return Math.max(1, (cumulative[0] || 1) + ((lastCum * .72 + max * .08 - (cumulative[0] || 1)) * i/(labels.length-1)));
-            });
-            var crossIdx = -1;
-            for (var ci=0; ci<cumulative.length; ci++) { if (Number(cumulative[ci]||0) >= Number(baseline[ci]||0)) { crossIdx=ci; break; } }
-            fillBetween(cumulative, baseline, "rgba(46, 160, 103, 0.15)", 0);
-            if (crossIdx >= 0) fillBetween(cumulative, baseline, "rgba(196, 65, 65, 0.18)", crossIdx);
-            var barW = Math.max(24, Math.min(58, plotW/(labels.length*2.0)));
-            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,ch-padB); grd.addColorStop(0,"#F5BE50"); grd.addColorStop(1,"#FFF2CE"); g.fillStyle=grd; g.fillRect(xx,yy,barW,ch-padB-yy); g.strokeStyle="#D69A22"; g.strokeRect(xx,yy,barW,ch-padB-yy); if(v>0){ g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; g.fillText(String(v), xScale(i), Math.max(padT+14, yy-6)); }});
-            drawSmooth(baseline, "#4FA0CF", 3, [10,8]);
-            drawSmooth(cumulative, "#B92B3A", 5, null);
-            cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); g.fillStyle="#FFFFFF"; g.strokeStyle="#B92B3A"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,6,0,Math.PI*2); g.fill(); g.stroke(); });
+            var barW = Math.max(26, Math.min(66, (cw-padL-padR)/(labels.length*1.8)));
+            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,ch-padB); grd.addColorStop(0,"#F2B84B"); grd.addColorStop(1,"#FFF3D8"); g.fillStyle=grd; g.fillRect(xx,yy,barW,ch-padB-yy); g.strokeStyle="#D99523"; g.strokeRect(xx,yy,barW,ch-padB-yy); g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; if(v>0) g.fillText(String(v), xScale(i), yy-6); });
+            g.strokeStyle="#B92B3A"; g.lineWidth=4; g.beginPath(); cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke();
+            cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); g.fillStyle="#FFFFFF"; g.strokeStyle="#B92B3A"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,5,0,Math.PI*2); g.fill(); g.stroke(); });
+            var baseline = cumulative.map(function(v,i){ return cumulative[0] + ((max * .72 - cumulative[0]) * (labels.length<=1 ? 0 : i/(labels.length-1))); });
+            g.strokeStyle="#4FA0CF"; g.lineWidth=3; g.setLineDash([10,8]); g.beginPath(); baseline.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke(); g.setLineDash([]);
             var last = weekly[weekly.length-1]||0, prev = weekly.length>1 ? weekly[weekly.length-2]||0 : 0;
-            var runaway = last >= Math.max(2, prev*1.5);
-            if (runaway || crossIdx >= 0) {
-                var ix = runaway ? weekly.length-1 : crossIdx;
-                var cx=xScale(ix), cy=yScale(cumulative[ix] || cumulative[cumulative.length-1] || 0);
-                g.save(); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(cx,padT); g.lineTo(cx,ch-padB); g.stroke(); g.setLineDash([]);
-                g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=4; g.beginPath(); g.arc(cx,cy,14,0,Math.PI*2); g.fill(); g.stroke();
-                g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.textAlign="left"; g.fillText(runaway ? "RUNAWAY" : "CROSSOVER", Math.min(cw-120, cx+18), Math.max(30, cy-18)); g.restore();
-            }
-            g.textAlign="center"; g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), ch-18); });
-            g.textAlign="left"; g.fillStyle="#5F766C"; g.font="bold 12px Segoe UI, Arial"; g.fillText("Bars = weekly fails   Red = cumulative   Blue = baseline   shaded = control/escalation zone", padL, 18);
+            if (last >= Math.max(2, prev*1.5)) { var xx=xScale(weekly.length-1), yy=yScale(cumulative[cumulative.length-1]); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(xx,padT); g.lineTo(xx,ch-padB); g.stroke(); g.setLineDash([]); g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,13,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.fillText("RUNAWAY", Math.min(cw-95, xx+16), Math.max(30, yy-16)); }
+            g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; g.textAlign="center"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), ch-16); });
+            g.textAlign="left"; g.fillStyle="#5F766C"; g.font="bold 12px Segoe UI, Arial"; g.fillText("Bars = weekly fails   Red = cumulative   Blue = baseline", padL, 18);
             return c.toDataURL("image/png");
         }
         function boardHeatmapDataUri(matrix, title) {
@@ -27171,6 +27258,9 @@ body.traceops-premium-shell [class*="impact"]{
             return true;
         });
     }
+    function traceOpsBoardHasActiveMultiFilters(snFilters, partFilters, refFilters) {
+        return !!(((snFilters || []).length) || ((partFilters || []).length) || ((refFilters || []).length));
+    }
     function traceOpsBoardRefsForPartFilters(rows, partFilters) {
         var partSet = {}, refMap = {};
         (partFilters || []).forEach(function(v){ var p = String(v || '').trim(); if (p) partSet[p] = true; });
@@ -27195,45 +27285,95 @@ body.traceops-premium-shell [class*="impact"]{
         if (idx >= 0) base.splice(idx, 1); else base.push(value);
         return base;
     }
-    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, activeSnList, activePartList, activeRefList, filteredRows, totalRows) {
+    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, activeSnList, activePartList, activeRefList, filteredRows, totalRows, searchText, setSearchText) {
         var totalActive = (activeSnList || []).length + (activePartList || []).length + (activeRefList || []).length;
-        function chip(label, value, onRemove) {
-            return h('button', { key: label + value, type: 'button', onClick: onRemove, title: 'Remover filtro', style: { border: '1px solid #C9DAF5', background: '#EEF5FF', color: '#1F3A5F', borderRadius: 999, padding: '6px 9px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, label + ': ' + value + ' ×');
-        }
-        function optionButton(kind, opt, active, onClick) {
+        var optionSearch = String(searchText || '').toLowerCase().trim();
+        function matchesSearch(kind, opt) {
+            if (!optionSearch) return true;
             var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : opt.ref);
-            var meta = kind === 'SN' ? (opt.modeCount + ' modos · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' ev');
-            return h('button', { key: kind + value, type: 'button', onClick: onClick, style: { textAlign: 'left', border: '1px solid ' + (active ? '#1F6FEB' : '#D9E6F7'), background: active ? '#EEF5FF' : '#fff', color: '#102A43', borderRadius: 12, padding: '8px 9px', cursor: 'pointer', minWidth: 0 } }, [
-                h('div', { key: 'v', style: { fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, value),
-                h('div', { key: 'm', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, meta)
-            ]);
+            var bag = [value, opt.wo, opt.sku, opt.family, opt.bu, opt.eventCount, opt.serialCount, opt.refCount, opt.partCount, opt.modeCount];
+            if (kind === 'PN') bag = bag.concat(opt.refList || Object.keys(opt.refs || {}));
+            if (kind === 'REF') bag = bag.concat(Object.keys(opt.parts || {}), Object.keys(opt.modes || {}));
+            if (kind === 'SN') bag = bag.concat(opt.refList || Object.keys(opt.refs || {}), Object.keys(opt.modes || {}));
+            return bag.join(' ').toLowerCase().indexOf(optionSearch) >= 0;
         }
-        function column(title, subtitle, children) {
-            return h('div', { key: title, style: { border: '1px solid #D9E6F7', borderRadius: 14, background: '#FAFCFF', padding: 10, minWidth: 0 } }, [
-                h('div', { key: 't', style: { fontSize: 10, fontWeight: 900, color: '#5F766C', letterSpacing: '.08em', textTransform: 'uppercase' } }, title),
-                h('div', { key: 's', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, marginBottom: 8 } }, subtitle),
-                h('div', { key: 'c', style: { display: 'grid', gap: 6, maxHeight: 180, overflow: 'auto' } }, children)
-            ]);
+        function applySearch(kind, list) {
+            return (Array.isArray(list) ? list : []).filter(function(opt){ return matchesSearch(kind, opt); });
         }
-        return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, overflow: 'hidden' } }, [
-            h('div', { key: 'hdr', style: { padding: '14px 18px', background: '#F7FAFF', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' } }, [
+        var visibleSerialOptions = applySearch('SN', serialOptions);
+        var visiblePartOptions = applySearch('PN', partOptions);
+        var visibleRefOptions = applySearch('REF', refOptions);
+        var combinedOptions = [];
+        (visiblePartOptions || []).slice(0, 30).forEach(function(x){ combinedOptions.push({ kind:'PN', label:x.part, meta:x.serialCount + ' SN · ' + x.refCount + ' refs · ' + x.eventCount + ' ev', raw:x }); });
+        (visibleRefOptions || []).slice(0, 48).forEach(function(x){ combinedOptions.push({ kind:'REF', label:x.ref, meta:x.serialCount + ' SN · ' + x.partCount + ' PN · ' + x.eventCount + ' ev', raw:x }); });
+        (visibleSerialOptions || []).slice(0, 28).forEach(function(x){ combinedOptions.push({ kind:'SN', label:x.sn, meta:x.modeCount + ' modos · ' + x.refCount + ' refs · ' + x.eventCount + ' ev', raw:x }); });
+        combinedOptions.sort(function(a,b){
+            var aw = a.kind === 'REF' ? 0 : a.kind === 'PN' ? 1 : 2;
+            var bw = b.kind === 'REF' ? 0 : b.kind === 'PN' ? 1 : 2;
+            return aw - bw || String(a.label).localeCompare(String(b.label));
+        });
+        function chip(label, value, onRemove) {
+            return h('button', { key: label + value, type: 'button', onClick: onRemove, title: 'Remover filtro', className: 'smt-bi-filter-chip' }, label + ': ' + value + ' ×');
+        }
+        function applyCombined(item) {
+            if (!item) return;
+            if (item.kind === 'SN') {
+                setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, item.raw.sn, traceOpsYieldCleanSn));
+                setBoardSnFilter('');
+            } else if (item.kind === 'PN') {
+                var nextParts = traceOpsBoardMultiToggle(activePartList, item.raw.part);
+                var pnRefs = {};
+                (partOptions || []).forEach(function(opt){
+                    if (nextParts.indexOf(opt.part) < 0) return;
+                    (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; });
+                });
+                var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); });
+                setBoardPartMultiFilter(nextParts);
+                setBoardRefMultiFilter(nextRefs);
+                if (nextRefs.length) setBoardSelectedRef(nextRefs[0]);
+            } else if (item.kind === 'REF') {
+                var next = traceOpsBoardMultiToggle(activeRefList, item.raw.ref, traceOpsBoardNormalizeRef);
+                setBoardRefMultiFilter(next);
+                if (next.length) setBoardSelectedRef(next[0]);
+            }
+            setBoardDetailZoom(false);
+        }
+        function activeSummary() {
+            var out = [];
+            (activeSnList || []).forEach(function(v){ out.push(chip('SN', v, function(){ setBoardSnMultiFilter((activeSnList || []).filter(function(x){ return x !== v; })); })); });
+            (activePartList || []).forEach(function(v){ out.push(chip('PN', v, function(){
+                var nextParts = (activePartList || []).filter(function(x){ return x !== v; });
+                var pnRefs = {};
+                (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); });
+                var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); });
+                setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]);
+            })); });
+            (activeRefList || []).forEach(function(v){ out.push(chip('Ref', v, function(){ setBoardRefMultiFilter((activeRefList || []).filter(function(x){ return x !== v; })); })); });
+            if (out.length) out.push(h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); setSearchText && setSearchText(''); }, className: 'smt-bi-filter-clear' }, 'Limpiar filtros'));
+            return out;
+        }
+        return h('section', { className: 'smt-bi-filter-panel' }, [
+            h('div', { key: 'hdr', className: 'smt-bi-filter-head' }, [
                 h('div', { key: 'copy' }, [
-                    h('div', { key: 't', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Filtros combinados de Board Impact'),
-                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Seleccion multiple por SN, numero de parte y RefDes. Los filtros se combinan por interseccion dentro del scope actual.')
+                    h('div', { key: 't', className: 'smt-bi-filter-title' }, 'Smart Filter · Board Impact'),
+                    h('div', { key: 's', className: 'smt-bi-filter-sub' }, 'Busca y combina SN, número de parte y RefDes. El scope se aplica a todos los modos de falla activos.')
                 ]),
-                h('div', { key: 'summary', style: { display: 'inline-flex', borderRadius: 999, background: '#EEF5FF', border: '1px solid #C9DAF5', color: '#1F3A5F', padding: '7px 10px', fontSize: 11, fontWeight: 900 } }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
+                h('div', { key: 'summary', className: 'smt-bi-filter-counter' }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
             ]),
-            h('div', { key: 'body', style: { padding: 14, display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : 'repeat(3,minmax(0,1fr))', gap: 10 } }, [
-                column('Serial Number', activeSnList.length ? activeSnList.length + ' seleccionado(s)' : serialOptions.length + ' disponible(s)', (serialOptions || []).slice(0, 40).map(function(x){ var active = activeSnList.indexOf(x.sn) >= 0; return optionButton('SN', x, active, function(){ setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, x.sn, traceOpsYieldCleanSn)); setBoardSnFilter(''); setBoardDetailZoom(false); }); })),
-                column('Numero de parte', activePartList.length ? activePartList.length + ' seleccionado(s)' : partOptions.length + ' disponible(s)', (partOptions || []).slice(0, 40).map(function(x){ var active = activePartList.indexOf(x.part) >= 0; return optionButton('PN', x, active, function(){ var nextParts = traceOpsBoardMultiToggle(activePartList, x.part); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); setBoardDetailZoom(false); }); })),
-                column('RefDes', activeRefList.length ? activeRefList.length + ' seleccionado(s)' : refOptions.length + ' disponible(s)', (refOptions || []).slice(0, 80).map(function(x){ var active = activeRefList.indexOf(x.ref) >= 0; return optionButton('REF', x, active, function(){ var next = traceOpsBoardMultiToggle(activeRefList, x.ref, traceOpsBoardNormalizeRef); setBoardRefMultiFilter(next); if (next.length) setBoardSelectedRef(next[0]); setBoardDetailZoom(false); }); }))
+            h('div', { key: 'search', className: 'smt-bi-smartbar' }, [
+                h('input', { key: 'q', value: searchText || '', onChange: function(e){ setSearchText && setSearchText(e.target.value); }, placeholder: 'Buscar SN, PN o RefDes...', className: 'smt-bi-smart-input', 'aria-label': 'Buscar SN PN o RefDes en Board Impact' }),
+                optionSearch ? h('button', { key: 'clearq', type: 'button', onClick: function(){ setSearchText && setSearchText(''); }, className: 'smt-bi-smart-clear' }, 'Limpiar búsqueda') : null,
+                h('span', { key: 'count', className: 'smt-bi-smart-count' }, visibleSerialOptions.length + ' SN · ' + visiblePartOptions.length + ' PN · ' + visibleRefOptions.length + ' Ref')
             ]),
-            totalActive ? h('div', { key: 'active', style: { padding: '0 14px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' } }, [
-                (activeSnList || []).map(function(v){ return chip('SN', v, function(){ setBoardSnMultiFilter((activeSnList || []).filter(function(x){ return x !== v; })); }); }),
-                (activePartList || []).map(function(v){ return chip('PN', v, function(){ var nextParts = (activePartList || []).filter(function(x){ return x !== v; }); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); }); }),
-                (activeRefList || []).map(function(v){ return chip('Ref', v, function(){ setBoardRefMultiFilter((activeRefList || []).filter(function(x){ return x !== v; })); }); }),
-                h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); }, style: { border: '1px solid #F3B6B0', background: '#FDEEEE', color: '#C44141', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, 'Limpiar filtros')
-            ]) : null
+            h('div', { key: 'options', className: 'smt-bi-pill-rail' }, (combinedOptions || []).slice(0, isMobile() ? 42 : 84).map(function(item){
+                var active = item.kind === 'SN' ? activeSnList.indexOf(item.raw.sn) >= 0 : item.kind === 'PN' ? activePartList.indexOf(item.raw.part) >= 0 : activeRefList.indexOf(item.raw.ref) >= 0;
+                return h('button', { key: item.kind + item.label, type: 'button', onClick: function(){ applyCombined(item); }, className: 'smt-bi-option-pill' + (active ? ' active' : '') + ' kind-' + item.kind.toLowerCase(), title: item.kind + ' · ' + item.label + ' · ' + item.meta }, [
+                    h('span', { key: 'k', className: 'smt-bi-option-kind' }, item.kind),
+                    h('span', { key: 'v', className: 'smt-bi-option-label' }, item.label),
+                    h('span', { key: 'm', className: 'smt-bi-option-meta' }, item.meta)
+                ]);
+            })),
+            totalActive ? h('div', { key: 'active', className: 'smt-bi-active-filters' }, activeSummary()) : null
         ]);
     }
 
@@ -27292,7 +27432,16 @@ body.traceops-premium-shell [class*="impact"]{
         var activeBoardPartRefs = traceOpsBoardArrayClean(traceOpsBoardRefsForPartFilters(boardAllRowsBeforeModeFilter, activeBoardPartFilters), validRefMap, traceOpsBoardNormalizeRef);
         var boardVisualRefGroup = traceOpsBoardArrayClean(activeBoardPartRefs.concat(activeBoardRefFilters), validRefMap, traceOpsBoardNormalizeRef);
         var activeBoardSnFilter = activeBoardSnFilters.length === 1 ? activeBoardSnFilters[0] : "";
-        rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
+        var globalFilterRows = traceOpsBoardApplyMultiFilters(boardAllRowsBeforeModeFilter, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
+        if (traceOpsBoardHasActiveMultiFilters(activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters)) {
+            modeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(globalFilterRows), []);
+            if (modeOptions.length && !modeOptions.some(function(m){ return String(m.mode) === activeMode; })) activeMode = modeOptions[0].mode;
+            activeModeRow = modeOptions.find(function(m) { return String(m.mode) === activeMode; }) || modeOptions[0] || activeModeRow;
+            rows = activeMode ? globalFilterRows.filter(function(r){ return traceOpsBoardModeEquals(r, activeMode); }) : globalFilterRows;
+            if (!rows.length) rows = globalFilterRows;
+        } else {
+            rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
+        }
         var activeFilteredModeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(rows), []);
         if (activeFilteredModeOptions.length) activeModeRow = activeFilteredModeOptions.find(function(m) { return String(m.mode) === activeMode; }) || activeFilteredModeOptions[0] || activeModeRow;
         var seedRefs = (ctx.refs && ctx.refs.length ? ctx.refs : []).concat(activeModeRow && activeModeRow.refs ? activeModeRow.refs : []);
@@ -27467,7 +27616,7 @@ body.traceops-premium-shell [class*="impact"]{
                 kpi("FR vs Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%", traceOpsYieldFlowFmt(affectedSerials) + " fails / " + traceOpsYieldFlowFmt(totalBuiltUnits) + " built", "purple"),
                 kpi("Refs unicas", uniqueRefs.length || 1, (boardSide === "bottom" ? "BOTTOM" : "TOP") + " side", "purple"),
                 kpi("Criticidad", selectedSeverity.label, selectedRef, selectedSeverity.key === "critical" ? "red" : selectedSeverity.key === "high" ? "amber" : "yellow")),
-            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, rows, allBoardRows.length),
+            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, rows, boardAllRowsBeforeModeFilter.length, boardMultiSearch, setBoardMultiSearch),
             traceOpsBoardRenderFailureTrendPanel(modeOptions),
             ccItems.length ? h("section", { id: "traceops-board-cc-actions", style: { background: "#FFFDF4", border: "1px solid #F1C04E", borderRadius: 18, padding: isMobile() ? "12px" : "14px 16px", display: "flex", flexDirection: "column", gap: 10 } }, [
                 h("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" } }, [
@@ -37875,7 +38024,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.8 · Fast Import + Crossover Trend PPT · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.1 · Board Impact View UI Refresh · 2026-05-23';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37919,7 +38068,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.8 · Fast Import + Crossover Trend PPT · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.1 · Board Impact View UI Refresh · 2026-05-23';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
