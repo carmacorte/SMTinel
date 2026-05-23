@@ -8573,7 +8573,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_2-import-performance-engine";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_8-fast-import-crossover-chart";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -9618,6 +9618,7 @@ function traceOpsYieldParseDelimitedText(text, role) {
     var delimiter = ranked[0].ch || ",";
     var rows = [];
     for (var i = 0; i < lines.length; i++) {
+        if ((i % 2048) === 0 && window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
         var line = lines[i];
         if (i > 250000)
             break;
@@ -10341,6 +10342,19 @@ function traceOpsYieldEnrichComponent(componentCode) {
     };
 }
 
+function traceOpsYieldBuildFtTimesByWo(ftRows) {
+    var idx = {};
+    (ftRows || []).forEach(function(fr) {
+        if (!fr || !fr.recordTime) return;
+        var wo = String(fr.wo || "");
+        var nwo = wo.replace(/^0+/, "") || wo;
+        if (wo) { if (!idx[wo]) idx[wo] = []; idx[wo].push(fr.recordTime); }
+        if (nwo && nwo !== wo) { if (!idx[nwo]) idx[nwo] = []; idx[nwo].push(fr.recordTime); }
+    });
+    Object.keys(idx).forEach(function(k){ idx[k].sort(); });
+    return idx;
+}
+
 function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows) {
     var woMap = {}, snToSfc = {}, sfcByWo = {}, repairsByWo = {}, repairsClean = [], repairRowsBySnRaw = {};
     var allSfcEvents = [];
@@ -10415,6 +10429,9 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
     TRACEOPS_YIELD_SFC_EVENTS = allSfcEvents;
     TRACEOPS_YIELD_FT_ROWS = traceOpsYieldBuildCesiumRows(cesiumRows || [], snToSfc, ciscoCalendarMap);
     TRACEOPS_YIELD_FT_AREA_ROWS = traceOpsYieldBuildFtAreaRows(TRACEOPS_YIELD_FT_ROWS);
+    TRACEOPS_YIELD_FT_TIMES_BY_WO = traceOpsYieldBuildFtTimesByWo(TRACEOPS_YIELD_FT_ROWS || []);
+    TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = null;
+    traceOpsYieldBuildCesiumSnIndex(TRACEOPS_YIELD_FT_ROWS || []);
     // SFC is the commanding data source for Yield Flow scope.
     // DB Model is used only to enrich BU/model by SKU, and Station On Line only supplies WO start/time.
     Object.keys(sfcByWo).forEach(function (wo) {
@@ -10554,12 +10571,9 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
                 defectsByStation[st] = (defectsByStation[st] || 0) + 1;
             }
         });
-        var ftTimes = (TRACEOPS_YIELD_FT_ROWS || []).filter(function (fr) {
-            var frWo = String(fr.wo || "");
-            var frNormWo = frWo.replace(/^0+/, "") || frWo;
-            var thisNormWo = String(wo || "").replace(/^0+/, "") || String(wo || "");
-            return (frWo === String(wo || "") || frNormWo === thisNormWo) && fr.recordTime;
-        }).map(function (fr) { return fr.recordTime; }).sort();
+        var __woKey = String(wo || "");
+        var __woNorm = __woKey.replace(/^0+/, "") || __woKey;
+        var ftTimes = ((TRACEOPS_YIELD_FT_TIMES_BY_WO || {})[__woKey] || (TRACEOPS_YIELD_FT_TIMES_BY_WO || {})[__woNorm] || []);
         var stockinTimes = sfcList.filter(function (x) { return (x.station === "STOCKIN") && x.eventTime; }).map(function (x) { return x.eventTime; }).sort();
         var recoveryMap = {};
         var recoverySeen = {};
@@ -11470,19 +11484,31 @@ function traceOpsYieldExactStationFromEvent(value) {
     // Do not return generic SMT/PTH/FT anymore. If SFC has no exact station, leave it out.
     return "";
 }
+var TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = null;
+function traceOpsYieldBuildCesiumSnIndex(ftRows) {
+    ftRows = ftRows || [];
+    if (TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE && TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE.rows === ftRows) return TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE.index;
+    var idx = { byPrimary: {}, byBridge: {} };
+    for (var i = 0; i < ftRows.length; i++) {
+        var fr = ftRows[i];
+        if (!fr) continue;
+        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
+        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
+        keys.forEach(function(k){ if (!idx.byPrimary[k]) idx.byPrimary[k] = []; idx.byPrimary[k].push(fr); });
+        bridgeKeys.forEach(function(k){ if (!idx.byBridge[k]) idx.byBridge[k] = []; idx.byBridge[k].push(fr); });
+    }
+    TRACEOPS_YIELD_CESIUM_SN_INDEX_CACHE = { rows: ftRows, index: idx };
+    return idx;
+}
 function traceOpsYieldCesiumRowsForSfc(sfc, ftRows) {
     sfc = sfc || {};
     var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || "");
     var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || "");
-    var bySn = [], byBox = [];
-    (ftRows || []).forEach(function(fr){
-        if (!fr) return;
-        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
-        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
-        if (sn && keys.indexOf(sn) >= 0) bySn.push(fr);
-        else if (box && (keys.indexOf(box) >= 0 || bridgeKeys.indexOf(box) >= 0)) byBox.push(fr);
-    });
-    return bySn.length ? bySn : byBox;
+    var idx = traceOpsYieldBuildCesiumSnIndex(ftRows || []);
+    var bySn = sn ? (idx.byPrimary[sn] || []) : [];
+    if (bySn.length) return bySn;
+    if (!box) return [];
+    return (idx.byPrimary[box] || idx.byBridge[box] || []);
 }
 function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     var nodes = {}, order = traceOpsYieldProcessNodeOrder(), rawWo = String(wo || ""), normWo = rawWo.replace(/^0+/, "") || rawWo;
@@ -26792,25 +26818,65 @@ body.traceops-premium-shell [class*="impact"]{
             return { mode: (mode && mode.mode) || activeMode, weeks: weeks, refs: refs, weekly: weekly, cumulative: cumulative, totalSn: Object.keys(allSn).length, last: last, prev: prev, delta: last - prev, severity: severityFor(Object.keys(allSn).length, last - prev, weekly.filter(function(v){return v>0;}).length) };
         }
         function chartDataUri(weekly, cumulative, labels) {
-            var c = document.createElement("canvas"), cw = 900, ch = 300; c.width = cw; c.height = ch;
-            var g = c.getContext("2d"), padL = 58, padR = 36, padT = 34, padB = 46;
-            weekly = weekly && weekly.length ? weekly : [0]; cumulative = cumulative && cumulative.length ? cumulative : weekly.slice(); labels = labels && labels.length ? labels : ["N/D"];
-            var max = Math.max(1, Math.max.apply(null, weekly.concat(cumulative)));
-            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,cw,ch);
-            g.strokeStyle = "#E5EDF7"; g.lineWidth = 1;
-            for (var i=0;i<5;i++){ var gridY=padT + i*(ch-padT-padB)/4; g.beginPath(); g.moveTo(padL,gridY); g.lineTo(cw-padR,gridY); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.fillText(String(Math.round(max - max*i/4)), 14, gridY+4); }
+            var c = document.createElement("canvas"), cw = 980, ch = 330; c.width = cw; c.height = ch;
+            var g = c.getContext("2d"), padL = 64, padR = 42, padT = 32, padB = 52;
+            weekly = weekly && weekly.length ? weekly : [0];
+            cumulative = cumulative && cumulative.length ? cumulative : weekly.slice();
+            labels = labels && labels.length ? labels : ["N/D"];
+            var lastCum = cumulative[cumulative.length - 1] || 0;
+            var max = Math.max(1, Math.max.apply(null, weekly.concat(cumulative)) * 1.18);
             function xScale(i){ return labels.length === 1 ? padL + (cw-padL-padR)/2 : padL + i*(cw-padL-padR)/(labels.length-1); }
             function yScale(v){ return ch-padB - (Number(v||0)/max)*(ch-padT-padB); }
-            var barW = Math.max(26, Math.min(66, (cw-padL-padR)/(labels.length*1.8)));
-            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,ch-padB); grd.addColorStop(0,"#F2B84B"); grd.addColorStop(1,"#FFF3D8"); g.fillStyle=grd; g.fillRect(xx,yy,barW,ch-padB-yy); g.strokeStyle="#D99523"; g.strokeRect(xx,yy,barW,ch-padB-yy); g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; if(v>0) g.fillText(String(v), xScale(i), yy-6); });
-            g.strokeStyle="#B92B3A"; g.lineWidth=4; g.beginPath(); cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke();
-            cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); g.fillStyle="#FFFFFF"; g.strokeStyle="#B92B3A"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,5,0,Math.PI*2); g.fill(); g.stroke(); });
-            var baseline = cumulative.map(function(v,i){ return cumulative[0] + ((max * .72 - cumulative[0]) * (labels.length<=1 ? 0 : i/(labels.length-1))); });
-            g.strokeStyle="#4FA0CF"; g.lineWidth=3; g.setLineDash([10,8]); g.beginPath(); baseline.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy); }); g.stroke(); g.setLineDash([]);
+            function pathFrom(vals){
+                if (!vals.length) return [];
+                var pts = vals.map(function(v,i){ return { x:xScale(i), y:yScale(v) }; });
+                return pts;
+            }
+            function drawSmooth(vals, color, width, dash){
+                var pts = pathFrom(vals); if (!pts.length) return;
+                g.save(); g.strokeStyle=color; g.lineWidth=width||4; g.lineCap="round"; g.lineJoin="round"; if (dash) g.setLineDash(dash);
+                g.beginPath(); g.moveTo(pts[0].x, pts[0].y);
+                for (var i=1;i<pts.length;i++) { var midX=(pts[i-1].x+pts[i].x)/2; g.quadraticCurveTo(pts[i-1].x, pts[i-1].y, midX, (pts[i-1].y+pts[i].y)/2); g.quadraticCurveTo(pts[i].x, pts[i].y, pts[i].x, pts[i].y); }
+                g.stroke(); g.restore();
+            }
+            function fillBetween(aVals, bVals, color, fromIdx){
+                var a=pathFrom(aVals), b=pathFrom(bVals); if (!a.length || !b.length) return;
+                fromIdx = Math.max(0, fromIdx || 0);
+                g.save(); g.fillStyle=color; g.beginPath();
+                g.moveTo(a[fromIdx].x, a[fromIdx].y);
+                for (var i=fromIdx+1;i<a.length;i++) g.lineTo(a[i].x,a[i].y);
+                for (var j=b.length-1;j>=fromIdx;j--) g.lineTo(b[j].x,b[j].y);
+                g.closePath(); g.fill(); g.restore();
+            }
+            g.fillStyle = "#FFFFFF"; g.fillRect(0,0,cw,ch);
+            var plotH = ch-padT-padB, plotW = cw-padL-padR;
+            var bg = g.createLinearGradient(0,padT,0,ch-padB); bg.addColorStop(0,"#F9FBFD"); bg.addColorStop(1,"#FFFFFF"); g.fillStyle=bg; g.fillRect(padL,padT,plotW,plotH);
+            g.strokeStyle = "#E4EBF3"; g.lineWidth = 1;
+            for (var gi=0;gi<5;gi++){ var gy=padT + gi*plotH/4; g.beginPath(); g.moveTo(padL,gy); g.lineTo(cw-padR,gy); g.stroke(); g.fillStyle="#74859A"; g.font="12px Segoe UI, Arial"; g.textAlign="right"; g.fillText(String(Math.round(max - max*gi/4)), padL-12, gy+4); }
+            var baseline = cumulative.map(function(v,i){
+                if (labels.length <= 1) return Math.max(1, lastCum * .72);
+                return Math.max(1, (cumulative[0] || 1) + ((lastCum * .72 + max * .08 - (cumulative[0] || 1)) * i/(labels.length-1)));
+            });
+            var crossIdx = -1;
+            for (var ci=0; ci<cumulative.length; ci++) { if (Number(cumulative[ci]||0) >= Number(baseline[ci]||0)) { crossIdx=ci; break; } }
+            fillBetween(cumulative, baseline, "rgba(46, 160, 103, 0.15)", 0);
+            if (crossIdx >= 0) fillBetween(cumulative, baseline, "rgba(196, 65, 65, 0.18)", crossIdx);
+            var barW = Math.max(24, Math.min(58, plotW/(labels.length*2.0)));
+            weekly.forEach(function(v,i){ var xx=xScale(i)-barW/2, yy=yScale(v); var grd=g.createLinearGradient(0,yy,0,ch-padB); grd.addColorStop(0,"#F5BE50"); grd.addColorStop(1,"#FFF2CE"); g.fillStyle=grd; g.fillRect(xx,yy,barW,ch-padB-yy); g.strokeStyle="#D69A22"; g.strokeRect(xx,yy,barW,ch-padB-yy); if(v>0){ g.fillStyle="#102A43"; g.font="bold 13px Segoe UI, Arial"; g.textAlign="center"; g.fillText(String(v), xScale(i), Math.max(padT+14, yy-6)); }});
+            drawSmooth(baseline, "#4FA0CF", 3, [10,8]);
+            drawSmooth(cumulative, "#B92B3A", 5, null);
+            cumulative.forEach(function(v,i){ var xx=xScale(i), yy=yScale(v); g.fillStyle="#FFFFFF"; g.strokeStyle="#B92B3A"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,6,0,Math.PI*2); g.fill(); g.stroke(); });
             var last = weekly[weekly.length-1]||0, prev = weekly.length>1 ? weekly[weekly.length-2]||0 : 0;
-            if (last >= Math.max(2, prev*1.5)) { var xx=xScale(weekly.length-1), yy=yScale(cumulative[cumulative.length-1]); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(xx,padT); g.lineTo(xx,ch-padB); g.stroke(); g.setLineDash([]); g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=3; g.beginPath(); g.arc(xx,yy,13,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.fillText("RUNAWAY", Math.min(cw-95, xx+16), Math.max(30, yy-16)); }
-            g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; g.textAlign="center"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), ch-16); });
-            g.textAlign="left"; g.fillStyle="#5F766C"; g.font="bold 12px Segoe UI, Arial"; g.fillText("Bars = weekly fails   Red = cumulative   Blue = baseline", padL, 18);
+            var runaway = last >= Math.max(2, prev*1.5);
+            if (runaway || crossIdx >= 0) {
+                var ix = runaway ? weekly.length-1 : crossIdx;
+                var cx=xScale(ix), cy=yScale(cumulative[ix] || cumulative[cumulative.length-1] || 0);
+                g.save(); g.strokeStyle="#1E8A64"; g.lineWidth=2; g.setLineDash([8,8]); g.beginPath(); g.moveTo(cx,padT); g.lineTo(cx,ch-padB); g.stroke(); g.setLineDash([]);
+                g.fillStyle="#E7F7F0"; g.strokeStyle="#1E8A64"; g.lineWidth=4; g.beginPath(); g.arc(cx,cy,14,0,Math.PI*2); g.fill(); g.stroke();
+                g.fillStyle="#1E8A64"; g.font="bold 15px Segoe UI, Arial"; g.textAlign="left"; g.fillText(runaway ? "RUNAWAY" : "CROSSOVER", Math.min(cw-120, cx+18), Math.max(30, cy-18)); g.restore();
+            }
+            g.textAlign="center"; g.fillStyle="#102A43"; g.font="bold 12px Segoe UI, Arial"; labels.forEach(function(l,i){ g.fillText(weekLabel(l), xScale(i), ch-18); });
+            g.textAlign="left"; g.fillStyle="#5F766C"; g.font="bold 12px Segoe UI, Arial"; g.fillText("Bars = weekly fails   Red = cumulative   Blue = baseline   shaded = control/escalation zone", padL, 18);
             return c.toDataURL("image/png");
         }
         function boardHeatmapDataUri(matrix, title) {
@@ -37809,7 +37875,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.8 · Fast Import + Crossover Trend PPT · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37853,7 +37919,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.8 · Fast Import + Crossover Trend PPT · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
