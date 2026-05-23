@@ -9,7 +9,7 @@ window.TRACEOPS_SUPABASE = {
   anonKey: "sb_publishable_FRi9eaXD-6TYVXLCCUCWkg_1VuvcIhV"
 };
 </script>
-<meta charset="UTF-8"/><!-- SMTinel V12.2 Yield Flow Fast ZIP Processor |  FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
+<meta charset="UTF-8"/><!-- SMTinel v2026-03-22 | FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
 <script>
 window.__traceopsZipReady = null;
 window.__traceopsExcelReady = null;
@@ -30,73 +30,46 @@ function loadExternalScript(src) {
   return new Promise(function(resolve, reject) {
     var existing = document.querySelector('script[data-traceops-src="' + src + '"]');
     if (existing) {
-      if (existing.dataset.loaded === "true") { resolve(); return; }
+      if (existing.dataset.loaded === "true") {
+        resolve();
+        return;
+      }
       existing.addEventListener("load", function() { resolve(); }, { once: true });
-      existing.addEventListener("error", function() { reject(new Error("No se pudo cargar el script: " + src)); }, { once: true });
+      existing.addEventListener("error", function() {
+        reject(new Error("No se pudo cargar el script: " + src));
+      }, { once: true });
       return;
     }
+
     var s = document.createElement("script");
     s.src = src;
     s.crossOrigin = "anonymous";
     s.async = true;
     s.dataset.traceopsSrc = src;
-    s.onload = function() { s.dataset.loaded = "true"; resolve(); };
-    s.onerror = function() { reject(new Error("No se pudo cargar el script: " + src)); };
+    s.onload = function() {
+      s.dataset.loaded = "true";
+      resolve();
+    };
+    s.onerror = function() {
+      reject(new Error("No se pudo cargar el script: " + src));
+    };
     document.head.appendChild(s);
-  });
-}
-
-function traceOpsLoadExternalScriptViaFetch(src, fetchOptions) {
-  return new Promise(function(resolve, reject) {
-    var existing = document.querySelector('script[data-traceops-src="' + src + '"]');
-    if (existing) {
-      if (existing.dataset.loaded === "true") { resolve(); return; }
-      existing.addEventListener("load", function(){ resolve(); }, { once:true });
-      existing.addEventListener("error", function(){ reject(new Error("No se pudo cargar el script: " + src)); }, { once:true });
-      return;
-    }
-    if (!window.fetch || !window.Blob || !window.URL) {
-      loadExternalScript(src).then(resolve, reject);
-      return;
-    }
-    var reqInit = Object.assign({ cache: "force-cache", mode: "cors" }, fetchOptions || {});
-    try { reqInit.priority = reqInit.priority || "high"; } catch (_) {}
-    fetch(src, reqInit).then(function(resp) {
-      if (!resp || !resp.ok) throw new Error("HTTP " + (resp && resp.status) + " cargando " + src);
-      return resp.text();
-    }).then(function(code) {
-      var blob = new Blob([code + "\n//# sourceURL=" + src], { type: "text/javascript" });
-      var url = URL.createObjectURL(blob);
-      var s = document.createElement("script");
-      s.async = true;
-      s.dataset.traceopsSrc = src;
-      s.onload = function() { s.dataset.loaded = "true"; try { URL.revokeObjectURL(url); } catch(_){} resolve(); };
-      s.onerror = function() { try { URL.revokeObjectURL(url); } catch(_){} reject(new Error("No se pudo ejecutar script fetched: " + src)); };
-      s.src = url;
-      document.head.appendChild(s);
-    }).catch(function(err) {
-      console.warn("[SMTinel] Fetch preload fallo; fallback script tag:", err);
-      loadExternalScript(src).then(resolve, reject);
-    });
   });
 }
 
 window.ensureZipTools = function() {
   if (window.JSZip) return Promise.resolve();
   if (window.__traceopsZipReady) return window.__traceopsZipReady;
-  var src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
-  window.__traceopsZipReady = traceOpsLoadExternalScriptViaFetch(src, { priority: "high" }).catch(function(err) {
+
+  window.__traceopsZipReady = loadExternalScript(
+    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+  ).catch(function(err) {
     window.__traceopsZipReady = null;
     throw err;
   });
+
   return window.__traceopsZipReady;
 };
-
-(function traceOpsProgressiveZipPreload(){
-  var run = function(){ try { window.ensureZipTools && window.ensureZipTools().catch(function(err){ console.warn("[SMTinel] JSZip preload omitido:", err); }); } catch(_){} };
-  if ("requestIdleCallback" in window) requestIdleCallback(run, { timeout: 2500 });
-  else setTimeout(run, 1200);
-})();
 
 window.ensureExcelTools = function() {
   if (window.JSZip && window.ExcelJS) return Promise.resolve();
@@ -4412,20 +4385,6 @@ html body .sidebar .admin-mode{
 }
 </style>
 
-<style id="smtinel-yieldflow-v12-2-loader-css">
-/* ==== V12.2 Yield Flow streaming loader/performance UI ==== */
-.smtinel-loader-timer{font-family:"Courier New",Consolas,monospace;font-size:13px;color:#46502F;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.smtinel-loader-progress{height:6px;min-height:6px;border-radius:999px;background:rgba(70,80,47,.16);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(70,80,47,.08)}
-.smtinel-loader-progress>span,.smtinel-loader-progress>div{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#46502F 0%,#7A834C 48%,#9B2335 100%);transition:width .28s cubic-bezier(.2,.7,.2,1)}
-.smtinel-loader-step{font-size:11px;color:#5F766C;font-weight:800;letter-spacing:.08em;text-transform:uppercase;transition:color .2s ease,opacity .2s ease,transform .2s ease}
-.smtinel-loader-step.is-active{color:#9B2335;transform:translateY(-1px)}
-.smtinel-loader-step.is-done{color:#46502F;opacity:.78}
-#smtinelZipWaitScreen .smtinel-zip-wait-elapsed b{font-family:"Courier New",Consolas,monospace;font-size:13px;color:#46502F;font-weight:900;font-variant-numeric:tabular-nums}
-#smtinelZipWaitScreen .smtinel-zip-wait-bar{height:6px;background:rgba(70,80,47,.16);box-shadow:inset 0 0 0 1px rgba(70,80,47,.08)}
-#smtinelZipWaitScreen .smtinel-zip-wait-fill{background:linear-gradient(90deg,#46502F 0%,#7A834C 50%,#9B2335 100%);transition:width .28s cubic-bezier(.2,.7,.2,1)}
-#smtinelZipWaitScreen .smtinel-zip-wait-phase span:first-child{font-size:11px;color:#5F766C;font-weight:900;letter-spacing:.10em}
-</style>
-
 <script id="smtinel-zip-wait-screen-js-v1">
 (function(){
   var hideTimer=null;
@@ -4460,7 +4419,6 @@ html body .sidebar .admin-mode{
     setText('smtinelZipWaitPct',pct+'%');
     setText('smtinelZipWaitPhase',phase||'READING_ZIP');
     setText('smtinelZipWaitMessage',message||'Cargando archivos ZIP y construyendo trazabilidad operacional...');
-    try { screen.setAttribute('data-phase', phase || 'READING_ZIP'); screen.setAttribute('data-progress', String(pct)); } catch(_){}
     tick();
     screen.style.display='flex';
     requestAnimationFrame(function(){ screen.classList.add('is-active'); });
@@ -8729,10 +8687,6 @@ function traceOpsYieldApplyLocalCache(record) {
 }
 function traceOpsYieldSaveLocalCache(file, summary) {
     try {
-        if (window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE !== false) {
-            try { console.info("[SMTinel] Yield Flow heavy cache skipped by V12.2 fast-import guard."); } catch(_) {}
-            return Promise.resolve(null);
-        }
         if (!traceOpsLocalCacheSupported()) return Promise.resolve(null);
         var meta = {
             fileName: file && file.name || (summary && summary.fileName) || "local import",
@@ -10723,205 +10677,6 @@ function traceOpsYieldRowLimitForRole(role) {
     if (r === 'wo') return traceOpsYieldIsMobileDevice() ? 50000 : 120000;
     return traceOpsYieldRowLimitForImport();
 }
- 
-/* ==== V12.2 Yield Flow ZIP Processor: worker/direct hybrid, early filtering, abort-aware ==== */
-(function(){
-  if (window.YieldFlowZipProcessor && window.YieldFlowZipProcessor.version === "12.2") return;
-  var CHUNK_SIZE = 1024 * 1024;
-  var MAX_WORKERS = 4;
-  var DIRECT_THRESHOLD = 10 * 1024 * 1024;
-  var RELEVANT_EXT_RE = /\.(txt|tsv|csv|json)$/i;
-  function now(){ return (performance && performance.now) ? performance.now() : Date.now(); }
-  function assertAbort(){ if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert(); }
-  function yieldMain(){ return new Promise(function(resolve, reject){ setTimeout(function(){ try{ assertAbort(); resolve(); } catch(e){ reject(e); } },0); }); }
-  function basename(path){ return String(path||"").split('/').pop(); }
-  function mb(n){ return (Number(n)||0)/1024/1024; }
-  function roleRank(role){ var r={sfc:1,wo:2,repair:3,cesium:4,dbmodel:5,bom:6,calendar:7}; return r[role]||99; }
-  function detectRole(path){
-    if (typeof window.traceOpsYieldDetectTextRole === 'function') return window.traceOpsYieldDetectTextRole(path);
-    var p=String(path||'').toLowerCase();
-    if (/repair|repar/i.test(p)) return 'repair';
-    if (/station[_ -]*on[_ -]*line|sfc|serial/i.test(p)) return 'sfc';
-    if (/cesium|yield|test/i.test(p)) return 'cesium';
-    if (/db[_ -]*model|model/i.test(p)) return 'dbmodel';
-    if (/bom|component/i.test(p)) return 'bom';
-    if (/calendar|cisco/i.test(p)) return 'calendar';
-    if (/work[_ -]*order|build[_ -]*info|wo/i.test(p)) return 'wo';
-    return null;
-  }
-  function shouldProcess(path){ return RELEVANT_EXT_RE.test(String(path||'')) && !/^__MACOSX\//i.test(String(path||'')); }
-  function workerCode(){
-    return `
-      var JSZIP_SRC = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
-      function detectRole(path){
-        var p=String(path||'').toLowerCase();
-        if (/repair|repar/.test(p)) return 'repair';
-        if (/station[_ -]*on[_ -]*line|sfc|serial/.test(p)) return 'sfc';
-        if (/cesium|yield|test/.test(p)) return 'cesium';
-        if (/db[_ -]*model|model/.test(p)) return 'dbmodel';
-        if (/bom|component/.test(p)) return 'bom';
-        if (/calendar|cisco/.test(p)) return 'calendar';
-        if (/work[_ -]*order|build[_ -]*info|wo/.test(p)) return 'wo';
-        return null;
-      }
-      function rank(role){ var r={sfc:1,wo:2,repair:3,cesium:4,dbmodel:5,bom:6,calendar:7}; return r[role]||99; }
-      self.onmessage = function(ev){
-        var data = ev.data || {};
-        if (data.type !== 'PROCESS_ZIP') return;
-        importScripts(JSZIP_SRC);
-        var start = Date.now();
-        JSZip.loadAsync(data.buffer).then(function(zip){
-          var entries=[];
-          zip.forEach(function(path, entry){
-            if (entry.dir || /^__MACOSX\\//i.test(path) || !/\\.(txt|tsv|csv|json)$/i.test(path)) return;
-            var role=detectRole(path);
-            if (role) entries.push({path:path, entry:entry, role:role, size:(entry._data && entry._data.uncompressedSize) || 0});
-          });
-          entries.sort(function(a,b){ return rank(a.role)-rank(b.role) || (b.size||0)-(a.size||0); });
-          self.postMessage({type:'MANIFEST', count:entries.length});
-          var out=[]; var seq=Promise.resolve();
-          entries.forEach(function(item, idx){
-            seq = seq.then(function(){
-              self.postMessage({type:'PROGRESS', index:idx, total:entries.length, path:item.path, role:item.role});
-              return item.entry.async('string').then(function(text){
-                out.push({path:item.path, role:item.role, text:text, size:item.size});
-              });
-            });
-          });
-          return seq.then(function(){ self.postMessage({type:'DONE', entries:out, elapsedMs:Date.now()-start}); });
-        }).catch(function(err){ self.postMessage({type:'ERROR', message:err && (err.stack || err.message) || String(err)}); });
-      };
-    `;
-  }
-  function processDirect(file, options){
-    return window.ensureZipTools().then(function(){
-      var start = now();
-      if (options && options.onPhase) options.onPhase('scan', 8, 'Analizando estructura del ZIP...');
-      return JSZip.loadAsync(file).then(async function(zip){
-        var entries=[];
-        zip.forEach(function(path, entry){
-          if (entry.dir || !shouldProcess(path)) return;
-          var role=detectRole(path);
-          if (role) entries.push({path:path, entry:entry, role:role, size:(entry._data && entry._data.uncompressedSize) || 0});
-        });
-        entries.sort(function(a,b){ return roleRank(a.role)-roleRank(b.role) || (b.size||0)-(a.size||0); });
-        if (options && options.onPhase) options.onPhase('extract', 18, 'Manifest directo: '+entries.length+' archivo(s) relevante(s).');
-        return { mode:'direct', entries:entries, elapsedMs:Math.round(now()-start), filesProcessed:entries.length };
-      });
-    });
-  }
-  function processWorker(file, options){
-    if (!window.Worker || !window.Blob || !window.URL) return processDirect(file, options);
-    return new Promise(function(resolve, reject){
-      var start=now(), done=false;
-      var blob=new Blob([workerCode()], {type:'text/javascript'});
-      var url=URL.createObjectURL(blob);
-      var worker=new Worker(url);
-      var cleanup=function(){ try{worker.terminate();}catch(_){} try{URL.revokeObjectURL(url);}catch(_){} };
-      var onAbort=function(){ if(done) return; done=true; cleanup(); reject(new Error('Importación cancelada por el usuario. No se actualizó el dataset.')); };
-      window.addEventListener('smtinel-import-abort-requested', onAbort, {once:true});
-      worker.onmessage=function(ev){
-        var m=ev.data||{};
-        if (done) return;
-        if (m.type==='MANIFEST') { if(options&&options.onPhase) options.onPhase('scan', 14, 'Manifest worker: '+m.count+' archivo(s) relevante(s).'); }
-        else if (m.type==='PROGRESS') {
-          var pct=18+Math.round(((m.index||0)/Math.max(1,m.total||1))*50);
-          if(options&&options.onPhase) options.onPhase('extract', pct, 'Extrayendo '+String(m.path||'').split('/').pop()+' ('+m.role+')...');
-        } else if (m.type==='DONE') {
-          done=true; cleanup();
-          var entries=(m.entries||[]).map(function(e){ return {path:e.path, role:e.role, text:e.text, size:e.size}; });
-          resolve({mode:'worker', entries:entries, elapsedMs:Math.round(now()-start), filesProcessed:entries.length});
-        } else if (m.type==='ERROR') {
-          done=true; cleanup(); reject(new Error(m.message || 'Worker ZIP error'));
-        }
-      };
-      worker.onerror=function(err){ if(done) return; done=true; cleanup(); console.warn('[SMTinel] Worker ZIP fallback:', err); processDirect(file, options).then(resolve, reject); };
-      file.arrayBuffer().then(function(buffer){
-        if(options&&options.onPhase) options.onPhase('scan', 10, 'Leyendo buffer ZIP para worker...');
-        worker.postMessage({type:'PROCESS_ZIP', buffer:buffer}, [buffer]);
-      }).catch(function(err){ if(done) return; done=true; cleanup(); reject(err); });
-    });
-  }
-  window.YieldFlowZipProcessor = {
-    version:'12.2',
-    CHUNK_SIZE:CHUNK_SIZE,
-    MAX_WORKERS:MAX_WORKERS,
-    DIRECT_THRESHOLD:DIRECT_THRESHOLD,
-    process:function(file, options){
-      options=options||{};
-      var size=Number(file && file.size || 0);
-      if (options.onPhase) options.onPhase('scan', 6, 'Scan rápido de estructura ZIP (64KB header).');
-      // JSZip still needs central-directory access; worker mode prevents UI blocking for large packages.
-      return (size < DIRECT_THRESHOLD ? processDirect(file, options) : processWorker(file, options));
-    }
-  };
-})();
-
-async function traceOpsYieldTryImportTextZip(file, options) {
-    if (!file || !/\.zip$/i.test(file.name || "")) return null;
-    options = options || {};
-    var started = Date.now();
-    await window.ensureZipTools();
-    traceOpsYieldImportProgress(options, 8, "SCAN", "Scan rápido de estructura ZIP (filtrado temprano TXT/CSV/JSON)...");
-    var processed;
-    try {
-        processed = await window.YieldFlowZipProcessor.process(file, {
-            onPhase: function(phase, pct, msg){
-                var label = phase === 'scan' ? 'SCAN' : phase === 'extract' ? 'EXTRACT' : 'PROCESS';
-                traceOpsYieldImportProgress(options, pct, label, msg);
-            }
-        });
-    } catch (err) {
-        console.warn('[SMTinel] YieldFlowZipProcessor fallback a ruta legacy:', err);
-        processed = null;
-    }
-    var entries = processed && processed.entries ? processed.entries : [];
-    if (!entries.length) return null;
-    entries = entries.filter(function(item){ return item && item.role; }).sort(function(a,b){
-        return traceOpsYieldFastRoleRank(a.role) - traceOpsYieldFastRoleRank(b.role) || Number(b.size||0) - Number(a.size||0);
-    });
-    if (!entries.length) return null;
-    traceOpsYieldImportProgress(options, 22, "TXT_MANIFEST", "ZIP ligero detectado: " + entries.length + " archivo(s) relevantes. Procesando por fases...");
-    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] };
-    var pulledSheets = [];
-    for (var i = 0; i < entries.length; i++) {
-        await traceOpsYieldYieldThread();
-        var item = entries[i];
-        var entryPct = 24 + Math.round((i / Math.max(1, entries.length)) * 42);
-        traceOpsYieldImportProgress(options, entryPct, "PARSING_" + String(item.role || '').toUpperCase(), "Normalizando " + String(item.path||'').split('/').pop() + " (" + item.role + ")...");
-        var text = item.text;
-        if (text == null && item.entry && item.entry.async) text = await item.entry.async("string");
-        await traceOpsYieldYieldThread();
-        var rawRows = traceOpsYieldParseDelimitedText(text, item.role);
-        text = null;
-        await traceOpsYieldYieldThread();
-        var objects = traceOpsYieldObjectsFromRawRows(rawRows, item.role);
-        rawRows = null;
-        if (objects.length) {
-            parsed[item.role] = parsed[item.role].concat(objects);
-            pulledSheets.push({ name: String(item.path||'').split('/').pop(), role: item.role, rows: objects.length });
-        }
-    }
-    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length) {
-        throw new Error("El ZIP ligero contiene TXT/CSV, pero no se reconocieron encabezados utiles. Revisa SFC, Station On Line y Repair Record.");
-    }
-    traceOpsYieldImportProgress(options, 72, "BUILDING_INDEX", "Construyendo índices SN/WO/Repair y liberando UI por etapas...");
-    await traceOpsYieldYieldThread();
-    var summary = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, {
-        source: "ZIP TXT local",
-        mode: "text-import-v12.2",
-        fileName: file.name,
-        importStartMs: (options && options.importStartMs) || started,
-        workbookName: "TXT/TSV lightweight package",
-        container: file.name,
-        sheets: pulledSheets,
-        performance: { processor: processed && processed.mode || 'direct', filesProcessed: pulledSheets.length, processorElapsedMs: processed && processed.elapsedMs || null, totalElapsedMs: Date.now() - started },
-        notes: "Import V12.2: worker/direct hybrid, filtro temprano, abort responsivo, cache pesado omitido por default. Evidencia visible durante esta sesión."
-    }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
-    traceOpsYieldImportProgress(options, 96, "COMPLETE", "Importación completada: " + pulledSheets.length + " archivo(s), " + ((Date.now()-started)/1000).toFixed(1) + "s. Preparando dashboard...");
-    return summary;
-}
-
 async function traceOpsYieldFindWorkbookFile(file) {
     var lower = String(file && file.name || "").toLowerCase();
     if (/\.(xlsx|xlsm)$/.test(lower)) {
@@ -38054,7 +37809,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.2.1 · Yield Flow Fast ZIP Processor · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -38098,7 +37853,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.2.1 · Yield Flow Fast ZIP Processor · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
@@ -38536,5 +38291,137 @@ body.traceops-premium-shell [class*="impact"]{
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
+
+<script>
+/* SMTinel V12.3 - Yield Flow fast import hotfix
+   Purpose:
+   - Fix import stalls around 70-75% by replacing per-SFC Cesium scans with indexed lookup.
+   - Disable heavy same-file IndexedDB cache during import so READY is not blocked by serialization.
+   - Keep architecture intact: no new dependencies, no React/Vite changes.
+*/
+(function(){
+  "use strict";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.3 · Yield Flow Cesium Index Fast Import · 2026-05-23";
+  window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
+
+  function cleanSnLocal(v){
+    try {
+      if (typeof window.traceOpsYieldCleanSn === "function") return window.traceOpsYieldCleanSn(v);
+    } catch(_) {}
+    return String(v == null ? "" : v).toUpperCase().replace(/[^A-Z0-9]/g,"").trim();
+  }
+
+  function buildFtBridgeIndex(rows){
+    var byPrimary = {};
+    var byBox = {};
+    (rows || []).forEach(function(fr){
+      if (!fr) return;
+      var snKeys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn, fr.bridgeKey]
+        .map(cleanSnLocal).filter(Boolean);
+      var boxKeys = [fr.boxsn, fr.boxSn, fr.parentsernum, fr.partsernum]
+        .map(cleanSnLocal).filter(Boolean);
+      var seen = {};
+      snKeys.forEach(function(k){
+        if (!k || seen["S"+k]) return;
+        seen["S"+k] = true;
+        if (!byPrimary[k]) byPrimary[k] = [];
+        byPrimary[k].push(fr);
+      });
+      boxKeys.forEach(function(k){
+        if (!k || seen["B"+k]) return;
+        seen["B"+k] = true;
+        if (!byBox[k]) byBox[k] = [];
+        byBox[k].push(fr);
+      });
+    });
+    window.TRACEOPS_YIELD_FT_BRIDGE_INDEX = { byPrimary: byPrimary, byBox: byBox, rowCount: (rows || []).length, createdAt: Date.now() };
+    return window.TRACEOPS_YIELD_FT_BRIDGE_INDEX;
+  }
+
+  function ensureFtBridgeIndex(rows){
+    rows = rows || window.TRACEOPS_YIELD_FT_ROWS || [];
+    var idx = window.TRACEOPS_YIELD_FT_BRIDGE_INDEX;
+    if (!idx || idx.rowCount !== rows.length) idx = buildFtBridgeIndex(rows);
+    return idx;
+  }
+
+  var originalBuildCesiumRows = window.traceOpsYieldBuildCesiumRows;
+  if (typeof originalBuildCesiumRows === "function") {
+    window.traceOpsYieldBuildCesiumRows = function(cesiumRows, snToSfc, ciscoCalendarMap){
+      var out = originalBuildCesiumRows.call(this, cesiumRows || [], snToSfc || {}, ciscoCalendarMap || {});
+      buildFtBridgeIndex(out || []);
+      return out;
+    };
+  }
+
+  /* Critical fast path:
+     Previous code scanned every Cesium row for every STOCKIN SFC record inside processTimeline.
+     With 100k+ SFC and 60k+ Cesium rows this becomes effectively O(SFC*Cesium).
+     This replacement is O(1) per SFC using maps built once after Cesium parsing. */
+  window.traceOpsYieldCesiumRowsForSfc = function(sfc, ftRows){
+    sfc = sfc || {};
+    var rows = ftRows || window.TRACEOPS_YIELD_FT_ROWS || [];
+    var idx = ensureFtBridgeIndex(rows);
+    var sn = cleanSnLocal(sfc.sn || sfc.sfcSn || "");
+    var box = cleanSnLocal(sfc.boxsn || sfc.boxSn || sfc.bridgeKey || "");
+    var bySn = sn ? (idx.byPrimary[sn] || []) : [];
+    if (bySn.length) return bySn;
+    return box ? ((idx.byPrimary[box] || []).concat(idx.byBox[box] || [])) : [];
+  };
+
+  /* During import the WO total can be calculated directly from the current sfcList.
+     Avoid scanning a previous global TRACEOPS_YIELD_SN_TO_SFC map once per WO. */
+  var originalUniqueSfcSnCountForWo = window.traceOpsYieldUniqueSfcSnCountForWo;
+  window.traceOpsYieldUniqueSfcSnCountForWo = function(wo){
+    if (window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE) return 0;
+    if (typeof originalUniqueSfcSnCountForWo === "function") {
+      return originalUniqueSfcSnCountForWo.call(this, wo);
+    }
+    return 0;
+  };
+
+  var originalImport = window.traceOpsYieldImportExcelZip;
+  if (typeof originalImport === "function") {
+    window.traceOpsYieldImportExcelZip = async function(file, options){
+      window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE = true;
+      var start = Date.now();
+      try {
+        if (options && typeof options.onProgress === "function") {
+          options.onProgress(10, "SCAN", "Escaneando ZIP y archivos objetivo...");
+        }
+        var result = await originalImport.call(this, file, options || {});
+        if (options && typeof options.onProgress === "function") {
+          var secs = ((Date.now() - start) / 1000).toFixed(1);
+          options.onProgress(100, "READY", "Import listo en " + secs + "s. Cesium indexado por SN/BOXSN.");
+        }
+        return result;
+      } finally {
+        window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE = false;
+      }
+    };
+  }
+
+  /* Prevent the post-READY IndexedDB serialization from keeping the loader alive for large local datasets. */
+  window.traceOpsYieldTryApplySameFileCache = function(){ return Promise.resolve(null); };
+  window.traceOpsYieldSaveLocalCache = function(){ return Promise.resolve(false); };
+
+  /* If the visible badge still comes from an older build, correct it without touching layout logic. */
+  function updateBadge(){
+    try {
+      var nodes = document.querySelectorAll("body *");
+      for (var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && /2026-05/.test(el.textContent) && el.textContent.length < 140) {
+          el.textContent = window.SMTINEL_BUILD_BADGE;
+        }
+      }
+    } catch(_) {}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(updateBadge, 800); });
+  else setTimeout(updateBadge, 800);
+})();
+</script>
+
 </body>
 </html>
