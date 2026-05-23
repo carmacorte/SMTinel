@@ -37809,7 +37809,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.4.1 · Yield Flow Import Deadlock Fix · 2026-05-23';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -37853,7 +37853,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.4.1 · Yield Flow Import Deadlock Fix · 2026-05-23';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
@@ -38301,7 +38301,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.3 · Yield Flow Cesium Index Fast Import · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.4.1 · Yield Flow Import Deadlock Fix · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -38420,6 +38420,183 @@ body.traceops-premium-shell [class*="impact"]{
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(updateBadge, 800); });
   else setTimeout(updateBadge, 800);
+})();
+</script>
+
+
+<!-- V12.4.1 loader/import deadlock patch -->
+<script>
+/* SMTinel V12.4 - Yield Flow import deadlock fix
+   Root cause fixed:
+   - V12.3 returned 0 from traceOpsYieldUniqueSfcSnCountForWo during import.
+   - BuildFromImported then fell back to sfcList.map(...).filter(arr.indexOf), an O(N^2) unique count.
+   - Large WOs could hang the loader around 70-100% even with small ZIPs.
+   Fix:
+   - Precompute distinct SFC SN counts by WO once before BuildFromImported.
+   - Return O(1) counts during import.
+   - Defer Cesium parsing in text-ZIP import by default so UI reaches READY first.
+*/
+(function(){
+  "use strict";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.4 · Yield Flow Import Deadlock Fix · 2026-05-23";
+  window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
+  window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = true;
+
+  function callProgress(options, pct, phase, msg){
+    try { if (options && typeof options.onProgress === "function") options.onProgress(pct, phase, msg); } catch(_) {}
+    try { if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(pct, phase, msg); } catch(_) {}
+  }
+  function cleanWoLocal(v){
+    try { if (typeof window.traceOpsYieldCleanWo === "function") return window.traceOpsYieldCleanWo(v); } catch(_) {}
+    return String(v == null ? "" : v).trim();
+  }
+  function cleanSnLocal(v){
+    try { if (typeof window.traceOpsYieldCleanSn === "function") return window.traceOpsYieldCleanSn(v); } catch(_) {}
+    return String(v == null ? "" : v).toUpperCase().replace(/[^A-Z0-9]/g,"").trim();
+  }
+  function pickLocal(row, names){
+    try { if (typeof window.traceOpsYieldPick === "function") return window.traceOpsYieldPick(row, names); } catch(_) {}
+    row = row || {};
+    for (var i=0;i<names.length;i++){
+      if (row[names[i]] != null && String(row[names[i]]).trim() !== "") return row[names[i]];
+    }
+    return "";
+  }
+  function buildWoSnCountMap(sfcRows){
+    var sets = Object.create(null);
+    (sfcRows || []).forEach(function(row){
+      var wo = cleanWoLocal(pickLocal(row, ["WorkOrderNo", "workorderno", "Work Order", "Work Order to search", "WO Number", "WO NO", "WO_NO", "WO", "WorkOrder", "Orden", "Order"]));
+      if (!wo) return;
+      var sn = "";
+      try { if (typeof window.traceOpsYieldPickSn === "function") sn = window.traceOpsYieldPickSn(row); } catch(_) {}
+      if (!sn) sn = pickLocal(row, ["SN", "Serial", "Serial Number", "serialnumber", "sysserialno", "boxsn", "BOXSN"]);
+      sn = cleanSnLocal(sn);
+      if (!sn) return;
+      if (!sets[wo]) sets[wo] = Object.create(null);
+      sets[wo][sn] = 1;
+    });
+    var counts = Object.create(null);
+    Object.keys(sets).forEach(function(wo){ counts[wo] = Object.keys(sets[wo]).length; });
+    window.TRACEOPS_YIELD_FAST_WO_SN_COUNT_MAP = counts;
+    return counts;
+  }
+
+  var previousUniqueWoCount = window.traceOpsYieldUniqueSfcSnCountForWo;
+  window.traceOpsYieldUniqueSfcSnCountForWo = function(wo){
+    var key = cleanWoLocal(wo);
+    var map = window.TRACEOPS_YIELD_FAST_WO_SN_COUNT_MAP || {};
+    if (key && map[key] != null) return map[key];
+    if (window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE) return 0;
+    if (typeof previousUniqueWoCount === "function") return previousUniqueWoCount.call(this, wo);
+    return 0;
+  };
+
+  var originalBuild = window.traceOpsYieldBuildFromImported;
+  if (typeof originalBuild === "function" && !originalBuild.__smtinelV124Wrapped) {
+    var wrappedBuild = function(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows){
+      buildWoSnCountMap(sfcRows || []);
+      return originalBuild.call(this, workRows || [], sfcRows || [], repairRows || [], sourceMeta || {}, calendarRows || [], dbModelRows || [], cesiumRows || [], bomRows || []);
+    };
+    wrappedBuild.__smtinelV124Wrapped = true;
+    window.traceOpsYieldBuildFromImported = wrappedBuild;
+  }
+
+  var originalTryTextZip = window.traceOpsYieldTryImportTextZip;
+  if (typeof originalTryTextZip === "function") {
+    window.traceOpsYieldTryImportTextZip = async function(file, options){
+      if (!file || !/\.zip$/i.test(file.name || "")) return null;
+      await window.ensureZipTools();
+      window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE = true;
+      var started = Date.now();
+      callProgress(options, 12, "SCAN", "Escaneando ZIP TXT y preparando importación rápida...");
+      var outer = await JSZip.loadAsync(file);
+      var entries = [];
+      outer.forEach(function(path, entry){
+        if (entry.dir || /^__MACOSX\//i.test(path)) return;
+        if (!/\.(txt|tsv|csv)$/i.test(path)) return;
+        var role = "";
+        try { role = window.traceOpsYieldDetectTextRole(path); } catch(_) {}
+        if (!role) return;
+        if (window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT && role === "cesium") {
+          window.TRACEOPS_YIELD_DEFERRED_CESIUM_ENTRY = { path:path, entry:entry, fileName:file.name, deferredAt:Date.now() };
+          return;
+        }
+        entries.push({ path:path, entry:entry, role:role });
+      });
+      if (!entries.length) {
+        window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE = false;
+        return originalTryTextZip.call(this, file, options || {});
+      }
+      entries.sort(function(a,b){
+        var ar = typeof window.traceOpsYieldFastRoleRank === "function" ? window.traceOpsYieldFastRoleRank(a.role) : 99;
+        var br = typeof window.traceOpsYieldFastRoleRank === "function" ? window.traceOpsYieldFastRoleRank(b.role) : 99;
+        return ar - br;
+      });
+      var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] };
+      var pulled = [];
+      try {
+        for (var i=0;i<entries.length;i++){
+          if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
+          var item = entries[i];
+          var pct = 18 + Math.round((i / Math.max(1, entries.length)) * 48);
+          callProgress(options, pct, "PARSING_" + String(item.role || "").toUpperCase(), "Leyendo " + item.path.split('/').pop() + " sin cálculos pesados...");
+          var text = await item.entry.async("string");
+          await (typeof window.traceOpsYieldYieldThread === "function" ? window.traceOpsYieldYieldThread() : new Promise(function(r){ setTimeout(r,0); }));
+          var rawRows = window.traceOpsYieldParseDelimitedText(text, item.role);
+          text = null;
+          await (typeof window.traceOpsYieldYieldThread === "function" ? window.traceOpsYieldYieldThread() : new Promise(function(r){ setTimeout(r,0); }));
+          var objects = window.traceOpsYieldObjectsFromRawRows(rawRows, item.role);
+          rawRows = null;
+          if (objects && objects.length) {
+            parsed[item.role] = parsed[item.role].concat(objects);
+            pulled.push({ name:item.path.split('/').pop(), role:item.role, rows:objects.length });
+          }
+          if (item.role === "sfc") {
+            callProgress(options, pct + 2, "INDEX_SFC", "Precalculando conteo único de SN por WO...");
+            buildWoSnCountMap(parsed.sfc);
+          }
+          await (typeof window.traceOpsYieldYieldThread === "function" ? window.traceOpsYieldYieldThread() : new Promise(function(r){ setTimeout(r,0); }));
+        }
+        if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length) {
+          throw new Error("El ZIP TXT no tiene encabezados útiles para Yield Flow.");
+        }
+        callProgress(options, 76, "BUILDING_INDEX", "Construyendo modelo Yield Flow con conteos O(1) por WO...");
+        buildWoSnCountMap(parsed.sfc);
+        var meta = {
+          source:"ZIP TXT local",
+          mode:"text-import-fast-v12.4",
+          fileName:file.name,
+          importStartMs:(options && options.importStartMs) || started,
+          workbookName:"TXT/TSV lightweight package",
+          container:file.name,
+          sheets:pulled,
+          notes:"V12.4: corrige deadlock O(N^2) en conteo único de SN por WO y difiere Cesium durante importación inicial."
+        };
+        var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, [], parsed.bom);
+        var secs = ((Date.now() - started) / 1000).toFixed(1);
+        callProgress(options, 100, "READY", "Import local listo en " + secs + "s. Cesium quedó diferido para evitar bloqueo.");
+        try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
+        return built;
+      } finally {
+        window.TRACEOPS_YIELD_FAST_IMPORT_ACTIVE = false;
+      }
+    };
+  }
+
+  function updateBadge(){
+    try {
+      var nodes = document.querySelectorAll("body *");
+      for (var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && /2026-05/.test(el.textContent) && el.textContent.length < 160) {
+          el.textContent = window.SMTINEL_BUILD_BADGE;
+        }
+      }
+    } catch(_) {}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(updateBadge, 700); });
+  else setTimeout(updateBadge, 700);
 })();
 </script>
 
