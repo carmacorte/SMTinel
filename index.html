@@ -9,7 +9,7 @@ window.TRACEOPS_SUPABASE = {
   anonKey: "sb_publishable_FRi9eaXD-6TYVXLCCUCWkg_1VuvcIhV"
 };
 </script>
-<meta charset="UTF-8"/><!-- SMTinel v2026-05-23 V11.9.1 | FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
+<meta charset="UTF-8"/><!-- SMTinel V12.2 Yield Flow Fast ZIP Processor |  FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
 <script>
 window.__traceopsZipReady = null;
 window.__traceopsExcelReady = null;
@@ -30,46 +30,73 @@ function loadExternalScript(src) {
   return new Promise(function(resolve, reject) {
     var existing = document.querySelector('script[data-traceops-src="' + src + '"]');
     if (existing) {
-      if (existing.dataset.loaded === "true") {
-        resolve();
-        return;
-      }
+      if (existing.dataset.loaded === "true") { resolve(); return; }
       existing.addEventListener("load", function() { resolve(); }, { once: true });
-      existing.addEventListener("error", function() {
-        reject(new Error("No se pudo cargar el script: " + src));
-      }, { once: true });
+      existing.addEventListener("error", function() { reject(new Error("No se pudo cargar el script: " + src)); }, { once: true });
       return;
     }
-
     var s = document.createElement("script");
     s.src = src;
     s.crossOrigin = "anonymous";
     s.async = true;
     s.dataset.traceopsSrc = src;
-    s.onload = function() {
-      s.dataset.loaded = "true";
-      resolve();
-    };
-    s.onerror = function() {
-      reject(new Error("No se pudo cargar el script: " + src));
-    };
+    s.onload = function() { s.dataset.loaded = "true"; resolve(); };
+    s.onerror = function() { reject(new Error("No se pudo cargar el script: " + src)); };
     document.head.appendChild(s);
+  });
+}
+
+function traceOpsLoadExternalScriptViaFetch(src, fetchOptions) {
+  return new Promise(function(resolve, reject) {
+    var existing = document.querySelector('script[data-traceops-src="' + src + '"]');
+    if (existing) {
+      if (existing.dataset.loaded === "true") { resolve(); return; }
+      existing.addEventListener("load", function(){ resolve(); }, { once:true });
+      existing.addEventListener("error", function(){ reject(new Error("No se pudo cargar el script: " + src)); }, { once:true });
+      return;
+    }
+    if (!window.fetch || !window.Blob || !window.URL) {
+      loadExternalScript(src).then(resolve, reject);
+      return;
+    }
+    var reqInit = Object.assign({ cache: "force-cache", mode: "cors" }, fetchOptions || {});
+    try { reqInit.priority = reqInit.priority || "high"; } catch (_) {}
+    fetch(src, reqInit).then(function(resp) {
+      if (!resp || !resp.ok) throw new Error("HTTP " + (resp && resp.status) + " cargando " + src);
+      return resp.text();
+    }).then(function(code) {
+      var blob = new Blob([code + "\n//# sourceURL=" + src], { type: "text/javascript" });
+      var url = URL.createObjectURL(blob);
+      var s = document.createElement("script");
+      s.async = true;
+      s.dataset.traceopsSrc = src;
+      s.onload = function() { s.dataset.loaded = "true"; try { URL.revokeObjectURL(url); } catch(_){} resolve(); };
+      s.onerror = function() { try { URL.revokeObjectURL(url); } catch(_){} reject(new Error("No se pudo ejecutar script fetched: " + src)); };
+      s.src = url;
+      document.head.appendChild(s);
+    }).catch(function(err) {
+      console.warn("[SMTinel] Fetch preload fallo; fallback script tag:", err);
+      loadExternalScript(src).then(resolve, reject);
+    });
   });
 }
 
 window.ensureZipTools = function() {
   if (window.JSZip) return Promise.resolve();
   if (window.__traceopsZipReady) return window.__traceopsZipReady;
-
-  window.__traceopsZipReady = loadExternalScript(
-    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
-  ).catch(function(err) {
+  var src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+  window.__traceopsZipReady = traceOpsLoadExternalScriptViaFetch(src, { priority: "high" }).catch(function(err) {
     window.__traceopsZipReady = null;
     throw err;
   });
-
   return window.__traceopsZipReady;
 };
+
+(function traceOpsProgressiveZipPreload(){
+  var run = function(){ try { window.ensureZipTools && window.ensureZipTools().catch(function(err){ console.warn("[SMTinel] JSZip preload omitido:", err); }); } catch(_){} };
+  if ("requestIdleCallback" in window) requestIdleCallback(run, { timeout: 2500 });
+  else setTimeout(run, 1200);
+})();
 
 window.ensureExcelTools = function() {
   if (window.JSZip && window.ExcelJS) return Promise.resolve();
@@ -177,8 +204,6 @@ window.addEventListener("error", function(ev) {
 
 
 window.__TRACEOPS_BOOT_OK__ = true;
-window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true; // V11.9 guard: prevents 100% import deadlock on large ZIPs
-
 window.addEventListener("unhandledrejection", function(ev) {
   try {
     var reason = ev && ev.reason ? (ev.reason.stack || ev.reason.message || String(ev.reason)) : "Unhandled promise rejection";
@@ -2521,123 +2546,6 @@ button.danger,.btn-danger,.rcca-critical-action{
 .ri-tracker-edit-plan{min-width:240px;min-height:92px!important;}
 .ri-tracker-table td{vertical-align:top;}
 
-
-
-/* ==== SMTinel V12.1 Board Impact View UI Refresh ==== */
-:root{
-  --smt-bg:#FAFAF9;
-  --smt-panel:rgba(255,255,255,.78);
-  --smt-panel-solid:#FFFFFF;
-  --smt-olive-900:#3D4A36;
-  --smt-olive-700:#56664B;
-  --smt-olive-600:#6B7A61;
-  --smt-text:#1C1917;
-  --smt-muted:#78716C;
-  --smt-line:#E7E5E4;
-  --smt-crimson:#9B2335;
-  --smt-crimson-rgb:155,35,53;
-  --smt-blue:#2563EB;
-  --smt-orange:#D97706;
-  --smt-green:#059669;
-  --smt-purple:#7C3AED;
-  --smt-red:#DC2626;
-  --smt-gray:#4B5563;
-}
-#boardimpact-section{
-  width:100% !important;
-  max-width:1920px !important;
-  margin-left:auto !important;
-  margin-right:auto !important;
-  padding:0 clamp(10px,1.2vw,24px) !important;
-  gap:18px !important;
-  background:transparent !important;
-}
-#boardimpact-section *{font-feature-settings:"tnum" 1, "lnum" 1;}
-#boardimpact-section > div:first-child,
-#boardimpact-section > section{
-  border-radius:18px !important;
-  box-shadow:0 2px 8px rgba(0,0,0,.04) !important;
-}
-#boardimpact-section > div:nth-child(2){
-  display:grid !important;
-  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
-  gap:14px !important;
-}
-#boardimpact-section > div:nth-child(2) > div{
-  background:var(--smt-panel) !important;
-  backdrop-filter:blur(10px) !important;
-  -webkit-backdrop-filter:blur(10px) !important;
-  border:1px solid rgba(var(--smt-crimson-rgb),.15) !important;
-  border-radius:12px !important;
-  padding:16px !important;
-  box-shadow:0 2px 8px rgba(0,0,0,.04) !important;
-  min-height:104px !important;
-}
-#boardimpact-section > div:nth-child(2) > div > div:first-child{
-  width:42px !important;height:42px !important;border-radius:12px !important;
-}
-#boardimpact-section > div:nth-child(2) > div > div:last-child > div:first-child{
-  color:var(--smt-olive-600) !important;
-  font-size:.75rem !important;
-  letter-spacing:.05em !important;
-  text-transform:uppercase !important;
-}
-#boardimpact-section > div:nth-child(2) > div > div:last-child > div:nth-child(2){
-  font-size:clamp(1.5rem,2.5vw,2.5rem) !important;
-  font-weight:800 !important;
-  line-height:.95 !important;
-  color:var(--smt-text) !important;
-}
-.smt-bi-filter-panel{
-  background:var(--smt-panel-solid);
-  border:1px solid #D9E6F7;
-  border-radius:18px;
-  overflow:hidden;
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
-}
-.smt-bi-filter-head{
-  padding:14px 18px;
-  background:#F7FAFF;
-  border-bottom:1px solid #ECF3FF;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.smt-bi-filter-title{font-size:15px;font-weight:900;color:#102A43;}
-.smt-bi-filter-sub{font-size:10.5px;color:#5F766C;margin-top:4px;}
-.smt-bi-filter-counter{display:inline-flex;border-radius:999px;background:#EEF5FF;border:1px solid #C9DAF5;color:#1F3A5F;padding:7px 10px;font-size:11px;font-weight:900;}
-.smt-bi-smartbar{padding:14px 16px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.smt-bi-smart-input{flex:1 1 420px;height:48px;border:1px solid #C9DAF5;border-radius:999px;padding:0 16px;font-size:13px;font-weight:800;color:#102A43;outline:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.03);}
-.smt-bi-smart-input:focus{border-color:var(--smt-crimson);box-shadow:0 0 0 3px rgba(var(--smt-crimson-rgb),.12);}
-.smt-bi-smart-clear{height:48px;border:1px solid #C9DAF5;background:#fff;color:#1F3A5F;border-radius:999px;padding:0 14px;font-size:11px;font-weight:900;cursor:pointer;}
-.smt-bi-smart-count{font-size:10.5px;font-weight:900;color:#5F766C;white-space:nowrap;}
-.smt-bi-pill-rail{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 14px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
-.smt-bi-option-pill{height:48px;flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;border:1px solid #D9E6F7;background:#fff;color:#102A43;border-radius:999px;padding:0 12px;cursor:pointer;max-width:340px;box-shadow:0 1px 4px rgba(0,0,0,.03);}
-.smt-bi-option-pill.active{border-color:var(--smt-crimson);background:#FFF5F6;box-shadow:0 0 0 2px rgba(var(--smt-crimson-rgb),.08);}
-.smt-bi-option-kind{font-size:9px;font-weight:950;letter-spacing:.08em;color:#fff;background:#1F3A5F;border-radius:999px;padding:4px 6px;}
-.smt-bi-option-pill.kind-pn .smt-bi-option-kind{background:var(--smt-orange);}
-.smt-bi-option-pill.kind-ref .smt-bi-option-kind{background:var(--smt-crimson);}
-.smt-bi-option-pill.kind-sn .smt-bi-option-kind{background:var(--smt-blue);}
-.smt-bi-option-label{font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
-.smt-bi-option-meta{font-size:10px;color:#5F766C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px;}
-.smt-bi-active-filters{padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.smt-bi-filter-chip{border:1px solid #C9DAF5;background:#EEF5FF;color:#1F3A5F;border-radius:999px;padding:7px 10px;font-size:10.5px;font-weight:900;cursor:pointer;}
-.smt-bi-filter-clear{border:1px solid #F3B6B0;background:#FDEEEE;color:#C44141;border-radius:999px;padding:7px 10px;font-size:10.5px;font-weight:900;cursor:pointer;}
-#boardimpact-section section:has(#traceops-board-pdf-stage){min-height:780px;}
-#traceops-board-pdf-stage{min-height:680px !important;}
-#boardimpact-section table tr:nth-child(even) td{background:rgba(250,250,249,.55);}
-#boardimpact-section table tr:hover td{background:#FFF5F6 !important;}
-#boardimpact-section button:focus-visible,
-#boardimpact-section input:focus-visible,
-#boardimpact-section select:focus-visible{outline:3px solid rgba(var(--smt-crimson-rgb),.28) !important;outline-offset:2px !important;}
-@media (min-width:1366px){#boardimpact-section{padding-left:clamp(16px,1.4vw,28px) !important;padding-right:clamp(16px,1.4vw,28px) !important;}}
-@media (min-width:1600px){#boardimpact-section{max-width:1880px !important;}#traceops-board-pdf-stage{min-height:720px !important;}}
-@media (min-width:1920px){#boardimpact-section{max-width:1920px !important;}#traceops-board-pdf-stage{min-height:760px !important;}}
-@media (max-width:1440px){#boardimpact-section > div:nth-child(2){grid-template-columns:repeat(3,minmax(0,1fr)) !important;}}
-@media (max-width:720px){#boardimpact-section > div:nth-child(2){grid-template-columns:repeat(2,minmax(0,1fr)) !important;} .smt-bi-smart-input{flex-basis:100%;} .smt-bi-smart-count{width:100%;} .smt-bi-option-meta{display:none;} #traceops-board-pdf-stage{min-height:72svh !important;}}
-/* ==== End SMTinel V12.1 Board Impact View UI Refresh ==== */
 </style>
 
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4504,6 +4412,20 @@ html body .sidebar .admin-mode{
 }
 </style>
 
+<style id="smtinel-yieldflow-v12-2-loader-css">
+/* ==== V12.2 Yield Flow streaming loader/performance UI ==== */
+.smtinel-loader-timer{font-family:"Courier New",Consolas,monospace;font-size:13px;color:#46502F;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.smtinel-loader-progress{height:6px;min-height:6px;border-radius:999px;background:rgba(70,80,47,.16);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(70,80,47,.08)}
+.smtinel-loader-progress>span,.smtinel-loader-progress>div{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#46502F 0%,#7A834C 48%,#9B2335 100%);transition:width .28s cubic-bezier(.2,.7,.2,1)}
+.smtinel-loader-step{font-size:11px;color:#5F766C;font-weight:800;letter-spacing:.08em;text-transform:uppercase;transition:color .2s ease,opacity .2s ease,transform .2s ease}
+.smtinel-loader-step.is-active{color:#9B2335;transform:translateY(-1px)}
+.smtinel-loader-step.is-done{color:#46502F;opacity:.78}
+#smtinelZipWaitScreen .smtinel-zip-wait-elapsed b{font-family:"Courier New",Consolas,monospace;font-size:13px;color:#46502F;font-weight:900;font-variant-numeric:tabular-nums}
+#smtinelZipWaitScreen .smtinel-zip-wait-bar{height:6px;background:rgba(70,80,47,.16);box-shadow:inset 0 0 0 1px rgba(70,80,47,.08)}
+#smtinelZipWaitScreen .smtinel-zip-wait-fill{background:linear-gradient(90deg,#46502F 0%,#7A834C 50%,#9B2335 100%);transition:width .28s cubic-bezier(.2,.7,.2,1)}
+#smtinelZipWaitScreen .smtinel-zip-wait-phase span:first-child{font-size:11px;color:#5F766C;font-weight:900;letter-spacing:.10em}
+</style>
+
 <script id="smtinel-zip-wait-screen-js-v1">
 (function(){
   var hideTimer=null;
@@ -4538,14 +4460,10 @@ html body .sidebar .admin-mode{
     setText('smtinelZipWaitPct',pct+'%');
     setText('smtinelZipWaitPhase',phase||'READING_ZIP');
     setText('smtinelZipWaitMessage',message||'Cargando archivos ZIP y construyendo trazabilidad operacional...');
+    try { screen.setAttribute('data-phase', phase || 'READING_ZIP'); screen.setAttribute('data-progress', String(pct)); } catch(_){}
     tick();
     screen.style.display='flex';
     requestAnimationFrame(function(){ screen.classList.add('is-active'); });
-    // V11.9: READY must not keep the modal open if post-import rendering/cache work continues.
-    if (pct >= 100 && /READY|CACHE_HIT|RESTORED/i.test(String(phase || ''))) {
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(function(){ try { window.smtinelZipWaitHide(0); } catch(_){} }, 900);
-    }
   };
   window.smtinelZipWaitHide=function(delay){
     var screen=getScreen(); if(!screen) return;
@@ -8811,23 +8729,8 @@ function traceOpsYieldApplyLocalCache(record) {
 }
 function traceOpsYieldSaveLocalCache(file, summary) {
     try {
-        // V11.9: avoid IndexedDB structured-clone deadlocks on large Yield ZIPs.
-        // The dataset is already in memory after import; saving 40-150 MB snapshots can
-        // freeze Chrome/Safari at 100% for several minutes. Keep only lightweight meta.
-        var fileSizeMb = traceOpsYieldMb(file && file.size || 0);
-        var rowCount = Number(summary && summary.rows && ((summary.rows.sfc || 0) + (summary.rows.repairs || 0) + (summary.rows.cesium || summary.rows.cesiumInScope || 0)) || 0);
-        if (fileSizeMb >= 2 || rowCount >= 15000 || window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE === true) {
-            var lightMeta = {
-                fileName: file && file.name || (summary && summary.fileName) || "local import",
-                fileSize: file && file.size || 0,
-                lastModified: file && file.lastModified || 0,
-                fingerprint: traceOpsYieldFileFingerprint(file),
-                cachedAt: new Date().toISOString(),
-                storage: "metadata-only",
-                privacy: "local-only-no-cloud",
-                engine: "V11.9 Import Deadlock Guard"
-            };
-            try { localStorage.setItem("traceops_yieldflow_cache_meta", JSON.stringify(lightMeta)); } catch(_) {}
+        if (window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE !== false) {
+            try { console.info("[SMTinel] Yield Flow heavy cache skipped by V12.2 fast-import guard."); } catch(_) {}
             return Promise.resolve(null);
         }
         if (!traceOpsLocalCacheSupported()) return Promise.resolve(null);
@@ -10820,6 +10723,205 @@ function traceOpsYieldRowLimitForRole(role) {
     if (r === 'wo') return traceOpsYieldIsMobileDevice() ? 50000 : 120000;
     return traceOpsYieldRowLimitForImport();
 }
+ 
+/* ==== V12.2 Yield Flow ZIP Processor: worker/direct hybrid, early filtering, abort-aware ==== */
+(function(){
+  if (window.YieldFlowZipProcessor && window.YieldFlowZipProcessor.version === "12.2") return;
+  var CHUNK_SIZE = 1024 * 1024;
+  var MAX_WORKERS = 4;
+  var DIRECT_THRESHOLD = 10 * 1024 * 1024;
+  var RELEVANT_EXT_RE = /\.(txt|tsv|csv|json)$/i;
+  function now(){ return (performance && performance.now) ? performance.now() : Date.now(); }
+  function assertAbort(){ if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert(); }
+  function yieldMain(){ return new Promise(function(resolve, reject){ setTimeout(function(){ try{ assertAbort(); resolve(); } catch(e){ reject(e); } },0); }); }
+  function basename(path){ return String(path||"").split('/').pop(); }
+  function mb(n){ return (Number(n)||0)/1024/1024; }
+  function roleRank(role){ var r={sfc:1,wo:2,repair:3,cesium:4,dbmodel:5,bom:6,calendar:7}; return r[role]||99; }
+  function detectRole(path){
+    if (typeof window.traceOpsYieldDetectTextRole === 'function') return window.traceOpsYieldDetectTextRole(path);
+    var p=String(path||'').toLowerCase();
+    if (/repair|repar/i.test(p)) return 'repair';
+    if (/station[_ -]*on[_ -]*line|sfc|serial/i.test(p)) return 'sfc';
+    if (/cesium|yield|test/i.test(p)) return 'cesium';
+    if (/db[_ -]*model|model/i.test(p)) return 'dbmodel';
+    if (/bom|component/i.test(p)) return 'bom';
+    if (/calendar|cisco/i.test(p)) return 'calendar';
+    if (/work[_ -]*order|build[_ -]*info|wo/i.test(p)) return 'wo';
+    return null;
+  }
+  function shouldProcess(path){ return RELEVANT_EXT_RE.test(String(path||'')) && !/^__MACOSX\//i.test(String(path||'')); }
+  function workerCode(){
+    return `
+      var JSZIP_SRC = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      function detectRole(path){
+        var p=String(path||'').toLowerCase();
+        if (/repair|repar/.test(p)) return 'repair';
+        if (/station[_ -]*on[_ -]*line|sfc|serial/.test(p)) return 'sfc';
+        if (/cesium|yield|test/.test(p)) return 'cesium';
+        if (/db[_ -]*model|model/.test(p)) return 'dbmodel';
+        if (/bom|component/.test(p)) return 'bom';
+        if (/calendar|cisco/.test(p)) return 'calendar';
+        if (/work[_ -]*order|build[_ -]*info|wo/.test(p)) return 'wo';
+        return null;
+      }
+      function rank(role){ var r={sfc:1,wo:2,repair:3,cesium:4,dbmodel:5,bom:6,calendar:7}; return r[role]||99; }
+      self.onmessage = function(ev){
+        var data = ev.data || {};
+        if (data.type !== 'PROCESS_ZIP') return;
+        importScripts(JSZIP_SRC);
+        var start = Date.now();
+        JSZip.loadAsync(data.buffer).then(function(zip){
+          var entries=[];
+          zip.forEach(function(path, entry){
+            if (entry.dir || /^__MACOSX\\//i.test(path) || !/\\.(txt|tsv|csv|json)$/i.test(path)) return;
+            var role=detectRole(path);
+            if (role) entries.push({path:path, entry:entry, role:role, size:(entry._data && entry._data.uncompressedSize) || 0});
+          });
+          entries.sort(function(a,b){ return rank(a.role)-rank(b.role) || (b.size||0)-(a.size||0); });
+          self.postMessage({type:'MANIFEST', count:entries.length});
+          var out=[]; var seq=Promise.resolve();
+          entries.forEach(function(item, idx){
+            seq = seq.then(function(){
+              self.postMessage({type:'PROGRESS', index:idx, total:entries.length, path:item.path, role:item.role});
+              return item.entry.async('string').then(function(text){
+                out.push({path:item.path, role:item.role, text:text, size:item.size});
+              });
+            });
+          });
+          return seq.then(function(){ self.postMessage({type:'DONE', entries:out, elapsedMs:Date.now()-start}); });
+        }).catch(function(err){ self.postMessage({type:'ERROR', message:err && (err.stack || err.message) || String(err)}); });
+      };
+    `;
+  }
+  function processDirect(file, options){
+    return window.ensureZipTools().then(function(){
+      var start = now();
+      if (options && options.onPhase) options.onPhase('scan', 8, 'Analizando estructura del ZIP...');
+      return JSZip.loadAsync(file).then(async function(zip){
+        var entries=[];
+        zip.forEach(function(path, entry){
+          if (entry.dir || !shouldProcess(path)) return;
+          var role=detectRole(path);
+          if (role) entries.push({path:path, entry:entry, role:role, size:(entry._data && entry._data.uncompressedSize) || 0});
+        });
+        entries.sort(function(a,b){ return roleRank(a.role)-roleRank(b.role) || (b.size||0)-(a.size||0); });
+        if (options && options.onPhase) options.onPhase('extract', 18, 'Manifest directo: '+entries.length+' archivo(s) relevante(s).');
+        return { mode:'direct', entries:entries, elapsedMs:Math.round(now()-start), filesProcessed:entries.length };
+      });
+    });
+  }
+  function processWorker(file, options){
+    if (!window.Worker || !window.Blob || !window.URL) return processDirect(file, options);
+    return new Promise(function(resolve, reject){
+      var start=now(), done=false;
+      var blob=new Blob([workerCode()], {type:'text/javascript'});
+      var url=URL.createObjectURL(blob);
+      var worker=new Worker(url);
+      var cleanup=function(){ try{worker.terminate();}catch(_){} try{URL.revokeObjectURL(url);}catch(_){} };
+      var onAbort=function(){ if(done) return; done=true; cleanup(); reject(new Error('Importación cancelada por el usuario. No se actualizó el dataset.')); };
+      window.addEventListener('smtinel-import-abort-requested', onAbort, {once:true});
+      worker.onmessage=function(ev){
+        var m=ev.data||{};
+        if (done) return;
+        if (m.type==='MANIFEST') { if(options&&options.onPhase) options.onPhase('scan', 14, 'Manifest worker: '+m.count+' archivo(s) relevante(s).'); }
+        else if (m.type==='PROGRESS') {
+          var pct=18+Math.round(((m.index||0)/Math.max(1,m.total||1))*50);
+          if(options&&options.onPhase) options.onPhase('extract', pct, 'Extrayendo '+String(m.path||'').split('/').pop()+' ('+m.role+')...');
+        } else if (m.type==='DONE') {
+          done=true; cleanup();
+          var entries=(m.entries||[]).map(function(e){ return {path:e.path, role:e.role, text:e.text, size:e.size}; });
+          resolve({mode:'worker', entries:entries, elapsedMs:Math.round(now()-start), filesProcessed:entries.length});
+        } else if (m.type==='ERROR') {
+          done=true; cleanup(); reject(new Error(m.message || 'Worker ZIP error'));
+        }
+      };
+      worker.onerror=function(err){ if(done) return; done=true; cleanup(); console.warn('[SMTinel] Worker ZIP fallback:', err); processDirect(file, options).then(resolve, reject); };
+      file.arrayBuffer().then(function(buffer){
+        if(options&&options.onPhase) options.onPhase('scan', 10, 'Leyendo buffer ZIP para worker...');
+        worker.postMessage({type:'PROCESS_ZIP', buffer:buffer}, [buffer]);
+      }).catch(function(err){ if(done) return; done=true; cleanup(); reject(err); });
+    });
+  }
+  window.YieldFlowZipProcessor = {
+    version:'12.2',
+    CHUNK_SIZE:CHUNK_SIZE,
+    MAX_WORKERS:MAX_WORKERS,
+    DIRECT_THRESHOLD:DIRECT_THRESHOLD,
+    process:function(file, options){
+      options=options||{};
+      var size=Number(file && file.size || 0);
+      if (options.onPhase) options.onPhase('scan', 6, 'Scan rápido de estructura ZIP (64KB header).');
+      // JSZip still needs central-directory access; worker mode prevents UI blocking for large packages.
+      return (size < DIRECT_THRESHOLD ? processDirect(file, options) : processWorker(file, options));
+    }
+  };
+})();
+
+async function traceOpsYieldTryImportTextZip(file, options) {
+    if (!file || !/\.zip$/i.test(file.name || "")) return null;
+    options = options || {};
+    var started = Date.now();
+    await window.ensureZipTools();
+    traceOpsYieldImportProgress(options, 8, "SCAN", "Scan rápido de estructura ZIP (filtrado temprano TXT/CSV/JSON)...");
+    var processed;
+    try {
+        processed = await window.YieldFlowZipProcessor.process(file, {
+            onPhase: function(phase, pct, msg){
+                var label = phase === 'scan' ? 'SCAN' : phase === 'extract' ? 'EXTRACT' : 'PROCESS';
+                traceOpsYieldImportProgress(options, pct, label, msg);
+            }
+        });
+    } catch (err) {
+        console.warn('[SMTinel] YieldFlowZipProcessor fallback a ruta legacy:', err);
+        processed = null;
+    }
+    var entries = processed && processed.entries ? processed.entries : [];
+    if (!entries.length) return null;
+    entries = entries.filter(function(item){ return item && item.role; }).sort(function(a,b){
+        return traceOpsYieldFastRoleRank(a.role) - traceOpsYieldFastRoleRank(b.role) || Number(b.size||0) - Number(a.size||0);
+    });
+    if (!entries.length) return null;
+    traceOpsYieldImportProgress(options, 22, "TXT_MANIFEST", "ZIP ligero detectado: " + entries.length + " archivo(s) relevantes. Procesando por fases...");
+    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] };
+    var pulledSheets = [];
+    for (var i = 0; i < entries.length; i++) {
+        await traceOpsYieldYieldThread();
+        var item = entries[i];
+        var entryPct = 24 + Math.round((i / Math.max(1, entries.length)) * 42);
+        traceOpsYieldImportProgress(options, entryPct, "PARSING_" + String(item.role || '').toUpperCase(), "Normalizando " + String(item.path||'').split('/').pop() + " (" + item.role + ")...");
+        var text = item.text;
+        if (text == null && item.entry && item.entry.async) text = await item.entry.async("string");
+        await traceOpsYieldYieldThread();
+        var rawRows = traceOpsYieldParseDelimitedText(text, item.role);
+        text = null;
+        await traceOpsYieldYieldThread();
+        var objects = traceOpsYieldObjectsFromRawRows(rawRows, item.role);
+        rawRows = null;
+        if (objects.length) {
+            parsed[item.role] = parsed[item.role].concat(objects);
+            pulledSheets.push({ name: String(item.path||'').split('/').pop(), role: item.role, rows: objects.length });
+        }
+    }
+    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length) {
+        throw new Error("El ZIP ligero contiene TXT/CSV, pero no se reconocieron encabezados utiles. Revisa SFC, Station On Line y Repair Record.");
+    }
+    traceOpsYieldImportProgress(options, 72, "BUILDING_INDEX", "Construyendo índices SN/WO/Repair y liberando UI por etapas...");
+    await traceOpsYieldYieldThread();
+    var summary = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, {
+        source: "ZIP TXT local",
+        mode: "text-import-v12.2",
+        fileName: file.name,
+        importStartMs: (options && options.importStartMs) || started,
+        workbookName: "TXT/TSV lightweight package",
+        container: file.name,
+        sheets: pulledSheets,
+        performance: { processor: processed && processed.mode || 'direct', filesProcessed: pulledSheets.length, processorElapsedMs: processed && processed.elapsedMs || null, totalElapsedMs: Date.now() - started },
+        notes: "Import V12.2: worker/direct hybrid, filtro temprano, abort responsivo, cache pesado omitido por default. Evidencia visible durante esta sesión."
+    }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
+    traceOpsYieldImportProgress(options, 96, "COMPLETE", "Importación completada: " + pulledSheets.length + " archivo(s), " + ((Date.now()-started)/1000).toFixed(1) + "s. Preparando dashboard...");
+    return summary;
+}
+
 async function traceOpsYieldFindWorkbookFile(file) {
     var lower = String(file && file.name || "").toLowerCase();
     if (/\.(xlsx|xlsm)$/.test(lower)) {
@@ -13413,9 +13515,6 @@ function App() {
     var boardRefMultiFilterArr = _useState([]);
     var boardRefMultiFilter = boardRefMultiFilterArr[0];
     var setBoardRefMultiFilter = boardRefMultiFilterArr[1];
-    var boardMultiSearchArr = _useState("");
-    var boardMultiSearch = boardMultiSearchArr[0];
-    var setBoardMultiSearch = boardMultiSearchArr[1];
     var boardDetailZoomArr = _useState(false);
     var boardDetailZoom = boardDetailZoomArr[0];
     var setBoardDetailZoom = boardDetailZoomArr[1];
@@ -13455,12 +13554,6 @@ function App() {
     }
     function resetYieldFilters() { setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" }); }
     function traceOpsScheduleCriticalModelAnalysis() {
-        // V11.9: do not let optional critical-model analysis block the first dashboard render.
-        var heavyRows = Number((TRACEOPS_YIELD_SFC_EVENTS && TRACEOPS_YIELD_SFC_EVENTS.length) || 0) + Number((TRACEOPS_YIELD_FT_ROWS && TRACEOPS_YIELD_FT_ROWS.length) || 0);
-        if (heavyRows > 25000) {
-            setCriticalModelAnalysisState({ status: "idle", message: "Critical Model Analysis deferred for large import. Use Statistical Analysis / Board Impact on demand.", result: null });
-            return;
-        }
         setCriticalModelAnalysisState({ status: "loading", message: "Calculating critical models...", result: null });
         var run = function () {
             try {
@@ -13509,12 +13602,15 @@ function App() {
                 setYieldImportState({ status: "loading", message: "Tracing valid sheets and building Yield Flow model...", summary: summary, progress: 78, phase: "BUILDING_FLOW" });
                 if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(78, "BUILDING_FLOW", "Construyendo modelo Yield Flow, trazabilidad y análisis crítico...");
                 setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" });
-                if (traceOpsYieldMb(file && file.size || 0) >= 2) { try { setActiveModule("sentinelux"); } catch(_) {} }
                 setYieldImportState({ status: "ok", progress: 100, phase: "READY", message: "Import local completado: " + ((summary.rows && summary.rows.workOrders) || 0) + " WO · " + ((summary.rows && summary.rows.sfcWorkOrders) || 0) + " WO en SFC · " + ((summary.rows && summary.rows.sfc) || 0) + " SFC · " + ((summary.rows && summary.rows.repairs) || 0) + " repair rows · " + ((summary.rows && summary.rows.validRepairSn) || 0) + " SN reparados validos · " + ((summary.rows && summary.rows.calendar) || 0) + " calendar rows · " + ((summary.rows && summary.rows.dbModel) || 0) + " DB model rows · " + ((summary.rows && summary.rows.cesiumInScope) || 0) + " Cesium FT rows in scope. Regla puente: SFC[BOXSN] extrae el serial FJZ y se conecta contra Cesium[syserialno]. Parent/part serial quedan como fallback legacy; Repair conserva compatibilidad por SN/parentsernum. Scope/filtros salen de SFC; DB Model solo enriquece BU/modelo. Cache local IndexedDB habilitado: el dataset se conserva solo en este navegador, sin nube.", summary: summary });
-                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, "READY", "Import local completado. Dashboard disponible. Cache pesado omitido para evitar bloqueo.");
-                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(250);
-                // V11.9: defer/skip heavy cache persistence until after UI is released.
-                setTimeout(function(){ try { traceOpsYieldSaveLocalCache(file, summary); } catch(_) {} }, 1200);
+                traceOpsYieldSaveLocalCache(file, summary).then(function () {
+                    setYieldImportState(function(prev) {
+                        if (!prev || prev.status !== "ok") return prev;
+                        return Object.assign({}, prev, { message: prev.message + " Sesion guardada localmente; en refresh se restaura sin recargar ZIP." });
+                    });
+                });
+                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, "READY", "Import local completado. Preparando dashboard...");
+                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(650);
                 traceOpsScheduleCriticalModelAnalysis();
             }).catch(function (err) {
                 setYieldImportState({ status: "error", message: err && err.message ? err.message : String(err), summary: null, progress: 0, phase: "ERROR" });
@@ -25058,11 +25154,7 @@ body.traceops-premium-shell [class*="impact"]{
         return { serials: serials, failureRows: failureRows, kpi: { failurePool: failurePool, activePool: activePool, freshFailures: freshFailures, reentryUnits: reentryUnits, recoveredUnits: recoveredUnits, pendingUnits: pendingUnits, netBleeding: netBleeding, topFailure: failureRows[0] ? failureRows[0].failureMode : 'N/D', topStation: failureRows[0] ? failureRows[0].station : 'N/D', topLocation: failureRows[0] ? failureRows[0].location : 'N/D' } };
     }
 
-    function traceOpsYieldEmptyRuntimeModel() {
-        return { filters: yieldFilters, options: {}, kpi: { orders: 0, units: 0, clean: 0, risk: 0, builtUnits: 0, failureRateManufactured: 0, failureRateBuilt: 0, yield: 0, touch: 0, avgLeadHours: 0, avgFtHours: null, avgStockinHours: null, weeklyCount: 0, bgaUnits: 0, stockinUnits: 0, ftUnits: 0, reintegrationCandidates: 0, avgReintegrationProxy: null, recoveryAvgHours: null, reintegrationFlowLabel: 'N/D' }, rows: [], trackerRows: [], topRiskSku: [], weeklyTrend: [], causeSummary: [], failurePatterns: [], stationFpy: [], ftRows: [], ftAreaRows: [], stationSequenceBreakdown: { totalUnits: 0, rows: [], allRows: [] }, cesiumCurrentBreakdown: { rows: [] }, actionTracker: [], processBreakdown: [], topPainCases: [] };
-    }
-    var traceOpsYieldCanBuildRuntimeModel = !!(yieldImportState && yieldImportState.status === "ok" && (activeModule === "yieldflow" || activeModule === "boardimpact" || activeModule === "criticalmodel"));
-    var yieldFlowModel = traceOpsYieldCanBuildRuntimeModel ? traceOpsBuildYieldFlowModelLocal(yieldFilters) : traceOpsYieldEmptyRuntimeModel();
+    var yieldFlowModel = traceOpsBuildYieldFlowModelLocal(yieldFilters);
     async function exportYieldFlowXlsx() {
         await window.ensureExcelTools();
         var model = traceOpsBuildYieldFlowModelLocal(yieldFilters);
@@ -27258,9 +27350,6 @@ body.traceops-premium-shell [class*="impact"]{
             return true;
         });
     }
-    function traceOpsBoardHasActiveMultiFilters(snFilters, partFilters, refFilters) {
-        return !!(((snFilters || []).length) || ((partFilters || []).length) || ((refFilters || []).length));
-    }
     function traceOpsBoardRefsForPartFilters(rows, partFilters) {
         var partSet = {}, refMap = {};
         (partFilters || []).forEach(function(v){ var p = String(v || '').trim(); if (p) partSet[p] = true; });
@@ -27285,95 +27374,45 @@ body.traceops-premium-shell [class*="impact"]{
         if (idx >= 0) base.splice(idx, 1); else base.push(value);
         return base;
     }
-    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, activeSnList, activePartList, activeRefList, filteredRows, totalRows, searchText, setSearchText) {
+    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, activeSnList, activePartList, activeRefList, filteredRows, totalRows) {
         var totalActive = (activeSnList || []).length + (activePartList || []).length + (activeRefList || []).length;
-        var optionSearch = String(searchText || '').toLowerCase().trim();
-        function matchesSearch(kind, opt) {
-            if (!optionSearch) return true;
-            var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : opt.ref);
-            var bag = [value, opt.wo, opt.sku, opt.family, opt.bu, opt.eventCount, opt.serialCount, opt.refCount, opt.partCount, opt.modeCount];
-            if (kind === 'PN') bag = bag.concat(opt.refList || Object.keys(opt.refs || {}));
-            if (kind === 'REF') bag = bag.concat(Object.keys(opt.parts || {}), Object.keys(opt.modes || {}));
-            if (kind === 'SN') bag = bag.concat(opt.refList || Object.keys(opt.refs || {}), Object.keys(opt.modes || {}));
-            return bag.join(' ').toLowerCase().indexOf(optionSearch) >= 0;
-        }
-        function applySearch(kind, list) {
-            return (Array.isArray(list) ? list : []).filter(function(opt){ return matchesSearch(kind, opt); });
-        }
-        var visibleSerialOptions = applySearch('SN', serialOptions);
-        var visiblePartOptions = applySearch('PN', partOptions);
-        var visibleRefOptions = applySearch('REF', refOptions);
-        var combinedOptions = [];
-        (visiblePartOptions || []).slice(0, 30).forEach(function(x){ combinedOptions.push({ kind:'PN', label:x.part, meta:x.serialCount + ' SN · ' + x.refCount + ' refs · ' + x.eventCount + ' ev', raw:x }); });
-        (visibleRefOptions || []).slice(0, 48).forEach(function(x){ combinedOptions.push({ kind:'REF', label:x.ref, meta:x.serialCount + ' SN · ' + x.partCount + ' PN · ' + x.eventCount + ' ev', raw:x }); });
-        (visibleSerialOptions || []).slice(0, 28).forEach(function(x){ combinedOptions.push({ kind:'SN', label:x.sn, meta:x.modeCount + ' modos · ' + x.refCount + ' refs · ' + x.eventCount + ' ev', raw:x }); });
-        combinedOptions.sort(function(a,b){
-            var aw = a.kind === 'REF' ? 0 : a.kind === 'PN' ? 1 : 2;
-            var bw = b.kind === 'REF' ? 0 : b.kind === 'PN' ? 1 : 2;
-            return aw - bw || String(a.label).localeCompare(String(b.label));
-        });
         function chip(label, value, onRemove) {
-            return h('button', { key: label + value, type: 'button', onClick: onRemove, title: 'Remover filtro', className: 'smt-bi-filter-chip' }, label + ': ' + value + ' ×');
+            return h('button', { key: label + value, type: 'button', onClick: onRemove, title: 'Remover filtro', style: { border: '1px solid #C9DAF5', background: '#EEF5FF', color: '#1F3A5F', borderRadius: 999, padding: '6px 9px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, label + ': ' + value + ' ×');
         }
-        function applyCombined(item) {
-            if (!item) return;
-            if (item.kind === 'SN') {
-                setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, item.raw.sn, traceOpsYieldCleanSn));
-                setBoardSnFilter('');
-            } else if (item.kind === 'PN') {
-                var nextParts = traceOpsBoardMultiToggle(activePartList, item.raw.part);
-                var pnRefs = {};
-                (partOptions || []).forEach(function(opt){
-                    if (nextParts.indexOf(opt.part) < 0) return;
-                    (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; });
-                });
-                var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); });
-                setBoardPartMultiFilter(nextParts);
-                setBoardRefMultiFilter(nextRefs);
-                if (nextRefs.length) setBoardSelectedRef(nextRefs[0]);
-            } else if (item.kind === 'REF') {
-                var next = traceOpsBoardMultiToggle(activeRefList, item.raw.ref, traceOpsBoardNormalizeRef);
-                setBoardRefMultiFilter(next);
-                if (next.length) setBoardSelectedRef(next[0]);
-            }
-            setBoardDetailZoom(false);
+        function optionButton(kind, opt, active, onClick) {
+            var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : opt.ref);
+            var meta = kind === 'SN' ? (opt.modeCount + ' modos · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' ev');
+            return h('button', { key: kind + value, type: 'button', onClick: onClick, style: { textAlign: 'left', border: '1px solid ' + (active ? '#1F6FEB' : '#D9E6F7'), background: active ? '#EEF5FF' : '#fff', color: '#102A43', borderRadius: 12, padding: '8px 9px', cursor: 'pointer', minWidth: 0 } }, [
+                h('div', { key: 'v', style: { fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, value),
+                h('div', { key: 'm', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, meta)
+            ]);
         }
-        function activeSummary() {
-            var out = [];
-            (activeSnList || []).forEach(function(v){ out.push(chip('SN', v, function(){ setBoardSnMultiFilter((activeSnList || []).filter(function(x){ return x !== v; })); })); });
-            (activePartList || []).forEach(function(v){ out.push(chip('PN', v, function(){
-                var nextParts = (activePartList || []).filter(function(x){ return x !== v; });
-                var pnRefs = {};
-                (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); });
-                var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); });
-                setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]);
-            })); });
-            (activeRefList || []).forEach(function(v){ out.push(chip('Ref', v, function(){ setBoardRefMultiFilter((activeRefList || []).filter(function(x){ return x !== v; })); })); });
-            if (out.length) out.push(h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); setSearchText && setSearchText(''); }, className: 'smt-bi-filter-clear' }, 'Limpiar filtros'));
-            return out;
+        function column(title, subtitle, children) {
+            return h('div', { key: title, style: { border: '1px solid #D9E6F7', borderRadius: 14, background: '#FAFCFF', padding: 10, minWidth: 0 } }, [
+                h('div', { key: 't', style: { fontSize: 10, fontWeight: 900, color: '#5F766C', letterSpacing: '.08em', textTransform: 'uppercase' } }, title),
+                h('div', { key: 's', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, marginBottom: 8 } }, subtitle),
+                h('div', { key: 'c', style: { display: 'grid', gap: 6, maxHeight: 180, overflow: 'auto' } }, children)
+            ]);
         }
-        return h('section', { className: 'smt-bi-filter-panel' }, [
-            h('div', { key: 'hdr', className: 'smt-bi-filter-head' }, [
+        return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, overflow: 'hidden' } }, [
+            h('div', { key: 'hdr', style: { padding: '14px 18px', background: '#F7FAFF', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' } }, [
                 h('div', { key: 'copy' }, [
-                    h('div', { key: 't', className: 'smt-bi-filter-title' }, 'Smart Filter · Board Impact'),
-                    h('div', { key: 's', className: 'smt-bi-filter-sub' }, 'Busca y combina SN, número de parte y RefDes. El scope se aplica a todos los modos de falla activos.')
+                    h('div', { key: 't', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Filtros combinados de Board Impact'),
+                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Seleccion multiple por SN, numero de parte y RefDes. Los filtros se combinan por interseccion dentro del scope actual.')
                 ]),
-                h('div', { key: 'summary', className: 'smt-bi-filter-counter' }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
+                h('div', { key: 'summary', style: { display: 'inline-flex', borderRadius: 999, background: '#EEF5FF', border: '1px solid #C9DAF5', color: '#1F3A5F', padding: '7px 10px', fontSize: 11, fontWeight: 900 } }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
             ]),
-            h('div', { key: 'search', className: 'smt-bi-smartbar' }, [
-                h('input', { key: 'q', value: searchText || '', onChange: function(e){ setSearchText && setSearchText(e.target.value); }, placeholder: 'Buscar SN, PN o RefDes...', className: 'smt-bi-smart-input', 'aria-label': 'Buscar SN PN o RefDes en Board Impact' }),
-                optionSearch ? h('button', { key: 'clearq', type: 'button', onClick: function(){ setSearchText && setSearchText(''); }, className: 'smt-bi-smart-clear' }, 'Limpiar búsqueda') : null,
-                h('span', { key: 'count', className: 'smt-bi-smart-count' }, visibleSerialOptions.length + ' SN · ' + visiblePartOptions.length + ' PN · ' + visibleRefOptions.length + ' Ref')
+            h('div', { key: 'body', style: { padding: 14, display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : 'repeat(3,minmax(0,1fr))', gap: 10 } }, [
+                column('Serial Number', activeSnList.length ? activeSnList.length + ' seleccionado(s)' : serialOptions.length + ' disponible(s)', (serialOptions || []).slice(0, 40).map(function(x){ var active = activeSnList.indexOf(x.sn) >= 0; return optionButton('SN', x, active, function(){ setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, x.sn, traceOpsYieldCleanSn)); setBoardSnFilter(''); setBoardDetailZoom(false); }); })),
+                column('Numero de parte', activePartList.length ? activePartList.length + ' seleccionado(s)' : partOptions.length + ' disponible(s)', (partOptions || []).slice(0, 40).map(function(x){ var active = activePartList.indexOf(x.part) >= 0; return optionButton('PN', x, active, function(){ var nextParts = traceOpsBoardMultiToggle(activePartList, x.part); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); setBoardDetailZoom(false); }); })),
+                column('RefDes', activeRefList.length ? activeRefList.length + ' seleccionado(s)' : refOptions.length + ' disponible(s)', (refOptions || []).slice(0, 80).map(function(x){ var active = activeRefList.indexOf(x.ref) >= 0; return optionButton('REF', x, active, function(){ var next = traceOpsBoardMultiToggle(activeRefList, x.ref, traceOpsBoardNormalizeRef); setBoardRefMultiFilter(next); if (next.length) setBoardSelectedRef(next[0]); setBoardDetailZoom(false); }); }))
             ]),
-            h('div', { key: 'options', className: 'smt-bi-pill-rail' }, (combinedOptions || []).slice(0, isMobile() ? 42 : 84).map(function(item){
-                var active = item.kind === 'SN' ? activeSnList.indexOf(item.raw.sn) >= 0 : item.kind === 'PN' ? activePartList.indexOf(item.raw.part) >= 0 : activeRefList.indexOf(item.raw.ref) >= 0;
-                return h('button', { key: item.kind + item.label, type: 'button', onClick: function(){ applyCombined(item); }, className: 'smt-bi-option-pill' + (active ? ' active' : '') + ' kind-' + item.kind.toLowerCase(), title: item.kind + ' · ' + item.label + ' · ' + item.meta }, [
-                    h('span', { key: 'k', className: 'smt-bi-option-kind' }, item.kind),
-                    h('span', { key: 'v', className: 'smt-bi-option-label' }, item.label),
-                    h('span', { key: 'm', className: 'smt-bi-option-meta' }, item.meta)
-                ]);
-            })),
-            totalActive ? h('div', { key: 'active', className: 'smt-bi-active-filters' }, activeSummary()) : null
+            totalActive ? h('div', { key: 'active', style: { padding: '0 14px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' } }, [
+                (activeSnList || []).map(function(v){ return chip('SN', v, function(){ setBoardSnMultiFilter((activeSnList || []).filter(function(x){ return x !== v; })); }); }),
+                (activePartList || []).map(function(v){ return chip('PN', v, function(){ var nextParts = (activePartList || []).filter(function(x){ return x !== v; }); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); }); }),
+                (activeRefList || []).map(function(v){ return chip('Ref', v, function(){ setBoardRefMultiFilter((activeRefList || []).filter(function(x){ return x !== v; })); }); }),
+                h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); }, style: { border: '1px solid #F3B6B0', background: '#FDEEEE', color: '#C44141', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, 'Limpiar filtros')
+            ]) : null
         ]);
     }
 
@@ -27432,16 +27471,7 @@ body.traceops-premium-shell [class*="impact"]{
         var activeBoardPartRefs = traceOpsBoardArrayClean(traceOpsBoardRefsForPartFilters(boardAllRowsBeforeModeFilter, activeBoardPartFilters), validRefMap, traceOpsBoardNormalizeRef);
         var boardVisualRefGroup = traceOpsBoardArrayClean(activeBoardPartRefs.concat(activeBoardRefFilters), validRefMap, traceOpsBoardNormalizeRef);
         var activeBoardSnFilter = activeBoardSnFilters.length === 1 ? activeBoardSnFilters[0] : "";
-        var globalFilterRows = traceOpsBoardApplyMultiFilters(boardAllRowsBeforeModeFilter, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
-        if (traceOpsBoardHasActiveMultiFilters(activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters)) {
-            modeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(globalFilterRows), []);
-            if (modeOptions.length && !modeOptions.some(function(m){ return String(m.mode) === activeMode; })) activeMode = modeOptions[0].mode;
-            activeModeRow = modeOptions.find(function(m) { return String(m.mode) === activeMode; }) || modeOptions[0] || activeModeRow;
-            rows = activeMode ? globalFilterRows.filter(function(r){ return traceOpsBoardModeEquals(r, activeMode); }) : globalFilterRows;
-            if (!rows.length) rows = globalFilterRows;
-        } else {
-            rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
-        }
+        rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
         var activeFilteredModeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(rows), []);
         if (activeFilteredModeOptions.length) activeModeRow = activeFilteredModeOptions.find(function(m) { return String(m.mode) === activeMode; }) || activeFilteredModeOptions[0] || activeModeRow;
         var seedRefs = (ctx.refs && ctx.refs.length ? ctx.refs : []).concat(activeModeRow && activeModeRow.refs ? activeModeRow.refs : []);
@@ -27616,7 +27646,7 @@ body.traceops-premium-shell [class*="impact"]{
                 kpi("FR vs Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%", traceOpsYieldFlowFmt(affectedSerials) + " fails / " + traceOpsYieldFlowFmt(totalBuiltUnits) + " built", "purple"),
                 kpi("Refs unicas", uniqueRefs.length || 1, (boardSide === "bottom" ? "BOTTOM" : "TOP") + " side", "purple"),
                 kpi("Criticidad", selectedSeverity.label, selectedRef, selectedSeverity.key === "critical" ? "red" : selectedSeverity.key === "high" ? "amber" : "yellow")),
-            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, rows, boardAllRowsBeforeModeFilter.length, boardMultiSearch, setBoardMultiSearch),
+            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, rows, allBoardRows.length),
             traceOpsBoardRenderFailureTrendPanel(modeOptions),
             ccItems.length ? h("section", { id: "traceops-board-cc-actions", style: { background: "#FFFDF4", border: "1px solid #F1C04E", borderRadius: 18, padding: isMobile() ? "12px" : "14px 16px", display: "flex", flexDirection: "column", gap: 10 } }, [
                 h("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" } }, [
@@ -38024,7 +38054,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.1 · Board Impact View UI Refresh · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -38068,7 +38098,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.1 · Board Impact View UI Refresh · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V11.7 · Executive Quality Alert PPT Theme · 2026-05-22';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
