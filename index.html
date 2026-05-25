@@ -2522,7 +2522,7 @@ button.danger,.btn-danger,.rcca-critical-action{
 
 
 /* =========================================================
-   SMTinel V12.8.1 - Recovery Neural Graph Stable
+   SMTinel V12.9 - Recovery Neural Map Maximized
    Scope: visual layer only. No parser / import / Board Impact data logic changes.
    ========================================================= */
 #boardimpact-section.boardimpact-glass-full{
@@ -15860,7 +15860,7 @@ body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-hotspot-gl
 
 <style id="smtinel-v12-6-enterprise-ui-tuning">
 /* ========================================================================
-   SMTinel V12.8.1 - Recovery Neural Graph Stable
+   SMTinel V12.9 - Recovery Neural Map Maximized
    Scope: visual/layout only. No parser, Yield Flow, PPT or data logic touched.
    ======================================================================== */
 :root{
@@ -38199,7 +38199,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -38243,7 +38243,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
@@ -38691,7 +38691,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -38828,7 +38828,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = true;
 
@@ -39557,12 +39557,270 @@ body.traceops-premium-shell [class*="impact"]{
 <script id="smtinel-v12-8-build-badge">
 (function(){
   try{
-    window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
-    window.SMTINEL_BUILD_BADGE = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
+    window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+    window.SMTINEL_BUILD_BADGE = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
     document.documentElement.classList.add('smtinel-v12-8-recovery-neural');
   }catch(e){}
 })();
 </script>
 
+
+
+<style id="smtinel-v12-9-recovery-neural-map-maximized">
+/* ========================================================================
+   SMTinel V12.9 - Recovery Neural Map Maximized
+   Scope: UI/CSS only. Maximizes Recovery Intelligence map for desktop view.
+   Parser, import engine, Yield Flow and Board Impact logic remain untouched.
+   ======================================================================== */
+@media (min-width:1180px){
+  body:has(#recovery-section) .main-content,
+  body:has(#recovery-section) .app-main,
+  body:has(#recovery-section) main{
+    max-width:none!important;
+    width:100%!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  #recovery-section{
+    width:calc(100vw - 18px)!important;
+    max-width:none!important;
+    margin-left:50%!important;
+    transform:translateX(-50%)!important;
+    padding:10px!important;
+    border-radius:30px!important;
+  }
+
+  #recovery-section .ri-vm-header{
+    display:grid!important;
+    grid-template-columns:minmax(420px,1fr) auto minmax(380px,.75fr)!important;
+    gap:18px!important;
+    align-items:center!important;
+    padding:18px 22px!important;
+    margin-bottom:12px!important;
+  }
+  #recovery-section .ri-vm-header h2{
+    font-size:clamp(34px,3vw,58px)!important;
+    line-height:.92!important;
+  }
+  #recovery-section .ri-vm-header p{
+    max-width:980px!important;
+  }
+
+  /* Main shell: map gets almost all available width. Side panels become slim overlays. */
+  #recovery-section .ri-vm-shell{
+    position:relative!important;
+    display:grid!important;
+    grid-template-columns:176px minmax(0,1fr) 248px!important;
+    gap:12px!important;
+    padding:12px!important;
+    min-height:calc(100vh - 235px)!important;
+    border-radius:30px!important;
+  }
+
+  #recovery-section .ri-vm-left{
+    z-index:8!important;
+    padding:10px!important;
+    gap:10px!important;
+    border-radius:24px!important;
+    max-height:calc(100vh - 260px)!important;
+    overflow:auto!important;
+  }
+  #recovery-section .ri-vm-side-card{
+    min-height:74px!important;
+    padding:10px 12px!important;
+    border-radius:18px!important;
+  }
+  #recovery-section .ri-vm-side-card b{
+    font-size:24px!important;
+  }
+  #recovery-section .ri-vm-side-card small{
+    font-size:10px!important;
+  }
+  #recovery-section .ri-vm-left .ri-vm-colorby{
+    padding:10px!important;
+    border-radius:18px!important;
+  }
+
+  #recovery-section .ri-vm-right{
+    z-index:8!important;
+    padding:10px!important;
+    gap:10px!important;
+    border-radius:24px!important;
+    max-height:calc(100vh - 260px)!important;
+    overflow:auto!important;
+  }
+  #recovery-section .ri-vm-panel-title{
+    padding:12px!important;
+    border-radius:18px!important;
+  }
+  #recovery-section .ri-vm-risk-card{
+    padding:13px 14px!important;
+    border-radius:20px!important;
+    min-height:auto!important;
+  }
+  #recovery-section .ri-vm-risk-card b,
+  #recovery-section .ri-vm-risk-card strong{
+    font-size:28px!important;
+  }
+
+  /* Neural map dominates the viewport. */
+  #recovery-section .ri-vm-canvas{
+    min-height:calc(100vh - 260px)!important;
+    height:calc(100vh - 260px)!important;
+    padding:22px 26px!important;
+    border-radius:28px!important;
+    overflow:hidden!important;
+  }
+  #recovery-section .ri-vm-title-row{
+    grid-template-columns:250px minmax(0,1fr) 110px!important;
+    gap:18px!important;
+    padding-bottom:8px!important;
+  }
+  #recovery-section .ri-vm-flow{
+    grid-template-columns:245px minmax(0,1fr)!important;
+    gap:24px!important;
+    min-height:calc(100vh - 330px)!important;
+    height:calc(100vh - 330px)!important;
+    align-items:center!important;
+  }
+  #recovery-section .ri-vm-flow:before{
+    left:205px!important;
+    top:34px!important;
+    bottom:34px!important;
+  }
+
+  #recovery-section .ri-vm-root{
+    width:205px!important;
+    height:205px!important;
+    position:relative!important;
+    top:auto!important;
+  }
+  #recovery-section .ri-vm-root strong{
+    font-size:40px!important;
+  }
+
+  #recovery-section .ri-vm-buckets{
+    gap:14px!important;
+    justify-content:space-evenly!important;
+    height:100%!important;
+    padding:0!important;
+  }
+  #recovery-section .ri-vm-bucket{
+    grid-template-columns:minmax(210px,255px) minmax(560px,1fr)!important;
+    gap:22px!important;
+    min-height:88px!important;
+  }
+  #recovery-section .ri-vm-bucket:after{
+    left:238px!important;
+    width:24px!important;
+    height:24px!important;
+  }
+  #recovery-section .ri-vm-bucket-node{
+    min-height:96px!important;
+    grid-template-columns:42px 1fr!important;
+    padding:14px 16px!important;
+    border-radius:24px!important;
+  }
+  #recovery-section .ri-vm-bucket-node svg{
+    width:34px!important;
+    height:34px!important;
+  }
+  #recovery-section .ri-vm-bucket-node b{
+    font-size:34px!important;
+  }
+  #recovery-section .ri-vm-bucket-node .ri-vm-bucket-top{
+    max-width:210px!important;
+    font-size:10px!important;
+  }
+
+  #recovery-section .ri-vm-lines-wrap,
+  #recovery-section .ri-vm-lines-top{
+    gap:6px!important;
+  }
+  #recovery-section .ri-vm-station{
+    grid-template-columns:38px 128px minmax(180px,1fr) 72px!important;
+    min-height:30px!important;
+    padding:5px 10px!important;
+    gap:9px!important;
+  }
+  #recovery-section .ri-vm-station:before{
+    width:13px!important;
+    height:13px!important;
+  }
+  #recovery-section .ri-vm-station span,
+  #recovery-section .ri-vm-station-label{
+    font-size:11px!important;
+  }
+  #recovery-section .ri-vm-station-no{
+    min-width:30px!important;
+    height:20px!important;
+    font-size:9px!important;
+  }
+  #recovery-section .ri-vm-station small{
+    font-size:10px!important;
+  }
+  #recovery-section .ri-vm-detail{
+    margin-top:3px!important;
+    max-height:120px!important;
+    overflow:auto!important;
+  }
+
+  /* Reduce obstruction from bottom dock while reviewing topology. */
+  body:has(#recovery-section) .bottom-nav,
+  body:has(#recovery-section) .floating-nav,
+  body:has(#recovery-section) .traceops-bottom-nav{
+    transform:translateX(-50%) scale(.88)!important;
+    opacity:.92!important;
+  }
+}
+
+@media (min-width:1600px){
+  #recovery-section .ri-vm-shell{
+    grid-template-columns:190px minmax(1120px,1fr) 270px!important;
+  }
+  #recovery-section .ri-vm-bucket{
+    grid-template-columns:minmax(230px,280px) minmax(680px,1fr)!important;
+  }
+  #recovery-section .ri-vm-bucket:after{left:262px!important;}
+  #recovery-section .ri-vm-station{
+    grid-template-columns:42px 152px minmax(240px,1fr) 86px!important;
+  }
+}
+
+@media (min-width:1180px) and (max-width:1380px){
+  #recovery-section .ri-vm-shell{
+    grid-template-columns:150px minmax(0,1fr) 220px!important;
+  }
+  #recovery-section .ri-vm-canvas{
+    padding:18px!important;
+  }
+  #recovery-section .ri-vm-flow{
+    grid-template-columns:205px minmax(0,1fr)!important;
+    gap:18px!important;
+  }
+  #recovery-section .ri-vm-root{
+    width:176px!important;
+    height:176px!important;
+  }
+  #recovery-section .ri-vm-root strong{font-size:34px!important;}
+  #recovery-section .ri-vm-bucket{
+    grid-template-columns:205px minmax(420px,1fr)!important;
+    gap:18px!important;
+  }
+  #recovery-section .ri-vm-bucket:after{left:196px!important;}
+  #recovery-section .ri-vm-station{
+    grid-template-columns:34px 112px minmax(110px,1fr) 58px!important;
+  }
+}
+</style>
+
+<script>
+(function(){
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+  window.SMTINEL_BUILD_BADGE = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+  document.documentElement.classList.add('smtinel-v12-9-recovery-map-maximized');
+})();
+</script>
 </body>
 </html>
