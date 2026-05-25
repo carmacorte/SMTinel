@@ -2522,7 +2522,7 @@ button.danger,.btn-danger,.rcca-critical-action{
 
 
 /* =========================================================
-   SMTinel V12.6 - Board Impact + Recovery Enterprise UI
+   SMTinel V12.8.1 - Recovery Neural Graph Stable
    Scope: visual layer only. No parser / import / Board Impact data logic changes.
    ========================================================= */
 #boardimpact-section.boardimpact-glass-full{
@@ -15860,7 +15860,7 @@ body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-hotspot-gl
 
 <style id="smtinel-v12-6-enterprise-ui-tuning">
 /* ========================================================================
-   SMTinel V12.6 - Board Impact + Recovery Intelligence Enterprise UI Tuning
+   SMTinel V12.8.1 - Recovery Neural Graph Stable
    Scope: visual/layout only. No parser, Yield Flow, PPT or data logic touched.
    ======================================================================== */
 :root{
@@ -28300,7 +28300,7 @@ body.traceops-premium-shell [class*="impact"]{
         var topFailures = failures.slice(0,4);
         return h('div',{id:'recovery-section' ,className:'smtinel-ri ri-visual-map',style:{display:'flex',flexDirection:'column',gap:14,marginBottom:14}},[
             h('section',{className:'ri-vm-header'},[
-                h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Intelligence · Visual Map'),h('h2',null,'Bonepile Visual Map'),h('p',null,'Vista ejecutiva: Aging bucket → Current station → Risk concentration. Solo se muestran Top 5 estaciones por bucket; el detalle completo queda expandible.')]),
+                h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Intelligence · Bonepile Network Graph'),h('h2',null,'Bonepile Network Graph'),h('p',null,'Vista ejecutiva tipo grafo: Bonepile → Aging bucket → Estación actual → concentración de riesgo. Permite ubicar rápidamente dónde está detenido el inventario.')]),
                 h('div',{className:'ri-vm-toolbar'},[h('button',{type:'button'},'Filters'),h('button',{type:'button',className:'primary'},'Analyze'),h('button',{type:'button'},'Export')]), h('div',{className:'ri-vm-scope-chips'},scopeChips.map(function(x){ return h('span',{key:x},x); }))
             ]),
             h('section',{className:'ri-vm-shell'},[
@@ -38199,7 +38199,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.6 · Board Impact + Recovery Enterprise UI · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -38243,7 +38243,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.6 · Board Impact + Recovery Enterprise UI · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
@@ -38691,7 +38691,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.6 · Board Impact + Recovery Enterprise UI · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -38828,7 +38828,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.6 · Board Impact + Recovery Enterprise UI · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = true;
 
@@ -38987,6 +38987,580 @@ body.traceops-premium-shell [class*="impact"]{
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(updateBadge, 700); });
   else setTimeout(updateBadge, 700);
+})();
+</script>
+
+
+<style id="smtinel-v12-8-recovery-neural-graph-ui">
+/* ========================================================================
+   SMTinel V12.8.1 - Recovery Intelligence Neural Graph Stable
+   Scope: UI/CSS only. Parser, Yield Flow, Board Impact data logic untouched.
+   Purpose: turn Bonepile Visual Map from card dashboard into operational graph.
+   ======================================================================== */
+#recovery-section.ri-visual-map,
+#recovery-section{
+  --ng-bg:#F4F8F7;
+  --ng-ink:#0E2742;
+  --ng-muted:#60756C;
+  --ng-line:#D7E5F2;
+  --ng-green:#20A875;
+  --ng-blue:#267BEF;
+  --ng-yellow:#D4A017;
+  --ng-orange:#F26A2E;
+  --ng-red:#C83D42;
+  --ng-violet:#7A51C2;
+}
+@media (min-width:1180px){
+  #recovery-section{
+    width:min(1920px, calc(100vw - 32px))!important;
+    max-width:none!important;
+    margin-left:50%!important;
+    transform:translateX(-50%)!important;
+    padding:18px!important;
+    border-radius:34px!important;
+    background:
+      radial-gradient(circle at 16% 30%,rgba(32,168,117,.12),transparent 30%),
+      radial-gradient(circle at 72% 10%,rgba(38,123,239,.10),transparent 34%),
+      linear-gradient(180deg,rgba(255,255,255,.72),rgba(238,246,247,.86))!important;
+    border:1px solid rgba(215,229,242,.95)!important;
+    box-shadow:0 36px 110px rgba(14,39,66,.12), inset 0 1px 0 rgba(255,255,255,.9)!important;
+  }
+  body:has(#recovery-section) .main-content{
+    max-width:none!important;
+    width:100%!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+}
+
+/* Header becomes a compact mission header */
+#recovery-section .ri-vm-header{
+  border-radius:28px!important;
+  padding:22px 26px!important;
+  background:
+    radial-gradient(circle at 78% 10%,rgba(38,123,239,.13),transparent 28%),
+    linear-gradient(135deg,rgba(255,255,255,.96),rgba(243,249,247,.90))!important;
+  border:1px solid rgba(215,229,242,.92)!important;
+  box-shadow:0 18px 54px rgba(14,39,66,.08)!important;
+}
+#recovery-section .ri-vm-header h2{
+  font-size:clamp(30px,2.8vw,52px)!important;
+  letter-spacing:-.055em!important;
+  color:var(--ng-ink)!important;
+}
+#recovery-section .ri-vm-header h2:after{
+  content:" · Neural Flow Topology";
+  color:#20A875;
+  font-weight:900;
+}
+#recovery-section .ri-vm-header p{
+  max-width:760px!important;
+  font-size:14px!important;
+  line-height:1.62!important;
+  color:var(--ng-muted)!important;
+}
+#recovery-section .ri-vm-toolbar button,
+#recovery-section .ri-vm-header button{
+  border-radius:18px!important;
+  min-height:42px!important;
+  box-shadow:0 12px 28px rgba(14,39,66,.10)!important;
+}
+
+/* Three-zone topology layout */
+#recovery-section .ri-vm-shell{
+  display:grid!important;
+  grid-template-columns:minmax(210px,250px) minmax(760px,1fr) minmax(285px,360px)!important;
+  gap:20px!important;
+  align-items:stretch!important;
+  padding:18px!important;
+  border-radius:34px!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.72),rgba(235,246,245,.80))!important;
+  border:1px solid rgba(215,229,242,.94)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 28px 90px rgba(14,39,66,.10)!important;
+}
+
+/* Left metrics become compact operational source panel */
+#recovery-section .ri-vm-left{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+  border-radius:28px!important;
+  padding:14px!important;
+  background:
+    radial-gradient(circle at 20% 12%,rgba(32,168,117,.16),transparent 32%),
+    linear-gradient(180deg,#07130E,#0E1E17)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 20px 54px rgba(14,39,66,.13)!important;
+}
+#recovery-section .ri-vm-side-card{
+  border-radius:22px!important;
+  padding:14px!important;
+  background:rgba(255,255,255,.92)!important;
+  border:1px solid rgba(215,229,242,.76)!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.9)!important;
+  transition:transform .18s ease, box-shadow .18s ease!important;
+}
+#recovery-section .ri-vm-side-card:hover{transform:translateY(-2px)!important;box-shadow:0 22px 50px rgba(0,0,0,.18)!important;}
+#recovery-section .ri-vm-side-card b{font-size:28px!important;color:var(--ng-ink)!important;letter-spacing:-.035em!important;}
+#recovery-section .ri-vm-side-card small{color:#5F766C!important;font-weight:800!important;}
+#recovery-section .ri-vm-left .ri-vm-colorby{
+  margin-top:auto!important;
+  background:rgba(255,255,255,.94)!important;
+  border-radius:22px!important;
+  padding:14px!important;
+}
+
+/* Central canvas: neural network field */
+#recovery-section .ri-vm-canvas{
+  position:relative!important;
+  min-height:780px!important;
+  padding:30px 36px!important;
+  overflow:hidden!important;
+  border-radius:34px!important;
+  background:
+    radial-gradient(circle at 24% 50%,rgba(32,168,117,.17),transparent 24%),
+    radial-gradient(circle at 64% 35%,rgba(38,123,239,.13),transparent 30%),
+    radial-gradient(circle at 82% 70%,rgba(200,61,66,.08),transparent 26%),
+    linear-gradient(180deg,rgba(255,255,255,.96),rgba(247,251,250,.91))!important;
+  border:1px solid rgba(215,229,242,.95)!important;
+  box-shadow:0 28px 90px rgba(14,39,66,.11), inset 0 1px 0 rgba(255,255,255,.95)!important;
+}
+#recovery-section .ri-vm-canvas:before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  opacity:.42!important;
+  background-image:
+    linear-gradient(rgba(14,39,66,.06) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(14,39,66,.06) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%,rgba(32,168,117,.08),transparent 38%)!important;
+  background-size:42px 42px,42px 42px,auto!important;
+  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%)!important;
+}
+#recovery-section .ri-vm-canvas:after{
+  content:"RECOVERY NEURAL MAP"!important;
+  position:absolute!important;
+  right:24px!important;
+  top:18px!important;
+  color:rgba(70,80,47,.42)!important;
+  font-size:10px!important;
+  letter-spacing:.28em!important;
+  font-weight:950!important;
+}
+#recovery-section .ri-vm-title-row{
+  position:relative!important;
+  z-index:4!important;
+  display:grid!important;
+  grid-template-columns:220px minmax(0,1fr) 120px!important;
+  gap:24px!important;
+  padding:0 0 16px!important;
+  color:#46502F!important;
+  font-size:10px!important;
+  letter-spacing:.18em!important;
+  font-weight:950!important;
+  text-transform:uppercase!important;
+}
+#recovery-section .ri-vm-title-row span:first-child::before{content:"Bonepile Source"!important;display:block!important;font-size:18px!important;letter-spacing:-.03em!important;color:var(--ng-ink)!important;margin-bottom:4px!important;text-transform:none!important;}
+
+/* Neural topology: source -> aging clusters -> station satellites */
+#recovery-section .ri-vm-flow{
+  position:relative!important;
+  z-index:2!important;
+  display:grid!important;
+  grid-template-columns:220px minmax(0,1fr)!important;
+  gap:34px!important;
+  align-items:center!important;
+  min-height:690px!important;
+}
+#recovery-section .ri-vm-flow:before{
+  content:""!important;
+  position:absolute!important;
+  left:176px!important;
+  top:70px!important;
+  bottom:70px!important;
+  width:2px!important;
+  background:linear-gradient(180deg,rgba(32,168,117,.12),rgba(38,123,239,.36),rgba(212,160,23,.30),rgba(200,61,66,.32))!important;
+  box-shadow:0 0 24px rgba(38,123,239,.16)!important;
+  border-radius:999px!important;
+}
+#recovery-section .ri-vm-root{
+  width:186px!important;
+  height:186px!important;
+  position:sticky!important;
+  top:150px!important;
+  margin:0!important;
+  justify-self:center!important;
+  align-self:center!important;
+  border-radius:999px!important;
+  color:var(--ng-ink)!important;
+  background:
+    radial-gradient(circle at 35% 26%,#fff 0,#f6fbff 38%,#e7f1ff 68%,#dcecff 100%)!important;
+  border:1px solid rgba(170,203,238,.96)!important;
+  box-shadow:
+    0 0 0 14px rgba(38,123,239,.045),
+    0 0 0 34px rgba(32,168,117,.035),
+    0 22px 70px rgba(14,39,66,.16)!important;
+  overflow:visible!important;
+}
+#recovery-section .ri-vm-root:before{
+  content:""!important;
+  position:absolute!important;
+  inset:-18px!important;
+  border-radius:999px!important;
+  border:1px dashed rgba(38,123,239,.38)!important;
+  animation:smtinelNeuralSpin 18s linear infinite!important;
+}
+#recovery-section .ri-vm-root:after{
+  content:""!important;
+  position:absolute!important;
+  right:-58px!important;
+  top:50%!important;
+  width:58px!important;
+  height:2px!important;
+  background:linear-gradient(90deg,rgba(38,123,239,.68),rgba(38,123,239,.05))!important;
+  transform:translateY(-50%)!important;
+  box-shadow:0 0 16px rgba(38,123,239,.25)!important;
+}
+#recovery-section .ri-vm-root svg{width:42px!important;height:42px!important;color:#102A43!important;filter:drop-shadow(0 8px 14px rgba(38,123,239,.15))!important;}
+#recovery-section .ri-vm-root b{font-size:12px!important;color:#46502F!important;text-transform:uppercase!important;letter-spacing:.10em!important;margin-top:8px!important;}
+#recovery-section .ri-vm-root strong{font-size:36px!important;line-height:1!important;color:var(--ng-ink)!important;letter-spacing:-.055em!important;}
+#recovery-section .ri-vm-root small{font-size:12px!important;color:#5F766C!important;font-weight:800!important;}
+
+#recovery-section .ri-vm-buckets{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:24px!important;
+  padding:8px 0!important;
+  position:relative!important;
+}
+#recovery-section .ri-vm-bucket{
+  display:grid!important;
+  grid-template-columns:230px minmax(440px,1fr)!important;
+  gap:28px!important;
+  align-items:center!important;
+  min-height:112px!important;
+  position:relative!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#recovery-section .ri-vm-bucket:before{
+  content:""!important;
+  position:absolute!important;
+  left:-34px!important;
+  top:50%!important;
+  width:34px!important;
+  height:2px!important;
+  transform:translateY(-50%)!important;
+  background:linear-gradient(90deg,rgba(38,123,239,.22),currentColor)!important;
+  opacity:.55!important;
+  box-shadow:0 0 14px currentColor!important;
+}
+#recovery-section .ri-vm-bucket:after{
+  content:""!important;
+  position:absolute!important;
+  left:216px!important;
+  top:50%!important;
+  width:28px!important;
+  height:28px!important;
+  transform:translate(-50%,-50%)!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  border:2px solid currentColor!important;
+  box-shadow:0 0 0 8px rgba(255,255,255,.82),0 0 22px currentColor!important;
+  opacity:.88!important;
+}
+#recovery-section .ri-vm-bucket.green{color:var(--ng-green)!important;}
+#recovery-section .ri-vm-bucket.blue{color:var(--ng-blue)!important;}
+#recovery-section .ri-vm-bucket.yellow{color:var(--ng-yellow)!important;}
+#recovery-section .ri-vm-bucket.orange{color:var(--ng-orange)!important;}
+#recovery-section .ri-vm-bucket.red{color:var(--ng-red)!important;}
+#recovery-section .ri-vm-bucket-node{
+  position:relative!important;
+  min-height:122px!important;
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:48px 1fr!important;
+  grid-template-rows:auto auto auto!important;
+  gap:4px 14px!important;
+  align-items:center!important;
+  padding:18px 20px!important;
+  border-radius:28px!important;
+  background:rgba(255,255,255,.88)!important;
+  border:1.5px solid currentColor!important;
+  box-shadow:0 18px 50px rgba(14,39,66,.10), inset 0 1px 0 rgba(255,255,255,.95)!important;
+  backdrop-filter:blur(16px)!important;
+}
+#recovery-section .ri-vm-bucket-node:before{
+  content:""!important;
+  position:absolute!important;
+  inset:-7px!important;
+  border-radius:32px!important;
+  border:1px solid currentColor!important;
+  opacity:.16!important;
+  animation:smtinelNodeBreath 3.8s ease-in-out infinite!important;
+}
+#recovery-section .ri-vm-bucket-node:after{
+  content:""!important;
+  position:absolute!important;
+  right:-28px!important;
+  top:50%!important;
+  width:28px!important;
+  height:2px!important;
+  transform:translateY(-50%)!important;
+  background:linear-gradient(90deg,currentColor,rgba(255,255,255,0))!important;
+  box-shadow:0 0 16px currentColor!important;
+  opacity:.55!important;
+}
+#recovery-section .ri-vm-bucket-node svg{
+  grid-row:1 / 4!important;
+  width:38px!important;
+  height:38px!important;
+  padding:9px!important;
+  border-radius:999px!important;
+  color:currentColor!important;
+  background:rgba(255,255,255,.88)!important;
+  border:1px solid currentColor!important;
+  box-shadow:0 0 18px rgba(255,255,255,.72)!important;
+}
+#recovery-section .ri-vm-bucket-node span{font-size:12px!important;font-weight:950!important;letter-spacing:.10em!important;color:currentColor!important;text-transform:uppercase!important;}
+#recovery-section .ri-vm-bucket-node b{font-size:38px!important;line-height:.95!important;color:var(--ng-ink)!important;letter-spacing:-.055em!important;}
+#recovery-section .ri-vm-bucket-node small{font-size:12px!important;color:#5F766C!important;font-weight:800!important;}
+#recovery-section .ri-vm-bucket-node .ri-vm-bucket-top{
+  grid-column:2/3!important;
+  margin:5px 0 0!important;
+  max-width:160px!important;
+  color:#536A61!important;
+  font-size:11px!important;
+  line-height:1.38!important;
+  font-weight:800!important;
+}
+
+/* Station side: satellites instead of table rows */
+#recovery-section .ri-vm-lines{
+  position:relative!important;
+  display:block!important;
+  min-width:0!important;
+}
+#recovery-section .ri-vm-lines:before{
+  content:""!important;
+  position:absolute!important;
+  left:-22px!important;
+  top:50%!important;
+  width:22px!important;
+  height:2px!important;
+  transform:translateY(-50%)!important;
+  background:linear-gradient(90deg,currentColor,rgba(255,255,255,0))!important;
+  opacity:.35!important;
+}
+#recovery-section .ri-vm-lines-wrap,
+#recovery-section .ri-vm-lines-top{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:9px!important;
+}
+#recovery-section .ri-vm-station{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:42px 145px minmax(120px,1fr) 84px!important;
+  gap:12px!important;
+  align-items:center!important;
+  min-height:38px!important;
+  padding:7px 12px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid rgba(215,229,242,.90)!important;
+  box-shadow:0 10px 24px rgba(14,39,66,.06), inset 0 1px 0 rgba(255,255,255,.88)!important;
+  backdrop-filter:blur(12px)!important;
+}
+#recovery-section .ri-vm-station:before{
+  content:""!important;
+  width:16px!important;
+  height:16px!important;
+  border-radius:999px!important;
+  justify-self:center!important;
+  background:currentColor!important;
+  box-shadow:0 0 0 6px rgba(255,255,255,.85),0 0 20px currentColor!important;
+}
+#recovery-section .ri-vm-station:after{
+  content:""!important;
+  position:absolute!important;
+  left:-34px!important;
+  top:50%!important;
+  width:34px!important;
+  border-top:1px dashed currentColor!important;
+  opacity:.32!important;
+}
+#recovery-section .ri-vm-station span,
+#recovery-section .ri-vm-station-label{
+  font-size:12px!important;
+  font-weight:950!important;
+  color:#102A43!important;
+  letter-spacing:.01em!important;
+}
+#recovery-section .ri-vm-station-no{
+  display:inline-flex!important;
+  min-width:34px!important;
+  height:22px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  margin-right:8px!important;
+  border-radius:999px!important;
+  color:#102A43!important;
+  background:rgba(255,255,255,.82)!important;
+  border:1px solid currentColor!important;
+  font-size:10px!important;
+  font-weight:950!important;
+}
+#recovery-section .ri-vm-station > i{
+  height:8px!important;
+  border-radius:999px!important;
+  background:rgba(215,229,242,.70)!important;
+  overflow:hidden!important;
+}
+#recovery-section .ri-vm-station > i > em,
+#recovery-section .ri-vm-station em:not(.ri-vm-station-name){
+  display:block!important;
+  height:100%!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,currentColor,rgba(255,255,255,.78))!important;
+  box-shadow:0 0 14px currentColor!important;
+}
+#recovery-section .ri-vm-station small{
+  font-size:11px!important;
+  color:#46502F!important;
+  font-weight:850!important;
+  text-align:right!important;
+}
+#recovery-section .ri-vm-station.muted{
+  opacity:.62!important;
+  filter:saturate(.6)!important;
+}
+#recovery-section .ri-vm-detail{
+  margin-top:6px!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.72)!important;
+  border:1px dashed rgba(215,229,242,.95)!important;
+}
+#recovery-section .ri-vm-detail summary{
+  font-size:11px!important;
+  color:#102A43!important;
+  letter-spacing:.08em!important;
+}
+
+/* Right risk panel becomes AI neural risk engine */
+#recovery-section .ri-vm-right{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+  border-radius:28px!important;
+  padding:14px!important;
+  background:
+    radial-gradient(circle at 80% 10%,rgba(200,61,66,.14),transparent 36%),
+    linear-gradient(180deg,#07130E,#0D1E17)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 20px 54px rgba(14,39,66,.13)!important;
+}
+#recovery-section .ri-vm-panel-title{
+  border-radius:22px!important;
+  padding:18px!important;
+  color:#fff!important;
+  background:linear-gradient(135deg,#102A43,#17324D)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.22)!important;
+}
+#recovery-section .ri-vm-panel-title:before{
+  content:"AI RECOVERY ENGINE";
+  display:block;
+  font-size:10px;
+  letter-spacing:.20em;
+  color:#8FE6BE;
+  margin-bottom:6px;
+  font-weight:950;
+}
+#recovery-section .ri-vm-risk-note{
+  color:rgba(255,255,255,.58)!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+  padding:0 4px!important;
+}
+#recovery-section .ri-vm-issue{
+  border-radius:22px!important;
+  padding:18px!important;
+  background:rgba(255,255,255,.94)!important;
+  border:1px solid rgba(215,229,242,.80)!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+#recovery-section .ri-vm-issue strong{
+  font-size:30px!important;
+  letter-spacing:-.055em!important;
+}
+#recovery-section .ri-vm-issue b{
+  font-size:14px!important;
+  color:var(--ng-ink)!important;
+}
+#recovery-section .ri-vm-issue p{
+  color:#46502F!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+
+/* Summary chips */
+#recovery-section .ri-vm-summary{
+  position:relative!important;
+  z-index:3!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;
+  margin-top:20px!important;
+}
+#recovery-section .ri-vm-summary span{
+  border-radius:18px!important;
+  padding:13px!important;
+  background:rgba(255,255,255,.84)!important;
+  border:1px solid rgba(215,229,242,.94)!important;
+  box-shadow:0 12px 26px rgba(14,39,66,.06)!important;
+}
+#recovery-section .ri-vm-summary b{font-size:22px!important;color:var(--ng-ink)!important;}
+
+@keyframes smtinelNeuralSpin{to{transform:rotate(360deg)}}
+@keyframes smtinelNodeBreath{0%,100%{opacity:.10;transform:scale(1)}50%{opacity:.28;transform:scale(1.018)}}
+@keyframes smtinelEdgePulse{0%{opacity:.18}50%{opacity:.62}100%{opacity:.18}}
+#recovery-section .ri-vm-bucket:before,
+#recovery-section .ri-vm-station:after{animation:smtinelEdgePulse 3.6s ease-in-out infinite!important;}
+
+@media (max-width:1179px){
+  #recovery-section .ri-vm-shell{grid-template-columns:1fr!important;}
+  #recovery-section .ri-vm-left{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #recovery-section .ri-vm-right{background:#07130E!important;}
+  #recovery-section .ri-vm-canvas{min-height:auto!important;padding:18px!important;}
+  #recovery-section .ri-vm-flow{grid-template-columns:1fr!important;min-height:auto!important;}
+  #recovery-section .ri-vm-flow:before,#recovery-section .ri-vm-root:after,#recovery-section .ri-vm-bucket:before,#recovery-section .ri-vm-bucket:after,#recovery-section .ri-vm-station:after{display:none!important;}
+  #recovery-section .ri-vm-root{position:relative!important;top:auto!important;width:auto!important;height:auto!important;border-radius:26px!important;padding:18px!important;}
+  #recovery-section .ri-vm-bucket{grid-template-columns:1fr!important;gap:12px!important;}
+  #recovery-section .ri-vm-bucket-node:after{display:none!important;}
+  #recovery-section .ri-vm-station{grid-template-columns:36px 130px minmax(100px,1fr) 76px!important;}
+}
+@media (max-width:680px){
+  #recovery-section .ri-vm-left{grid-template-columns:1fr!important;}
+  #recovery-section .ri-vm-header h2{font-size:28px!important;}
+  #recovery-section .ri-vm-header h2:after{display:block;margin-top:4px;}
+  #recovery-section .ri-vm-title-row{display:none!important;}
+  #recovery-section .ri-vm-station{grid-template-columns:1fr!important;border-radius:18px!important;}
+  #recovery-section .ri-vm-station:before{display:none!important;}
+  #recovery-section .ri-vm-station small{text-align:left!important;}
+  #recovery-section .ri-vm-summary{grid-template-columns:1fr!important;}
+}
+</style>
+<script id="smtinel-v12-8-build-badge">
+(function(){
+  try{
+    window.SMTINEL_BUILD_VERSION = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
+    window.SMTINEL_BUILD_BADGE = 'SMTinel V12.8.1 · Recovery Neural Graph Stable · 2026-05-23';
+    document.documentElement.classList.add('smtinel-v12-8-recovery-neural');
+  }catch(e){}
 })();
 </script>
 
