@@ -2522,7 +2522,7 @@ button.danger,.btn-danger,.rcca-critical-action{
 
 
 /* =========================================================
-   SMTinel V12.9 - Recovery Neural Map Maximized
+   SMTinel V12.9 - Recovery Neural Operations Preview
    Scope: visual layer only. No parser / import / Board Impact data logic changes.
    ========================================================= */
 #boardimpact-section.boardimpact-glass-full{
@@ -15860,7 +15860,7 @@ body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-hotspot-gl
 
 <style id="smtinel-v12-6-enterprise-ui-tuning">
 /* ========================================================================
-   SMTinel V12.9 - Recovery Neural Map Maximized
+   SMTinel V12.9 - Recovery Neural Operations Preview
    Scope: visual/layout only. No parser, Yield Flow, PPT or data logic touched.
    ======================================================================== */
 :root{
@@ -38199,7 +38199,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script id="smtinel-visible-version-badge-v65">
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
   function mountVersionBadge(){
     try {
       var old = document.getElementById('smtinel-build-version-badge');
@@ -38243,7 +38243,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
   function setBuildBadge(){
     try{
       var id='smtinel-build-badge';
@@ -38691,7 +38691,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -38828,7 +38828,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = true;
 
@@ -39557,8 +39557,8 @@ body.traceops-premium-shell [class*="impact"]{
 <script id="smtinel-v12-8-build-badge">
 (function(){
   try{
-    window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
-    window.SMTINEL_BUILD_BADGE = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+    window.SMTINEL_BUILD_VERSION = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
+    window.SMTINEL_BUILD_BADGE = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
     document.documentElement.classList.add('smtinel-v12-8-recovery-neural');
   }catch(e){}
 })();
@@ -39568,7 +39568,7 @@ body.traceops-premium-shell [class*="impact"]{
 
 <style id="smtinel-v12-9-recovery-neural-map-maximized">
 /* ========================================================================
-   SMTinel V12.9 - Recovery Neural Map Maximized
+   SMTinel V12.9 - Recovery Neural Operations Preview
    Scope: UI/CSS only. Maximizes Recovery Intelligence map for desktop view.
    Parser, import engine, Yield Flow and Board Impact logic remain untouched.
    ======================================================================== */
@@ -39817,9 +39817,196 @@ body.traceops-premium-shell [class*="impact"]{
 
 <script>
 (function(){
-  window.SMTINEL_BUILD_VERSION = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
-  window.SMTINEL_BUILD_BADGE = 'SMTinel V12.9 · Recovery Neural Map Maximized · 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
+  window.SMTINEL_BUILD_BADGE = 'SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23';
   document.documentElement.classList.add('smtinel-v12-9-recovery-map-maximized');
+})();
+</script>
+
+
+<!-- =====================================================================
+     SMTinel V13.0 - Recovery Neural Operations View (non-destructive UI)
+     Adds an alternative Neural Operations View on top of Recovery Intelligence.
+     Parser, Yield Flow, Board Impact and export logic remain unchanged.
+     ===================================================================== -->
+<style id="smtinel-v13-neural-ops-style">
+  :root{
+    --smtinel-no-bg:#05080d;
+    --smtinel-no-panel:#0b121a;
+    --smtinel-no-ink:#eaf7ff;
+    --smtinel-no-muted:#8ba4a6;
+    --smtinel-no-green:#39d49a;
+    --smtinel-no-blue:#5aa7ff;
+    --smtinel-no-amber:#d89a2b;
+    --smtinel-no-red:#ef4e5d;
+    --smtinel-no-purple:#9a6cff;
+  }
+  #recovery-section .smt-neural-togglebar{
+    display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:-6px 0 8px 0;position:relative;z-index:8;
+  }
+  #recovery-section .smt-neural-togglebar button{
+    border:1px solid rgba(20,42,67,.16);border-radius:999px;padding:9px 14px;background:#fff;color:#102a43;
+    font-size:11px;font-weight:950;letter-spacing:.02em;cursor:pointer;box-shadow:0 10px 24px rgba(16,42,67,.08);
+  }
+  #recovery-section .smt-neural-togglebar button.active{
+    background:linear-gradient(135deg,#0b231d,#143757);color:#fff;border-color:rgba(57,212,154,.45);
+    box-shadow:0 0 0 1px rgba(57,212,154,.16),0 18px 45px rgba(16,42,67,.22);
+  }
+  #recovery-section .smt-neural-ops-view{display:none;}
+  #recovery-section.smt-neural-mode > .ri-vm-shell{display:none!important;}
+  #recovery-section.smt-neural-mode .smt-neural-ops-view{display:block;}
+
+  .smt-neural-ops-view{
+    margin:4px 0 18px;border-radius:30px;overflow:hidden;border:1px solid rgba(103,137,151,.22);
+    background:
+      radial-gradient(circle at 18% 55%,rgba(57,212,154,.18),transparent 24%),
+      radial-gradient(circle at 72% 40%,rgba(90,167,255,.16),transparent 28%),
+      linear-gradient(135deg,#030609 0%,#071018 52%,#0a1217 100%);
+    color:var(--smtinel-no-ink);box-shadow:0 30px 90px rgba(3,6,9,.32);
+  }
+  .smt-no-layout{display:grid;grid-template-columns:250px minmax(760px,1fr) 320px;gap:18px;min-height:760px;padding:20px;}
+  .smt-no-side,.smt-no-risk{border-radius:26px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px);padding:16px;}
+  .smt-no-side{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));}
+  .smt-no-risk{background:linear-gradient(180deg,rgba(3,6,9,.92),rgba(8,18,20,.94));}
+  .smt-no-metric{display:flex;gap:12px;align-items:center;border-radius:18px;padding:13px 12px;margin-bottom:12px;background:rgba(255,255,255,.92);color:#102a43;box-shadow:0 10px 24px rgba(0,0,0,.18);}
+  .smt-no-metric i{width:34px;height:34px;border-radius:14px;display:grid;place-items:center;background:rgba(57,212,154,.14);color:#14915f;font-style:normal;font-weight:900;}
+  .smt-no-metric span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.16em;color:#5f766c;font-weight:950;}
+  .smt-no-metric b{display:block;font-size:24px;line-height:1;color:#102a43;letter-spacing:-.04em;margin-top:3px;}
+  .smt-no-metric small{display:block;font-size:10px;color:#5f766c;margin-top:3px;font-weight:750;}
+  .smt-no-canvas{
+    position:relative;min-height:720px;border-radius:28px;overflow:hidden;border:1px solid rgba(214,232,255,.14);
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),
+      radial-gradient(circle at 50% 48%,rgba(88,156,255,.16),transparent 34%),
+      radial-gradient(circle at 24% 52%,rgba(57,212,154,.18),transparent 22%),
+      rgba(2,7,12,.62);
+    background-size:42px 42px,42px 42px,auto,auto,auto;
+  }
+  .smt-no-canvas::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,transparent 38%,rgba(3,6,9,.38) 78%);pointer-events:none;}
+  .smt-no-title{position:absolute;top:24px;left:28px;z-index:4;}
+  .smt-no-title span{display:block;color:var(--smtinel-no-green);font-size:10px;font-weight:950;letter-spacing:.22em;text-transform:uppercase;}
+  .smt-no-title h3{margin:6px 0 0;font-size:26px;line-height:1;color:#fff;letter-spacing:-.04em;}
+  .smt-no-title p{margin:6px 0 0;color:rgba(234,247,255,.62);font-size:12px;max-width:460px;line-height:1.45;}
+  .smt-no-svg{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+  .smt-no-edge{stroke:rgba(135,206,250,.45);stroke-width:1.1;fill:none;stroke-dasharray:7 10;animation:smtEdgeFlow 5.5s linear infinite;}
+  .smt-no-edge.strong{stroke:rgba(57,212,154,.72);stroke-width:2.3;filter:drop-shadow(0 0 7px rgba(57,212,154,.42));}
+  .smt-no-edge.hot{stroke:rgba(239,78,93,.75);stroke-width:2.6;filter:drop-shadow(0 0 9px rgba(239,78,93,.45));}
+  @keyframes smtEdgeFlow{to{stroke-dashoffset:-120;}}
+  .smt-no-node{position:absolute;z-index:3;transform:translate(-50%,-50%);border-radius:999px;display:grid;place-items:center;text-align:center;color:#fff;}
+  .smt-no-core{left:28%;top:52%;width:190px;height:190px;background:radial-gradient(circle at 38% 30%,rgba(255,255,255,.95),rgba(57,212,154,.18) 34%,rgba(3,20,18,.94) 72%);border:1px solid rgba(154,255,215,.55);box-shadow:0 0 0 16px rgba(57,212,154,.05),0 0 80px rgba(57,212,154,.35);animation:smtCorePulse 4.5s ease-in-out infinite;}
+  @keyframes smtCorePulse{0%,100%{box-shadow:0 0 0 12px rgba(57,212,154,.05),0 0 60px rgba(57,212,154,.25)}50%{box-shadow:0 0 0 24px rgba(57,212,154,.08),0 0 100px rgba(57,212,154,.42)}}
+  .smt-no-core b{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#d8fff0;}
+  .smt-no-core strong{font-size:34px;line-height:1;margin:6px 0;letter-spacing:-.06em;}
+  .smt-no-core small{font-size:11px;color:rgba(234,247,255,.72);}
+  .smt-no-bucket{width:142px;height:142px;background:rgba(255,255,255,.08);border:1px solid currentColor;box-shadow:0 0 32px rgba(255,255,255,.12);backdrop-filter:blur(6px);}
+  .smt-no-bucket.green{color:var(--smtinel-no-green);left:54%;top:26%;}
+  .smt-no-bucket.blue{color:var(--smtinel-no-blue);left:61%;top:45%;}
+  .smt-no-bucket.amber{color:var(--smtinel-no-amber);left:55%;top:65%;}
+  .smt-no-bucket.red{color:var(--smtinel-no-red);left:42%;top:78%;}
+  .smt-no-bucket.purple{color:var(--smtinel-no-purple);left:36%;top:25%;}
+  .smt-no-bucket span{font-size:10px;font-weight:950;letter-spacing:.16em;color:currentColor;}
+  .smt-no-bucket strong{font-size:25px;line-height:1;margin-top:5px;color:#fff;}
+  .smt-no-bucket small{font-size:10px;color:rgba(234,247,255,.65);padding:0 12px;line-height:1.25;}
+  .smt-no-station{position:absolute;z-index:3;display:flex;align-items:center;gap:8px;color:#dff8ff;font-size:11px;font-weight:950;letter-spacing:.03em;}
+  .smt-no-station i{width:11px;height:11px;border-radius:50%;background:currentColor;box-shadow:0 0 20px currentColor;}
+  .smt-no-station b{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);}
+  .smt-no-station em{display:block;width:86px;height:5px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;}
+  .smt-no-station em::before{content:"";display:block;height:100%;width:var(--w,50%);background:currentColor;box-shadow:0 0 12px currentColor;}
+  .smt-no-orbit{position:absolute;z-index:2;border:1px solid rgba(176,220,255,.12);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;}
+  .smt-no-orbit.o1{left:48%;top:52%;width:680px;height:480px;}
+  .smt-no-orbit.o2{left:48%;top:52%;width:480px;height:330px;}
+  .smt-no-stars{position:absolute;inset:0;z-index:0;opacity:.55;background-image:radial-gradient(circle,rgba(167,231,255,.75) 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(circle at 50% 50%,#000 0%,transparent 78%);}
+  .smt-no-risk-title{border-radius:18px;padding:15px;background:linear-gradient(135deg,rgba(57,212,154,.18),rgba(90,167,255,.16));border:1px solid rgba(105,197,255,.28);display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:13px;}
+  .smt-no-risk-title b{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#dff8ff;line-height:1.25;}
+  .smt-no-risk-title span{width:30px;height:30px;border-radius:999px;background:var(--smtinel-no-red);display:grid;place-items:center;font-weight:950;color:#fff;}
+  .smt-no-risk-card{border-radius:20px;padding:14px;background:rgba(255,255,255,.95);color:#102a43;margin-bottom:12px;border:1px solid rgba(255,255,255,.18);box-shadow:0 14px 34px rgba(0,0,0,.26);}
+  .smt-no-risk-card span{display:block;font-size:9px;font-weight:950;letter-spacing:.14em;text-transform:uppercase;color:#d13d4b;}
+  .smt-no-risk-card b{display:block;margin-top:6px;font-size:16px;line-height:1.15;}
+  .smt-no-risk-card strong{float:right;font-size:28px;color:#d13d4b;margin-left:10px;}
+  .smt-no-risk-card p{font-size:11px;line-height:1.45;color:#53636a;margin:8px 0 0;clear:both;}
+  .smt-no-legend{position:absolute;left:28px;bottom:22px;z-index:4;display:flex;gap:8px;flex-wrap:wrap;}
+  .smt-no-legend span{border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.06);font-size:10px;color:rgba(234,247,255,.72);font-weight:850;}
+  @media (max-width:1100px){.smt-no-layout{grid-template-columns:1fr;}.smt-no-canvas{min-height:760px}.smt-no-side,.smt-no-risk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.smt-no-metric,.smt-no-risk-card{margin-bottom:0}}
+</style>
+<script id="smtinel-v13-neural-ops-script">
+(function(){
+  'use strict';
+  var wired=false;
+  function text(el){return el ? String(el.textContent||'').replace(/\s+/g,' ').trim() : '';}
+  function num(s){var m=String(s||'').match(/[0-9][0-9,.]*/);return m?m[0]:'0';}
+  function metricHtml(label,value,sub,ico){return '<div class="smt-no-metric"><i>'+ico+'</i><div><span>'+label+'</span><b>'+value+'</b><small>'+sub+'</small></div></div>';}
+  function riskHtml(level,title,value,desc){return '<div class="smt-no-risk-card"><strong>'+value+'</strong><span>'+level+'</span><b>'+title+'</b><p>'+desc+'</p></div>';}
+  function stationHtml(name,no,x,y,w,color){return '<div class="smt-no-station" style="left:'+x+'%;top:'+y+'%;color:'+color+';--w:'+w+'%"><i></i><b>'+no+' '+name+'</b><em></em></div>';}
+  function build(section){
+    if(!section || section.querySelector('.smt-neural-ops-view')) return;
+    var shell=section.querySelector('.ri-vm-shell');
+    var total=num(text(section.querySelector('.ri-vm-root strong')) || text(section.querySelector('.ri-vm-side-card b')));
+    var bucketEls=[].slice.call(section.querySelectorAll('.ri-vm-bucket'));
+    var bucketData=bucketEls.map(function(b,idx){
+      var title=text(b.querySelector('.ri-vm-bucket-node span')) || ['0-30D','31-60D','61-90D','91-365D','>1Y'][idx] || 'Bucket';
+      var value=num(text(b.querySelector('.ri-vm-bucket-node b')));
+      var pct=text(b.querySelector('.ri-vm-bucket-node small')) || '0%';
+      var top=text(b.querySelector('.ri-vm-bucket-top')) || 'No active units';
+      return {title:title,value:value,pct:pct,top:top};
+    });
+    while(bucketData.length<5){bucketData.push({title:['0-30D','31-60D','61-90D','91-365D','>1Y'][bucketData.length],value:'0',pct:'0%',top:'No active units'});}
+    var stationEls=[].slice.call(section.querySelectorAll('.ri-vm-station')).slice(0,18);
+    var stations=stationEls.map(function(s,i){
+      var no=text(s.querySelector('.ri-vm-station-no')) || String(i+1).padStart(3,'0');
+      var name=text(s.querySelector('em')) || text(s.querySelector('span')) || 'STATION';
+      var val=num(text(s.querySelector('small')));
+      return {no:no,name:name,value:val};
+    });
+    if(!stations.length){stations=[{no:'017',name:'STOCKIN',value:60},{no:'013',name:'ICT',value:22},{no:'004',name:'AOI2',value:12},{no:'049',name:'MRB',value:7},{no:'038',name:'PCBP',value:5}];}
+    var coords=[[76,23],[79,31],[82,39],[79,47],[84,56],[75,64],[70,74],[58,83],[43,87],[30,76],[21,62],[18,45],[24,30],[39,17],[58,13],[70,18],[87,69],[65,52]];
+    var colors=['#39d49a','#5aa7ff','#d89a2b','#ef4e5d','#9a6cff'];
+    var stationMarkup=stations.map(function(s,i){var c=coords[i%coords.length];return stationHtml(s.name,s.no,c[0],c[1],Math.min(100,Math.max(8,Number(String(s.value).replace(/,/g,''))%100||30)),colors[i%colors.length]);}).join('');
+    var lines=['<svg class="smt-no-svg" viewBox="0 0 1000 720" preserveAspectRatio="none">'];
+    [[280,374,540,188,'strong'],[280,374,610,324,'strong'],[280,374,550,468,''],[280,374,420,562,'hot'],[280,374,360,180,'']].forEach(function(l){lines.push('<path class="smt-no-edge '+l[4]+'" d="M'+l[0]+' '+l[1]+' C '+(l[0]+120)+' '+l[3]+', '+(l[2]-120)+' '+l[3]+', '+l[2]+' '+l[3]+'"/>');});
+    coords.slice(0,stations.length).forEach(function(c,i){lines.push('<path class="smt-no-edge '+(i%7===0?'hot':i%3===0?'strong':'')+'" d="M560 360 C 650 '+(180+i*18)+', 720 '+(c[1]*7.2)+', '+(c[0]*10)+' '+(c[1]*7.2)+'"/>');});
+    lines.push('</svg>');
+    var view=document.createElement('section');
+    view.className='smt-neural-ops-view';
+    view.innerHTML='<div class="smt-no-layout">'
+      +'<aside class="smt-no-side">'
+      +metricHtml('Total Bonepile Units',total,'Current filtered population','◇')
+      +metricHtml('Aging Buckets','5','Operational aging layers','◎')
+      +metricHtml('Station Nodes',String(stations.length),'Current event clusters','✦')
+      +metricHtml('High Risk',bucketData[3].value, bucketData[3].pct+' in critical aging','△')
+      +metricHtml('> 1Y Units',bucketData[4].value,bucketData[4].pct+' long aging','□')
+      +'</aside>'
+      +'<main class="smt-no-canvas">'
+      +'<div class="smt-no-stars"></div><div class="smt-no-orbit o1"></div><div class="smt-no-orbit o2"></div>'+lines.join('')
+      +'<div class="smt-no-title"><span>Recovery Intelligence</span><h3>Neural Operations Map</h3><p>Bonepile source connected to aging orbits, station constellations and risk propagation. Line intensity represents concentration.</p></div>'
+      +'<div class="smt-no-node smt-no-core"><b>Bonepile Core</b><strong>'+total+'</strong><small>filtered units</small></div>'
+      +'<div class="smt-no-node smt-no-bucket green"><span>'+bucketData[0].title+'</span><strong>'+bucketData[0].value+'</strong><small>'+bucketData[0].top+'</small></div>'
+      +'<div class="smt-no-node smt-no-bucket blue"><span>'+bucketData[1].title+'</span><strong>'+bucketData[1].value+'</strong><small>'+bucketData[1].top+'</small></div>'
+      +'<div class="smt-no-node smt-no-bucket amber"><span>'+bucketData[2].title+'</span><strong>'+bucketData[2].value+'</strong><small>'+bucketData[2].top+'</small></div>'
+      +'<div class="smt-no-node smt-no-bucket red"><span>'+bucketData[3].title+'</span><strong>'+bucketData[3].value+'</strong><small>'+bucketData[3].top+'</small></div>'
+      +'<div class="smt-no-node smt-no-bucket purple"><span>'+bucketData[4].title+'</span><strong>'+bucketData[4].value+'</strong><small>'+bucketData[4].top+'</small></div>'
+      +stationMarkup
+      +'<div class="smt-no-legend"><span>Edge weight = volume</span><span>Glow = risk</span><span>Orbit = aging bucket</span><span>Satellite = station</span></div>'
+      +'</main>'
+      +'<aside class="smt-no-risk"><div class="smt-no-risk-title"><b>AI Recovery Engine<br>Risk Interpretation</b><span>'+String(stations.length)+'</span></div>'
+      +riskHtml('CRITICAL','Primary aging concentration',bucketData[3].value,'Review station ownership, physical hold reason and release gate for the dominant high-aging cluster.')
+      +riskHtml('HIGH','Station bottleneck',stations[0].name, 'Largest satellite node by current scope. Validate SFC state and re-entry plan.')
+      +riskHtml('MEDIUM','Recovery candidate pool',bucketData[0].value, 'Fresh bucket may contain clean units that can be moved first after evidence validation.')
+      +riskHtml('LOW','Topology coverage',String(stations.length), 'Station relationships detected from current filtered Yield Flow scope.')
+      +'</aside></div>';
+    if(shell){shell.parentNode.insertBefore(view,shell);}else{section.appendChild(view);}
+    var bar=document.createElement('div');bar.className='smt-neural-togglebar';
+    bar.innerHTML='<button type="button" data-mode="classic">Classic Enterprise</button><button type="button" data-mode="neural">Neural Operations</button>';
+    section.insertBefore(bar,section.firstChild);
+    var mode=localStorage.getItem('smtinel_recovery_view_mode')||'neural';
+    function apply(m){section.classList.toggle('smt-neural-mode',m==='neural');[].slice.call(bar.querySelectorAll('button')).forEach(function(b){b.classList.toggle('active',b.getAttribute('data-mode')===m);});localStorage.setItem('smtinel_recovery_view_mode',m);}
+    bar.addEventListener('click',function(e){var b=e.target.closest('button[data-mode]');if(b)apply(b.getAttribute('data-mode'));});
+    apply(mode);
+  }
+  function scan(){var section=document.getElementById('recovery-section');if(section) build(section);}
+  var mo=new MutationObserver(function(){scan();});
+  function start(){if(wired)return;wired=true;scan();mo.observe(document.body,{childList:true,subtree:true});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
 </body>
