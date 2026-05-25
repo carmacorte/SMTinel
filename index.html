@@ -40282,5 +40282,62 @@ body.traceops-premium-shell [class*="impact"]{
   mo.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 })();
 </script>
+
+<!-- SMTinel V13.2.1 - Recovery Neural Transparent HUD Stable -->
+<style id="smtinel-v13-2-1-transparent-hud-stable">
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-neural-ops-view{background:radial-gradient(circle at 50% 44%,rgba(70,110,140,.18),transparent 36%),radial-gradient(circle at 24% 54%,rgba(57,212,154,.20),transparent 28%),linear-gradient(135deg,rgba(2,5,8,.82),rgba(3,13,16,.72) 52%,rgba(2,5,8,.86))!important;border:1px solid rgba(148,255,220,.18)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 28px 95px rgba(0,0,0,.38)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode .smt-neural-togglebar button[data-mode="hud"]{border-color:rgba(105,255,210,.42)!important;color:#cffff0!important;background:rgba(10,34,30,.55)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-neural-togglebar button[data-mode="hud"]{background:linear-gradient(135deg,rgba(50,255,180,.45),rgba(60,120,255,.28))!important;box-shadow:0 0 0 1px rgba(105,255,210,.25),0 0 30px rgba(57,212,154,.22)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-canvas{background:linear-gradient(rgba(150,230,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(150,230,255,.045) 1px,transparent 1px),radial-gradient(circle at 38% 52%,rgba(57,212,154,.22),transparent 25%),radial-gradient(circle at 65% 44%,rgba(70,130,255,.18),transparent 32%),rgba(2,7,12,.44)!important;background-size:36px 36px,36px 36px,auto,auto,auto!important;backdrop-filter:blur(18px) saturate(150%)!important;border:1px solid rgba(132,225,255,.18)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-side,html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-risk{background:linear-gradient(180deg,rgba(5,14,14,.54),rgba(6,18,14,.38))!important;border:1px solid rgba(110,255,205,.17)!important;backdrop-filter:blur(22px) saturate(150%)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-metric,html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-risk-card{background:rgba(245,250,247,.72)!important;backdrop-filter:blur(18px) saturate(135%)!important;border:1px solid rgba(255,255,255,.42)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-bucket{background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.20),rgba(255,255,255,.055) 45%,rgba(5,10,16,.42))!important;backdrop-filter:blur(12px) saturate(160%)!important;}
+html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-station b{background:rgba(10,18,24,.48)!important;border-color:rgba(190,245,255,.20)!important;backdrop-filter:blur(11px)!important;}
+</style>
+<script id="smtinel-v13-2-1-transparent-hud-stable-script">
+(function(){
+  'use strict';
+  function syncHudButton(section){
+    var bar=section&&section.querySelector('.smt-neural-togglebar');
+    if(!bar||bar.querySelector('button[data-mode="hud"]')) return;
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.setAttribute('data-mode','hud');
+    btn.textContent='Transparent HUD';
+    bar.appendChild(btn);
+    bar.addEventListener('click',function(e){
+      var b=e.target&&e.target.closest&&e.target.closest('button[data-mode]');
+      if(!b) return;
+      var mode=b.getAttribute('data-mode');
+      if(mode==='hud'){
+        section.classList.add('smt-neural-mode','smt-hud-mode');
+        localStorage.setItem('smtinel_recovery_view_mode','neural');
+        localStorage.setItem('smtinel_recovery_hud_mode','1');
+      }else{
+        section.classList.remove('smt-hud-mode');
+        localStorage.setItem('smtinel_recovery_hud_mode','0');
+      }
+      Array.prototype.slice.call(bar.querySelectorAll('button')).forEach(function(x){
+        var xm=x.getAttribute('data-mode');
+        x.classList.toggle('active',(mode==='hud'&&xm==='hud')||(mode!=='hud'&&xm===mode));
+      });
+    },true);
+    if(localStorage.getItem('smtinel_recovery_hud_mode')==='1'){
+      section.classList.add('smt-neural-mode','smt-hud-mode');
+      Array.prototype.slice.call(bar.querySelectorAll('button')).forEach(function(x){x.classList.toggle('active',x.getAttribute('data-mode')==='hud');});
+    }
+  }
+  function apply(){
+    document.documentElement.classList.add('smtinel-v13-2-1-hud');
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.1 - Recovery Neural Transparent HUD Stable - 2026-05-23';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.1 - Recovery Neural Transparent HUD Stable - 2026-05-23';
+    var section=document.getElementById('recovery-section');
+    if(section) syncHudButton(section);
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',apply);}else{apply();}
+  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
