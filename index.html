@@ -38784,7 +38784,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.3 - Cesium BOXSN Bridge Active - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -38921,9 +38921,9 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.0 · Recovery Neural Operations Preview · 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.3 - Cesium BOXSN Bridge Active - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
-  window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = true;
+  window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   function callProgress(options, pct, phase, msg){
     try { if (options && typeof options.onProgress === "function") options.onProgress(pct, phase, msg); } catch(_) {}
@@ -39053,11 +39053,22 @@ body.traceops-premium-shell [class*="impact"]{
           workbookName:"TXT/TSV lightweight package",
           container:file.name,
           sheets:pulled,
-          notes:"V12.4: corrige deadlock O(N^2) en conteo único de SN por WO y difiere Cesium durante importación inicial."
+          notes:"V13.2.3: corrige deadlock O(N^2), mantiene Cesium activo y restaura bridge SFC.BOXSN -> Cesium.sysserialno."
         };
-        var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, [], parsed.bom);
+        var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
+        try {
+          window.TRACEOPS_YIELD_BRIDGE_DEBUG = {
+            sfcRows: (parsed.sfc || []).length,
+            cesiumRows: (parsed.cesium || []).length,
+            ftRows: (window.TRACEOPS_YIELD_FT_ROWS || []).length,
+            sfcIndexKeys: window.TRACEOPS_YIELD_SN_TO_SFC ? Object.keys(window.TRACEOPS_YIELD_SN_TO_SFC).length : 0,
+            createdAt: new Date().toISOString(),
+            rule: "SFC.BOXSN -> Cesium.sysserialno"
+          };
+          console.info("[SMTinel YieldFlow Bridge]", window.TRACEOPS_YIELD_BRIDGE_DEBUG);
+        } catch(_) {}
         var secs = ((Date.now() - started) / 1000).toFixed(1);
-        callProgress(options, 100, "READY", "Import local listo en " + secs + "s. Cesium quedó diferido para evitar bloqueo.");
+        callProgress(options, 100, "READY", "Import local listo en " + secs + "s. Bridge SFC.BOXSN → Cesium.sysserialno activo.");
         try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
         return built;
       } finally {
