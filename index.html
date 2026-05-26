@@ -11626,18 +11626,107 @@ function traceOpsYieldExactStationFromEvent(value) {
 }
 function traceOpsYieldCesiumRowsForSfc(sfc, ftRows) {
     sfc = sfc || {};
+    ftRows = ftRows || TRACEOPS_YIELD_FT_ROWS || [];
     var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || "");
-    var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || "");
-    var bySn = [], byBox = [];
+    var sfcSn = traceOpsYieldCleanSn(sfc.sfcSn || "");
+    var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || sfc.bridgeKey || "");
+    var primary = [], secondary = [];
     (ftRows || []).forEach(function(fr){
         if (!fr) return;
-        var keys = [fr.cesiumSn, fr.syserialno, fr.serial, fr.sn, fr.sfcSn].map(traceOpsYieldCleanSn).filter(Boolean);
-        var bridgeKeys = [fr.boxsn, fr.bridgeKey, fr.parentsernum, fr.partsernum].map(traceOpsYieldCleanSn).filter(Boolean);
-        if (sn && keys.indexOf(sn) >= 0) bySn.push(fr);
-        else if (box && (keys.indexOf(box) >= 0 || bridgeKeys.indexOf(box) >= 0)) byBox.push(fr);
+        var cesiumKeys = [
+            fr.syserialno, fr.cesiumSn, fr.serial, fr.Serial, fr.SN,
+            fr.sn, fr.sfcSn, fr.bridgeKey, fr.boxsn, fr.boxSn
+        ].map(traceOpsYieldCleanSn).filter(Boolean);
+        var legacyKeys = [
+            fr.parentsernum, fr.partsernum, fr.parentSn, fr.partSn
+        ].map(traceOpsYieldCleanSn).filter(Boolean);
+
+        // Main bridge rule:
+        // SFC currentevent STOCKIN means the unit is already finished in SFC;
+        // use BOXSN/FJZ as the primary lookup against Cesium.syserialno.
+        if (box && cesiumKeys.indexOf(box) >= 0) {
+            primary.push(fr);
+            return;
+        }
+        // Fallback: some imports normalize SFC sn to BOXSN, so keep sn/sfcSn as secondary.
+        if ((sn && cesiumKeys.indexOf(sn) >= 0) || (sfcSn && cesiumKeys.indexOf(sfcSn) >= 0)) {
+            secondary.push(fr);
+            return;
+        }
+        // Legacy fallback only after primary/secondary fail.
+        if (box && legacyKeys.indexOf(box) >= 0) secondary.push(fr);
     });
-    return bySn.length ? bySn : byBox;
+    return primary.length ? primary : secondary;
 }
+
+function traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown(snToSfc, ftRows) {
+    var stockinRows = {};
+    Object.keys(snToSfc || {}).forEach(function(k) {
+        var sfc = snToSfc[k] || {};
+        var st = traceOpsYieldNormalizeSequenceStation(sfc.event || sfc.currentEvent || sfc.station || sfc.testStation || "");
+        if (st !== "STOCKIN") return;
+        var box = traceOpsYieldCleanSn(sfc.boxsn || sfc.boxSn || sfc.bridgeKey || "");
+        var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || k || "");
+        var key = box || sn;
+        if (key && !stockinRows[key]) stockinRows[key] = sfc;
+    });
+
+    var latestBySfc = {};
+    Object.keys(stockinRows).forEach(function(key) {
+        var sfc = stockinRows[key] || {};
+        var rows = traceOpsYieldCesiumRowsForSfc(sfc, ftRows || TRACEOPS_YIELD_FT_ROWS || []);
+        rows.forEach(function(r, idx) {
+            if (!r) return;
+            var t = traceOpsYieldCesiumTimeValue(r, idx);
+            var prev = latestBySfc[key];
+            if (!prev || t >= prev.__timeValue) {
+                latestBySfc[key] = Object.assign({}, r, {
+                    __timeValue: t,
+                    __bridgeKey: key,
+                    sfcSn: sfc.sfcSn || r.sfcSn || '',
+                    boxsn: sfc.boxsn || sfc.boxSn || r.boxsn || key,
+                    wo: sfc.wo || r.wo || '',
+                    sku: sfc.sku || r.sku || '',
+                    family: sfc.family || r.family || '',
+                    bu: sfc.bu || r.bu || '',
+                    line: sfc.line || r.line || '',
+                    currentEvent: sfc.event || sfc.currentEvent || 'STOCKIN'
+                });
+            }
+        });
+    });
+
+    var map = {};
+    Object.keys(latestBySfc).forEach(function(key) {
+        var r = latestBySfc[key] || {};
+        var st = String(r.testArea || r.station || "N/D").trim() || "N/D";
+        if (!map[st]) map[st] = { station: st, total: 0, pass: 0, fail: 0, retry: 0, other: 0, serials: [], failMap: {} };
+        var x = map[st];
+        var kind = r.kind || traceOpsYieldStatusKind(r.status || r.rawStatus || "");
+        var failLabel = traceOpsYieldCleanFailureSignal([r.failingTestName, r.testInfo]);
+        x.total += 1;
+        if (kind === "pass") x.pass += 1;
+        else if (kind === "fail") {
+            x.fail += 1;
+            if (failLabel !== "N/D") x.failMap[failLabel] = (x.failMap[failLabel] || 0) + 1;
+        }
+        else if (/retry|retest/i.test(String(r.status || r.rawStatus || ""))) x.retry += 1;
+        else x.other += 1;
+        x.serials.push(Object.assign({}, r, {
+            sn: key,
+            station: st,
+            symptom: kind === "fail" ? failLabel : (r.failingTestName || r.status || "Last Cesium status"),
+            location: r.machine || r.recordTime || "N/D"
+        }));
+    });
+
+    return Object.keys(map).map(function(k) {
+        var x = map[k];
+        x.topFails = traceOpsYieldTopFailList(x.failMap, x.fail, 5);
+        return x;
+    }).sort(function(a,b) { return b.total - a.total || String(a.station).localeCompare(String(b.station)); });
+}
+
 function traceOpsYieldBuildWoProcessTimeline(sfcList, repairList, ftRows, wo) {
     var nodes = {}, order = traceOpsYieldProcessNodeOrder(), rawWo = String(wo || ""), normWo = rawWo.replace(/^0+/, "") || rawWo;
     order.forEach(function(n){ nodes[n] = { node: n, snMap: {}, failMap: {}, repairMap: {}, timeMap: {}, examples: [] }; });
@@ -12645,7 +12734,7 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         filteredSnToSfcForStationBreakdown[sn] = sfc;
     });
     var stationSequenceBreakdown = traceOpsYieldBuildStationSequenceBreakdown(filteredSnToSfcForStationBreakdown, ftRows, { restrictToSfc: true });
-    var cesiumCurrentBreakdown = traceOpsYieldBuildCesiumCurrentBreakdown(ftRows);
+    var cesiumCurrentBreakdown = traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown(filteredSnToSfcForStationBreakdown, TRACEOPS_YIELD_FT_ROWS || ftRows || []);
     var bgaUnits = riskRows.filter(function (x) { return /BGA|REBALL|U8300|ASIC|CPU|FPGA|UNDERFILL/i.test([x.symptom, x.location, x.family, x.sku].join(' ')); }).reduce(function (a, b) { return a + Number(b.risk || 0); }, 0);
     var stockinUnits = trackerRows.reduce(function (a, t) { return a + Number((t.completedByStation && t.completedByStation.STOCKIN) || 0); }, 0);
     var ftUnits = trackerRows.reduce(function (a, t) { var c = t.completedByStation || {}; return a + Number(c.FT || 0); }, 0);
@@ -40329,271 +40418,13 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.1 - Recovery Neural Transparent HUD Stable - 2026-05-23';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.1 - Recovery Neural Transparent HUD Stable - 2026-05-23';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.2 - SFC BOXSN Cesium Bridge Restored - 2026-05-23';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.2 - SFC BOXSN Cesium Bridge Restored - 2026-05-23';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',apply);}else{apply();}
   new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
-<script id="smtinel-v13-2-2-sfc-boxsn-cesium-bridge-restore">
-(function(){
-  'use strict';
-
-  var BUILD = 'SMTinel V13.2.2 - SFC BOXSN to Cesium Bridge Restore - 2026-05-26';
-
-  function cleanSn(value){
-    return String(value == null ? '' : value)
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '')
-      .trim();
-  }
-
-  function extractFjz(value){
-    var raw = String(value == null ? '' : value).toUpperCase();
-    var match = raw.match(/FJZ[A-Z0-9]+/);
-    return match ? cleanSn(match[0]) : cleanSn(value);
-  }
-
-  function pick(row, names){
-    row = row || {};
-    for (var i = 0; i < names.length; i++) {
-      if (Object.prototype.hasOwnProperty.call(row, names[i]) && row[names[i]] != null && row[names[i]] !== '') {
-        return row[names[i]];
-      }
-    }
-    var lower = {};
-    Object.keys(row).forEach(function(k){ lower[String(k).toLowerCase().replace(/[^a-z0-9]/g, '')] = k; });
-    for (var j = 0; j < names.length; j++) {
-      var key = String(names[j]).toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (lower[key] && row[lower[key]] != null && row[lower[key]] !== '') return row[lower[key]];
-    }
-    return '';
-  }
-
-  function stationOfSfc(row){
-    var raw = String((row && (row.event || row.currentEvent || row.currentevent || row.station || row.testStation)) || '').toUpperCase();
-    if (/STOCK\s*IN|STOCKIN|FINISH|COMPLETE/.test(raw)) return 'STOCKIN';
-    if (typeof window.traceOpsYieldNormalizeSequenceStation === 'function') {
-      try { return window.traceOpsYieldNormalizeSequenceStation(raw); } catch (_) {}
-    }
-    return raw.replace(/[^A-Z0-9]/g, '');
-  }
-
-  function cesiumStation(row){
-    var raw = String((row && (row.testArea || row.station || row.area || row.AREA || row['Test Area'] || row.TestArea)) || '').trim();
-    if (!raw) raw = 'N/D';
-    return raw;
-  }
-
-  function statusKind(row){
-    var raw = String((row && (row.kind || row.status || row.rawStatus || row.Result || row.PASSFAIL || row.PassFail)) || '').toUpperCase();
-    if (raw === 'PASS' || /\bPASS(?:ED)?\b|GOOD|OK/.test(raw)) return 'pass';
-    if (/\bFAIL(?:ED)?\b|NG|ERROR|DEFECT/.test(raw)) return 'fail';
-    if (/RETRY|RETEST/.test(raw)) return 'retry';
-    return 'other';
-  }
-
-  function timeValue(row, fallback){
-    var raw = row && (row.recordTime || row.testdate || row.RECTIME || row['Record Time'] || row.Timestamp || row.DateTime || row.Fecha);
-    if (raw instanceof Date && !isNaN(raw.getTime())) return raw.getTime();
-    var parsed = raw;
-    if (typeof window.traceOpsYieldParseDate === 'function') {
-      try { parsed = window.traceOpsYieldParseDate(raw) || raw; } catch (_) {}
-    }
-    var t = Date.parse(String(parsed || '').replace(' ', 'T'));
-    return isNaN(t) ? Number(fallback || 0) : t;
-  }
-
-  function failureLabel(row){
-    var label = pick(row || {}, [
-      'failingTestName','Failing Test Name','FallingTestName','Failed Test Name','Failure Test Name',
-      'testInfo','Test Info','TEST INFO','Failure Info','Fail Detail','Failure Detail','Symptom','Failure'
-    ]);
-    if (typeof window.traceOpsYieldCleanFailureSignal === 'function') {
-      try { return window.traceOpsYieldCleanFailureSignal([label]); } catch (_) {}
-    }
-    return String(label || '').trim() || 'N/D';
-  }
-
-  function addKey(map, key, value){
-    key = cleanSn(key);
-    if (!key) return;
-    if (!map[key]) map[key] = value;
-  }
-
-  function buildStockinScope(){
-    var scope = { keys: {}, sfcByKey: {}, count: 0 };
-    var snToSfc = window.TRACEOPS_YIELD_SN_TO_SFC || {};
-    var seenRows = [];
-    Object.keys(snToSfc).forEach(function(k){
-      var row = snToSfc[k] || {};
-      if (seenRows.indexOf(row) >= 0) return;
-      seenRows.push(row);
-      if (stationOfSfc(row) !== 'STOCKIN') return;
-      var sfcSn = cleanSn(row.sfcSn || row.sn || k);
-      var boxSn = extractFjz(row.boxsn || row.boxSn || row.BOXSN || row.bridgeKey || '');
-      var bridge = boxSn || sfcSn;
-      if (!bridge) return;
-      scope.count += 1;
-      [boxSn, sfcSn, row.bridgeKey, row.parentsernum, row.partsernum].forEach(function(x){
-        var key = extractFjz(x);
-        if (key) {
-          scope.keys[key] = true;
-          addKey(scope.sfcByKey, key, row);
-        }
-      });
-    });
-    return scope;
-  }
-
-  function cesiumKeys(row){
-    row = row || {};
-    var keys = [
-      row.cesiumSn, row.syserialno, row.sysserialno, row.SySerialNo, row.SysSerialNo,
-      row.sn, row.sfcSn, row.serial, row.Serial, row.SN,
-      row.bridgeKey, row.boxsn, row.BOXSN, row.parentsernum, row.partsernum
-    ];
-    return keys.map(extractFjz).filter(Boolean);
-  }
-
-  function bridgeRowsToStockin(rows){
-    var scope = buildStockinScope();
-    var out = [];
-    var seen = {};
-    (rows || []).forEach(function(row, idx){
-      var keys = cesiumKeys(row);
-      var match = '';
-      for (var i = 0; i < keys.length; i++) {
-        if (scope.keys[keys[i]]) { match = keys[i]; break; }
-      }
-      if (!match) return;
-      var id = match + '|' + (row.__seq != null ? row.__seq : idx) + '|' + String(row.recordTime || row.testdate || '');
-      if (seen[id]) return;
-      seen[id] = true;
-      var sfc = scope.sfcByKey[match] || {};
-      out.push(Object.assign({}, row, {
-        sn: match,
-        bridgeKey: match,
-        bridgeSource: 'sfc.boxsn_to_cesium.syserialno',
-        sfcSn: sfc.sfcSn || sfc.sn || row.sfcSn || '',
-        boxsn: sfc.boxsn || match,
-        wo: row.wo || sfc.wo || '',
-        sku: row.sku || sfc.sku || '',
-        family: row.family || sfc.family || '',
-        bu: row.bu || sfc.bu || '',
-        line: row.line || sfc.line || '',
-        sfcStation: 'STOCKIN',
-        __bridgeTime: timeValue(row, idx),
-        __bridgeIdx: idx
-      }));
-    });
-    window.TRACEOPS_YIELD_STOCKIN_SFC_BRIDGE_INDEX = {
-      stockinSfc: scope.count,
-      matchedCesiumRows: out.length,
-      createdAt: Date.now()
-    };
-    return out;
-  }
-
-  function buildCurrentBreakdown(rows){
-    var bridged = bridgeRowsToStockin(rows || []);
-    var latest = {};
-    bridged.forEach(function(row, idx){
-      var key = cleanSn(row.bridgeKey || row.sn || row.cesiumSn || row.sfcSn);
-      if (!key) return;
-      var tv = row.__bridgeTime || timeValue(row, idx);
-      if (!latest[key] || tv >= latest[key].__bridgeTime) latest[key] = Object.assign({}, row, { __bridgeTime: tv });
-    });
-    var map = {};
-    Object.keys(latest).forEach(function(key){
-      var row = latest[key] || {};
-      var st = cesiumStation(row);
-      if (!map[st]) map[st] = { station: st, total: 0, pass: 0, fail: 0, retry: 0, other: 0, serials: [], failMap: {} };
-      var x = map[st];
-      var kind = statusKind(row);
-      var fail = failureLabel(row);
-      x.total += 1;
-      if (kind === 'pass') x.pass += 1;
-      else if (kind === 'fail') {
-        x.fail += 1;
-        if (fail && fail !== 'N/D') x.failMap[fail] = (x.failMap[fail] || 0) + 1;
-      } else if (kind === 'retry') x.retry += 1;
-      else x.other += 1;
-      x.serials.push(Object.assign({}, row, {
-        station: st,
-        status: row.status || row.rawStatus || row.kind || '',
-        symptom: kind === 'fail' ? fail : (row.failingTestName || row.testInfo || row.status || 'Last Cesium status'),
-        location: row.machine || row.recordTime || 'N/D'
-      }));
-    });
-    return Object.keys(map).map(function(k){
-      var x = map[k];
-      x.topFails = Object.keys(x.failMap).map(function(name){ return { name: name, count: x.failMap[name], share: x.fail ? (x.failMap[name] / x.fail * 100) : 0 }; })
-        .sort(function(a,b){ return b.count - a.count || String(a.name).localeCompare(String(b.name)); })
-        .slice(0, 5);
-      return x;
-    }).sort(function(a,b){ return b.total - a.total || String(a.station).localeCompare(String(b.station)); });
-  }
-
-  function buildFtIndex(rows){
-    var byPrimary = {}, byBox = {};
-    (rows || []).forEach(function(row){
-      cesiumKeys(row).forEach(function(k){
-        if (!byPrimary[k]) byPrimary[k] = [];
-        byPrimary[k].push(row);
-      });
-      var bx = extractFjz(row && row.boxsn);
-      if (bx) {
-        if (!byBox[bx]) byBox[bx] = [];
-        byBox[bx].push(row);
-      }
-    });
-    window.TRACEOPS_YIELD_FT_BRIDGE_INDEX = { byPrimary: byPrimary, byBox: byBox, rowCount: (rows || []).length, createdAt: Date.now() };
-    return window.TRACEOPS_YIELD_FT_BRIDGE_INDEX;
-  }
-
-  var originalBuildCesiumRows = window.traceOpsYieldBuildCesiumRows;
-  if (typeof originalBuildCesiumRows === 'function' && !window.__SMTINEL_BOXSN_BRIDGE_BUILD_PATCHED__) {
-    window.__SMTINEL_BOXSN_BRIDGE_BUILD_PATCHED__ = true;
-    window.traceOpsYieldBuildCesiumRows = function(cesiumRows, snToSfc, ciscoCalendarMap){
-      var out = originalBuildCesiumRows.call(this, cesiumRows || [], snToSfc || {}, ciscoCalendarMap || {});
-      buildFtIndex(out || []);
-      return out;
-    };
-  }
-
-  var originalRowsForSfc = window.traceOpsYieldCesiumRowsForSfc;
-  window.traceOpsYieldCesiumRowsForSfc = function(sfc, ftRows){
-    var rows = ftRows || window.TRACEOPS_YIELD_FT_ROWS || [];
-    var idx = window.TRACEOPS_YIELD_FT_BRIDGE_INDEX;
-    if (!idx || idx.rowCount !== rows.length) idx = buildFtIndex(rows);
-    var sn = cleanSn(sfc && (sfc.sn || sfc.sfcSn));
-    var box = extractFjz(sfc && (sfc.boxsn || sfc.boxSn || sfc.bridgeKey));
-    var primary = [];
-    if (sn && idx.byPrimary[sn]) primary = primary.concat(idx.byPrimary[sn]);
-    if (primary.length) return primary;
-    var fallback = [];
-    if (box && idx.byPrimary[box]) fallback = fallback.concat(idx.byPrimary[box]);
-    if (box && idx.byBox[box]) fallback = fallback.concat(idx.byBox[box]);
-    if (fallback.length) return fallback;
-    return typeof originalRowsForSfc === 'function' ? originalRowsForSfc.call(this, sfc, ftRows) : [];
-  };
-
-  var originalCurrentBreakdown = window.traceOpsYieldBuildCesiumCurrentBreakdown;
-  window.traceOpsYieldBuildCesiumCurrentBreakdown = function(rows){
-    var candidateRows = (rows && rows.length) ? rows : (window.TRACEOPS_YIELD_FT_ROWS || []);
-    var bridged = buildCurrentBreakdown(candidateRows);
-    if (bridged && bridged.length) return bridged;
-    return typeof originalCurrentBreakdown === 'function' ? originalCurrentBreakdown.call(this, rows || []) : [];
-  };
-
-  window.SMTINEL_BUILD_VERSION = BUILD;
-  window.SMTINEL_BUILD_BADGE = BUILD;
-  console.info('[SMTinel] SFC BOXSN to Cesium bridge restore active', BUILD);
 })();
 </script>
 
