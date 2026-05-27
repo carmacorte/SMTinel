@@ -41070,5 +41070,152 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 
 <style>@media(max-width:900px){#smtinel-board-pattern-summary .smtinel-board-pattern-grid{grid-template-columns:1fr!important}}</style>
+
+
+<script id="smtinel-v1326-smt-top-offenders-pareto">
+(function(){
+  "use strict";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.6 - SMT Top Offenders Pareto + Board Pattern + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
+
+  function cleanText(value){ return String(value == null ? "" : value).trim(); }
+  function normText(value){ return cleanText(value).toUpperCase().replace(/[_-]+/g," ").replace(/\s+/g," ").trim(); }
+  function cleanSn(value){
+    try { if (typeof window.traceOpsYieldCleanSn === "function") return window.traceOpsYieldCleanSn(value); } catch(_) {}
+    return cleanText(value).toUpperCase().replace(/[^A-Z0-9]/g,"");
+  }
+  function failureRaw(row){
+    if (!row) return "";
+    var keys = ["failureMode","mode","symptom","repairSymptom","defect","description","testInfo","testinfo","test_info","failingTestName","failing_test_name","Failing Test Name","testName","failure","error","Failure Mode","TESTINFO"];
+    for (var i=0;i<keys.length;i++) {
+      var v = row[keys[i]];
+      if (v != null && String(v).trim()) return String(v);
+    }
+    try { if (typeof window.traceOpsBoardFailureModeLabel === "function") return window.traceOpsBoardFailureModeLabel(row); } catch(_) {}
+    return "N/D";
+  }
+  function snFromRow(row, idx){
+    try { if (typeof window.traceOpsBoardSnValue === "function") return window.traceOpsBoardSnValue(row, idx || 0); } catch(_) {}
+    return cleanSn(row && (row.sn || row.SN || row.serial || row.serialNumber || row.syserialno || row.sysserialno || row.boxsn || row.BOXSN)) || ("ROW_" + idx);
+  }
+  function normalizeFailureMode(value){
+    var t = normText(value);
+    if (!t || t === "N D" || t === "ND") return "Unclassified";
+    if (/INSUFFICIENT|LOW SOLDER|NO SOLDER|SOLDER INSUFF|LESS SOLDER/.test(t)) return "Insufficient Solder";
+    if (/BRIDGE|SHORT|SOLDER SHORT/.test(t)) return "Solder Bridge";
+    if (/\bOPEN\b|HIP|HEAD IN PILLOW|NON WET|NONWET/.test(t)) return "Open / HIP";
+    if (/TOMBSTONE|TOMBSTON/.test(t)) return "Tombstone";
+    if (/WRONG COMPONENT|WRONG PART|INCORRECT COMPONENT|MISMATCH COMPONENT|WRONG VALUE/.test(t)) return "Wrong Component";
+    if (/MISALIGN|OFFSET|SKEW|SHIFT|ROTATION|COPLANAR/.test(t)) return "Misalignment";
+    if (/DAMAGE|DAMAGED|CRACK|BROKEN|CHIPPED|BURN/.test(t)) return "Component Damage";
+    if (/MISSING|ABSENT|NOT PRESENT/.test(t)) return "Missing Component";
+    if (/POLARITY|REVERSE|REVERSED|ORIENTATION/.test(t)) return "Polarity / Orientation";
+    if (/RETEST|NTF|NO TROUBLE|NO FAULT/.test(t)) return "Retest / NTF";
+    var words = t.toLowerCase().split(" ").filter(Boolean).slice(0,4).map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); });
+    return words.join(" ") || "Unclassified";
+  }
+  function getRowsFromPage(){
+    var rows = [];
+    try { rows = (window.boardImpactContext && window.boardImpactContext.rows) || []; } catch(_) {}
+    if (!rows || !rows.length) {
+      try { rows = (window.yieldFlowModel && window.yieldFlowModel.rows) || []; } catch(_) {}
+    }
+    if (!rows || !rows.length) {
+      try { rows = window.TRACEOPS_YIELD_FT_ROWS || []; } catch(_) {}
+    }
+    return Array.isArray(rows) ? rows : [];
+  }
+  function currentModeFromDom(){
+    try { var ctxMode = window.boardImpactContext && window.boardImpactContext.mode; if (ctxMode) return normalizeFailureMode(ctxMode); } catch(_) {}
+    var active = document.querySelector('#boardimpact-section button[style*="rgb(31, 111, 235)"], #boardimpact-section button[style*="#1F6FEB"], #boardimpact-section button[style*="#2563EB"]');
+    return active ? normalizeFailureMode(active.textContent.split('·')[0]) : "";
+  }
+  function filterRowsForBoardScope(rows){
+    var mode = currentModeFromDom();
+    if (!mode) return rows;
+    var filtered = rows.filter(function(row){ return normalizeFailureMode(failureRaw(row)) === mode; });
+    return filtered.length ? filtered : rows;
+  }
+  function buildSmtTopOffenders(rows){
+    rows = Array.isArray(rows) ? rows : [];
+    var byMode = {};
+    rows.forEach(function(row, idx){
+      var mode = normalizeFailureMode(failureRaw(row));
+      var sn = snFromRow(row, idx);
+      if (!mode || !sn) return;
+      if (!byMode[mode]) byMode[mode] = { mode: mode, snMap: {}, eventCount: 0 };
+      byMode[mode].snMap[sn] = true;
+      byMode[mode].eventCount += 1;
+    });
+    var all = Object.keys(byMode).map(function(k){
+      var x = byMode[k];
+      return { mode: x.mode, count: Object.keys(x.snMap).length, eventCount: x.eventCount };
+    }).filter(function(x){ return x.count > 0; }).sort(function(a,b){ return b.count - a.count || b.eventCount - a.eventCount || a.mode.localeCompare(b.mode); });
+    var total = all.reduce(function(sum, x){ return sum + x.count; }, 0);
+    var top = all.slice(0,5);
+    var others = all.slice(5).reduce(function(sum, x){ return sum + x.count; }, 0);
+    var out = top.map(function(x){ return { mode: x.mode, count: x.count, percent: total ? (x.count / total) * 100 : 0 }; });
+    if (others > 0) out.push({ mode: "Others", count: others, percent: total ? (others / total) * 100 : 0 });
+    return { rows: out, total: total, modeCount: all.length };
+  }
+  function renderPareto(pareto){
+    var rows = pareto.rows || [];
+    var max = rows.reduce(function(m,x){ return Math.max(m, x.percent || 0); }, 1);
+    var body = rows.length ? rows.map(function(x, i){
+      var width = Math.max(4, Math.round((x.percent || 0) / max * 100));
+      var pct = (x.percent || 0).toFixed((x.percent || 0) >= 10 ? 0 : 1) + "%";
+      return '<div style="display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(140px,2fr) 58px 56px;gap:10px;align-items:center;padding:'+(i ? '9px 0 0' : '0')+';margin-top:'+(i ? '9px' : '0')+';border-top:'+(i ? '1px solid #ECF3FF' : '0')+'">'
+        + '<div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:22px;height:22px;border-radius:999px;background:#EEF5FF;color:#1F3A5F;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:950">'+(i+1)+'</span><strong style="font-size:12px;color:#102A43;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.mode+'</strong></div>'
+        + '<div style="height:13px;background:#ECF3FF;border-radius:999px;overflow:hidden"><div style="height:13px;width:'+width+'%;background:linear-gradient(90deg,#1F6FEB,#D9A441,#C44141);border-radius:999px"></div></div>'
+        + '<div style="font-size:12px;font-weight:950;color:#102A43;text-align:right">'+pct+'</div>'
+        + '<div style="font-size:11px;font-weight:900;color:#5F766C;text-align:right">'+x.count+' SN</div>'
+        + '</div>';
+    }).join('') : '<div style="font-size:12px;color:#5F766C;padding:10px 0">No SMT defect data in current scope.</div>';
+    return '<section id="smtinel-smt-top-offenders-pareto" style="background:linear-gradient(135deg,#FFFFFF,#F7FAFF);border:1px solid #D9E6F7;border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(20,32,51,.045);margin-top:12px">'
+      + '<div style="padding:14px 18px;background:#F7FAFF;border-bottom:1px solid #ECF3FF;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:950;color:#102A43">SMT Top Offenders Pareto</div><div style="font-size:10.5px;color:#5F766C;margin-top:4px">Top 5 defect modes + Others. Counts use distinct SN in the active Board Impact scope.</div></div><span style="display:inline-flex;border-radius:999px;padding:5px 9px;background:#EEF8F2;color:#1A7A3C;border:1px solid rgba(26,122,60,.14);font-size:10px;font-weight:950">'+pareto.modeCount+' modes · '+pareto.total+' SN</span></div>'
+      + '<div style="padding:14px 18px">'+body+'</div>'
+      + '</section>';
+  }
+  function installTopOffendersPareto(){
+    var root = document.getElementById('boardimpact-section');
+    if (!root) return;
+    var summary = document.getElementById('smtinel-board-pattern-summary');
+    var kpiStrip = root.children && root.children[1];
+    var anchor = summary || kpiStrip;
+    if (!anchor) return;
+    var rows = filterRowsForBoardScope(getRowsFromPage());
+    var pareto = buildSmtTopOffenders(rows);
+    window.traceOpsBoardImpactSmtTopOffendersPareto = pareto;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = renderPareto(pareto);
+    var node = wrap.firstElementChild;
+    var old = document.getElementById('smtinel-smt-top-offenders-pareto');
+    if (old) old.replaceWith(node);
+    else anchor.insertAdjacentElement('afterend', node);
+  }
+  function updateBadge(){
+    try {
+      var nodes = document.querySelectorAll('body *');
+      for (var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && /2026-05/.test(el.textContent) && el.textContent.length < 220) el.textContent = window.SMTINEL_BUILD_BADGE;
+      }
+    } catch(_) {}
+  }
+  function run(){ installTopOffendersPareto(); updateBadge(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(run, 1400); });
+  else setTimeout(run, 1400);
+  try {
+    var mo = new MutationObserver(function(){
+      clearTimeout(window.__smtinelV1326Timer);
+      window.__smtinelV1326Timer = setTimeout(run, 500);
+    });
+    mo.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
+  } catch(_) {}
+  window.traceOpsBoardImpactBuildSmtTopOffenders = buildSmtTopOffenders;
+})();
+</script>
+<style>@media(max-width:700px){#smtinel-smt-top-offenders-pareto [style*="grid-template-columns"]{grid-template-columns:1fr!important}}</style>
 </body>
 </html>
