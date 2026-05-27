@@ -25431,6 +25431,54 @@ body.traceops-premium-shell [class*="impact"]{
         a.click();
         URL.revokeObjectURL(a.href);
     }
+    function traceOpsYieldNormalizeCesiumTestSignatureName(value) {
+        var raw = String(value == null ? "" : value).trim();
+        if (!raw) return "N/D";
+        raw = raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+        if (!raw || /^\s*(n\/?a|na|none|null|undefined|pass|passed|ok)\s*$/i.test(raw)) return "N/D";
+        var compact = raw
+            .replace(/^error\s*[:\-]\s*/i, "")
+            .replace(/^fail(?:ed|ing)?\s*(?:test)?\s*[:\-]\s*/i, "")
+            .replace(/\s*[:|].*$/g, "")
+            .trim();
+        var upper = compact.toUpperCase()
+            .replace(/[^A-Z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "")
+            .replace(/_+/g, "_");
+        if (!upper) return "N/D";
+        var aliases = {
+            "INSUFFICIENT_SOLDER": "INSUFFICIENT SOLDER",
+            "LOW_SOLDER": "INSUFFICIENT SOLDER",
+            "NO_SOLDER": "INSUFFICIENT SOLDER",
+            "SOLDER_BRIDGE": "SOLDER BRIDGE",
+            "SOLDER_SHORT": "SOLDER BRIDGE",
+            "SHORT": "SOLDER BRIDGE",
+            "OPEN": "OPEN / HIP",
+            "HIP": "OPEN / HIP",
+            "HEAD_IN_PILLOW": "OPEN / HIP",
+            "NON_WET": "OPEN / HIP",
+            "WRONG_COMPONENT": "WRONG COMPONENT",
+            "WRONG_PART": "WRONG COMPONENT",
+            "MISALIGNMENT": "MISALIGNMENT",
+            "OFFSET": "MISALIGNMENT",
+            "SKEW": "MISALIGNMENT",
+            "TOMBSTONE": "TOMBSTONE",
+            "COMPONENT_DAMAGE": "COMPONENT DAMAGE",
+            "DAMAGE": "COMPONENT DAMAGE",
+            "BROKEN": "COMPONENT DAMAGE",
+            "CRACKED": "COMPONENT DAMAGE"
+        };
+        if (aliases[upper]) return aliases[upper];
+        if (/INSUFFICIENT|LOW_SOLDER|NO_SOLDER/.test(upper)) return "INSUFFICIENT SOLDER";
+        if (/BRIDGE|SOLDER_SHORT|SHORT/.test(upper)) return "SOLDER BRIDGE";
+        if (/HEAD_IN_PILLOW|\bHIP\b|\bOPEN\b|NON_WET/.test(upper)) return "OPEN / HIP";
+        if (/WRONG_(COMPONENT|PART)|WRONGCOMPONENT|WRONGPART/.test(upper)) return "WRONG COMPONENT";
+        if (/MISALIGN|OFFSET|SKEW/.test(upper)) return "MISALIGNMENT";
+        if (/TOMBSTONE/.test(upper)) return "TOMBSTONE";
+        if (/DAMAGE|BROKEN|CRACK/.test(upper)) return "COMPONENT DAMAGE";
+        return upper;
+    }
+
     function traceOpsYieldPickCesiumTestSignature(row) {
         row = row || {};
         var candidates = [
@@ -25456,6 +25504,10 @@ body.traceops-premium-shell [class*="impact"]{
     function traceOpsYieldBuildCesiumTestSignaturePareto(rows, maxItems) {
         rows = rows || [];
         maxItems = maxItems || 5;
+        try {
+            var cached = window.TRACEOPS_YIELD_CESIUM_SIGNATURE_PARETO_CACHE;
+            if (cached && cached.rows === rows && cached.maxItems === maxItems && cached.length === rows.length) return cached.value;
+        } catch (_) {}
         var byKey = {};
         rows.forEach(function(row) {
             if (!traceOpsYieldCesiumRowLooksFail(row)) return;
@@ -25498,7 +25550,9 @@ body.traceops-premium-shell [class*="impact"]{
             rest.forEach(function(x) { restRows = restRows.concat(x.rows || []); });
             top.push({ name: "Others", count: restCount, percent: total ? (restCount / total * 100) : 0, rows: restRows, stations: [], areas: [] });
         }
-        return { total: total, rows: top, rawRows: list };
+        var result = { total: total, rows: top, rawRows: list };
+        try { window.TRACEOPS_YIELD_CESIUM_SIGNATURE_PARETO_CACHE = { rows: rows, maxItems: maxItems, length: rows.length, value: result }; } catch (_) {}
+        return result;
     }
 
     function traceOpsYieldRenderCesiumTestSignaturePareto(pareto, h, mobile, setModal, fmt) {
@@ -38894,7 +38948,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.3 - Cesium BOXSN Bridge Active - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -39031,7 +39085,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.3 - Cesium BOXSN Bridge Active - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -40539,8 +40593,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.2 - SFC BOXSN Cesium Bridge Restored - 2026-05-23';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.2 - SFC BOXSN Cesium Bridge Restored - 2026-05-23';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -40560,7 +40614,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -40865,8 +40919,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   }
 
   function updateBadge(){
@@ -41012,7 +41066,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.5 - Board Pattern Summary + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41185,7 +41239,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.6 - SMT Top Offenders Pareto + Board Pattern + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41450,7 +41504,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.2.7 - Recovery Intelligence Light Override - 2026-05-23';
+  var badge = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -41476,7 +41530,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.9 - Recovery Light + Cesium Test Signature Pareto - 2026-05-23';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -41494,6 +41548,28 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   setTimeout(syncTraceOpsReleaseBadge, 500);
   setTimeout(syncTraceOpsReleaseBadge, 2000);
   setTimeout(syncTraceOpsReleaseBadge, 5000);
+})();
+</script>
+
+<!-- SMTinel V13.2.10 final badge sync -->
+<script>
+(function(){
+  var badgeText = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+  function applyBadge(){
+    try{
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
+      nodes.forEach(function(n){
+        if(n && n.childNodes && n.childNodes.length === 1 && n.textContent && /SMTinel\s+V13\.2\./.test(n.textContent)){
+          n.textContent = badgeText;
+        }
+      });
+    }catch(_){ }
+  }
+  window.TRACEOPS_RELEASE_BADGE = badgeText;
+  window.TRACEOPS_YIELD_RELEASE_BADGE = badgeText;
+  setTimeout(applyBadge, 0);
+  setTimeout(applyBadge, 1000);
+  setTimeout(applyBadge, 4000);
 })();
 </script>
 </body>
