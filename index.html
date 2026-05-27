@@ -41572,5 +41572,181 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   setTimeout(applyBadge, 4000);
 })();
 </script>
+
+<!-- SMTinel V13.2.11 full viewport recovery layout fix -->
+<style id="smtinel-v13-2-11-full-viewport-fix">
+  html,
+  body,
+  #root{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow-x:hidden !important;
+  }
+
+  body.traceops-premium-shell,
+  body.traceops-premium-shell #root{
+    width:100vw !important;
+    max-width:100vw !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+
+  body.traceops-premium-shell .saas-topbar,
+  .saas-topbar,
+  .saas-topbar.sidebar-collapsed{
+    left:0 !important;
+    right:0 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    margin:0 !important;
+  }
+
+  body.traceops-premium-shell .main-content,
+  body.traceops-premium-shell .main-content.expanded,
+  .main-content,
+  .main-content.expanded{
+    margin-left:0 !important;
+    margin-right:0 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    padding-left:8px !important;
+    padding-right:8px !important;
+    overflow-x:hidden !important;
+  }
+
+  body.traceops-premium-shell .main-content > *,
+  .main-content > *{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  body.traceops-premium-shell .main-content section,
+  body.traceops-premium-shell .main-content article,
+  body.traceops-premium-shell .main-content .tcard,
+  body.traceops-premium-shell .main-content .pf-card,
+  body.traceops-premium-shell .main-content .traceops-panel,
+  body.traceops-premium-shell .main-content .traceops-calendar,
+  body.traceops-premium-shell .main-content .traceops-context,
+  body.traceops-premium-shell .main-content .toq-dashboard,
+  body.traceops-premium-shell .main-content .boardimpact-glass-full{
+    max-width:none !important;
+    width:100% !important;
+    box-sizing:border-box !important;
+  }
+
+  body.traceops-premium-shell .sidebar:not(.open){
+    transform:translateX(-100%) !important;
+    pointer-events:none !important;
+  }
+
+  body.traceops-premium-shell .sidebar.open{
+    pointer-events:auto !important;
+  }
+
+  /* Recovery Intelligence must use the whole available viewport instead of a centered/narrow lane. */
+  #recovery-section,
+  #recovery-section > *,
+  #recovery-section .smt-neural-ops-view,
+  #recovery-section .smt-no-layout,
+  #recovery-section .smt-no-canvas,
+  #recovery-section .smt-no-side,
+  #recovery-section .ri-vm-shell,
+  #recovery-section .ri-vm-canvas,
+  #recovery-section .ri-vm-board,
+  #recovery-section .ri-vm-content{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  #recovery-section .smt-no-layout{
+    display:grid !important;
+    grid-template-columns:minmax(170px,220px) minmax(0,1fr) minmax(250px,320px) !important;
+    gap:12px !important;
+    align-items:stretch !important;
+  }
+
+  #recovery-section .ri-vm-shell{
+    display:grid !important;
+    grid-template-columns:minmax(170px,220px) minmax(0,1fr) minmax(250px,320px) !important;
+    gap:12px !important;
+  }
+
+  #recovery-section .smt-no-canvas,
+  #recovery-section .ri-vm-canvas{
+    overflow:visible !important;
+  }
+
+  #recovery-section .ri-vm-flow,
+  #recovery-section .ri-vm-buckets,
+  #recovery-section .smt-no-orbit,
+  #recovery-section .smt-no-map{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+  }
+
+  @media(max-width:1100px){
+    #recovery-section .smt-no-layout,
+    #recovery-section .ri-vm-shell{
+      grid-template-columns:1fr !important;
+    }
+
+    #recovery-section .smt-no-side,
+    #recovery-section .ri-vm-left,
+    #recovery-section .ri-vm-right{
+      display:grid !important;
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      gap:10px !important;
+    }
+  }
+
+  @media(max-width:640px){
+    body.traceops-premium-shell .main-content,
+    body.traceops-premium-shell .main-content.expanded,
+    .main-content,
+    .main-content.expanded{
+      padding-left:6px !important;
+      padding-right:6px !important;
+    }
+
+    #recovery-section .smt-no-side,
+    #recovery-section .ri-vm-left,
+    #recovery-section .ri-vm-right{
+      grid-template-columns:1fr !important;
+    }
+  }
+</style>
+<script id="smtinel-v13-2-11-badge-sync">
+(function(){
+  var badgeText = 'SMTinel V13.2.11 - Full Viewport Recovery Layout + Cesium Signature Fix - 2026-05-23';
+  function applyBadge(){
+    try{
+      window.TRACEOPS_RELEASE_BADGE = badgeText;
+      window.TRACEOPS_YIELD_RELEASE_BADGE = badgeText;
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
+      nodes.forEach(function(n){
+        if(!n || !n.childNodes || n.childNodes.length !== 1 || !n.textContent) return;
+        if(/SMTinel\s+V13\.2\./.test(n.textContent)) n.textContent = badgeText;
+      });
+    }catch(_){ }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBadge); else applyBadge();
+  setTimeout(applyBadge, 250);
+  setTimeout(applyBadge, 1000);
+  setTimeout(applyBadge, 3000);
+  setTimeout(applyBadge, 7000);
+})();
+</script>
+
 </body>
 </html>
