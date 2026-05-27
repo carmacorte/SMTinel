@@ -40792,5 +40792,283 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 })();
 </script>
 
+
+<style id="smtinel-v1325-recovery-light-css">
+/* SMTinel V13.2.5 - Recovery Intelligence Light Theme */
+#recovery-section.smtinel-ri,
+#recovery-section .ri-vm-header,
+#recovery-section .ri-vm-shell,
+#recovery-section .ri-vm-canvas,
+#recovery-section .ri-vm-left,
+#recovery-section .ri-vm-right{
+  color:#102A43!important;
+}
+#recovery-section .ri-vm-header{
+  background:linear-gradient(135deg,#FFFFFF 0%,#F7FAFF 100%)!important;
+  border:1px solid #D9E6F7!important;
+  box-shadow:0 8px 24px rgba(20,32,51,.05)!important;
+}
+#recovery-section .ri-vm-header h2,
+#recovery-section .ri-vm-header h3{
+  color:#102A43!important;
+}
+#recovery-section .ri-vm-header p,
+#recovery-section .smtinel-ri-eyebrow{
+  color:#5F766C!important;
+}
+#recovery-section .ri-vm-shell{
+  background:linear-gradient(180deg,#FFFFFF 0%,#F7FAFF 100%)!important;
+  border:1px solid #D9E6F7!important;
+  border-radius:24px!important;
+  box-shadow:0 10px 28px rgba(20,32,51,.05)!important;
+}
+#recovery-section .ri-vm-canvas{
+  background:
+    linear-gradient(to right,rgba(31,111,235,.055) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(31,111,235,.055) 1px,transparent 1px),
+    radial-gradient(circle at 18% 18%,rgba(74,144,226,.10),transparent 34%),
+    #FFFFFF!important;
+  background-size:34px 34px,34px 34px,auto,auto!important;
+  border:1px solid #D9E6F7!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 8px 22px rgba(20,32,51,.045)!important;
+}
+#recovery-section .ri-vm-left,
+#recovery-section .ri-vm-right{
+  background:transparent!important;
+}
+#recovery-section .ri-vm-side-card,
+#recovery-section .ri-vm-root,
+#recovery-section .ri-vm-bucket-node,
+#recovery-section .ri-vm-station,
+#recovery-section .ri-vm-issue,
+#recovery-section .ri-vm-detail,
+#recovery-section .ri-vm-summary span{
+  background:#FFFFFF!important;
+  border:1px solid #D9E6F7!important;
+  color:#102A43!important;
+  box-shadow:0 4px 14px rgba(20,32,51,.045)!important;
+}
+#recovery-section .ri-vm-root{
+  background:radial-gradient(circle at 45% 30%,rgba(30,138,100,.18),transparent 52%),linear-gradient(180deg,#FFFFFF,#F4FAF7)!important;
+}
+#recovery-section .ri-vm-root b,
+#recovery-section .ri-vm-root strong,
+#recovery-section .ri-vm-bucket-node b,
+#recovery-section .ri-vm-side-card b,
+#recovery-section .ri-vm-issue strong{
+  color:#102A43!important;
+}
+#recovery-section .ri-vm-root small,
+#recovery-section .ri-vm-bucket-node small,
+#recovery-section .ri-vm-bucket-top,
+#recovery-section .ri-vm-side-card small,
+#recovery-section .ri-vm-station small,
+#recovery-section .ri-vm-risk-note{
+  color:#5F766C!important;
+}
+#recovery-section .ri-vm-title-row span{
+  color:#5F766C!important;
+}
+#recovery-section .ri-vm-panel-title{
+  background:linear-gradient(135deg,#EEF5FF,#FFFFFF)!important;
+  color:#102A43!important;
+  border:1px solid #D9E6F7!important;
+}
+#recovery-section .ri-vm-issue.crit,
+#recovery-section .ri-vm-issue.high{
+  background:#FFF7F5!important;
+  border-color:#F3C7C3!important;
+}
+#recovery-section .ri-vm-issue.med{
+  background:#FFFDF4!important;
+  border-color:#F1D982!important;
+}
+#recovery-section .ri-vm-issue.low{
+  background:#F7FAFF!important;
+  border-color:#D9E6F7!important;
+}
+#recovery-section .ri-vm-toolbar button{
+  background:#FFFFFF!important;
+  color:#1F3A5F!important;
+  border:1px solid #C9DAF5!important;
+  box-shadow:0 4px 12px rgba(20,32,51,.045)!important;
+}
+#recovery-section .ri-vm-toolbar button.primary{
+  background:linear-gradient(135deg,#1E8A64,#4A90E2)!important;
+  color:#FFFFFF!important;
+  border-color:rgba(30,138,100,.25)!important;
+}
+</style>
+<script id="smtinel-v1325-board-pattern-recovery-light">
+(function(){
+  "use strict";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.5 - Board Pattern Summary + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
+
+  function cleanText(value){ return String(value == null ? "" : value).trim(); }
+  function normText(value){ return cleanText(value).toUpperCase().replace(/\s+/g," "); }
+  function cleanSn(value){
+    try { if (typeof window.traceOpsYieldCleanSn === "function") return window.traceOpsYieldCleanSn(value); } catch(_) {}
+    return cleanText(value).toUpperCase().replace(/[^A-Z0-9]/g,"");
+  }
+  function normalizeRef(value){
+    try { if (typeof window.traceOpsBoardNormalizeRef === "function") return window.traceOpsBoardNormalizeRef(value); } catch(_) {}
+    return cleanText(value).toUpperCase();
+  }
+  function extractRefs(row){
+    try { if (typeof window.traceOpsBoardExtractRefsFromRow === "function") return window.traceOpsBoardExtractRefsFromRow(row); } catch(_) {}
+    var raw = [row && row.ref, row && row.refdes, row && row.RefDes, row && row.failLocation, row && row.failureLocation, row && row.location].join(" ");
+    var matches = raw.toUpperCase().match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
+    var seen = {}, out = [];
+    matches.forEach(function(x){ x = normalizeRef(x); if (x && !seen[x]) { seen[x] = true; out.push(x); } });
+    return out;
+  }
+  function snFromRow(row, idx){
+    try { if (typeof window.traceOpsBoardSnValue === "function") return window.traceOpsBoardSnValue(row, idx || 0); } catch(_) {}
+    return cleanSn(row && (row.sn || row.SN || row.serial || row.serialNumber || row.syserialno || row.sysserialno));
+  }
+  function componentCode(row){
+    return cleanText(row && (row.componentCode || row.componentPn || row.partNumber || row.pn || row.component_code || row.ComponentCode || row.PartNumber));
+  }
+  function failureMode(row){
+    try { if (typeof window.traceOpsBoardFailureModeLabel === "function") return window.traceOpsBoardFailureModeLabel(row); } catch(_) {}
+    return cleanText(row && (row.failureMode || row.mode || row.symptom || row.repairSymptom || row.defect || row.description)) || "N/D";
+  }
+  function sideValue(row){ return normText(row && (row.side || row.lado || row.boardSide || row.Side)); }
+  function addUnique(map, key){ if (!key) return; map[key] = true; }
+  function countDistinctSnByKey(rows, keyGetter){
+    var map = {};
+    (Array.isArray(rows) ? rows : []).forEach(function(row, idx){
+      var key = keyGetter(row, idx);
+      if (!key) return;
+      var sn = snFromRow(row, idx) || ("ROW_" + idx);
+      if (!map[key]) map[key] = { key:key, snMap:{}, eventCount:0, rows:[] };
+      map[key].snMap[sn] = true;
+      map[key].eventCount += 1;
+      map[key].rows.push(row);
+    });
+    return Object.keys(map).map(function(key){
+      var x = map[key];
+      return { key:key, count:Object.keys(x.snMap).length, eventCount:x.eventCount, rows:x.rows };
+    }).sort(function(a,b){ return b.count - a.count || b.eventCount - a.eventCount || String(a.key).localeCompare(String(b.key), "es", { numeric:true }); });
+  }
+  function buildPatternSummary(rows){
+    rows = Array.isArray(rows) ? rows : [];
+    var topRefDes = countDistinctSnByKey(rows, function(row){ var refs = extractRefs(row); return refs && refs[0]; }).slice(0,5);
+    var topComponents = countDistinctSnByKey(rows, componentCode).slice(0,5);
+    var topModes = countDistinctSnByKey(rows, failureMode).slice(0,4);
+    var sides = {}, refsAll = {}, componentsAll = {}, modesAll = {};
+    rows.forEach(function(row, idx){
+      extractRefs(row).forEach(function(ref){ addUnique(refsAll, ref); });
+      addUnique(componentsAll, componentCode(row));
+      addUnique(modesAll, failureMode(row));
+      addUnique(sides, sideValue(row));
+    });
+    var refCount = Object.keys(refsAll).length;
+    var componentCount = Object.keys(componentsAll).length;
+    var modeCount = Object.keys(modesAll).length;
+    var sideCount = Object.keys(sides).filter(Boolean).length;
+    var direction = "Manufacturing / Process";
+    var confidence = "Medium";
+    var reasons = [];
+    if (modeCount === 1 && refCount > 1) reasons.push("same failure mode across multiple RefDes");
+    if (componentCount === 1 && refCount > 1) reasons.push("same component code across multiple RefDes");
+    if (sideCount === 1 && refCount > 1) reasons.push("same board side concentration");
+    if (refCount === 1 && rows.length > 1) { direction = "Localized RefDes / Design Review Candidate"; reasons.push("single RefDes recurrence"); }
+    if (componentCount > 1 && refCount > 1 && modeCount > 1) { direction = "Detection / Test Coverage Candidate"; reasons.push("mixed modes and components"); }
+    if (componentCount === 1 && modeCount > 1) { direction = "Material / Component Candidate"; reasons.push("same component code with mixed symptoms"); }
+    if (reasons.length >= 2) confidence = "High";
+    if (!rows.length) { direction = "N/D"; confidence = "N/D"; reasons = ["no active Board Impact scope"]; }
+    return { direction:direction, confidence:confidence, reasons:reasons, topRefDes:topRefDes, topComponents:topComponents, topModes:topModes, refCount:refCount, componentCount:componentCount, modeCount:modeCount };
+  }
+  function pill(text, tone){
+    var bg = tone === "red" ? "#FDEEEE" : tone === "green" ? "#EEF8F2" : tone === "amber" ? "#FFF7D8" : "#EEF5FF";
+    var color = tone === "red" ? "#C44141" : tone === "green" ? "#1A7A3C" : tone === "amber" ? "#8A5A00" : "#1F3A5F";
+    return '<span style="display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;background:'+bg+';color:'+color+';border:1px solid rgba(31,111,235,.14);font-size:10px;font-weight:900;white-space:nowrap">'+text+'</span>';
+  }
+  function listHtml(items, emptyLabel){
+    if (!items || !items.length) return '<div style="font-size:11px;color:#8A8580;padding:8px 0">'+(emptyLabel || 'N/D')+'</div>';
+    return items.map(function(x, i){
+      return '<div style="display:flex;justify-content:space-between;gap:10px;border-top:'+(i ? '1px solid #ECF3FF' : '0')+';padding:'+(i ? '8px 0 0' : '0 0 0')+';margin-top:'+(i ? '8px' : '0')+'"><strong style="color:#102A43;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.key+'</strong><span style="color:#1F3A5F;font-size:11px;font-weight:900;white-space:nowrap">'+x.count+' SN</span></div>';
+    }).join('');
+  }
+  function makeCard(title, body, sub){
+    return '<div style="background:#FFFFFF;border:1px solid #D9E6F7;border-radius:16px;padding:13px 14px;box-shadow:0 4px 14px rgba(20,32,51,.045);min-width:0"><div style="font-size:10px;font-weight:950;color:#5F766C;letter-spacing:.10em;text-transform:uppercase">'+title+'</div>' + (sub ? '<div style="font-size:10.5px;color:#5F766C;margin-top:4px;line-height:1.35">'+sub+'</div>' : '') + '<div style="margin-top:10px">'+body+'</div></div>';
+  }
+  function renderSummary(summary){
+    var reasonText = (summary.reasons || []).slice(0,3).join(' · ') || 'Scope filtered by active Board Impact selection';
+    var tone = summary.confidence === 'High' ? 'green' : summary.confidence === 'N/D' ? 'amber' : 'blue';
+    var problemBody = '<div style="font-size:18px;font-weight:950;color:#102A43;line-height:1.1">'+summary.direction+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+pill('Confidence: '+summary.confidence, tone)+pill(summary.refCount+' RefDes', 'blue')+pill(summary.componentCount+' PN', 'blue')+'</div><div style="font-size:11px;color:#5F766C;line-height:1.45;margin-top:10px">'+reasonText+'</div>';
+    return '<section id="smtinel-board-pattern-summary" style="background:linear-gradient(135deg,#FFFFFF,#F7FAFF);border:1px solid #D9E6F7;border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(20,32,51,.045)"><div style="padding:14px 18px;background:#F7FAFF;border-bottom:1px solid #ECF3FF;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:950;color:#102A43">Impact Pattern Summary</div><div style="font-size:10.5px;color:#5F766C;margin-top:4px">Respects active failure mode, SN, PN and RefDes filters.</div></div>'+pill('V13.2.5', 'green')+'</div><div style="padding:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px" class="smtinel-board-pattern-grid">'+makeCard('Problem Direction', problemBody)+makeCard('Top RefDes by affected SN', listHtml(summary.topRefDes, 'No RefDes in current scope'))+makeCard('Top Component Code', listHtml(summary.topComponents, 'No component code in current scope'))+'</div></section>';
+  }
+  function getRowsFromPage(){
+    var rows = [];
+    try { rows = (window.boardImpactContext && window.boardImpactContext.rows) || []; } catch(_) {}
+    if (!rows || !rows.length) {
+      try { rows = (window.yieldFlowModel && window.yieldFlowModel.rows) || []; } catch(_) {}
+    }
+    return Array.isArray(rows) ? rows : [];
+  }
+  function currentModeFromDom(){
+    try {
+      var ctxMode = window.boardImpactContext && window.boardImpactContext.mode;
+      if (ctxMode) return normText(ctxMode);
+    } catch(_) {}
+    var active = document.querySelector('#boardimpact-section button[style*="rgb(31, 111, 235)"], #boardimpact-section button[style*="#1F6FEB"]');
+    return active ? normText(active.textContent.split('·')[0]) : '';
+  }
+  function filterRowsForBoardScope(rows){
+    var mode = currentModeFromDom();
+    if (!mode) return rows;
+    var filtered = rows.filter(function(row){ return normText(failureMode(row)) === mode; });
+    return filtered.length ? filtered : rows;
+  }
+  function installBoardPatternSummary(){
+    var root = document.getElementById('boardimpact-section');
+    if (!root) return;
+    var kpiStrip = root.children && root.children[1];
+    if (!kpiStrip) return;
+    var old = document.getElementById('smtinel-board-pattern-summary');
+    var rows = filterRowsForBoardScope(getRowsFromPage());
+    var summary = buildPatternSummary(rows);
+    var wrap = document.createElement('div');
+    wrap.innerHTML = renderSummary(summary);
+    var node = wrap.firstElementChild;
+    if (old) old.replaceWith(node);
+    else kpiStrip.insertAdjacentElement('afterend', node);
+  }
+  function installRecoveryLightCopy(){
+    try {
+      var eyebrow = document.querySelector('#recovery-section .smtinel-ri-eyebrow');
+      if (eyebrow) eyebrow.textContent = 'Recovery Intelligence · Light Operational Flow';
+      var title = document.querySelector('#recovery-section .ri-vm-header h2');
+      if (title) title.textContent = 'Bonepile Recovery Flow';
+    } catch(_) {}
+  }
+  function updateBadge(){
+    try {
+      var nodes = document.querySelectorAll('body *');
+      for (var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && /2026-05/.test(el.textContent) && el.textContent.length < 190) el.textContent = window.SMTINEL_BUILD_BADGE;
+      }
+    } catch(_) {}
+  }
+  function run(){ installBoardPatternSummary(); installRecoveryLightCopy(); updateBadge(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(run, 1000); });
+  else setTimeout(run, 1000);
+  try {
+    var mo = new MutationObserver(function(){
+      clearTimeout(window.__smtinelV1325Timer);
+      window.__smtinelV1325Timer = setTimeout(run, 350);
+    });
+    mo.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
+  } catch(_) {}
+  window.traceOpsBoardImpactBuildPatternSummary = buildPatternSummary;
+})();
+</script>
+
+<style>@media(max-width:900px){#smtinel-board-pattern-summary .smtinel-board-pattern-grid{grid-template-columns:1fr!important}}</style>
 </body>
 </html>
