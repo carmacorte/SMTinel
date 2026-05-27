@@ -40439,5 +40439,358 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 })();
 </script>
 
+<!-- V13.2.4 Yield Flow ZIP loader performance patch -->
+<script>
+/* SMTinel V13.2.4 - Yield Flow fast Cesium bridge index
+   Purpose:
+   - Keep Cesium active for SFC.BOXSN -> Cesium.sysserialno bridge.
+   - Remove repeated O(SFC * Cesium) scans from bridge calculations.
+   - Build direct array/hash indexes once and reuse them across panels.
+*/
+(function(){
+  "use strict";
+
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
+  window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
+
+  var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+
+  function nowMs(){
+    try { return performance.now(); } catch(_) { return Date.now(); }
+  }
+
+  function cleanSn(value){
+    try {
+      if (typeof window.traceOpsYieldCleanSn === "function") return window.traceOpsYieldCleanSn(value);
+    } catch(_) {}
+    return String(value == null ? "" : value).toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+  }
+
+  function statusKind(value){
+    try {
+      if (typeof window.traceOpsYieldStatusKind === "function") return window.traceOpsYieldStatusKind(value);
+    } catch(_) {}
+    var raw = String(value || "").toUpperCase();
+    if (/PASS|PASSED|^P$/.test(raw)) return "pass";
+    if (/FAIL|FAILED|^F$/.test(raw)) return "fail";
+    if (/RETRY|RETEST/.test(raw)) return "retry";
+    return "other";
+  }
+
+  function cleanFailure(candidates){
+    try {
+      if (typeof window.traceOpsYieldCleanFailureSignal === "function") return window.traceOpsYieldCleanFailureSignal(candidates);
+    } catch(_) {}
+    var arr = Array.isArray(candidates) ? candidates : [candidates];
+    for (var i = 0; i < arr.length; i++) {
+      var txt = String(arr[i] == null ? "" : arr[i]).replace(/[\t\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+      if (txt && txt !== "N/D" && txt !== "NA" && txt !== "N/A" && txt !== "0") return txt;
+    }
+    return "N/D";
+  }
+
+  function topFailList(failMap, totalFail, limit){
+    try {
+      if (typeof window.traceOpsYieldTopFailList === "function") return window.traceOpsYieldTopFailList(failMap, totalFail, limit);
+    } catch(_) {}
+    return Object.keys(failMap || {}).map(function(name){
+      return { name: name, count: failMap[name], share: totalFail ? (failMap[name] / totalFail * 100) : 0 };
+    }).sort(function(a,b){ return b.count - a.count || String(a.name).localeCompare(String(b.name)); }).slice(0, limit || 5);
+  }
+
+  function timeValue(row, fallbackIdx){
+    try {
+      if (typeof window.traceOpsYieldCesiumTimeValue === "function") return window.traceOpsYieldCesiumTimeValue(row, fallbackIdx);
+    } catch(_) {}
+    var raw = row && (row.recordTime || row.timestamp || row.dateTime || row.datetime || row.date || row.Date);
+    var t = raw ? Date.parse(raw) : NaN;
+    return Number.isFinite(t) ? t : Number(fallbackIdx || (row && row.__seq) || 0);
+  }
+
+  function addToMap(map, key, row){
+    key = cleanSn(key);
+    if (!key) return;
+    if (!map[key]) map[key] = [];
+    map[key].push(row);
+  }
+
+  function addUniqueKey(arr, seen, value){
+    var key = cleanSn(value);
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    arr.push(key);
+  }
+
+  function directKeysForFtRow(row){
+    var keys = [];
+    var seen = Object.create(null);
+    addUniqueKey(keys, seen, row && row.syserialno);
+    addUniqueKey(keys, seen, row && row.sysserialno);
+    addUniqueKey(keys, seen, row && row.cesiumSn);
+    addUniqueKey(keys, seen, row && row.serial);
+    addUniqueKey(keys, seen, row && row.Serial);
+    addUniqueKey(keys, seen, row && row.SN);
+    addUniqueKey(keys, seen, row && row.sn);
+    addUniqueKey(keys, seen, row && row.sfcSn);
+    addUniqueKey(keys, seen, row && row.bridgeKey);
+    addUniqueKey(keys, seen, row && row.boxsn);
+    addUniqueKey(keys, seen, row && row.boxSn);
+    return keys;
+  }
+
+  function legacyKeysForFtRow(row){
+    var keys = [];
+    var seen = Object.create(null);
+    addUniqueKey(keys, seen, row && row.parentsernum);
+    addUniqueKey(keys, seen, row && row.partsernum);
+    addUniqueKey(keys, seen, row && row.parentSn);
+    addUniqueKey(keys, seen, row && row.partSn);
+    return keys;
+  }
+
+  function getArrayToken(rows){
+    if (!rows) return "none";
+    return String(rows.length || 0) + ":" + String(rows[0] && (rows[0].__seq || rows[0].recordTime || rows[0].cesiumSn || rows[0].sn || "")) + ":" + String(rows[rows.length - 1] && (rows[rows.length - 1].__seq || rows[rows.length - 1].recordTime || rows[rows.length - 1].cesiumSn || rows[rows.length - 1].sn || ""));
+  }
+
+  function buildFastFtIndex(ftRows){
+    ftRows = ftRows || window.TRACEOPS_YIELD_FT_ROWS || [];
+    var token = getArrayToken(ftRows);
+    if (ftIndexCache && ftIndexCache.has(ftRows)) {
+      var cached = ftIndexCache.get(ftRows);
+      if (cached && cached.token === token) return cached;
+    }
+    if (ftRows.__smtinelFastFtIndex && ftRows.__smtinelFastFtIndex.token === token) {
+      return ftRows.__smtinelFastFtIndex;
+    }
+
+    var t0 = nowMs();
+    var direct = Object.create(null);
+    var legacy = Object.create(null);
+    var latestDirect = Object.create(null);
+    var uniqueDirectKeys = Object.create(null);
+    var indexedRows = 0;
+
+    for (var i = 0; i < ftRows.length; i++) {
+      var row = ftRows[i];
+      if (!row) continue;
+      indexedRows += 1;
+
+      var directKeys = directKeysForFtRow(row);
+      for (var d = 0; d < directKeys.length; d++) {
+        var dk = directKeys[d];
+        addToMap(direct, dk, row);
+        uniqueDirectKeys[dk] = 1;
+        var tv = timeValue(row, i);
+        var prev = latestDirect[dk];
+        if (!prev || tv >= prev.__timeValue) {
+          latestDirect[dk] = Object.assign({}, row, { __timeValue: tv, __indexKey: dk });
+        }
+      }
+
+      var legacyKeys = legacyKeysForFtRow(row);
+      for (var l = 0; l < legacyKeys.length; l++) {
+        addToMap(legacy, legacyKeys[l], row);
+      }
+    }
+
+    var index = {
+      token: token,
+      rows: ftRows,
+      direct: direct,
+      legacy: legacy,
+      latestDirect: latestDirect,
+      rowCount: indexedRows,
+      keyCount: Object.keys(uniqueDirectKeys).length,
+      buildMs: Math.round(nowMs() - t0),
+      createdAt: new Date().toISOString()
+    };
+
+    if (ftIndexCache) ftIndexCache.set(ftRows, index);
+    try {
+      Object.defineProperty(ftRows, "__smtinelFastFtIndex", { value: index, configurable: true });
+    } catch(_) {
+      try { ftRows.__smtinelFastFtIndex = index; } catch(__) {}
+    }
+
+    window.TRACEOPS_YIELD_FAST_FT_INDEX = index;
+    window.TRACEOPS_YIELD_FAST_FT_INDEX_STATS = {
+      rowCount: index.rowCount,
+      keyCount: index.keyCount,
+      buildMs: index.buildMs,
+      createdAt: index.createdAt
+    };
+    try { console.info("[SMTinel YieldFlow] Fast Cesium index", window.TRACEOPS_YIELD_FAST_FT_INDEX_STATS); } catch(_) {}
+    return index;
+  }
+
+  function uniqueRowsFromBuckets(buckets){
+    var out = [];
+    var seen = typeof WeakSet !== "undefined" ? new WeakSet() : null;
+    var seenFallback = Object.create(null);
+    for (var b = 0; b < buckets.length; b++) {
+      var list = buckets[b] || [];
+      for (var i = 0; i < list.length; i++) {
+        var row = list[i];
+        if (!row) continue;
+        if (seen) {
+          if (seen.has(row)) continue;
+          seen.add(row);
+        } else {
+          var key = String(row.__seq || "") + "|" + cleanSn(row.cesiumSn || row.sn || row.bridgeKey || "") + "|" + String(row.recordTime || "");
+          if (seenFallback[key]) continue;
+          seenFallback[key] = 1;
+        }
+        out.push(row);
+      }
+    }
+    return out;
+  }
+
+  function fastCesiumRowsForSfc(sfc, ftRows){
+    sfc = sfc || {};
+    var index = buildFastFtIndex(ftRows || window.TRACEOPS_YIELD_FT_ROWS || []);
+    var sn = cleanSn(sfc.sn || sfc.sfcSn || "");
+    var sfcSn = cleanSn(sfc.sfcSn || "");
+    var box = cleanSn(sfc.boxsn || sfc.boxSn || sfc.bridgeKey || "");
+
+    var primary = box ? (index.direct[box] || []) : [];
+    if (primary.length) return primary;
+
+    var secondaryBuckets = [];
+    if (sn) secondaryBuckets.push(index.direct[sn]);
+    if (sfcSn && sfcSn !== sn) secondaryBuckets.push(index.direct[sfcSn]);
+    if (box) secondaryBuckets.push(index.legacy[box]);
+    return uniqueRowsFromBuckets(secondaryBuckets);
+  }
+
+  function fastCurrentBreakdown(snToSfc, ftRows){
+    var index = buildFastFtIndex(ftRows || window.TRACEOPS_YIELD_FT_ROWS || []);
+    var stockinRows = Object.create(null);
+    var keys = Object.keys(snToSfc || {});
+    for (var i = 0; i < keys.length; i++) {
+      var sfc = snToSfc[keys[i]] || {};
+      var st = "";
+      try { st = window.traceOpsYieldNormalizeSequenceStation(sfc.event || sfc.currentEvent || sfc.station || sfc.testStation || ""); } catch(_) { st = String(sfc.event || sfc.currentEvent || sfc.station || "").toUpperCase(); }
+      if (st !== "STOCKIN") continue;
+      var box = cleanSn(sfc.boxsn || sfc.boxSn || sfc.bridgeKey || "");
+      var sn = cleanSn(sfc.sn || sfc.sfcSn || keys[i] || "");
+      var key = box || sn;
+      if (key && !stockinRows[key]) stockinRows[key] = sfc;
+    }
+
+    var latestBySfc = Object.create(null);
+    var stockKeys = Object.keys(stockinRows);
+    for (var k = 0; k < stockKeys.length; k++) {
+      var key = stockKeys[k];
+      var s = stockinRows[key] || {};
+      var rows = fastCesiumRowsForSfc(s, index.rows);
+      for (var rIdx = 0; rIdx < rows.length; rIdx++) {
+        var row = rows[rIdx];
+        var tv = timeValue(row, rIdx);
+        var prev = latestBySfc[key];
+        if (!prev || tv >= prev.__timeValue) {
+          latestBySfc[key] = Object.assign({}, row, {
+            __timeValue: tv,
+            __bridgeKey: key,
+            sfcSn: s.sfcSn || row.sfcSn || "",
+            boxsn: s.boxsn || s.boxSn || row.boxsn || key,
+            wo: s.wo || row.wo || "",
+            sku: s.sku || row.sku || "",
+            family: s.family || row.family || "",
+            bu: s.bu || row.bu || "",
+            line: s.line || row.line || "",
+            currentEvent: s.event || s.currentEvent || "STOCKIN"
+          });
+        }
+      }
+    }
+
+    var map = Object.create(null);
+    Object.keys(latestBySfc).forEach(function(key){
+      var row = latestBySfc[key] || {};
+      var station = String(row.testArea || row.station || "N/D").trim() || "N/D";
+      if (!map[station]) map[station] = { station: station, total: 0, pass: 0, fail: 0, retry: 0, other: 0, serials: [], failMap: {} };
+      var bucket = map[station];
+      var kind = row.kind || statusKind(row.status || row.rawStatus || "");
+      var failLabel = cleanFailure([row.failingTestName, row.testInfo]);
+      bucket.total += 1;
+      if (kind === "pass") bucket.pass += 1;
+      else if (kind === "fail") {
+        bucket.fail += 1;
+        if (failLabel !== "N/D") bucket.failMap[failLabel] = (bucket.failMap[failLabel] || 0) + 1;
+      } else if (kind === "retry" || /retry|retest/i.test(String(row.status || row.rawStatus || ""))) bucket.retry += 1;
+      else bucket.other += 1;
+      bucket.serials.push(Object.assign({}, row, {
+        sn: key,
+        station: station,
+        symptom: kind === "fail" ? failLabel : (row.failingTestName || row.status || "Last Cesium status"),
+        location: row.machine || row.recordTime || "N/D"
+      }));
+    });
+
+    return Object.keys(map).map(function(name){
+      var bucket = map[name];
+      bucket.topFails = topFailList(bucket.failMap, bucket.fail, 5);
+      return bucket;
+    }).sort(function(a,b){ return b.total - a.total || String(a.station).localeCompare(String(b.station)); });
+  }
+
+  var previousBuild = window.traceOpsYieldBuildFromImported;
+  if (typeof previousBuild === "function" && !previousBuild.__smtinelV1324Wrapped) {
+    var wrappedBuild = function(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows){
+      var result = previousBuild.call(this, workRows || [], sfcRows || [], repairRows || [], sourceMeta || {}, calendarRows || [], dbModelRows || [], cesiumRows || [], bomRows || []);
+      try { buildFastFtIndex(window.TRACEOPS_YIELD_FT_ROWS || []); } catch(_) {}
+      return result;
+    };
+    wrappedBuild.__smtinelV1324Wrapped = true;
+    window.traceOpsYieldBuildFromImported = wrappedBuild;
+    try { traceOpsYieldBuildFromImported = wrappedBuild; } catch(_) {}
+  }
+
+  window.traceOpsYieldBuildFastFtIndex = buildFastFtIndex;
+  window.traceOpsYieldCesiumRowsForSfc = fastCesiumRowsForSfc;
+  window.traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown;
+  try { traceOpsYieldCesiumRowsForSfc = fastCesiumRowsForSfc; } catch(_) {}
+  try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
+
+  function enforceBuildBadge(){
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.4 - Fast Cesium Bridge Index - 2026-05-23";
+  }
+
+  function updateBadge(){
+    enforceBuildBadge();
+    try {
+      var nodes = document.querySelectorAll("body *");
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && /2026-05/.test(el.textContent) && el.textContent.length < 180) {
+          if (el.textContent !== window.SMTINEL_BUILD_BADGE) el.textContent = window.SMTINEL_BUILD_BADGE;
+        }
+      }
+    } catch(_) {}
+  }
+
+  function installBadgeGuard(){
+    updateBadge();
+    try {
+      var observer = new MutationObserver(function(){ updateBadge(); });
+      observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    } catch(_) {}
+    var count = 0;
+    var timer = setInterval(function(){
+      count += 1;
+      updateBadge();
+      if (count >= 12) clearInterval(timer);
+    }, 1500);
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(installBadgeGuard, 900); });
+  else setTimeout(installBadgeGuard, 900);
+})();
+</script>
+
 </body>
 </html>
