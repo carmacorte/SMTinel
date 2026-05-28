@@ -20461,17 +20461,104 @@ body.traceops-premium-shell [class*="impact"]{
                 var reason = 'Defect signature: ' + clip(defectText || model.defect || problem, 80) + ' | Detection point: ' + clip(detection, 32);
                 return { steps: steps, primary: primary, primaryStep: primaryStep, detection: detection, reason: reason };
             }
-            function traceOpsFiiDrawSmtMachineIcon(slide, x, y, w, h, label, active, idx) {
-                var fill = active ? 'FFF1D6' : 'F7FAFF';
-                var stroke = active ? RED : 'A9C7E8';
-                rect(slide, x, y, w, h, fill, stroke, { width: active ? 1.4 : 0.6 });
-                var cx = x + w / 2;
-                var cy = y + 0.18;
-                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.rect) || 'rect', { x: x + 0.18, y: y + 0.18, w: w - 0.36, h: 0.38, fill: { color: active ? 'FFE0A3' : 'EAF2FF' }, line: { color: stroke, width: 0.45 } });
-                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.arc) || 'arc', { x: cx - 0.16, y: cy + 0.1, w: 0.32, h: 0.28, line: { color: active ? RED : BLUE, width: 0.7 } });
-                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.line) || 'line', { x: x + 0.24, y: y + h - 0.34, w: w - 0.48, h: 0, line: { color: active ? RED : 'B8CBE0', width: 1.0 } });
-                txt(slide, String(idx), x + 0.08, y + 0.08, 0.24, 0.12, { fontSize: 6.0, bold: true, color: active ? RED : BLUE, align: 'center' });
-                txt(slide, label, x + 0.06, y + h - 0.25, w - 0.12, 0.12, { fontSize: 5.5, bold: true, color: active ? RED : BLUE, align: 'center' });
+            function traceOpsFiiDrawSmtMachineIcon(slide, x, y, w, h, label, active, idx, stepId) {
+                var st = stepId || '';
+                var accent = active ? RED : '8FAFCF';
+                var soft = active ? 'FFE8E8' : 'FFFFFF';
+                var icon = active ? RED : '6D879E';
+                var shapeRect = (PptxGenJS.ShapeType && PptxGenJS.ShapeType.rect) || 'rect';
+                var shapeLine = (PptxGenJS.ShapeType && PptxGenJS.ShapeType.line) || 'line';
+                var shapeArc = (PptxGenJS.ShapeType && PptxGenJS.ShapeType.arc) || 'arc';
+                var shapeOval = (PptxGenJS.ShapeType && PptxGenJS.ShapeType.ellipse) || 'ellipse';
+                function glassRect(rx, ry, rw, rh, fill, stroke, width, trans) {
+                    slide.addShape(shapeRect, {
+                        x: rx,
+                        y: ry,
+                        w: rw,
+                        h: rh,
+                        rectRadius: 0.06,
+                        fill: { color: fill || 'FFFFFF', transparency: typeof trans === 'number' ? trans : 86 },
+                        line: { color: stroke || accent, width: width || 0.75, transparency: 8 }
+                    });
+                }
+                function drawLine(x1, y1, dx, dy, color, width) {
+                    slide.addShape(shapeLine, { x: x1, y: y1, w: dx, h: dy, line: { color: color || icon, width: width || 0.75, transparency: 0 } });
+                }
+                function drawRect(rx, ry, rw, rh, color, width) {
+                    slide.addShape(shapeRect, { x: rx, y: ry, w: rw, h: rh, fill: { color: 'FFFFFF', transparency: 100 }, line: { color: color || icon, width: width || 0.75 } });
+                }
+                function drawOval(rx, ry, rw, rh, color, width) {
+                    slide.addShape(shapeOval, { x: rx, y: ry, w: rw, h: rh, fill: { color: 'FFFFFF', transparency: 100 }, line: { color: color || icon, width: width || 0.75 } });
+                }
+                function drawArc(rx, ry, rw, rh, color, width) {
+                    slide.addShape(shapeArc, { x: rx, y: ry, w: rw, h: rh, line: { color: color || icon, width: width || 0.7 } });
+                }
+                glassRect(x, y, w, h, active ? soft : 'FFFFFF', accent, active ? 1.45 : 0.65, active ? 62 : 88);
+                if (active) {
+                    slide.addShape(shapeRect, { x: x + 0.03, y: y + 0.03, w: w - 0.06, h: h - 0.06, fill: { color: 'FFFFFF', transparency: 100 }, line: { color: RED, width: 0.55, transparency: 35 } });
+                    txt(slide, 'PRIMARY SUSPECT', x - 0.05, y - 0.28, w + 0.1, 0.12, { fontSize: 5.5, bold: true, color: RED, align: 'center' });
+                }
+                txt(slide, String(idx), x + 0.09, y + 0.08, 0.22, 0.13, { fontSize: 6.0, bold: true, color: active ? WHITE : BLUE, align: 'center' });
+                if (active) {
+                    slide.addShape(shapeRect, { x: x + 0.07, y: y + 0.07, w: 0.28, h: 0.22, rectRadius: 0.03, fill: { color: RED, transparency: 0 }, line: { color: RED, width: 0 } });
+                }
+                var ix = x + 0.22, iy = y + 0.28, iw = w - 0.44, ih = h - 0.55;
+                var c = icon;
+                if (st === 'printer') {
+                    drawRect(ix + 0.05, iy + 0.03, iw - 0.10, ih * 0.36, c, 0.9);
+                    drawLine(ix + 0.13, iy + ih * 0.43, iw - 0.26, 0, c, 0.75);
+                    drawRect(ix + 0.17, iy + ih * 0.50, iw - 0.34, ih * 0.18, c, 0.8);
+                    drawLine(ix + 0.04, iy + ih * 0.78, iw - 0.08, 0, c, 1.0);
+                    drawLine(ix + iw * 0.24, iy + ih * 0.37, 0, ih * 0.46, c, 0.65);
+                    drawLine(ix + iw * 0.76, iy + ih * 0.37, 0, ih * 0.46, c, 0.65);
+                } else if (st === 'spi') {
+                    drawRect(ix + 0.12, iy + 0.00, iw * 0.62, ih * 0.58, c, 0.8);
+                    drawRect(ix + iw * 0.74, iy + ih * 0.10, iw * 0.17, ih * 0.40, c, 0.7);
+                    drawLine(ix + 0.08, iy + ih * 0.70, iw * 0.82, 0, c, 0.9);
+                    drawLine(ix + iw * 0.20, iy + ih * 0.58, 0, ih * 0.22, c, 0.65);
+                    drawLine(ix + iw * 0.66, iy + ih * 0.58, 0, ih * 0.22, c, 0.65);
+                    drawOval(ix + iw * 0.36, iy + ih * 0.18, iw * 0.15, ih * 0.15, c, 0.6);
+                } else if (st === 'pnp') {
+                    drawRect(ix + 0.02, iy + ih * 0.30, iw - 0.04, ih * 0.36, c, 0.8);
+                    drawRect(ix + iw * 0.22, iy + ih * 0.02, iw * 0.22, ih * 0.24, c, 0.75);
+                    drawRect(ix + iw * 0.58, iy + ih * 0.02, iw * 0.22, ih * 0.24, c, 0.75);
+                    drawLine(ix + iw * 0.32, iy + ih * 0.25, 0, ih * 0.12, c, 0.7);
+                    drawLine(ix + iw * 0.68, iy + ih * 0.25, 0, ih * 0.12, c, 0.7);
+                    drawLine(ix + 0.10, iy + ih * 0.76, iw - 0.20, 0, c, 0.9);
+                } else if (st === 'reflow') {
+                    drawRect(ix + 0.02, iy + ih * 0.18, iw - 0.04, ih * 0.44, c, 0.85);
+                    drawLine(ix + 0.12, iy + ih * 0.68, iw - 0.24, 0, c, 0.9);
+                    drawArc(ix + iw * 0.22, iy + ih * 0.10, iw * 0.17, ih * 0.22, c, 0.55);
+                    drawArc(ix + iw * 0.42, iy + ih * 0.10, iw * 0.17, ih * 0.22, c, 0.55);
+                    drawArc(ix + iw * 0.62, iy + ih * 0.10, iw * 0.17, ih * 0.22, c, 0.55);
+                } else if (st === 'aoi') {
+                    drawRect(ix + iw * 0.12, iy + 0.00, iw * 0.58, ih * 0.58, c, 0.85);
+                    drawRect(ix + iw * 0.72, iy + ih * 0.12, iw * 0.16, ih * 0.34, c, 0.7);
+                    drawOval(ix + iw * 0.36, iy + ih * 0.18, iw * 0.12, ih * 0.12, c, 0.7);
+                    drawLine(ix + 0.10, iy + ih * 0.73, iw - 0.20, 0, c, 0.9);
+                } else if (st === 'xray') {
+                    drawRect(ix + 0.08, iy + 0.02, iw * 0.56, ih * 0.56, c, 0.85);
+                    drawRect(ix + iw * 0.67, iy + ih * 0.18, iw * 0.17, ih * 0.26, c, 0.7);
+                    drawLine(ix + iw * 0.18, iy + ih * 0.16, iw * 0.34, ih * 0.26, c, 0.6);
+                    drawLine(ix + iw * 0.52, iy + ih * 0.16, -iw * 0.34, ih * 0.26, c, 0.6);
+                    drawLine(ix + 0.10, iy + ih * 0.72, iw - 0.20, 0, c, 0.9);
+                } else if (st === 'ictft') {
+                    drawRect(ix + iw * 0.28, iy + 0.00, iw * 0.45, ih * 0.46, c, 0.85);
+                    drawLine(ix + iw * 0.35, iy + ih * 0.54, iw * 0.32, 0, c, 0.8);
+                    drawLine(ix + iw * 0.50, iy + ih * 0.46, 0, ih * 0.18, c, 0.7);
+                    drawRect(ix + iw * 0.20, iy + ih * 0.64, iw * 0.62, ih * 0.16, c, 0.75);
+                } else if (st === 'repair') {
+                    drawRect(ix + iw * 0.28, iy + 0.00, iw * 0.45, ih * 0.46, c, 0.85);
+                    drawLine(ix + iw * 0.34, iy + ih * 0.62, iw * 0.32, 0, c, 0.8);
+                    drawLine(ix + iw * 0.50, iy + ih * 0.46, 0, ih * 0.28, c, 0.7);
+                    drawLine(ix + iw * 0.15, iy + ih * 0.78, iw * 0.70, 0, c, 0.9);
+                    drawLine(ix + iw * 0.77, iy + ih * 0.08, iw * 0.09, -ih * 0.08, c, 0.75);
+                    drawLine(ix + iw * 0.86, iy, iw * 0.05, ih * 0.08, c, 0.75);
+                } else {
+                    drawRect(ix + 0.08, iy + 0.06, iw - 0.16, ih * 0.46, c, 0.8);
+                    drawLine(ix + 0.12, iy + ih * 0.70, iw - 0.24, 0, c, 0.9);
+                }
+                txt(slide, label, x + 0.06, y + h - 0.23, w - 0.12, 0.12, { fontSize: 5.5, bold: true, color: active ? RED : BLUE, align: 'center' });
             }
             function traceOpsFiiAddSmtProcessFlowSlide(pageNo) {
                 var flow = traceOpsFiiInferSmtProcessFocus(model.defect, model.station);
@@ -20494,11 +20581,8 @@ body.traceops-premium-shell [class*="impact"]{
                 flow.steps.forEach(function (st, i) {
                     var x = startX + i * (bw + gap);
                     var active = st.id === flow.primary;
-                    traceOpsFiiDrawSmtMachineIcon(slide, x, y, bw, bh, st.short, active, i + 1);
+                    traceOpsFiiDrawSmtMachineIcon(slide, x, y, bw, bh, st.short, active, i + 1, st.id);
                     if (i < flow.steps.length - 1) line(slide, x + bw + 0.03, y + 0.47, gap - 0.06, 0, active ? RED : '9DB8D5', active ? 1.2 : 0.6, true);
-                    if (active) {
-                        txt(slide, 'PRIMARY SUSPECT', x - 0.05, y - 0.28, bw + 0.1, 0.12, { fontSize: 5.5, bold: true, color: RED, align: 'center' });
-                    }
                 });
                 fiiTable(slide, 0.55, 6.05, [2.6, 3.4, 3.0, 2.9], [
                     [cell('Defect evidence', { fill: LIGHT_BLUE, bold: true }), cell('Process implication', { fill: LIGHT_BLUE, bold: true }), cell('Containment focus', { fill: LIGHT_BLUE, bold: true }), cell('Validation path', { fill: LIGHT_BLUE, bold: true })],
@@ -42046,7 +42130,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var VERSION_TEXT = 'SMTinel V13.2.15 - 8D SMT Process Flow Evidence + TSV References - 2026-05-23';
+  var VERSION_TEXT = 'SMTinel V13.2.16 - PPT 8D Transparent SMT Process Icons - 2026-05-23';
   window.TRACEOPS_VERSION_LABEL = VERSION_TEXT;
   function syncVersion(){
     try {
@@ -42060,6 +42144,26 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncVersion); else syncVersion();
   setTimeout(syncVersion, 500);
   setTimeout(syncVersion, 2000);
+})();
+</script>
+
+<script id="traceops-v13-2-16-transparent-smt-icons-badge-sync">
+(function(){
+  var VERSION_TEXT='SMTinel V13.2.16 - PPT 8D Transparent SMT Process Icons - 2026-05-23';
+  function sync(){
+    try{
+      var nodes=document.querySelectorAll('.traceops-version-badge,.smtinel-version-badge,[data-version-badge],.version-badge');
+      nodes.forEach(function(n){ if(n && /SMTinel V/i.test(n.textContent||'')) n.textContent=VERSION_TEXT; });
+      var all=document.querySelectorAll('body *');
+      for(var i=0;i<all.length;i++){
+        var el=all[i];
+        if(el && el.children && el.children.length===0 && /SMTinel V13\./.test(el.textContent||'')) el.textContent=VERSION_TEXT;
+      }
+    }catch(e){}
+  }
+  window.TRACEOPS_SMTINEL_VERSION_TEXT=VERSION_TEXT;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+  setTimeout(sync,800); setTimeout(sync,2500);
 })();
 </script>
 </body>
