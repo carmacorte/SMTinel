@@ -9850,6 +9850,60 @@ function traceOpsYieldCsvSplit(line) {
     out.push(cur.trim());
     return out;
 }
+
+function traceOpsYieldCommonDbOpen() {
+    return new Promise(function(resolve) {
+        try {
+            if (!window.indexedDB) return resolve(null);
+            var req = indexedDB.open('SMTinelCommonDB', 1);
+            req.onupgradeneeded = function(e) { var db = e.target.result; if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv'); };
+            req.onsuccess = function(e) { resolve(e.target.result); };
+            req.onerror = function() { resolve(null); };
+        } catch (_) { resolve(null); }
+    });
+}
+function traceOpsYieldCommonDbPut(key, value) {
+    return traceOpsYieldCommonDbOpen().then(function(db) {
+        return new Promise(function(resolve) {
+            if (!db) return resolve(false);
+            try { var tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(value, key); tx.oncomplete = function() { try { db.close(); } catch(_){} resolve(true); }; tx.onerror = function() { try { db.close(); } catch(_){} resolve(false); }; }
+            catch (_) { try { db.close(); } catch(__){} resolve(false); }
+        });
+    });
+}
+function traceOpsYieldCommonDbGet(key) {
+    return traceOpsYieldCommonDbOpen().then(function(db) {
+        return new Promise(function(resolve) {
+            if (!db) return resolve(null);
+            try { var tx = db.transaction('kv', 'readonly'); var req = tx.objectStore('kv').get(key); req.onsuccess = function() { var v = req.result || null; try { db.close(); } catch(_){} resolve(v); }; req.onerror = function() { try { db.close(); } catch(_){} resolve(null); }; }
+            catch (_) { try { db.close(); } catch(__){} resolve(null); }
+        });
+    });
+}
+function traceOpsYieldHasCommonPayload(parsed) {
+    return !!((parsed.wo && parsed.wo.length) || (parsed.repair && parsed.repair.length) || (parsed.calendar && parsed.calendar.length) || (parsed.dbmodel && parsed.dbmodel.length) || (parsed.bom && parsed.bom.length));
+}
+function traceOpsYieldHasBuPayload(parsed) { return !!((parsed.sfc && parsed.sfc.length) || (parsed.cesium && parsed.cesium.length)); }
+async function traceOpsYieldSaveCommonPayload(parsed, sourceName) {
+    if (!traceOpsYieldHasCommonPayload(parsed)) return { saved: false, rows: {} };
+    var common = { savedAt: new Date().toISOString(), sourceName: sourceName || '', wo: parsed.wo || [], repair: parsed.repair || [], calendar: parsed.calendar || [], dbmodel: parsed.dbmodel || [], bom: parsed.bom || [] };
+    var ok = await traceOpsYieldCommonDbPut('activeCommon', common);
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: ok, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length } }; } catch(_) {}
+    return { saved: ok, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length } };
+}
+async function traceOpsYieldMergeCachedCommon(parsed) {
+    if (!traceOpsYieldHasBuPayload(parsed)) return { merged: false, common: null };
+    var common = await traceOpsYieldCommonDbGet('activeCommon');
+    if (!common) return { merged: false, common: null };
+    if (!(parsed.wo || []).length) parsed.wo = common.wo || [];
+    if (!(parsed.repair || []).length) parsed.repair = common.repair || [];
+    if (!(parsed.calendar || []).length) parsed.calendar = common.calendar || [];
+    if (!(parsed.dbmodel || []).length) parsed.dbmodel = common.dbmodel || [];
+    if (!(parsed.bom || []).length) parsed.bom = common.bom || [];
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: (common.wo || []).length, repair: (common.repair || []).length, calendar: (common.calendar || []).length, dbmodel: (common.dbmodel || []).length, bom: (common.bom || []).length } }; } catch(_) {}
+    return { merged: true, common: common };
+}
+
 async function traceOpsYieldTryImportTextZip(file, options) {
     if (!file || !/\.zip$/i.test(file.name || ""))
         return null;
@@ -9889,20 +9943,30 @@ async function traceOpsYieldTryImportTextZip(file, options) {
         }
         text = null; rawRows = null;
     }
-    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length) {
+    if (traceOpsYieldHasCommonPayload(parsed)) {
+        traceOpsYieldImportProgress(options, 66, "COMMON_CACHE", "Actualizando Common DB local para reutilizarlo con paquetes BU...");
+        await traceOpsYieldSaveCommonPayload(parsed, file.name);
+    }
+    var cachedMerge = await traceOpsYieldMergeCachedCommon(parsed);
+    if (cachedMerge && cachedMerge.merged) {
+        traceOpsYieldImportProgress(options, 70, "COMMON_MERGED", "Common DB cache conectado al paquete BU activo...");
+        await traceOpsYieldYieldThread();
+    }
+    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) {
         throw new Error("El ZIP ligero contiene TXT/CSV, pero no se reconocieron encabezados utiles. Revisa que SFC tenga SN/currentevent, Station On Line tenga WO/Date/Line/SKU, y Repair Record tenga SN/FailTime/FailSymptom/FailLocation.");
     }
     traceOpsYieldImportProgress(options, 72, "BUILDING_INDEX", "Construyendo indices SN/WO/Repair una sola vez...");
     await traceOpsYieldYieldThread();
+    var isCommonOnly = traceOpsYieldHasCommonPayload(parsed) && !traceOpsYieldHasBuPayload(parsed);
     return traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, {
-        source: "ZIP TXT local",
-        mode: "text-import",
+        source: isCommonOnly ? "COMMON DB local" : "ZIP TXT local",
+        mode: isCommonOnly ? "common-cache" : "text-import",
         fileName: file.name,
         importStartMs: (options && options.importStartMs) || Date.now(),
-        workbookName: "TXT/TSV lightweight package",
+        workbookName: isCommonOnly ? "COMMON DB package" : "TXT/TSV lightweight package",
         container: file.name,
         sheets: pulledSheets,
-        notes: "Import ligero V11.3: procesa SFC/Repair primero, libera UI por etapas y usa cache IndexedDB por fingerprint exacto. No se cargo XLSM, PowerPivot, pivots, macros, estilos ni dashboards pesados. Evidencia visible solo durante esta sesion."
+        notes: isCommonOnly ? "Common DB cargado y cacheado. Ahora carga un paquete BU con SFC.txt + Cesium.txt; SMTinel enriquecera SFC desde Station_on_line_report, DB_Model, Repair_Record, BOM y Calendar." : "Import ligero V13.2.19: paquete BU conectado a Common DB cache cuando existe. SFC puede venir raw sin formulas; SMTinel recalcula Build Start Date, Line, BU, Product Family y Cisco Week durante la carga."
     }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
 }
 function traceOpsYieldObjectsFromRawRows(rawRows, role) {
@@ -10538,12 +10602,23 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         if (!sfcBu && line) { var _linePfx = line.split('-')[0].trim(); if (_linePfx && _linePfx.length > 2 && !/^\d+$/.test(_linePfx)) sfcBu = _linePfx; }
         if (!sfcBu && event) { var _evPfx = event.split('-')[0].trim(); if (_evPfx && _evPfx.length > 2 && !/^\d+$/.test(_evPfx) && !/^(stockin|ict|aoi|smt|spi|pth|ft)$/i.test(_evPfx)) sfcBu = _evPfx; }
         var station = traceOpsYieldClassifyStation(event);
+        var woInfo = wo ? (woMap[wo] || woMap[traceOpsYieldNormalizeWoKey(wo)] || null) : null;
+        if (woInfo) {
+            if (!sku && woInfo.sku) sku = woInfo.sku;
+            if (!family && woInfo.family) family = woInfo.family;
+            if (!sfcBu && woInfo.bu) sfcBu = woInfo.bu;
+            if (!line && woInfo.line) line = woInfo.line;
+        }
         var dbSfc = traceOpsYieldApplyDbModel(sku, family, sfcBu);
-        sku = dbSfc.sku || sku;
-        family = dbSfc.family || family;
+        sku = dbSfc.sku || sku || (woInfo && woInfo.sku) || "";
+        family = dbSfc.family || family || (woInfo && woInfo.family) || "";
+        var enrichedBu = traceOpsYieldNormalizeBU(sfcBu || (woInfo && woInfo.bu) || dbSfc.bu || "");
+        var enrichedBuildStartDate = String(traceOpsYieldPick(row, ["Build Start Date", "Build Start", "Start Date", "Fecha Inicio"]) || (woInfo && (woInfo.date || woInfo.startSmt)) || "");
+        var enrichedWeek = traceOpsYieldResolveCiscoWeek(row, ciscoCalendarMap);
+        if ((!enrichedWeek || enrichedWeek === "Imported") && woInfo && woInfo.week) enrichedWeek = woInfo.week;
         var sfcParent = traceOpsYieldPickParentSn(row);
         var sfcPart = traceOpsYieldPickPartSn(row);
-        var clean = { sn: boxSn || sn, sfcSn: sn, boxsn: boxSn, parentsernum: sfcParent, partsernum: sfcPart, bridgeKey: traceOpsYieldBridgeKeyFromParts(sn, sfcParent, sfcPart, boxSn), wo: wo, sku: sku, family: family, bu: traceOpsYieldInferBU(sfcBu, family, sku), event: event, eventTime: eventTime, line: line, station: station, week: traceOpsYieldResolveCiscoWeek(row, ciscoCalendarMap), buildStartDate: String(traceOpsYieldPick(row, ["Build Start Date", "Build Start", "Start Date", "Fecha Inicio"]) || ""), testStation: String(traceOpsYieldPick(row, ["teststation", "testst", "Test Station", "Station Test", "Station"]) || "") };
+        var clean = { sn: boxSn || sn, sfcSn: sn, boxsn: boxSn, parentsernum: sfcParent, partsernum: sfcPart, bridgeKey: traceOpsYieldBridgeKeyFromParts(sn, sfcParent, sfcPart, boxSn), wo: wo, sku: sku, family: family, bu: traceOpsYieldInferBU(enrichedBu, family, sku), event: event, eventTime: eventTime, line: line, station: station, week: enrichedWeek, buildStartDate: enrichedBuildStartDate, testStation: String(traceOpsYieldPick(row, ["teststation", "testst", "Test Station", "Station Test", "Station"]) || "") };
         allSfcEvents.push(clean);
         if (sn)
             snToSfc[sn] = clean;
@@ -20503,7 +20578,11 @@ body.traceops-premium-shell [class*="impact"]{
                     slide.addShape(shapeOval, { x: rx, y: ry, w: rw, h: rh, fill: { color: 'FFFFFF', transparency: 100 }, line: { color: color || icon, width: width || 0.75 } });
                 }
                 function drawArc(rx, ry, rw, rh, color, width) {
-                    slide.addShape(shapeArc, { x: rx, y: ry, w: rw, h: rh, line: { color: color || icon, width: width || 0.7 } });
+                    // PPT-safe heat/vision hint: avoid ShapeType.arc because it can corrupt PPTX in some PowerPoint builds.
+                    var cc = color || icon;
+                    var ww = width || 0.7;
+                    drawLine(rx + rw * 0.16, ry + rh * 0.40, rw * 0.26, -rh * 0.18, cc, ww);
+                    drawLine(rx + rw * 0.42, ry + rh * 0.22, rw * 0.26, rh * 0.18, cc, ww);
                 }
                 glassRect(x, y, w, h, active ? soft : 'FFFFFF', accent, active ? 1.45 : 0.65, active ? 62 : 88);
                 if (active) {
@@ -42199,6 +42278,45 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   else syncBadge();
   setTimeout(syncBadge, 800);
   setTimeout(syncBadge, 2500);
+})();
+</script>
+
+<script id="smtinel-v13-2-18-safe-ppt-icons-sync">
+(function(){
+  var VERSION_TEXT = 'SMTinel V13.2.18 - PPT Safe Transparent SMT Icons + Fast Typed Filters - 2026-05-23';
+  window.SMTINEL_VERSION_TEXT = VERSION_TEXT;
+  function syncBadge(){
+    try{
+      var nodes = document.querySelectorAll('body *');
+      for(var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if(el && el.childNodes && el.childNodes.length === 1 && /SMTinel V13\./.test(el.textContent || '')){
+          el.textContent = VERSION_TEXT;
+        }
+      }
+    }catch(e){}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge); else syncBadge();
+  setTimeout(syncBadge, 500);
+  setTimeout(syncBadge, 1500);
+})();
+</script>
+
+<script>
+(function(){
+  var label = 'SMTinel V13.2.19 - Common DB + BU Incremental Loader - 2026-05-28';
+  function sync(){
+    try{
+      document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
+      if (!document.querySelector('.smtinel-common-bu-version-badge')) {
+        var b=document.createElement('div'); b.className='smtinel-common-bu-version-badge'; b.textContent=label;
+        b.style.cssText='position:fixed;right:18px;bottom:74px;z-index:99999;background:#102A43;color:#fff;border-radius:18px;padding:10px 18px;font:800 12px Segoe UI,Arial;box-shadow:0 10px 28px rgba(16,42,67,.28);border:1px solid rgba(255,255,255,.24)';
+        document.body.appendChild(b);
+      } else document.querySelector('.smtinel-common-bu-version-badge').textContent=label;
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync); else sync();
+  setTimeout(sync,1500); setTimeout(sync,4000);
 })();
 </script>
 </body>
