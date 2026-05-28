@@ -11390,7 +11390,19 @@ function traceOpsYieldUniqueSorted(values) {
 function traceOpsYieldMatchesFilter(value, selected) {
     if (!selected || selected === 'ALL')
         return true;
-    return String(value || '') === String(selected || '');
+    var rawValue = String(value || '').trim();
+    var rawSelected = String(selected || '').trim();
+    if (!rawSelected || rawSelected === 'ALL')
+        return true;
+    if (rawValue === rawSelected)
+        return true;
+    var valueUpper = rawValue.toUpperCase();
+    var selectedUpper = rawSelected.toUpperCase();
+    if (valueUpper === selectedUpper)
+        return true;
+    // Fast typed filters: avoid rendering thousands of <option> nodes.
+    // A typed value works as a case-insensitive contains search.
+    return selectedUpper.length >= 2 && valueUpper.indexOf(selectedUpper) >= 0;
 }
 function traceOpsYieldWoRiskCount(row) {
     if (!row)
@@ -26147,9 +26159,7 @@ body.traceops-premium-shell [class*="impact"]{
                         f.label,
                         f.type === "date" ? React.createElement("input", { type: "date", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none" } }) :
                         f.type === "serial" ? React.createElement("input", { type: "search", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldCleanSn(e.target.value)); }, placeholder: "SN / barcode", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none", fontFamily: "monospace" } }) :
-                        React.createElement("select", { value: ((yieldFilters[f.key] && yieldFilters[f.key] !== "ALL" && (f.items || []).indexOf(yieldFilters[f.key]) >= 0) ? yieldFilters[f.key] : "ALL"), onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none" } },
-                            React.createElement("option", { value: "ALL" }, yieldText("all")),
-                            (f.items || []).map(function (v) { return React.createElement("option", { key: v, value: v }, v); }))));
+                        React.createElement("input", { type: "search", defaultValue: (yieldFilters[f.key] && yieldFilters[f.key] !== "ALL") ? yieldFilters[f.key] : "", placeholder: yieldText("all") + " / escribir para filtrar", title: "Escribe y presiona Enter, o sal del campo para aplicar. Evita cargar miles de opciones.", onKeyDown: function (e) { if (e.key === "Enter") { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); e.currentTarget.blur(); } }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none", fontFamily: "inherit" } })));
                 }))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
@@ -42164,6 +42174,31 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   window.TRACEOPS_SMTINEL_VERSION_TEXT=VERSION_TEXT;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', sync); else sync();
   setTimeout(sync,800); setTimeout(sync,2500);
+})();
+</script>
+
+<!-- SMTinel V13.2.17 - Fast typed Yield Flow filters -->
+<script>
+(function(){
+  var VERSION_TEXT = 'SMTinel V13.2.17 - Fast Typed Yield Flow Filters + Transparent SMT Icons - 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = VERSION_TEXT;
+  window.SMTINEL_BUILD_BADGE = VERSION_TEXT;
+  window.TRACEOPS_YIELD_TYPED_FILTERS = { active: true, mode: 'type-to-filter-on-blur', reason: 'Avoid rendering thousands of select options in Yield Flow filters.' };
+  function syncBadge(){
+    try {
+      var all = document.querySelectorAll('body *');
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        if (el && el.children && el.children.length === 0 && /SMTinel V13\./.test(el.textContent || '')) {
+          el.textContent = VERSION_TEXT;
+        }
+      }
+    } catch(_) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge);
+  else syncBadge();
+  setTimeout(syncBadge, 800);
+  setTimeout(syncBadge, 2500);
 })();
 </script>
 </body>
