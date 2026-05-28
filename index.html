@@ -20434,6 +20434,78 @@ body.traceops-premium-shell [class*="impact"]{
             var axis = rowsByAxis(corrective, normalized.d5_pca || model.pca);
             var evidenceText = safe(model.evidenceSummary || normalized.evidence_summary || normalized.d2_evidence || normalized.d3_evidence || 'Evidence to be attached.');
 
+            function traceOpsFiiInferSmtProcessFocus(defectText, stationText) {
+                var raw = safe([defectText, stationText, model.defect, model.station, normalized.process_affected, problem].join(' '), '').toLowerCase();
+                var steps = [
+                    { id: 'printer', label: 'Screen Printer', short: 'Printer', controls: 'Stencil, paste release, squeegee, aperture condition', keywords: /solder bridge|bridge|insufficient|low solder|no solder|paste|stencil|smear|deposit|solder ball/ },
+                    { id: 'spi', label: 'SPI', short: 'SPI', controls: 'Paste volume, height, area, offset and bridge detection', keywords: /spi|paste|insufficient|bridge|volume|height|offset|solder/ },
+                    { id: 'pnp', label: 'Pick & Place', short: 'P&P', controls: 'Feeder, nozzle, polarity, placement offset, component presence', keywords: /wrong component|wrong part|misalign|offset|skew|placement|tombstone|polarity|missing|feeder|pick/ },
+                    { id: 'reflow', label: 'Reflow', short: 'Reflow', controls: 'Thermal profile, wetting, tombstone and HIP/open conditions', keywords: /reflow|tombstone|open|hip|head in pillow|non wet|wetting|cold solder|void/ },
+                    { id: 'aoi', label: 'AOI', short: 'AOI', controls: 'Visual inspection recipe, bridge/open/polarity detection', keywords: /aoi|visual|workmanship|solder bridge|insufficient|wrong component|polarity/ },
+                    { id: 'xray', label: 'X-Ray', short: 'X-Ray', controls: 'Hidden joint validation for BGA, HIP, void and short risk', keywords: /xray|x-ray|bga|hip|head in pillow|void|hidden|ball/ },
+                    { id: 'ictft', label: 'ICT / FT', short: 'ICT/FT', controls: 'Functional signature, electrical symptoms and recovery validation', keywords: /ict|ft|functional|test|jtag|power|traffic|network|current|sensor|reload|diag|pcbp|fail/ },
+                    { id: 'repair', label: 'Repair / Retest', short: 'Repair', controls: 'Physical intervention, reference confirmation and PASS recovery', keywords: /repair|retest|touch|rework|stockin|confirmed|replace|soldering/ }
+                ];
+                var primary = 'ictft';
+                for (var i = 0; i < steps.length; i++) {
+                    if (steps[i].keywords.test(raw)) { primary = steps[i].id; break; }
+                }
+                if (/solder bridge|bridge/.test(raw)) primary = 'printer';
+                else if (/insufficient|low solder|no solder/.test(raw)) primary = 'printer';
+                else if (/wrong component|wrong part|feeder/.test(raw)) primary = 'pnp';
+                else if (/tombstone/.test(raw)) primary = 'reflow';
+                else if (/open|hip|head in pillow/.test(raw)) primary = 'reflow';
+                else if (/jtag|functional|power|traffic|network|current|diag|pcbp|test/.test(raw)) primary = 'ictft';
+                var primaryStep = steps.filter(function (s) { return s.id === primary; })[0] || steps[6];
+                var detection = /aoi/.test(raw) ? 'AOI' : /xray|x-ray/.test(raw) ? 'X-Ray' : /ict|ft|functional|test|jtag|pcbp|diag/.test(raw) ? 'ICT / FT' : safe(stationText || model.station, 'Station TBD');
+                var reason = 'Defect signature: ' + clip(defectText || model.defect || problem, 80) + ' | Detection point: ' + clip(detection, 32);
+                return { steps: steps, primary: primary, primaryStep: primaryStep, detection: detection, reason: reason };
+            }
+            function traceOpsFiiDrawSmtMachineIcon(slide, x, y, w, h, label, active, idx) {
+                var fill = active ? 'FFF1D6' : 'F7FAFF';
+                var stroke = active ? RED : 'A9C7E8';
+                rect(slide, x, y, w, h, fill, stroke, { width: active ? 1.4 : 0.6 });
+                var cx = x + w / 2;
+                var cy = y + 0.18;
+                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.rect) || 'rect', { x: x + 0.18, y: y + 0.18, w: w - 0.36, h: 0.38, fill: { color: active ? 'FFE0A3' : 'EAF2FF' }, line: { color: stroke, width: 0.45 } });
+                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.arc) || 'arc', { x: cx - 0.16, y: cy + 0.1, w: 0.32, h: 0.28, line: { color: active ? RED : BLUE, width: 0.7 } });
+                slide.addShape((PptxGenJS.ShapeType && PptxGenJS.ShapeType.line) || 'line', { x: x + 0.24, y: y + h - 0.34, w: w - 0.48, h: 0, line: { color: active ? RED : 'B8CBE0', width: 1.0 } });
+                txt(slide, String(idx), x + 0.08, y + 0.08, 0.24, 0.12, { fontSize: 6.0, bold: true, color: active ? RED : BLUE, align: 'center' });
+                txt(slide, label, x + 0.06, y + h - 0.25, w - 0.12, 0.12, { fontSize: 5.5, bold: true, color: active ? RED : BLUE, align: 'center' });
+            }
+            function traceOpsFiiAddSmtProcessFlowSlide(pageNo) {
+                var flow = traceOpsFiiInferSmtProcessFocus(model.defect, model.station);
+                var slide = bodySlide('D2 / D4 - SMT Process Flow Evidence', pageNo, 'Visual process map highlighting the process most related to the defect signature');
+                rect(slide, 0.45, 1.05, 12.45, 2.0, 'F7FAFF', 'B7D4F0');
+                txt(slide, 'PROCESS-RELATED DEFECT LOCATION', 0.68, 1.26, 3.5, 0.18, { fontSize: 10, bold: true, color: BLUE });
+                txt(slide, 'Highlighted process', 0.72, 1.72, 1.5, 0.12, { fontSize: 6.5, bold: true, color: GRAY });
+                txt(slide, flow.primaryStep.label, 0.72, 1.93, 3.2, 0.22, { fontSize: 16, bold: true, color: RED });
+                txt(slide, flow.reason, 0.72, 2.34, 5.4, 0.18, { fontSize: 7.0, color: BLACK });
+                rect(slide, 6.55, 1.28, 2.85, 1.22, 'FFFFFF', RED, { width: 1.1 });
+                txt(slide, 'Defect / Failure Mode', 6.72, 1.47, 1.8, 0.12, { fontSize: 6.5, bold: true, color: GRAY });
+                txt(slide, clip(model.defect || normalized.failure_mode || 'TBD', 48), 6.72, 1.75, 2.5, 0.18, { fontSize: 11.5, bold: true, color: RED });
+                txt(slide, 'Detected at: ' + clip(flow.detection, 42), 6.72, 2.17, 2.5, 0.13, { fontSize: 7.2, color: BLACK });
+                rect(slide, 9.75, 1.28, 2.75, 1.22, 'FFFFFF', BLUE, { width: 0.9 });
+                txt(slide, 'Recommended checks', 9.92, 1.47, 1.8, 0.12, { fontSize: 6.5, bold: true, color: GRAY });
+                txt(slide, clip(flow.primaryStep.controls, 105), 9.92, 1.76, 2.35, 0.36, { fontSize: 7.4, bold: true, color: BLUE });
+                rect(slide, 0.45, 3.45, 12.45, 2.32, 'FFFFFF', 'D9EAF7');
+                txt(slide, 'SMT PROCESS FLOW', 0.68, 3.66, 2.2, 0.16, { fontSize: 9, bold: true, color: BLUE });
+                var startX = 0.72, y = 4.08, bw = 1.28, bh = 0.95, gap = 0.20;
+                flow.steps.forEach(function (st, i) {
+                    var x = startX + i * (bw + gap);
+                    var active = st.id === flow.primary;
+                    traceOpsFiiDrawSmtMachineIcon(slide, x, y, bw, bh, st.short, active, i + 1);
+                    if (i < flow.steps.length - 1) line(slide, x + bw + 0.03, y + 0.47, gap - 0.06, 0, active ? RED : '9DB8D5', active ? 1.2 : 0.6, true);
+                    if (active) {
+                        txt(slide, 'PRIMARY SUSPECT', x - 0.05, y - 0.28, bw + 0.1, 0.12, { fontSize: 5.5, bold: true, color: RED, align: 'center' });
+                    }
+                });
+                fiiTable(slide, 0.55, 6.05, [2.6, 3.4, 3.0, 2.9], [
+                    [cell('Defect evidence', { fill: LIGHT_BLUE, bold: true }), cell('Process implication', { fill: LIGHT_BLUE, bold: true }), cell('Containment focus', { fill: LIGHT_BLUE, bold: true }), cell('Validation path', { fill: LIGHT_BLUE, bold: true })],
+                    [cell(clip(model.evidenceSummary || evidenceText || problem, 135)), cell(clip(flow.primaryStep.controls, 115)), cell(clip(normalized.d3_containment || model.station || 'Hold / sort at affected process and downstream detection point.', 115)), cell(clip(model.validation || normalized.validation_result || 'Confirm no recurrence after corrective action and retest.', 115))]
+                ], { rowH: 0.38, header: false, cell: { fontSize: 6.2 } });
+            }
+
             // 1 Cover
             var slide = pptx.addSlide();
             addBg(slide, true);
@@ -20482,8 +20554,11 @@ body.traceops-premium-shell [class*="impact"]{
             imageBox(slide, 'bad', 'BAD PART / SITUATION', 0.72, 5.25, 5.2, 1.45, RED, problem);
             imageBox(slide, 'good', 'GOOD PART / SITUATION', 7.1, 5.25, 5.2, 1.45, GREEN, 'Reference condition: correct P/N, expected setup and control pass.');
 
-            // 4 D3 Containment
-            slide = bodySlide('D3: Implement Containment Actions', 4, 'Containment by location and blocking status');
+            // 4 SMT Process Flow Evidence
+            traceOpsFiiAddSmtProcessFlowSlide(4);
+
+            // 5 D3 Containment
+            slide = bodySlide('D3: Implement Containment Actions', 5, 'Containment by location and blocking status');
             fiiTable(slide, 0.45, 1.15, [1.4, 1.1, 1.1, 1.1, 2.2, 1.4, 1.2], [
                 [cell('Location', { fill: LIGHT_BLUE, bold: true }), cell('Qty suspect', { fill: LIGHT_BLUE, bold: true }), cell('Good part', { fill: LIGHT_BLUE, bold: true }), cell('Bad part', { fill: LIGHT_BLUE, bold: true }), cell('Responsible', { fill: LIGHT_BLUE, bold: true }), cell('Clean date', { fill: LIGHT_BLUE, bold: true }), cell('Status', { fill: LIGHT_BLUE, bold: true })],
                 [cell('FJZ WHSE'), cell('Pending'), cell('Pending'), cell('Pending'), cell(safe(model.owners && model.owners[0], 'TBD')), cell('Pending'), cell('Pending')],
@@ -20499,8 +20574,8 @@ body.traceops-premium-shell [class*="impact"]{
             fiiTable(slide, 0.55, 5.0, [6.8, 2.2, 2.2], [[cell('Additional Containment Actions', { fill: LIGHT_BLUE, bold: true }), cell('Responsible', { fill: LIGHT_BLUE, bold: true }), cell('Clean Date', { fill: LIGHT_BLUE, bold: true })]].concat((containment.length ? containment : ['Containment action pending definition']).slice(0, 4).map(function (a) { return [cell(clip(itemText(a), 135)), cell(itemOwner(a)), cell(itemDate(a))]; })), { rowH: 0.34, header: false, cell: { fontSize: 6.4 } });
             txt(slide, 'D3c: Notify Customer of Blocking/Containment Actions (WITHIN 24 HOURS)', 0.65, 6.72, 8.0, 0.18, { fontSize: 7.5, bold: true, color: RED });
 
-            // 5 D4A Occurrence
-            slide = bodySlide('D4A - Occurrence Analysis', 5, 'Occurrence mechanism and cause categories');
+            // 6 D4A Occurrence
+            slide = bodySlide('D4A - Occurrence Analysis', 6, 'Occurrence mechanism and cause categories');
             txt(slide, 'Occurrence framing', 0.65, 1.1, 2.4, 0.18, { fontSize: 10, bold: true, color: BLUE });
             rect(slide, 0.55, 1.36, 12.1, 0.9, 'F7F7F7', BORDER);
             txt(slide, clip(model.occurrenceSummary || normalized.d4_occurrence || normalized.d4_root_cause, 420), 0.75, 1.56, 11.65, 0.45, { fontSize: 8.4 });
@@ -20512,8 +20587,8 @@ body.traceops-premium-shell [class*="impact"]{
             rect(slide, 0.75, 6.18, 11.75, 0.48, 'FFF2F2', RED);
             txt(slide, 'Occurrence conclusion: ' + clip(model.occurrenceSummary || normalized.d4_root_cause, 210), 0.9, 6.33, 11.35, 0.18, { fontSize: 8, bold: true, color: RED });
 
-            // 6 D4B Escape
-            slide = bodySlide('D4B - Escape Analysis', 6, 'Detection 5 Whys and escape confirmation');
+            // 7 D4B Escape
+            slide = bodySlide('D4B - Escape Analysis', 7, 'Detection 5 Whys and escape confirmation');
             fiiTable(slide, 0.65, 1.18, [2.3, 9.4], [
                 [cell('Escape point', { fill: LIGHT_BLUE, bold: true }), cell(clip(model.escapeSummary || normalized.detection_gap, 160))],
                 [cell('Expected detection control', { fill: LIGHT_BLUE, bold: true }), cell(model.station)],
@@ -20524,8 +20599,8 @@ body.traceops-premium-shell [class*="impact"]{
             rect(slide, 0.75, 5.75, 11.6, 0.55, 'FFF2F2', RED);
             txt(slide, 'Escape conclusion: ' + clip(model.escapeSummary || normalized.detection_gap || 'Detection gap remains under validation.', 220), 0.9, 5.91, 11.2, 0.19, { fontSize: 8.2, bold: true, color: RED });
 
-            // 7 D5 Action Split
-            slide = bodySlide('D5 - Permanent Corrective Actions', 7, 'Action matrix split by Occurrence, Detection and System');
+            // 8 D5 Action Split
+            slide = bodySlide('D5 - Permanent Corrective Actions', 8, 'Action matrix split by Occurrence, Detection and System');
             var d5Rows = [[cell('Axis', { fill: LIGHT_BLUE, bold: true }), cell('Corrective Actions', { fill: LIGHT_BLUE, bold: true }), cell('ECD', { fill: LIGHT_BLUE, bold: true }), cell('Responsible', { fill: LIGHT_BLUE, bold: true }), cell('Status', { fill: LIGHT_BLUE, bold: true })]];
             ['Occurrence','Detection','System'].forEach(function (ax) {
                 axis[ax].slice(0, 2).forEach(function (a, idx) { d5Rows.push([cell(idx ? '' : ax), cell(clip(a.text, 170)), cell(a.date), cell(a.owner), cell(a.status)]); });
@@ -20534,8 +20609,8 @@ body.traceops-premium-shell [class*="impact"]{
             ['Occurrence','Detection','System'].forEach(function (ax, i) { var x = 0.65 + i * 4.1; rect(slide, x, 4.75, 3.65, 1.15, 'F9FBFD', BORDER); txt(slide, ax, x + 0.15, 4.92, 1.4, 0.17, { fontSize: 11, bold: true, color: BLUE }); axis[ax].slice(0, 3).forEach(function (a, j) { addBullet(slide, a.text, x + 0.18, 5.22 + j * 0.22, 3.25, RED); }); });
             txt(slide, 'Note: actions are auto-classified from RCCA text. Edit RCCA action axis when customer-ready categorization is required.', 0.65, 6.45, 11.6, 0.16, { fontSize: 7, italic: true, color: GRAY });
 
-            // 8 D6 Verification Split
-            slide = bodySlide('D6 - Verification of Effectiveness', 8, 'Validation matrix by action axis');
+            // 9 D6 Verification Split
+            slide = bodySlide('D6 - Verification of Effectiveness', 9, 'Validation matrix by action axis');
             var d6Rows = [[cell('Axis', { fill: LIGHT_BLUE, bold: true }), cell('Corrective Action', { fill: LIGHT_BLUE, bold: true }), cell('Measurement Method', { fill: LIGHT_BLUE, bold: true }), cell('Validation Efficacy Results', { fill: LIGHT_BLUE, bold: true }), cell('Responsible', { fill: LIGHT_BLUE, bold: true }), cell('Completion Date', { fill: LIGHT_BLUE, bold: true })]];
             ['Occurrence','Detection','System'].forEach(function (ax) {
                 var a = axis[ax][0];
@@ -20547,8 +20622,8 @@ body.traceops-premium-shell [class*="impact"]{
             fiiTable(slide, 0.65, 5.05, [4.0, 3.2, 4.2], [[cell('Acceptance criteria', { fill: LIGHT_BLUE, bold: true }), cell('Recurrence status', { fill: LIGHT_BLUE, bold: true }), cell('Conclusion', { fill: LIGHT_BLUE, bold: true })], [cell('No recurrence signature, stable control behavior and traceable closure evidence.'), cell(normalized.recurrence_status || 'Under validation; no recurrence confirmed in current window.'), cell(clip(model.validation || normalized.validation_result || 'Pending effectiveness closure evidence.', 170))]], { rowH: 0.42, header: false, cell: { fontSize: 6.3 } });
             txt(slide, 'Validation is intentionally separated by axis to prevent duplicated closure logic.', 0.65, 6.42, 11.4, 0.16, { fontSize: 7, color: GRAY, italic: true });
 
-            // 9 D7/D8
-            slide = bodySlide('D7 Prevention / Yokoten + D8 Closure', 9, 'Preventive replication and closure status');
+            // 10 D7/D8
+            slide = bodySlide('D7 Prevention / Yokoten + D8 Closure', 10, 'Preventive replication and closure status');
             txt(slide, 'D7 Prevention / Yokoten', 0.6, 1.2, 3.2, 0.22, { fontSize: 12, bold: true, color: BLUE });
             rect(slide, 0.55, 1.55, 5.95, 2.05, 'F7F7F7', BORDER);
             bulletsFrom((preventive.length ? preventive.map(itemText).join('; ') : model.prevention || normalized.d7_prevention || 'Preventive action pending definition'), 7).forEach(function (b, i) { addBullet(slide, b, 0.75, 1.78 + i * 0.24, 5.4, RED); });
@@ -20562,7 +20637,7 @@ body.traceops-premium-shell [class*="impact"]{
             txt(slide, 'Open items: ' + clip((normalized.open_items || readinessMeta.missing || []).toString() || 'Remaining validation, evidence or control gap closure items stay visible.', 180), 7.1, 4.62, 5.3, 0.25, { fontSize: 8.0, bold: true, color: RED });
 
             // 10 Appendix
-            slide = bodySlide('Appendix A - Traceability & Evidence', 10, 'Foxconn-aligned traceability and evidence summary');
+            slide = bodySlide('Appendix A - Traceability & Evidence', 11, 'Foxconn-aligned traceability and evidence summary');
             txt(slide, 'Flow by station & date', 0.6, 1.22, 3.0, 0.22, { fontSize: 12, bold: true, color: BLUE });
             var steps = ['Build', model.line || 'Line', model.station || 'Station', 'Complaint', 'RCCA'];
             steps.forEach(function (st, i) { var x = 0.65 + i * 2.35; rect(slide, x, 1.75, 1.65, 0.55, 'F7F7F7', BORDER); txt(slide, clip(st, 24), x + 0.08, 1.94, 1.5, 0.12, { fontSize: 7.5, bold: true, align: 'center' }); if (i < steps.length - 1) line(slide, x + 1.65, 2.02, 0.55, 0, BLACK, 0.6, true); txt(slide, clip(model.detectionWindow, 35), x, 2.38, 1.75, 0.16, { fontSize: 5.6, color: GRAY, align: 'center' }); });
@@ -41966,6 +42041,25 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   syncBadge();
   setTimeout(syncBadge, 500);
   setTimeout(syncBadge, 2000);
+})();
+</script>
+
+<script>
+(function(){
+  var VERSION_TEXT = 'SMTinel V13.2.15 - 8D SMT Process Flow Evidence + TSV References - 2026-05-23';
+  window.TRACEOPS_VERSION_LABEL = VERSION_TEXT;
+  function syncVersion(){
+    try {
+      Array.prototype.forEach.call(document.querySelectorAll('body *'), function(el){
+        if (!el || !el.textContent) return;
+        var t = String(el.textContent || '').trim();
+        if (/SMTinel\s+V13\.2\./i.test(t) && t.length < 140) el.textContent = VERSION_TEXT;
+      });
+    } catch(_) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncVersion); else syncVersion();
+  setTimeout(syncVersion, 500);
+  setTimeout(syncVersion, 2000);
 })();
 </script>
 </body>
