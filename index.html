@@ -11452,27 +11452,61 @@ function traceOpsYieldResponsibleTone(area) {
     if (a === "FT") return { bg: "#F5F0FE", border: "#DBCDF8", text: "#6B2DA8" };
     return { bg: "#F7FAFF", border: "#D9E6F7", text: "#5F766C" };
 }
-function traceOpsYieldBestRepairCorrelation(sn, failingTestName) {
+function traceOpsYieldBestRepairCorrelation(sn, failingTestName, cesiumRow) {
     var key = traceOpsYieldCleanSn(sn || "");
     var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[key]) || [];
     if (!repairs.length) return null;
     var ft = String(failingTestName || '').toUpperCase();
-    var exact = null;
-    for (var i = 0; i < repairs.length; i++) {
-        var ref = String(repairs[i].refdes || repairs[i].failLocation || repairs[i].location || '').toUpperCase();
-        if (ref && ref !== 'N/D' && ref !== 'NA' && ft.indexOf(ref) >= 0) { exact = repairs[i]; break; }
+    var ftTime = NaN;
+    try { ftTime = traceOpsYieldCesiumTimeValue(cesiumRow || {}, 0); } catch (_) { ftTime = NaN; }
+    function repairTimeValue(rep, idx) {
+        var raw = rep && (rep.repairTime || rep.eventTime || rep.recordTime || rep.date || rep.Date || rep.timestamp || rep.createdAt || "");
+        var ms = raw ? new Date(String(raw).replace(" ", "T")).getTime() : NaN;
+        return Number.isFinite(ms) ? ms : Number(idx || 0);
     }
-    var r = exact || repairs[0];
+    var enriched = repairs.map(function(rep, idx) {
+        var ref = String(rep.refdes || rep.failLocation || rep.location || '').toUpperCase();
+        var symptom = String(rep.rootCause || rep.failureMode || rep.symptom || '').toUpperCase();
+        var t = repairTimeValue(rep, idx);
+        var exactRef = !!(ref && ref !== 'N/D' && ref !== 'NA' && ft && ft.indexOf(ref) >= 0);
+        var exactSymptom = !!(symptom && ft && (ft.indexOf(symptom) >= 0 || symptom.indexOf(ft) >= 0));
+        var isAfter = Number.isFinite(ftTime) && Number.isFinite(t) ? t >= ftTime : false;
+        var distance = Number.isFinite(ftTime) && Number.isFinite(t) ? Math.abs(t - ftTime) : Number.MAX_SAFE_INTEGER;
+        return { rep: rep, idx: idx, ref: ref, timeValue: t, exactRef: exactRef, exactSymptom: exactSymptom, isAfter: isAfter, distance: distance };
+    });
+    enriched.sort(function(a, b) {
+        return (Number(b.exactRef) - Number(a.exactRef)) ||
+               (Number(b.exactSymptom) - Number(a.exactSymptom)) ||
+               (Number(b.isAfter) - Number(a.isAfter)) ||
+               (a.distance - b.distance) ||
+               (Number(b.timeValue || 0) - Number(a.timeValue || 0));
+    });
+    var best = enriched[0] || { rep: repairs[0], exactRef: false, exactSymptom: false, isAfter: false };
+    var r = best.rep || repairs[0];
     var refdes = r.refdes || r.failLocation || r.location || "N/D";
-    var area = r.responsibleArea || traceOpsYieldClassifyResponsibleArea(r.rootCause || r.failureMode || r.symptom || "");
+    var failureMode = r.rootCause || r.failureMode || r.symptom || "N/D";
+    var area = r.responsibleArea || traceOpsYieldClassifyResponsibleArea(failureMode || "");
+    var station = r.detectionStation || r.station || "N/D";
+    var status = "MATCH CONFIRMED";
+    var confidence = (best.exactRef || best.exactSymptom || best.isAfter) ? "High" : "Medium";
     return {
         sn: key,
         refdes: refdes,
-        failureMode: r.rootCause || r.failureMode || r.symptom || "N/D",
+        repairRef: refdes,
+        repairSymptom: r.symptom || failureMode || "N/D",
+        failureMode: failureMode,
+        failedTest: failingTestName || "N/D",
         responsibleArea: area,
-        detectionStation: r.detectionStation || r.station || "N/D",
-        confidence: exact ? "High" : "Medium",
-        message: exact ? ("Functional symptom matches physical repair at " + refdes + ".") : ("Functional symptom has repair evidence on " + refdes + ".")
+        detectionStation: station,
+        repairStation: station,
+        repairTime: r.repairTime || r.eventTime || r.recordTime || r.date || "N/D",
+        status: status,
+        correlationStatus: status,
+        confidence: confidence,
+        defectValidation: "Real functional failure confirmed by repair record",
+        risk: "Alta relevancia para RCCA / Yield impact",
+        message: "Falla funcional en Cesium FT correlacionada con Repair Record en " + refdes + ".",
+        summary: "El serial presento falla funcional en Cesium FT (" + (failingTestName || "N/D") + ") y cuenta con evidencia de reparacion fisica relacionada en " + refdes + "."
     };
 }
 function traceOpsYieldBuildFtNarrative(area) {
@@ -12211,12 +12245,112 @@ function traceOpsYieldSerialModalRows(rows, filter, sortKey) {
     }
     return out.map(function (item) { return item.row; });
 }
+function traceOpsYieldSerialModalExtractRefs(row) {
+    row = row || {};
+    var refs = [];
+    function add(value) {
+        if (value == null) return;
+        if (Array.isArray(value)) {
+            value.forEach(add);
+            return;
+        }
+        var text = String(value || "").toUpperCase();
+        if (!text || /^(N\/?D|NA|NONE|NULL|UNDEFINED)$/i.test(text.trim())) return;
+        var matches = text.match(/\b[A-Z]{1,3}\d{1,5}(?:[_-][A-Z0-9]{1,6})?\b/g) || [];
+        matches.forEach(function(ref) {
+            ref = String(ref || "").trim().replace(/[.,;:]+$/g, "");
+            if (!ref || /^(WO|SN|PN|SKU|BU|LINE|FY|Q|W|N|D)$/i.test(ref)) return;
+            if (refs.indexOf(ref) < 0) refs.push(ref);
+        });
+    }
+    add(row.repairRef);
+    add(row.refdes);
+    add(row.RefDes);
+    add(row.failLocation);
+    add(row.failureLocation);
+    add(row.reference);
+    add(row.ref);
+    add(row.location);
+    add(row.modeRef);
+    add(row.refs);
+    add(row.references);
+    if (row.repairCorrelation) {
+        add(row.repairCorrelation.refdes);
+        add(row.repairCorrelation.repairRef);
+        add(row.repairCorrelation.failLocation);
+        add(row.repairCorrelation.location);
+    }
+    return refs;
+}
+function traceOpsYieldSerialModalPickRepairRef(row) {
+    row = row || {};
+    var candidates = [
+        row.repairRef,
+        row.repairRefdes,
+        row.repairLocation,
+        row.repairCorrelation && row.repairCorrelation.refdes,
+        row.repairCorrelation && row.repairCorrelation.repairRef,
+        row.refdes,
+        row.failLocation,
+        row.location
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+        var refs = traceOpsYieldSerialModalExtractRefs({ location: candidates[i] });
+        if (refs.length) return refs[0];
+    }
+    return "N/D";
+}
 function traceOpsYieldSerialModalTsv(rows) {
     function cell(value) {
         return String(value == null || value === "" ? "N/D" : value).replace(/[\t\r\n]+/g, " ").trim();
     }
-    var header = ["SN", "WO", "SKU", "Family", "BU", "Symptom", "Reference", "Station", "Cisco Week", "Line"];
-    var body = (rows || []).map(function (r) { return [r.sn, r.wo, r.sku, r.family, r.bu, r.symptom, r.location, r.station || r.event, r.week, r.line].map(cell).join("\t"); });
+    function pick(value, fallback) {
+        return value == null || value === "" ? (fallback || "N/D") : value;
+    }
+    var header = [
+        "SN",
+        "WO",
+        "SKU",
+        "Family",
+        "BU",
+        "Symptom / Failed Test",
+        "Failure Ref(s)",
+        "Repair Ref",
+        "Mode / Ref Source",
+        "Station / Test Area",
+        "Cesium Result",
+        "Repair Symptom",
+        "Correlation Status",
+        "Cisco Week",
+        "Line"
+    ];
+    var body = (rows || []).map(function (r) {
+        r = r || {};
+        var failureRefs = traceOpsYieldSerialModalExtractRefs(r);
+        var repairRef = traceOpsYieldSerialModalPickRepairRef(r);
+        var corr = r.repairCorrelation || {};
+        var result = r.status || r.teststatus || r.result || r.Result || r.cesiumResult || "N/D";
+        var repairSymptom = r.repairSymptom || corr.repairSymptom || corr.failureMode || "N/D";
+        var correlationStatus = r.correlationStatus || corr.status || corr.correlationStatus || (r.repairCorrelation ? "MATCH CONFIRMED" : "N/D");
+        var modeRefSource = r.location || r.refdes || r.failLocation || r.reference || r.modeRef || "N/D";
+        return [
+            r.sn || r.sfcSn || r.cesiumSn,
+            r.wo || r.workOrder,
+            r.sku || r.skuno,
+            r.family || r.model,
+            r.bu,
+            r.symptom || r.failingTestName || r.testInfo || r.failureMode,
+            failureRefs.length ? failureRefs.join(", ") : "N/D",
+            repairRef,
+            modeRefSource,
+            r.station || r.testArea || r.event,
+            result,
+            repairSymptom,
+            correlationStatus,
+            r.week || r.ciscoWeek,
+            r.line
+        ].map(cell).join("\t");
+    });
     return header.join("\t") + "\n" + body.join("\n");
 }
 function traceOpsYieldSerialModalDownload(rows, title) {
@@ -25506,39 +25640,87 @@ body.traceops-premium-shell [class*="impact"]{
         maxItems = maxItems || 5;
         try {
             var cached = window.TRACEOPS_YIELD_CESIUM_SIGNATURE_PARETO_CACHE;
-            if (cached && cached.rows === rows && cached.maxItems === maxItems && cached.length === rows.length) return cached.value;
+            if (cached && cached.rows === rows && cached.maxItems === maxItems && cached.length === rows.length && cached.version === "unique-latest-v1") return cached.value;
         } catch (_) {}
+
+        function pickSerial(row) {
+            return traceOpsYieldCleanSn((row && (row.sn || row.sfcSn || row.cesiumSn || row.syserialno || row.sysserialno || row.serial || row.SerialNumber || row["Serial Number"])) || "");
+        }
+
+        function rowTime(row, idx) {
+            try { return traceOpsYieldCesiumTimeValue(row, idx); } catch (_) { return Number((row && row.__seq) || idx || 0); }
+        }
+
+        function enrichLatestRow(row, sig, sn, idx) {
+            var out = Object.assign({}, row || {});
+            out.sn = traceOpsYieldCleanSn(out.sn || out.sfcSn || out.cesiumSn || out.syserialno || out.sysserialno || out.serial || sn || "");
+            out.cesiumSn = traceOpsYieldCleanSn(out.cesiumSn || out.syserialno || out.sysserialno || out.serial || out.sn || sn || "");
+            out.symptom = out.symptom || out.failingTestName || out.testInfo || out.testinfo || sig || "N/D";
+            out.failingTestName = out.failingTestName || out.testInfo || out.testinfo || sig || "N/D";
+            out.testInfo = out.testInfo || out.testinfo || sig || "N/D";
+            out.station = out.station || out.testArea || out.area || "N/D";
+            out.location = out.location || out.machine || out.fixture || out.station || "N/D";
+            out.__timeValue = rowTime(row, idx);
+            out.__signature = sig;
+            var corr = null;
+            try { corr = traceOpsYieldBestRepairCorrelation(out.sn || sn || out.cesiumSn, out.failingTestName || out.testInfo || sig, out); } catch (_) { corr = null; }
+            if (corr) {
+                out.repairCorrelation = corr;
+                out.correlationStatus = corr.status || corr.correlationStatus || "MATCH CONFIRMED";
+                out.defectValidation = corr.defectValidation || "Real functional failure confirmed by repair record";
+                out.repairRef = corr.refdes || corr.repairRef || "N/D";
+                out.repairSymptom = corr.repairSymptom || corr.failureMode || "N/D";
+                out.repairStation = corr.repairStation || corr.detectionStation || "N/D";
+                out.repairTime = corr.repairTime || "N/D";
+                out.location = (out.correlationStatus || "MATCH") + " · Repair " + (out.repairRef || "N/D") + " · " + (out.repairSymptom || "N/D");
+                out.source = "Cesium FT + Repair Record correlation";
+            }
+            return out;
+        }
+
         var byKey = {};
-        rows.forEach(function(row) {
+        var anonymousSeq = 0;
+        rows.forEach(function(row, idx) {
             if (!traceOpsYieldCesiumRowLooksFail(row)) return;
             var sig = traceOpsYieldPickCesiumTestSignature(row);
             if (!sig || sig === "N/D") return;
-            var sn = traceOpsYieldCleanSn((row && (row.sn || row.sfcSn || row.cesiumSn || row.syserialno || row.serial)) || "");
+            var sn = pickSerial(row);
             var key = sig.toUpperCase();
-            if (!byKey[key]) byKey[key] = { name: sig, count: 0, snMap: {}, rows: [], stations: {}, areas: {} };
+            if (!byKey[key]) byKey[key] = { name: sig, latestBySn: {}, anonymousRows: [], stations: {}, areas: {} };
             var item = byKey[key];
-            item.rows.push(row);
-            if (sn && !item.snMap[sn]) {
-                item.snMap[sn] = true;
-                item.count += 1;
-            } else if (!sn) {
-                item.count += 1;
+            var latestRow = enrichLatestRow(row, sig, sn, idx);
+
+            if (sn) {
+                var previous = item.latestBySn[sn];
+                if (!previous || latestRow.__timeValue >= previous.__timeValue) {
+                    item.latestBySn[sn] = latestRow;
+                }
+            } else {
+                latestRow.__anonymousKey = "anonymous_" + (++anonymousSeq);
+                item.anonymousRows.push(latestRow);
             }
+
             var st = String(row.station || row.testArea || row.area || "N/D").trim();
             if (st) item.stations[st] = true;
             var area = String(row.testArea || row.station || "N/D").trim();
             if (area) item.areas[area] = true;
         });
+
         var list = Object.keys(byKey).map(function(k) {
             var x = byKey[k];
+            var latestRows = Object.keys(x.latestBySn).map(function(sn) { return x.latestBySn[sn]; });
+            latestRows.sort(function(a, b) { return Number(b.__timeValue || 0) - Number(a.__timeValue || 0); });
+            var finalRows = latestRows.concat(x.anonymousRows || []);
             return {
                 name: x.name,
-                count: x.count,
-                rows: x.rows,
+                count: finalRows.length,
+                rows: finalRows,
+                confirmed: finalRows.filter(function(r) { return r && r.repairCorrelation; }).length,
                 stations: Object.keys(x.stations).slice(0, 4),
                 areas: Object.keys(x.areas).slice(0, 4)
             };
         }).filter(function(x) { return x.count > 0; }).sort(function(a, b) { return b.count - a.count || String(a.name).localeCompare(String(b.name)); });
+
         var total = list.reduce(function(sum, x) { return sum + Number(x.count || 0); }, 0);
         var top = list.slice(0, maxItems).map(function(x) {
             return Object.assign({}, x, { percent: total ? (x.count / total * 100) : 0 });
@@ -25550,8 +25732,8 @@ body.traceops-premium-shell [class*="impact"]{
             rest.forEach(function(x) { restRows = restRows.concat(x.rows || []); });
             top.push({ name: "Others", count: restCount, percent: total ? (restCount / total * 100) : 0, rows: restRows, stations: [], areas: [] });
         }
-        var result = { total: total, rows: top, rawRows: list };
-        try { window.TRACEOPS_YIELD_CESIUM_SIGNATURE_PARETO_CACHE = { rows: rows, maxItems: maxItems, length: rows.length, value: result }; } catch (_) {}
+        var result = { total: total, rows: top, rawRows: list, dedupeMode: "latest-result-by-unique-sn" };
+        try { window.TRACEOPS_YIELD_CESIUM_SIGNATURE_PARETO_CACHE = { rows: rows, maxItems: maxItems, length: rows.length, version: "unique-latest-v1", value: result }; } catch (_) {}
         return result;
     }
 
@@ -25580,9 +25762,9 @@ body.traceops-premium-shell [class*="impact"]{
                     h("div", { key: "top", style: { display: "grid", gridTemplateColumns: mobile ? "1fr" : "minmax(0,1fr) auto", gap: 8, alignItems: "center" } }, [
                         h("div", { key: "name", style: { minWidth: 0 } }, [
                             h("div", { style: { fontSize: 11.5, fontWeight: 900, color: "#102A43", textTransform: isOther ? "none" : "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, (isOther ? "" : (idx + 1) + ") ") + row.name),
-                            h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 } }, [chip(fmt(row.percent || 0, 1) + "%", idx < 2 ? "red" : "blue")].concat((row.areas || []).slice(0, 2).map(function(a) { return chip(a, "blue"); })))
+                            h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 } }, [chip(fmt(row.percent || 0, 1) + "%", idx < 2 ? "red" : "blue")].concat((row.confirmed ? [chip("MATCH " + fmt(row.confirmed || 0), "red")] : [])).concat((row.areas || []).slice(0, 2).map(function(a) { return chip(a, "blue"); })))
                         ]),
-                        h("button", { key: "btn", type: "button", onClick: function() { setModal({ title: row.name, subtitle: "Cesium Test Signature Pareto · " + fmt(row.count || 0) + " SN", rows: row.rows || [] }); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "6px 10px", fontSize: 9.5, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" } }, "View SN " + fmt(row.count || 0))
+                        h("button", { key: "btn", type: "button", onClick: function() { setModal({ title: row.name, subtitle: "Cesium Test Signature Pareto · SN unicos con ultimo resultado · MATCH = Cesium FT + Repair Record", rows: row.rows || [] }); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "6px 10px", fontSize: 9.5, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" } }, "View SN " + fmt(row.count || 0))
                     ]),
                     h("div", { key: "barwrap", style: { display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" } }, [
                         h("div", { key: "track", style: { height: 9, background: "#F1F5FA", borderRadius: 999, overflow: "hidden" } }, h("div", { style: { height: "100%", width: barWidth(row) + "%", background: idx < 2 && !isOther ? "linear-gradient(90deg,#A43B2E,#D9A441)" : "linear-gradient(90deg,#1F6FEB,#2EAADC)", borderRadius: 999 } })),
@@ -38948,7 +39130,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -39085,7 +39267,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -40593,8 +40775,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -40614,7 +40796,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -40919,8 +41101,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   }
 
   function updateBadge(){
@@ -41066,7 +41248,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41239,7 +41421,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41504,7 +41686,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+  var badge = 'SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -41530,7 +41712,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -41554,7 +41736,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.2.10 - Cesium Test Signature Fix + Recovery Light - 2026-05-23';
+  var badgeText = 'SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -41728,7 +41910,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.2.11 - Full Viewport Recovery Layout + Cesium Signature Fix - 2026-05-23';
+  var badgeText = 'SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -41748,5 +41930,43 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 })();
 </script>
 
+
+<script id="smtinel-v13-2-12-final-sync">
+(function(){
+  var badge = 'SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23';
+  window.SMTINEL_BUILD_VERSION = badge;
+  window.SMTINEL_BUILD_BADGE = badge;
+  function syncBadge(){
+    try {
+      document.querySelectorAll('.smtinel-build-badge,.traceops-build-badge,[data-build-badge]').forEach(function(el){ el.textContent = badge; });
+      Array.prototype.slice.call(document.querySelectorAll('div,span')).forEach(function(el){
+        if (el && el.textContent && /^SMTinel V13\./.test(el.textContent.trim())) el.textContent = badge;
+      });
+    } catch (_) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge); else syncBadge();
+  setTimeout(syncBadge, 500);
+  setTimeout(syncBadge, 2000);
+})();
+</script>
+
+<script id="smtinel-v13-2-13-correlation-badge-sync">
+(function(){
+  var versionText = "SMTinel V13.2.14 - TSV Failure References + Cesium Repair Correlation - 2026-05-23";
+  function syncBadge(){
+    try {
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
+      nodes.forEach(function(el){
+        if (!el || !el.textContent) return;
+        var t = String(el.textContent || '');
+        if (/SMTinel\s+V13\.2\./.test(t) && t.length < 140) el.textContent = versionText;
+      });
+    } catch(_) {}
+  }
+  syncBadge();
+  setTimeout(syncBadge, 500);
+  setTimeout(syncBadge, 2000);
+})();
+</script>
 </body>
 </html>
