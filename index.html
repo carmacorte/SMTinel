@@ -16403,6 +16403,98 @@ body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-hotspot-gl
 }
 </style>
 
+
+
+<style id="smtinel-v13-2-39-true-fullscreen-workspace-fix">
+/* =========================================================
+   SMTinel V13.2.39 - True Fullscreen Module Workspace Fix
+   Scope: visual layout only. No import / data engine changes.
+   ========================================================= */
+body.traceops-premium-shell .main-content,
+body.traceops-premium-shell .main-content.expanded,
+.main-content,
+.main-content.expanded {
+  margin-left: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+html,
+body,
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+.main-content > *,
+.main-content.expanded > * {
+  width: 100% !important;
+  max-width: none !important;
+}
+.module-workspace,
+.traceops-module-workspace,
+.traceops-workspace,
+.traceops-page,
+.traceops-dashboard,
+.toq-dashboard,
+.smt-exec,
+#command-center-section,
+#rcca-section,
+#eightd-section,
+#yield-flow-section,
+#board-impact-section,
+#maintenance-section {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.ops-hero,
+.saas-hero-card,
+.traceops-context,
+.traceops-panel,
+.traceops-calendar,
+.traceops-material-panel,
+.tcard,
+.pf-card,
+.cmp,
+.up,
+.prog,
+.api-bar {
+  width: 100% !important;
+  max-width: none !important;
+}
+.ops-hero img,
+.smt-exec-hero img,
+.toq-dashboard img {
+  max-width: 100% !important;
+}
+.saas-topbar,
+.saas-topbar.sidebar-collapsed {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+}
+body.traceops-premium-shell .main-content,
+body.traceops-premium-shell .main-content.expanded {
+  padding-top: 84px !important;
+}
+@media (max-width: 768px) {
+  body.traceops-premium-shell .main-content,
+  body.traceops-premium-shell .main-content.expanded,
+  .main-content,
+  .main-content.expanded {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .saas-topbar,
+  .saas-topbar.sidebar-collapsed {
+    width: 100% !important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -39381,7 +39473,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -39518,7 +39610,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -41026,8 +41118,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -41047,7 +41139,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -41352,8 +41444,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   }
 
   function updateBadge(){
@@ -41499,7 +41591,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41672,7 +41764,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41937,7 +42029,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -41963,7 +42055,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -41987,7 +42079,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var badgeText = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42161,7 +42253,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var badgeText = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -42184,7 +42276,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -42203,7 +42295,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23";
+  var versionText = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42307,7 +42399,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.2.38 - Fullscreen Module Layout - 2026-05-28';
+  var label = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -42325,7 +42417,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.2.38 - Fullscreen Module Layout - 2026-05-28';
+  var VERSION_LABEL = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -42575,7 +42667,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.2.23 - Repair Failure Mode Pareto Restored + Common Enrichment - 2026-05-23';
+  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -42937,6 +43029,65 @@ body.traceops-premium-shell .traceops-kpi-strip{
   try{ new MutationObserver(bind).observe(document.body, {subtree:true, childList:true}); }catch(_){ }
 
   window.SMTinelFastNavigate = fastNavigate;
+})();
+</script>
+
+
+<!-- SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter -->
+<style id="smtinel-v13-2-40-yield-filter-restore">
+/* Visual-only restoration for Yield Flow filter controls. Keeps Work Order as typed search. */
+.yf-filter-field[data-filter-key="businessUnit"] input,
+.yf-filter-field[data-filter-key="modelFamily"] input,
+.yf-filter-field[data-filter-key="skuModel"] input,
+.yf-filter-field[data-filter-key="testInfo"] input { cursor:pointer; }
+.yf-testinfo-filter-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(37,99,235,.22);background:rgba(239,246,255,.92);border-radius:999px;padding:4px 10px;font-weight:800;color:#17375e;font-size:12px}
+</style>
+<script id="smtinel-v13-2-40-yield-filter-restore">
+(function(){
+  'use strict';
+  var VERSION='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
+  function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
+  function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
+  function rows(){
+    var pools=['TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS','TRACEOPS_RISK_SUMMARY_ROWS','TRACEOPS_CESIUM_ROWS','TRACEOPS_SFC_ROWS'];
+    var out=[]; pools.forEach(function(k){var v=window[k]; if(Array.isArray(v)) out=out.concat(v);});
+    if(window.TRACEOPS_STATE){Object.keys(window.TRACEOPS_STATE).forEach(function(k){var v=window.TRACEOPS_STATE[k]; if(Array.isArray(v)&&/yield|cesium|sfc|risk|row/i.test(k)) out=out.concat(v);});}
+    return out;
+  }
+  function field(row,type){
+    if(type==='bu') return val(row,['bu','BU','businessUnit','business_unit']);
+    if(type==='family') return val(row,['productFamily','Product Family','PRODUCT_FAMILY','family','Familia','codename','CODENAME','modelName','MODEL_NAME']);
+    if(type==='sku') return val(row,['sku','SKU','skuno','SKUNO','model','MODEL','modelNumber','partnumber','Part Number']);
+    if(type==='test') return val(row,['testinfo','TESTINFO','testInfo','Test Info','failedTest','failed_test','failingTestName','failing_test_name','test_name','TEST_NAME','failureMode','Failure Mode','symptom','SYMPTOM']);
+    return '';
+  }
+  function findLabel(text){text=norm(text); var labels=Array.from(document.querySelectorAll('label,.filter-label,.field-label,.yf-label,th,span,div')).filter(function(el){return norm(el.textContent||'').includes(text);}); return labels[0]||null;}
+  function nearestControl(label){if(!label) return null; var root=label.closest('div,section,article,td')||label.parentElement; if(!root) return null; return root.querySelector('input,select');}
+  function datalistId(type){return 'smtinel-v13240-'+type+'-list';}
+  function ensureDatalist(type,values){var id=datalistId(type), dl=document.getElementById(id); if(!dl){dl=document.createElement('datalist'); dl.id=id; document.body.appendChild(dl);} dl.innerHTML=values.slice(0,2500).map(function(v){return '<option value="'+String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"></option>';}).join(''); return id;}
+  function attach(control,type,values){if(!control) return; if(control.tagName==='SELECT'){var cur=control.value; control.innerHTML='<option value="">All</option>'+values.map(function(v){return '<option value="'+String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'">'+String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</option>';}).join(''); if(cur) control.value=cur; return;}
+    control.setAttribute('list',ensureDatalist(type,values));
+    control.setAttribute('autocomplete','off');
+    control.placeholder = type==='test' ? 'All / Test Info / Failure Mode' : control.placeholder;
+  }
+  function restore(){var r=rows(); if(!r.length) return;
+    var bu=uniq(r.map(function(x){return field(x,'bu')}));
+    var fam=uniq(r.map(function(x){return field(x,'family')}));
+    var sku=uniq(r.map(function(x){return field(x,'sku')}));
+    var test=uniq(r.map(function(x){return field(x,'test')}));
+    attach(nearestControl(findLabel('BUSINESS UNIT')), 'bu', bu);
+    attach(nearestControl(findLabel('MODEL / PRODUCT FAMILY'))||nearestControl(findLabel('PRODUCT FAMILY')), 'family', fam);
+    attach(nearestControl(findLabel('SKU')), 'sku', sku);
+    var testCtl=nearestControl(findLabel('CESIUM TEST AREA'))||nearestControl(findLabel('TEST INFO'));
+    attach(testCtl, 'test', test);
+    if(testCtl){var lbl=(testCtl.closest('div')||testCtl.parentElement); if(lbl&&!/TEST INFO/i.test(lbl.textContent)){var note=document.createElement('span'); note.className='yf-testinfo-filter-chip'; note.textContent='Test Info enabled'; lbl.appendChild(note);}}
+  }
+  window.smtinelRefreshYieldFilterDropdowns=restore;
+  document.addEventListener('change',function(e){if(e.target&&/MODEL|PRODUCT|SKU|BUSINESS|CESIUM|TEST/i.test(e.target.placeholder||e.target.name||'')) setTimeout(restore,80);},true);
+  var tries=0,t=setInterval(function(){restore(); if(++tries>20) clearInterval(t);},1000);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',restore); else setTimeout(restore,100);
+  setTimeout(function(){document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){b.textContent=VERSION;});},500);
 })();
 </script>
 </body>
