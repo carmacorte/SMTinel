@@ -12167,7 +12167,20 @@ function traceOpsYieldStationValue(row) {
     return String((row && (row.station || row.currentEvent || row.event || row.current_event || row.CurrentEvent || row.processStation)) || '').trim();
 }
 function traceOpsYieldCesiumAreaValue(row) {
-    return String((row && (row.testArea || row.test_area || row.station || row.area || row.TestArea || row['Test Area'])) || '').trim();
+    var signature = row && (
+        row.testinfo || row.TESTINFO || row.testInfo || row['Test Info'] || row['TEST INFO'] ||
+        row.failedTest || row.failed_test || row.failingTestName || row.failing_test_name ||
+        row.test_name || row.TEST_NAME || row['Test Name'] || row.failureMode || row['Failure Mode'] ||
+        row.symptom || row.SYMPTOM
+    );
+    var area = row && (row.testArea || row.test_area || row.station || row.area || row.TestArea || row['Test Area']);
+    var value = signature || area || '';
+    try {
+        if (typeof traceOpsYieldCleanFailureSignal === 'function') {
+            value = traceOpsYieldCleanFailureSignal([value]);
+        }
+    } catch (_) {}
+    return String(value || '').trim();
 }
 function traceOpsYieldWoStationList(wo) {
     var rawWo = String(wo || '');
@@ -13565,7 +13578,7 @@ function App() {
                 line: "Linea",
                 bu: "Business Unit",
                 sfcStation: "SFC Station",
-                cesiumTestArea: "Cesium Test Area",
+                cesiumTestArea: "Cesium Test Info",
                 workOrder: "Work Order",
                 serialNumber: "Numero de serie",
                 dateFrom: "Fecha desde",
@@ -13613,7 +13626,7 @@ function App() {
                 line: "Line",
                 bu: "Business Unit",
                 sfcStation: "SFC Station",
-                cesiumTestArea: "Cesium Test Area",
+                cesiumTestArea: "Cesium Test Info",
                 workOrder: "Work Order",
                 serialNumber: "Serial Number",
                 dateFrom: "Date from",
@@ -13661,7 +13674,7 @@ function App() {
                 line: "Line",
                 bu: "Business Unit",
                 sfcStation: "SFC Station",
-                cesiumTestArea: "Cesium Test Area",
+                cesiumTestArea: "Cesium Test Info",
                 workOrder: "Work Order",
                 serialNumber: "Serial Number",
                 dateFrom: "Date from",
@@ -17797,6 +17810,8 @@ body.traceops-premium-shell [class*="impact"]{
   }
 }
 </style>
+
+
 
 
 
@@ -25888,7 +25903,7 @@ body.traceops-premium-shell [class*="impact"]{
             ws.views = [{ state: "frozen", ySplit: 1 }];
         }
         addSheet("KPI", ["Metric", "Value"], [
-            { Metric: "Work Orders", Value: model.kpi.orders }, { Metric: "Total Units", Value: model.kpi.units }, { Metric: "Clean Units", Value: model.kpi.clean }, { Metric: "Risk Units", Value: model.kpi.risk }, { Metric: "Clean Yield %", Value: traceOpsYieldFlowFmt(model.kpi.yield, 2) }, { Metric: "OJT Touch Rate %", Value: traceOpsYieldFlowFmt(model.kpi.touch, 2) }, { Metric: "Avg Reintegration", Value: traceOpsYieldFlowFmtHoursDays(model.kpi.avgReintegrationProxy, 1) }, { Metric: "Avg SMT to Stockin/FT", Value: traceOpsYieldFlowFmtHoursDays(model.kpi.avgLeadHours, 1) }, { Metric: "Scope BU", Value: yieldFilters.bu || "ALL" }, { Metric: "Scope Product Family", Value: yieldFilters.family || "ALL" }, { Metric: "Scope SKU", Value: yieldFilters.sku || "ALL" }, { Metric: "Scope Cisco Week", Value: yieldFilters.week || "ALL" }, { Metric: "Scope Line", Value: yieldFilters.line || "ALL" }, { Metric: "Scope SFC Station", Value: yieldFilters.sfcStation || "ALL" }, { Metric: "Scope Cesium Test Area", Value: yieldFilters.cesiumArea || "ALL" }, { Metric: "Scope Work Order", Value: yieldFilters.wo || "ALL" }, { Metric: "Scope Serial Number", Value: yieldFilters.sn || "ALL" }, { Metric: "Fecha desde", Value: yieldFilters.from || "ALL" }, { Metric: "Fecha hasta", Value: yieldFilters.to || "ALL" }
+            { Metric: "Work Orders", Value: model.kpi.orders }, { Metric: "Total Units", Value: model.kpi.units }, { Metric: "Clean Units", Value: model.kpi.clean }, { Metric: "Risk Units", Value: model.kpi.risk }, { Metric: "Clean Yield %", Value: traceOpsYieldFlowFmt(model.kpi.yield, 2) }, { Metric: "OJT Touch Rate %", Value: traceOpsYieldFlowFmt(model.kpi.touch, 2) }, { Metric: "Avg Reintegration", Value: traceOpsYieldFlowFmtHoursDays(model.kpi.avgReintegrationProxy, 1) }, { Metric: "Avg SMT to Stockin/FT", Value: traceOpsYieldFlowFmtHoursDays(model.kpi.avgLeadHours, 1) }, { Metric: "Scope BU", Value: yieldFilters.bu || "ALL" }, { Metric: "Scope Product Family", Value: yieldFilters.family || "ALL" }, { Metric: "Scope SKU", Value: yieldFilters.sku || "ALL" }, { Metric: "Scope Cisco Week", Value: yieldFilters.week || "ALL" }, { Metric: "Scope Line", Value: yieldFilters.line || "ALL" }, { Metric: "Scope SFC Station", Value: yieldFilters.sfcStation || "ALL" }, { Metric: "Scope Cesium Test Info", Value: yieldFilters.cesiumArea || "ALL" }, { Metric: "Scope Work Order", Value: yieldFilters.wo || "ALL" }, { Metric: "Scope Serial Number", Value: yieldFilters.sn || "ALL" }, { Metric: "Fecha desde", Value: yieldFilters.from || "ALL" }, { Metric: "Fecha hasta", Value: yieldFilters.to || "ALL" }
         ]);
         addSheet("Yield_by_WO", ["week", "line", "bu", "family", "sku", "wo", "yield", "touch", "total", "clean", "risk", "severity", "riskRate"], (model.rows || []).map(function (r) { var sev = traceOpsYieldWoSeverity(r); return Object.assign({}, r, { severity: sev.level, riskRate: traceOpsYieldFlowFmt(sev.rate, 2) + "%" }); }));
         addSheet("Weekly_Factory_Health", ["week", "period", "orders", "total", "clean", "risk", "ojtPct", "ft", "avgLeadHours"], model.weeklyTrend || []);
@@ -26333,7 +26348,8 @@ body.traceops-premium-shell [class*="impact"]{
                         f.label,
                         f.type === "date" ? React.createElement("input", { type: "date", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none" } }) :
                         f.type === "serial" ? React.createElement("input", { type: "search", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldCleanSn(e.target.value)); }, placeholder: "SN / barcode", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none", fontFamily: "monospace" } }) :
-                        React.createElement("input", { type: "search", defaultValue: (yieldFilters[f.key] && yieldFilters[f.key] !== "ALL") ? yieldFilters[f.key] : "", placeholder: yieldText("all") + " / escribir para filtrar", title: "Escribe y presiona Enter, o sal del campo para aplicar. Evita cargar miles de opciones.", onKeyDown: function (e) { if (e.key === "Enter") { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); e.currentTarget.blur(); } }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none", fontFamily: "inherit" } })));
+                        f.key === "wo" ? React.createElement("input", { type: "search", value: (yieldFilters[f.key] && yieldFilters[f.key] !== "ALL") ? yieldFilters[f.key] : "", placeholder: "WO / escribir para filtrar", title: "Work Order se mantiene como busqueda escrita. Presiona Enter o sal del campo para aplicar.", onChange: function (e) { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); }, onKeyDown: function (e) { if (e.key === "Enter") { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); e.currentTarget.blur(); } }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldNormFilter(e.target.value) || "ALL"); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#102A43", background: "#fff", outline: "none", fontFamily: "inherit" } }) :
+                        React.createElement("select", { value: (yieldFilters[f.key] && yieldFilters[f.key] !== "ALL") ? yieldFilters[f.key] : "ALL", onChange: function (e) { updateYieldFilter(f.key, e.target.value || "ALL"); }, title: "Selecciona una opcion del scope activo. Las listas se recalculan segun BU / familia / SKU / semana.", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 34px 0 10px", fontSize: 12, fontWeight: 800, color: "#102A43", background: "#fff", outline: "none", fontFamily: "inherit", cursor: "pointer", appearance: "auto" } }, [React.createElement("option", { key: f.key + "_ALL", value: "ALL" }, yieldText("all"))].concat(((f.items || [])).map(function (opt) { return React.createElement("option", { key: f.key + "_" + String(opt), value: opt }, opt); })) )));
                 }))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
@@ -39473,7 +39489,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -39610,7 +39626,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -41118,8 +41134,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -41139,7 +41155,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -41444,8 +41460,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   }
 
   function updateBadge(){
@@ -41591,7 +41607,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41764,7 +41780,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -42029,7 +42045,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -42055,7 +42071,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -42079,7 +42095,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var badgeText = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42253,7 +42269,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var badgeText = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -42276,7 +42292,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -42295,7 +42311,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28";
+  var versionText = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42399,7 +42415,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var label = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -42417,7 +42433,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var VERSION_LABEL = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -42667,7 +42683,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -43033,7 +43049,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 </script>
 
 
-<!-- SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter -->
+<!-- SMTinel V13.2.42 - Dropdown Syntax Safe Fix -->
 <style id="smtinel-v13-2-40-yield-filter-restore">
 /* Visual-only restoration for Yield Flow filter controls. Keeps Work Order as typed search. */
 .yf-filter-field[data-filter-key="businessUnit"] input,
@@ -43045,7 +43061,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.2.40 - Yield Flow Dropdown Filters Restore + Test Info Filter - 2026-05-28';
+  var VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -43090,5 +43106,23 @@ body.traceops-premium-shell .traceops-kpi-strip{
   setTimeout(function(){document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){b.textContent=VERSION;});},500);
 })();
 </script>
+
+
+<!-- SMTinel V13.2.42 - Dropdown Syntax Safe Fix -->
+<style id="smtinel-v13-2-41-real-dropdown-filter-polish">
+/* Visual-only polish for Yield Flow real dropdown selectors. Work Order remains typed search. */
+select option { font-weight: 700; }
+</style>
+<script id="smtinel-v13-2-41-version-badge">
+(function(){
+  var VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  function syncBadge(){
+    document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', syncBadge, {once:true}); else syncBadge();
+  setTimeout(syncBadge,500); setTimeout(syncBadge,2000);
+})();
+</script>
+
 </body>
 </html>
