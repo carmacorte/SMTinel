@@ -42307,7 +42307,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.2.19 - Common DB + BU Incremental Loader - 2026-05-28';
+  var label = 'SMTinel V13.2.38 - Fullscreen Module Layout - 2026-05-28';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -42325,7 +42325,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.2.21 - Common Enrichment Syntax Fix - 2026-05-28';
+  var VERSION_LABEL = 'SMTinel V13.2.38 - Fullscreen Module Layout - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -42744,6 +42744,91 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     content-visibility: auto;
     contain: layout paint style;
   }
+
+
+/* ==== V13.2.38 FULLSCREEN MODULE LAYOUT PATCH ====
+body.traceops-premium-shell .main-content,
+body.traceops-premium-shell .main-content.expanded{
+  width:100% !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+}
+
+@media (min-width:901px){
+  body.traceops-premium-shell .main-content{
+    margin-left:280px !important;
+    padding-left:24px !important;
+    padding-right:24px !important;
+  }
+  body.traceops-premium-shell .main-content.expanded{
+    margin-left:0 !important;
+    padding-left:24px !important;
+    padding-right:24px !important;
+  }
+}
+
+body.traceops-premium-shell .main-content > section,
+body.traceops-premium-shell .main-content > div,
+body.traceops-premium-shell .main-content .traceops-context,
+body.traceops-premium-shell .main-content .traceops-kpi-strip,
+body.traceops-premium-shell .main-content .traceops-analytics-grid,
+body.traceops-premium-shell .main-content .traceops-engineering-grid,
+body.traceops-premium-shell .main-content .traceops-calendar,
+body.traceops-premium-shell .main-content .traceops-material-panel,
+body.traceops-premium-shell .main-content .tcard,
+body.traceops-premium-shell .main-content .pf-card,
+body.traceops-premium-shell .main-content .cmp,
+body.traceops-premium-shell .main-content .toq-dashboard,
+body.traceops-premium-shell .main-content .smt-exec,
+body.traceops-premium-shell .main-content .ops-hero,
+body.traceops-premium-shell .main-content .saas-hero-card{
+  max-width:none !important;
+}
+
+body.traceops-premium-shell .main-content [class*="container"],
+body.traceops-premium-shell .main-content [class*="Container"],
+body.traceops-premium-shell .main-content [class*="wrapper"],
+body.traceops-premium-shell .main-content [class*="Wrapper"],
+body.traceops-premium-shell .main-content [class*="shell"],
+body.traceops-premium-shell .main-content [class*="Shell"]{
+  max-width:none !important;
+}
+
+body.traceops-premium-shell .traceops-analytics-grid{
+  grid-template-columns:minmax(320px,.85fr) minmax(0,1.55fr) !important;
+}
+
+body.traceops-premium-shell .traceops-engineering-grid,
+body.traceops-premium-shell .traceops-material-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+
+body.traceops-premium-shell .traceops-kpi-strip{
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+}
+
+@media (max-width:1180px){
+  body.traceops-premium-shell .traceops-analytics-grid,
+  body.traceops-premium-shell .traceops-engineering-grid,
+  body.traceops-premium-shell .traceops-material-grid{
+    grid-template-columns:1fr !important;
+  }
+  body.traceops-premium-shell .traceops-kpi-strip{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width:560px){
+  body.traceops-premium-shell .main-content,
+  body.traceops-premium-shell .main-content.expanded{
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+  body.traceops-premium-shell .traceops-kpi-strip{
+    grid-template-columns:1fr !important;
+  }
+}
+/* ==== END V13.2.38 FULLSCREEN MODULE LAYOUT PATCH ==== */
 </style>
 <script id="smtinel-fast-module-nav-v13-2-23">
 (function(){
