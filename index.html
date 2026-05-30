@@ -29096,10 +29096,49 @@ body.traceops-premium-shell [class*="impact"]{
             return Object.assign({}, b, { value:value });
         });
         var topFailures = failures.slice(0,4);
+        function recoveryExportCsvCell(value){
+            return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+        }
+        function recoveryDownloadText(filename, text, type){
+            try {
+                var blob = new Blob([text || ''], { type: type || 'text/plain;charset=utf-8;' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function(){ try { URL.revokeObjectURL(url); } catch(_) {} try { a.remove(); } catch(_) {} }, 250);
+            } catch (err) {
+                console.error('[SMTinel Recovery Export]', err);
+                try { alert('Recovery export could not be generated. See console for details.'); } catch(_) {}
+            }
+        }
+        function exportRecoveryIntelligenceCsv(){
+            var now = new Date().toISOString();
+            var lines = [];
+            lines.push(['Section','Metric','Value','Detail'].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','Generated At',now,'Recovery Intelligence active scope'].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','Total Bonepile Units',total,scopeChips.join(' | ')].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','Work Orders',workOrders,'Active / completed'].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','Models',models,'Unique models'].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','High Aging Risk',riskUnits,pct(riskUnits)+'% of total'].map(recoveryExportCsvCell).join(','));
+            lines.push(['Summary','Active Re-entry',activeReentry,'Recovery candidate pool'].map(recoveryExportCsvCell).join(','));
+            (buckets || []).forEach(function(b){
+                lines.push(['Aging Bucket',b.key,b.value,topStationText(b.id)].map(recoveryExportCsvCell).join(','));
+                stationRowsForBucket(b.id, 'volume').slice(0,25).forEach(function(r){
+                    lines.push(['Bucket Station',b.key,bucketStationValue(r,b.id),String((r.no != null ? r.no : '') + ' ' + (r.station || 'N/D')).trim()].map(recoveryExportCsvCell).join(','));
+                });
+            });
+            (topFailures || []).forEach(function(f, idx){
+                lines.push(['Top Failure',idx+1,Number(f.count || f.qty || f.units || 0),f.failureMode || f.mode || f.testinfo || f.symptom || 'N/D'].map(recoveryExportCsvCell).join(','));
+            });
+            recoveryDownloadText('smtinel_recovery_intelligence_export_' + now.slice(0,10) + '.csv', lines.join('\n'), 'text/csv;charset=utf-8;');
+        }
         return h('div',{id:'recovery-section' ,className:'smtinel-ri ri-visual-map',style:{display:'flex',flexDirection:'column',gap:14,marginBottom:14}},[
             h('section',{className:'ri-vm-header'},[
                 h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Intelligence · Bonepile Network Graph'),h('h2',null,'Bonepile Network Graph'),h('p',null,'Vista ejecutiva tipo grafo: Bonepile → Aging bucket → Estación actual → concentración de riesgo. Permite ubicar rápidamente dónde está detenido el inventario.')]),
-                h('div',{className:'ri-vm-toolbar'},[h('button',{type:'button'},'Filters'),h('button',{type:'button',className:'primary'},'Analyze'),h('button',{type:'button'},'Export')]), h('div',{className:'ri-vm-scope-chips'},scopeChips.map(function(x){ return h('span',{key:x},x); }))
+                h('div',{className:'ri-vm-toolbar'},[h('button',{type:'button'},'Filters'),h('button',{type:'button',className:'primary'},'Analyze'),h('button',{type:'button',onClick:function(){ exportRecoveryIntelligenceCsv(); },title:'Export Recovery Intelligence active scope to CSV'},'Export')]), h('div',{className:'ri-vm-scope-chips'},scopeChips.map(function(x){ return h('span',{key:x},x); }))
             ]),
             h('section',{className:'ri-vm-shell'},[
                 h('aside',{className:'ri-vm-left'},[
@@ -39489,7 +39528,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -39626,7 +39665,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -41134,8 +41173,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -41155,7 +41194,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -41460,8 +41499,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   }
 
   function updateBadge(){
@@ -41607,7 +41646,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -41780,7 +41819,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -42045,7 +42084,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var badge = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -42071,7 +42110,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -42095,7 +42134,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var badgeText = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42269,7 +42308,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var badgeText = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -42292,7 +42331,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var badge = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -42311,7 +42350,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28";
+  var versionText = "SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -42415,7 +42454,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var label = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -42433,7 +42472,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var VERSION_LABEL = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -42683,7 +42722,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var badge = 'SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -43061,7 +43100,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var VERSION='SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -43115,7 +43154,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.2.42 - Dropdown Syntax Safe Fix - 2026-05-28';
+  var VERSION='SMTinel V13.2.43 - Recovery Intelligence Export Fix - 2026-05-28';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -43126,3 +43165,4 @@ select option { font-weight: 700; }
 
 </body>
 </html>
+<!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
