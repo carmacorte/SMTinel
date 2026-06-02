@@ -43277,7 +43277,6 @@ body.traceops-premium-shell .traceops-kpi-strip{
   var VERSION='SMTinel V13.9.9 - Yield by Week Combo Chart - 2026-05-30';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
-  function pick(row, keys){return val(row, keys);}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
   function rows(){
     var pools=['TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS'];
@@ -43321,7 +43320,9 @@ body.traceops-premium-shell .traceops-kpi-strip{
     control.placeholder = type==='test' ? 'All / Test Info / Failure Mode' : control.placeholder;
   }
   function restore(){var r=rows(); if(!r.length) return;
-    var stations=dedupe(r.map(function(x){return String(pick(x,['station','Station','testArea','Test Area','TEST AREA','area','station_name'])).trim();}).filter(Boolean));
+    var stations=dedupe(r.map(function(x){return String((x&&(
+      x.station||x.Station||x.testArea||x['Test Area']||x['TEST AREA']||x.area||x.station_name||x['Station Name']||x.process||x.Process||x.sfcStation||x['SFC Station']
+    ))||'').trim();}).filter(Boolean));
     var bu=dedupe(filterKnown(r.map(function(x){return field(x,'bu')}), /^(ALL|N\/A|NA|NONE|UNKNOWN|TEST AREA|STATION|AOI|ICT|XRAY|FIVE_DX|NGFWBU|FIELDWORKS?|START|ROUTER|MRB)$/i).filter(function(v){
       return stations.indexOf(String(v||'').trim())<0;
     }));
@@ -44383,6 +44384,53 @@ document.addEventListener("DOMContentLoaded",sched);
 document.addEventListener("click",function(e){if(/Yield Flow|ZIP|Cargar|Scope|SFC|WO|Station|Filter|Refresh|Export/.test(tx(e.target)))setTimeout(sched,350)},true);
 })();
 </script>
+<style>
+body.traceops-premium-shell,
+body.traceops-premium-shell button,
+body.traceops-premium-shell input,
+body.traceops-premium-shell select,
+body.traceops-premium-shell textarea {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+body.traceops-premium-shell h1,
+body.traceops-premium-shell h2,
+body.traceops-premium-shell h3,
+body.traceops-premium-shell h4,
+body.traceops-premium-shell h5,
+body.traceops-premium-shell h6 {
+  line-height: 1.08 !important;
+  letter-spacing: -0.03em !important;
+}
+body.traceops-premium-shell .traceops-live-title h3,
+body.traceops-premium-shell .traceops-context-title,
+body.traceops-premium-shell .traceops-panel-head h3,
+body.traceops-premium-shell .traceops-engineering-card h4,
+body.traceops-premium-shell .traceops-calendar-head h3,
+body.traceops-premium-shell .traceops-kpi-value,
+body.traceops-premium-shell .traceops-kpi-label,
+body.traceops-premium-shell .traceops-context-subtitle,
+body.traceops-premium-shell .traceops-live-copy b,
+body.traceops-premium-shell .traceops-live-copy span,
+body.traceops-premium-shell .traceops-live-kpi .lbl,
+body.traceops-premium-shell .traceops-live-kpi .val,
+body.traceops-premium-shell .traceops-live-kpi .meta,
+body.traceops-premium-shell .traceops-live-badge {
+  font-size: inherit !important;
+}
+body.traceops-premium-shell .traceops-live-topbar,
+body.traceops-premium-shell .traceops-live-shell,
+body.traceops-premium-shell .traceops-context,
+body.traceops-premium-shell .traceops-panel,
+body.traceops-premium-shell .traceops-live-kpi,
+body.traceops-premium-shell .traceops-live-item,
+body.traceops-premium-shell .traceops-calendar-day,
+body.traceops-premium-shell .traceops-calendar-month-head,
+body.traceops-premium-shell .traceops-material-table th,
+body.traceops-premium-shell .traceops-material-table td {
+  font-size: 12px !important;
+}
+</style>
 
 </body>
 </html>
