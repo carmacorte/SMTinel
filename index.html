@@ -43277,6 +43277,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
   var VERSION='SMTinel V13.9.9 - Yield by Week Combo Chart - 2026-05-30';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
+  function pick(row, keys){return val(row, keys);}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
   function rows(){
     var pools=['TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS'];
