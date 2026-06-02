@@ -43272,10 +43272,29 @@ body.traceops-premium-shell .traceops-kpi-strip{
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
   function rows(){
-    var pools=['TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS','TRACEOPS_RISK_SUMMARY_ROWS','TRACEOPS_CESIUM_ROWS','TRACEOPS_SFC_ROWS'];
+    var pools=['TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS'];
     var out=[]; pools.forEach(function(k){var v=window[k]; if(Array.isArray(v)) out=out.concat(v);});
-    if(window.TRACEOPS_STATE){Object.keys(window.TRACEOPS_STATE).forEach(function(k){var v=window.TRACEOPS_STATE[k]; if(Array.isArray(v)&&/yield|cesium|sfc|risk|row/i.test(k)) out=out.concat(v);});}
+    if(window.TRACEOPS_STATE){Object.keys(window.TRACEOPS_STATE).forEach(function(k){var v=window.TRACEOPS_STATE[k]; if(Array.isArray(v)&&/yield|row/i.test(k)) out=out.concat(v);});}
     return out;
+  }
+  function filterKnown(values, rejectRe){
+    return values.filter(function(v){
+      var s=String(v||'').trim();
+      if(!s) return false;
+      if(rejectRe && rejectRe.test(s)) return false;
+      return true;
+    });
+  }
+  function dedupe(values){
+    var seen={}, out=[];
+    values.forEach(function(v){
+      var s=String(v||'').trim();
+      var k=s.toUpperCase();
+      if(!s||seen[k]) return;
+      seen[k]=1;
+      out.push(s);
+    });
+    return out.sort(function(a,b){return String(a).localeCompare(String(b));});
   }
   function field(row,type){
     if(type==='bu') return val(row,['bu','BU','businessUnit','business_unit']);
@@ -43294,10 +43313,15 @@ body.traceops-premium-shell .traceops-kpi-strip{
     control.placeholder = type==='test' ? 'All / Test Info / Failure Mode' : control.placeholder;
   }
   function restore(){var r=rows(); if(!r.length) return;
-    var bu=uniq(r.map(function(x){return field(x,'bu')}));
-    var fam=uniq(r.map(function(x){return field(x,'family')}));
-    var sku=uniq(r.map(function(x){return field(x,'sku')}));
-    var test=uniq(r.map(function(x){return field(x,'test')}));
+    var stations=dedupe(r.map(function(x){return String(pick(x,['station','Station','testArea','Test Area','TEST AREA','area','station_name'])).trim();}).filter(Boolean));
+    var bu=dedupe(filterKnown(r.map(function(x){return field(x,'bu')}), /^(ALL|N\/A|NA|NONE|UNKNOWN|TEST AREA|STATION|AOI|ICT|XRAY|FIVE_DX|NGFWBU|FIELDWORKS?|START|ROUTER|MRB)$/i).filter(function(v){
+      return stations.indexOf(String(v||'').trim())<0;
+    }));
+    var fam=dedupe(filterKnown(r.map(function(x){return field(x,'family')}), /^(ALL|N\/A|NA|NONE|UNKNOWN)$/i));
+    var sku=dedupe(filterKnown(r.map(function(x){return field(x,'sku')}), /^(ALL|N\/A|NA|NONE|UNKNOWN)$/i));
+    var test=dedupe(filterKnown(r.map(function(x){return field(x,'test')}), /^(ALL|N\/A|NA|NONE|UNKNOWN)$/i).filter(function(v){
+      return !/^(AOI|ICT|XRAY|FAILED ANALOG TEST|FAILED SHORTS TEST|FAIL|PASS|BU|BUSINESS UNIT|MODEL|SKU)$/i.test(String(v||'').trim());
+    }));
     attach(nearestControl(findLabel('BUSINESS UNIT')), 'bu', bu);
     attach(nearestControl(findLabel('MODEL / PRODUCT FAMILY'))||nearestControl(findLabel('PRODUCT FAMILY')), 'family', fam);
     attach(nearestControl(findLabel('SKU')), 'sku', sku);
@@ -44036,7 +44060,7 @@ function uut(r){return String(pick(r,["uuttype","Uuttype","uutType","model","Mod
 function loc(r){return String(pick(r,["location","Location","site","Site"])).trim()||"FJZ"}
 function qty(r){return num(pick(r,["Board Qty","boardQty","qty","Qty","quantity","Quantity"]),1)||1}
 function goal(r){var g=pick(r,["GOAL","Goal","goal","target","Target","ICT GOAL","AOI GOAL","FPY GOAL"]);return g===""?98:num(g,98)}
-function stations(){var m={};rawRows().forEach(function(r){var s=station(r).toUpperCase();if(s)m[s]=1});return Object.keys(m).sort()}
+function stations(){var m={},reject=/^(ALL|N\/A|NA|NONE|UNKNOWN|BUSINESS UNIT|BU|MODEL|SKU|FAMILY|AOI|ICT|XRAY|FAILED ANALOG TEST|FAILED SHORTS TEST|FIELDWORKS?|NGFWBU|START|ROUTER|MRB)$/i;rawRows().forEach(function(r){var s=station(r).trim();if(!s||reject.test(s))return;var hasYield=String(pick(r,["week","Week","fiscalWeek","Fiscal Week","workweek","Work Week","date","Date","testDate","Test Date","recTime","Rectime"])).trim()!==""||String(pick(r,["result","Result","status","Status","PASSFAIL","PassFail","pass_fail","testStatus"])).trim()!=="";if(!hasYield)return;m[s.toUpperCase()]=s});return Object.keys(m).map(function(k){return m[k]}).sort()}
 function data(st){var map={},rows=rawRows();st=String(st||"").toUpperCase();rows.forEach(function(r){var sr=station(r).toUpperCase();if(st&&sr!==st)return;var w=week(r),k=w+"|"+uut(r)+"|"+loc(r);if(!map[k])map[k]={week:w,uuttype:uut(r),location:loc(r),pass:0,fail:0,total:0,boardQty:0,goal:goal(r)};var n=qty(r);map[k].total+=n;map[k].boardQty+=n;if(result(r)==="FAIL")map[k].fail+=n;else map[k].pass+=n});return Object.keys(map).map(function(k){var r=map[k];r.yieldPct=r.total?r.pass/r.total*100:0;return r}).sort(function(a,b){return String(a.week).localeCompare(String(b.week))||a.yieldPct-b.yieldPct})}
 function csv(d,st){var h=["Week","Test Area","Uuttype","Location","Avg Yield","Board Qty","FP_yield_failqty","FP_yield_passqty","FP_yield_totqty","FP_yield_yield","Yield GOAL"];return [h.join(",")].concat(d.map(function(r){return [r.week,st,r.uuttype,r.location,pct(r.yieldPct),r.boardQty,r.fail,r.pass,r.total,pct(r.yieldPct),pct(r.goal)].map(q).join(",")})).join("\n")}
 function xls(d,st){var date=new Date().toLocaleString(),h='<html><head><meta charset="utf-8"><style>body{font-family:Segoe UI,Arial}h2{color:#145f7a}table{border-collapse:collapse;width:100%}th{background:#145f7a;color:#fff}td,th{border:1px solid #999;padding:6px}.bad{background:#f8d7da}.ok{background:#dff2e5}.warn{background:#fff3cd}</style></head><body><h2>Yield by Week - '+esc(st||"ALL TEST AREAS")+'</h2><p>Generated by SMTinel V13.9.9 · '+esc(date)+'</p><table><thead><tr><th>Week</th><th>Test Area</th><th>Uuttype</th><th>Location</th><th>Avg Yield</th><th>Board Qty</th><th>FP_yield_failqty</th><th>FP_yield_passqty</th><th>FP_yield_totqty</th><th>FP_yield_yield</th><th>Yield GOAL</th></tr></thead><tbody>';d.forEach(function(r){var c=r.yieldPct<r.goal?"bad":(r.yieldPct<98?"warn":"ok");h+='<tr class="'+c+'"><td>'+esc(r.week)+'</td><td>'+esc(st)+'</td><td>'+esc(r.uuttype)+'</td><td>'+esc(r.location)+'</td><td>'+pct(r.yieldPct)+'</td><td>'+r.boardQty+'</td><td>'+r.fail+'</td><td>'+r.pass+'</td><td>'+r.total+'</td><td>'+pct(r.yieldPct)+'</td><td>'+pct(r.goal)+'</td></tr>'});return h+'</tbody></table></body></html>'}
