@@ -6,7 +6,15 @@
 (function () {
   'use strict';
 
-  var WORKER_URL = 'yieldflow-zip-worker.js';
+  var WORKER_URL = (function () {
+    try {
+      var node = document.getElementById('smtinel-yieldflow-zip-worker-source');
+      if (node && node.textContent) {
+        return URL.createObjectURL(new Blob([node.textContent], { type: 'text/javascript' }));
+      }
+    } catch (_) {}
+    return 'yieldflow-zip-worker.js';
+  })();
   var DB_NAME = 'SMTinelYieldFlowZipCache';
   var DB_VERSION = 1;
   var STORE = 'parsedZipByHash';
