@@ -43320,7 +43320,9 @@ body.traceops-premium-shell .traceops-kpi-strip{
     control.placeholder = type==='test' ? 'All / Test Info / Failure Mode' : control.placeholder;
   }
   function restore(){var r=rows(); if(!r.length) return;
-    var stations=dedupe(r.map(function(x){return String(pick(x,['station','Station','testArea','Test Area','TEST AREA','area','station_name'])).trim();}).filter(Boolean));
+    var stations=dedupe(r.map(function(x){return String((x&&(
+      x.station||x.Station||x.testArea||x['Test Area']||x['TEST AREA']||x.area||x.station_name||x['Station Name']||x.process||x.Process||x.sfcStation||x['SFC Station']
+    ))||'').trim();}).filter(Boolean));
     var bu=dedupe(filterKnown(r.map(function(x){return field(x,'bu')}), /^(ALL|N\/A|NA|NONE|UNKNOWN|TEST AREA|STATION|AOI|ICT|XRAY|FIVE_DX|NGFWBU|FIELDWORKS?|START|ROUTER|MRB)$/i).filter(function(v){
       return stations.indexOf(String(v||'').trim())<0;
     }));
