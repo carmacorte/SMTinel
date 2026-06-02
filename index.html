@@ -25521,7 +25521,14 @@ body.traceops-premium-shell [class*="impact"]{
     }
     function traceOpsBoardTryPdfUrls() {
         var filename = traceOpsBoardGetPdfFilename(yieldFilters.family);
-        return ["./" + filename, filename, "./board-impact-assets/" + filename, "board-impact-assets/" + filename];
+        return [
+            "./docs/datasheets/" + filename,
+            "docs/datasheets/" + filename,
+            "./board-impact-assets/" + filename,
+            "board-impact-assets/" + filename,
+            "./" + filename,
+            filename
+        ];
     }
     var TRACEOPS_BOARD_REF_BOXES = {
         "L1_PSW1": {
