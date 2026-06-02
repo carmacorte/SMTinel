@@ -37346,6 +37346,107 @@ body.traceops-premium-shell .traceops-material-table th,
 body.traceops-premium-shell .traceops-material-table td {
   font-size: 12px !important;
 }
+body.traceops-premium-shell{
+  --smt-bg-deep:#0a0e1a;
+  --smt-bg-surface:#111827;
+  --smt-bg-elevated:#1a1f2e;
+  --smt-bg-card:#151b2b;
+  --smt-bg-hover:#1e2538;
+  --smt-accent-primary:#3b82f6;
+  --smt-accent-secondary:#06b6d4;
+  --smt-accent-success:#10b981;
+  --smt-accent-warning:#f59e0b;
+  --smt-accent-danger:#ef4444;
+  --smt-text-primary:#f1f5f9;
+  --smt-text-secondary:#94a3b8;
+  --smt-text-muted:#64748b;
+  --smt-border-subtle:rgba(148,163,184,.08);
+  --smt-border-medium:rgba(148,163,184,.12);
+  --smt-border-strong:rgba(148,163,184,.2);
+  background:var(--smt-bg-deep) !important;
+  color:var(--smt-text-primary) !important;
+}
+body.traceops-premium-shell::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(59,130,246,.18), transparent 28%),
+    radial-gradient(circle at 85% 0%, rgba(6,182,212,.12), transparent 22%),
+    linear-gradient(180deg, rgba(255,255,255,.02), transparent 22%, rgba(0,0,0,.08));
+  z-index:-1;
+}
+body.traceops-premium-shell .sidebar{
+  width:260px;
+  background:linear-gradient(180deg, var(--smt-bg-surface) 0%, var(--smt-bg-deep) 100%) !important;
+  border-right:1px solid var(--smt-border-medium);
+  box-shadow:20px 0 40px rgba(0,0,0,.28);
+}
+body.traceops-premium-shell .saas-topbar{
+  left:260px;
+  height:64px;
+  background:rgba(10,14,26,.88) !important;
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--smt-border-medium);
+}
+body.traceops-premium-shell .saas-topbar-title,
+body.traceops-premium-shell .sidebar-brand h2,
+body.traceops-premium-shell .ops-hero-title,
+body.traceops-premium-shell .traceops-live-title h3,
+body.traceops-premium-shell .traceops-context-title,
+body.traceops-premium-shell .traceops-panel-head h3,
+body.traceops-premium-shell .traceops-engineering-card h4{
+  letter-spacing:-0.03em !important;
+  font-weight:800 !important;
+}
+body.traceops-premium-shell .traceops-context,
+body.traceops-premium-shell .traceops-panel,
+body.traceops-premium-shell .traceops-live-kpi,
+body.traceops-premium-shell .traceops-live-item,
+body.traceops-premium-shell .traceops-calendar-day,
+body.traceops-premium-shell .saas-hero-card,
+body.traceops-premium-shell .traceops-engineering-card,
+body.traceops-premium-shell .traceops-calendar,
+body.traceops-premium-shell .tcard,
+body.traceops-premium-shell .pf-card,
+body.traceops-premium-shell .cmp,
+body.traceops-premium-shell .up,
+body.traceops-premium-shell .prog,
+body.traceops-premium-shell .api-bar,
+body.traceops-premium-shell .picker-box,
+body.traceops-premium-shell .lb-box,
+body.traceops-premium-shell .img-panel,
+body.traceops-premium-shell .ic-wrap{
+  background:rgba(17,24,39,.94) !important;
+  color:var(--smt-text-primary) !important;
+  border:1px solid var(--smt-border-subtle) !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.22) !important;
+}
+body.traceops-premium-shell .sidebar-btn:hover,
+body.traceops-premium-shell .traceops-live-item:hover,
+body.traceops-premium-shell .traceops-calendar-day:hover{
+  background:var(--smt-bg-hover) !important;
+}
+body.traceops-premium-shell .sidebar-btn.active,
+body.traceops-premium-shell .traceops-tab.active,
+body.traceops-premium-shell .traceops-calendar-chip.active,
+body.traceops-premium-shell .traceops-calendar-btn.active{
+  background:linear-gradient(90deg, rgba(59,130,246,.18), rgba(6,182,212,.08)) !important;
+  color:var(--smt-accent-primary) !important;
+}
+body.traceops-premium-shell .traceops-live-badge,
+body.traceops-premium-shell .sidebar-nuevo,
+body.traceops-premium-shell .ops-hero-btn.primary,
+body.traceops-premium-shell .saas-header-btn.primary{
+  background:linear-gradient(135deg, var(--smt-accent-primary), var(--smt-accent-secondary)) !important;
+  color:#fff !important;
+  box-shadow:0 8px 24px rgba(59,130,246,.24) !important;
+}
+body.traceops-premium-shell .traceops-material-table th,
+body.traceops-premium-shell .traceops-material-table td{
+  border-color:rgba(148,163,184,.12) !important;
+}
 </style>
 </body>
 </html>
