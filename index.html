@@ -44307,36 +44307,31 @@ function xls(d,st){var date=new Date().toLocaleString(),h='<html><head><meta cha
 function dl(name,type,content){var a=document.createElement("a"),b=new Blob([content],{type:type});a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
 function removeDuplicates(){document.querySelectorAll(".smt-ybw,.smt-ybw4,.smt-ybw5,.smt-ybw6,.smt-ybw7,.smt-ybw8").forEach(function(n){n.remove()});var all=[].slice.call(document.querySelectorAll(".smt-ybw9"));all.slice(1).forEach(function(n){n.remove()})}
 function comboSvg(w){
-  var W=Math.max(960,w.length*115+150),H=390,L=62,R=30,T=38,CH=210,BT=98;
+  var W=Math.max(960,w.length*115+150),H=430,L=62,R=30,T=38,CH=210,BT=98;
   var maxQty=Math.max(1, ...w.map(function(r){return r.total}));
   var step=(W-L-R)/Math.max(1,w.length), barW=Math.max(18,Math.min(38,step*.32));
   function x(i){return L+step*i+step/2}
   function yPct(v){return T+CH-(Math.max(0,Math.min(120,v))/120)*CH}
-  function yQty(v){return T+CH-(v/maxQty)*CH}
-  var s='<div class="smt-ybw9-chart-title">▣ Yield vs Target by Station</div><div class="smt-ybw9-chart-scroll"><svg class="smt-ybw9-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMinYMin meet">';
+  var s='<div class="smt-ybw9-chart-title">Yield vs Target by Station</div><div class="smt-ybw9-chart-scroll"><svg class="smt-ybw9-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMinYMin meet">';
   [0,20,40,60,80,100,120].forEach(function(v){var y=yPct(v);s+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="#e6eef7"/><text x="'+(L-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="#333">'+v.toFixed(0)+'.00%</text>'});
   s+='<line x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+(T+CH)+'" stroke="#777"/><line x1="'+L+'" y1="'+(T+CH)+'" x2="'+(W-R)+'" y2="'+(T+CH)+'" stroke="#222"/>';
   var ypts=[],gpts=[];
-  w.forEach(function(r,i){var xi=x(i),passH=(r.pass/maxQty)*CH,failH=(r.fail/maxQty)*CH,base=T+CH,py=base-passH,fy=py-failH,cy=classify(r.yieldPct,r.goal);
+  w.forEach(function(r,i){var xi=x(i),passH=(r.pass/maxQty)*CH,failH=(r.fail/maxQty)*CH,base=T+CH,py=base-passH,fy=py-failH;
     s+='<rect x="'+(xi-barW/2)+'" y="'+py+'" width="'+barW+'" height="'+Math.max(0,passH)+'" fill="#00b050"/>';
     s+='<rect x="'+(xi-barW/2)+'" y="'+fy+'" width="'+barW+'" height="'+Math.max(0,failH)+'" fill="#ff0000"/>';
-    s+='<line x1="'+(xi-step/2)+'" y1="'+(base+1)+'" x2="'+(xi-step/2)+'" y2="'+(base+70)+'" stroke="#222"/>';
-    s+='<text x="'+xi+'" y="'+(base+22)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#102a43">'+esc(r.week).replace(/ /g,' ')+'</text>';
+    s+='<line x1="'+(xi-step/2)+'" y1="'+(base+1)+'" x2="'+(xi-step/2)+'" y2="'+(base+54)+'" stroke="#222"/>';
+    s+='<text x="'+xi+'" y="'+(base+20)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#102a43">'+esc(r.week).replace(/ /g,' ')+'</text>';
     var yp=yPct(r.yieldPct), gp=yPct(r.goal); ypts.push(xi+','+yp); gpts.push(xi+','+gp);
-    var mark=r.yieldPct>=r.goal?'▲':'▼',mc=r.yieldPct>=r.goal?'#00b050':'#ff0000';
+    var mark=r.yieldPct>=r.goal?'UP':'DOWN',mc=r.yieldPct>=r.goal?'#00b050':'#ff0000';
     s+='<text x="'+xi+'" y="'+(yp-9)+'" text-anchor="middle" font-size="12" font-weight="900" fill="'+mc+'">'+mark+' '+pct(r.yieldPct)+'</text>';
-    s+='<text x="'+xi+'" y="'+(base+258)+'" text-anchor="middle" font-size="11" fill="#102a43">'+r.fail+'</text>';
-    s+='<text x="'+xi+'" y="'+(base+282)+'" text-anchor="middle" font-size="11" fill="#102a43">'+r.pass+'</text>';
-    s+='<text x="'+xi+'" y="'+(base+306)+'" text-anchor="middle" font-size="11" fill="#102a43">'+pct(r.goal)+'</text>';
-    s+='<text x="'+xi+'" y="'+(base+330)+'" text-anchor="middle" font-size="11" fill="#102a43">'+pct(r.yieldPct)+'</text>';
   });
   s+='<polyline fill="none" stroke="#ffc000" stroke-width="3" points="'+gpts.join(' ')+'"/>';
   s+='<polyline fill="none" stroke="#0070c0" stroke-width="4" points="'+ypts.join(' ')+'"/>';
   w.forEach(function(r,i){s+='<circle cx="'+x(i)+'" cy="'+yPct(r.yieldPct)+'" r="4" fill="#0070c0"/>'});
-  var base=T+CH;
-  s+='<rect x="'+L+'" y="'+(base+94)+'" width="'+(W-L-R)+'" height="96" fill="#fff" stroke="#222"/>';
-  ['Fail','Pass','Goal','Yield'].forEach(function(l,ri){var y=base+116+ri*24;s+='<text x="'+(L-15)+'" y="'+y+'" text-anchor="end" font-size="11" font-weight="800">'+l+'</text><line x1="'+L+'" y1="'+(base+94+ri*24)+'" x2="'+(W-R)+'" y2="'+(base+94+ri*24)+'" stroke="#ccc"/>'});
-  w.forEach(function(r,i){var xi=x(i);s+='<line x1="'+(xi-step/2)+'" y1="'+(base+94)+'" x2="'+(xi-step/2)+'" y2="'+(base+190)+'" stroke="#999"/>'});
+  var gridTop=T+CH+84, gridRowH=24, gridBottom=gridTop+gridRowH*5;
+  s+='<rect x="'+L+'" y="'+gridTop+'" width="'+(W-L-R)+'" height="'+(gridRowH*5)+'" fill="#fff" stroke="#222"/>';
+  ['Week','Fail','Pass','Goal','Yield'].forEach(function(l,ri){var y=gridTop+18+ri*gridRowH;s+='<text x="'+(L-15)+'" y="'+y+'" text-anchor="end" font-size="11" font-weight="800">'+l+'</text><line x1="'+L+'" y1="'+(gridTop+ri*gridRowH)+'" x2="'+(W-R)+'" y2="'+(gridTop+ri*gridRowH)+'" stroke="#ccc"/>'});
+  w.forEach(function(r,i){var xi=x(i),cx=xi-step/2,sx=Math.max(0,Math.min(W-R-cx,step));s+='<line x1="'+cx+'" y1="'+gridTop+'" x2="'+cx+'" y2="'+gridBottom+'" stroke="#999"/>';s+='<text x="'+(cx+sx/2)+'" y="'+(gridTop+18)+'" text-anchor="middle" font-size="11" font-weight="900" fill="#102a43">'+esc(r.week)+'</text>';s+='<text x="'+(cx+sx/2)+'" y="'+(gridTop+42)+'" text-anchor="middle" font-size="11" fill="#102a43">'+r.fail+'</text>';s+='<text x="'+(cx+sx/2)+'" y="'+(gridTop+66)+'" text-anchor="middle" font-size="11" fill="#102a43">'+r.pass+'</text>';s+='<text x="'+(cx+sx/2)+'" y="'+(gridTop+90)+'" text-anchor="middle" font-size="11" fill="#102a43">'+pct(r.goal)+'</text>';s+='<text x="'+(cx+sx/2)+'" y="'+(gridTop+114)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#102a43">'+pct(r.yieldPct)+'</text>'});
   s+='</svg></div><div class="smt-ybw9-legend"><span class="smt-ybw9-lg"><i class="smt-ybw9-swatch fail"></i>Fail</span><span class="smt-ybw9-lg"><i class="smt-ybw9-swatch pass"></i>Pass</span><span class="smt-ybw9-lg"><i class="smt-ybw9-swatch goal"></i>Goal</span><span class="smt-ybw9-lg"><i class="smt-ybw9-swatch yield"></i>Yield</span></div>';
   return s;
 }
