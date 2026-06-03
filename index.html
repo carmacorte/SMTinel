@@ -44217,7 +44217,7 @@ body.traceops-premium-shell .traceops-material-table td {
 
 
 <!-- SMTinel Yield Flow Worker ZIP Import Patch - clean external load 2026-06-02 -->
-<script src="yieldflow-main-thread-patch.js"></script>
+<!-- External worker patch file was not bundled with index (14); keep the inline performance hotfix below active and avoid a red script-load banner. -->
 <script id="smtinel-yieldflow-v13-10-performance-hotfix">
 (function(){
   'use strict';
@@ -44256,6 +44256,242 @@ body.traceops-premium-shell .traceops-material-table td {
   };
 }());
 </script>
+
+<style id="smtinel-topbar-unified-v14">
+/* Unified top strip: one visual band, consistent badges, no stacked glass layers. */
+:root{
+  --smtinel-topbar-h:74px;
+  --smtinel-topbar-bg:linear-gradient(180deg,rgba(252,253,250,.97),rgba(239,244,236,.94));
+  --smtinel-topbar-line:rgba(57,64,34,.16);
+  --smtinel-topbar-ink:#13240f;
+  --smtinel-topbar-muted:#5f6c55;
+  --smtinel-topbar-chip:rgba(255,255,255,.76);
+  --smtinel-topbar-chip-line:rgba(57,64,34,.18);
+  --smtinel-topbar-primary:#1f5f99;
+  --smtinel-topbar-primary-2:#1f6f58;
+}
+html body .saas-topbar,
+html body .saas-topbar.sidebar-collapsed,
+html body.traceops-premium-shell .saas-topbar,
+html body.traceops-premium-shell .saas-topbar.sidebar-collapsed{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  max-width:100% !important;
+  height:var(--smtinel-topbar-h) !important;
+  min-height:var(--smtinel-topbar-h) !important;
+  display:grid !important;
+  grid-template-columns:minmax(290px,36vw) minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:16px !important;
+  padding:10px clamp(16px,2vw,28px) !important;
+  overflow:hidden !important;
+  background:var(--smtinel-topbar-bg) !important;
+  border:0 !important;
+  border-bottom:1px solid var(--smtinel-topbar-line) !important;
+  border-radius:0 0 18px 18px !important;
+  box-shadow:0 10px 26px rgba(9,16,6,.075) !important;
+  backdrop-filter:blur(18px) saturate(1.08) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08) !important;
+  transform:none !important;
+}
+html body .saas-topbar-left,
+html body.traceops-premium-shell .saas-topbar-left{
+  min-width:0 !important;
+  width:auto !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  overflow:hidden !important;
+}
+html body .saas-topbar-brand-wrap,
+html body.traceops-premium-shell .saas-topbar-brand-wrap{
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body .app-logo-frame.topbar-logo,
+html body.traceops-premium-shell .app-logo-frame.topbar-logo{
+  width:42px !important;
+  height:42px !important;
+  min-width:42px !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,.58) !important;
+  border:1px solid rgba(57,64,34,.14) !important;
+  box-shadow:none !important;
+}
+html body .saas-topbar-brand,
+html body.traceops-premium-shell .saas-topbar-brand{
+  min-width:0 !important;
+  max-width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+html body .saas-topbar-title,
+html body.traceops-premium-shell .saas-topbar-title{
+  color:var(--smtinel-topbar-ink) !important;
+  font-size:15px !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  letter-spacing:0 !important;
+}
+html body .saas-topbar-subtitle,
+html body.traceops-premium-shell .saas-topbar-subtitle{
+  color:var(--smtinel-topbar-muted) !important;
+  font-size:11px !important;
+  line-height:1.2 !important;
+  letter-spacing:0 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+html body .saas-topbar-actions,
+html body.traceops-premium-shell .saas-topbar-actions{
+  min-width:0 !important;
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding:0 0 2px !important;
+  scrollbar-width:none !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+html body .saas-topbar-actions::-webkit-scrollbar,
+html body.traceops-premium-shell .saas-topbar-actions::-webkit-scrollbar{
+  display:none !important;
+}
+html body .saas-topbar-actions > *,
+html body.traceops-premium-shell .saas-topbar-actions > *{
+  flex:0 0 auto !important;
+}
+html body .saas-topbar .saas-menu-btn,
+html body .saas-topbar .saas-header-btn,
+html body .saas-topbar .saas-header-pill,
+html body.traceops-premium-shell .saas-topbar .saas-menu-btn,
+html body.traceops-premium-shell .saas-topbar .saas-header-btn,
+html body.traceops-premium-shell .saas-topbar .saas-header-pill{
+  height:42px !important;
+  min-height:42px !important;
+  border-radius:999px !important;
+  padding:0 14px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  background:var(--smtinel-topbar-chip) !important;
+  border:1px solid var(--smtinel-topbar-chip-line) !important;
+  color:#314020 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72) !important;
+  transform:none !important;
+  white-space:nowrap !important;
+  line-height:1 !important;
+}
+html body .saas-topbar .saas-menu-btn{
+  width:42px !important;
+  padding:0 !important;
+}
+html body .saas-topbar .saas-header-btn:hover,
+html body .saas-topbar .saas-menu-btn:hover,
+html body .saas-topbar .saas-header-pill:hover,
+html body.traceops-premium-shell .saas-topbar .saas-header-btn:hover,
+html body.traceops-premium-shell .saas-topbar .saas-menu-btn:hover,
+html body.traceops-premium-shell .saas-topbar .saas-header-pill:hover{
+  transform:none !important;
+  background:rgba(255,255,255,.9) !important;
+  border-color:rgba(57,64,34,.24) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 5px 14px rgba(9,16,6,.06) !important;
+}
+html body .saas-topbar .saas-header-btn.primary,
+html body.traceops-premium-shell .saas-topbar .saas-header-btn.primary{
+  color:#fff !important;
+  background:linear-gradient(135deg,var(--smtinel-topbar-primary),var(--smtinel-topbar-primary-2)) !important;
+  border-color:rgba(31,95,153,.32) !important;
+  box-shadow:0 8px 20px rgba(31,95,153,.18),inset 0 1px 0 rgba(255,255,255,.20) !important;
+}
+html body .saas-topbar .saas-header-btn.primary:hover,
+html body.traceops-premium-shell .saas-topbar .saas-header-btn.primary:hover{
+  background:linear-gradient(135deg,#174f84,#165f4a) !important;
+  box-shadow:0 10px 24px rgba(31,95,153,.22),inset 0 1px 0 rgba(255,255,255,.24) !important;
+}
+html body .saas-topbar .saas-header-pill > button,
+html body.traceops-premium-shell .saas-topbar .saas-header-pill > button{
+  height:28px !important;
+  min-width:34px !important;
+  padding:0 10px !important;
+  border-radius:999px !important;
+  line-height:1 !important;
+  box-shadow:none !important;
+}
+html body .saas-topbar .saas-header-pill .hide-mobile,
+html body.traceops-premium-shell .saas-topbar .saas-header-pill .hide-mobile{
+  color:#52624b !important;
+}
+html body .main-content,
+html body .main-content.expanded,
+html body.traceops-premium-shell .main-content,
+html body.traceops-premium-shell .main-content.expanded{
+  padding-top:calc(var(--smtinel-topbar-h) + 22px) !important;
+}
+@media(max-width:900px){
+  :root{ --smtinel-topbar-h:66px; }
+  html body .saas-topbar,
+  html body .saas-topbar.sidebar-collapsed,
+  html body.traceops-premium-shell .saas-topbar,
+  html body.traceops-premium-shell .saas-topbar.sidebar-collapsed{
+    grid-template-columns:42px minmax(0,1fr) !important;
+    gap:10px !important;
+    padding:9px 12px !important;
+    border-radius:0 0 16px 16px !important;
+  }
+  html body .saas-topbar-brand-wrap,
+  html body.traceops-premium-shell .saas-topbar-brand-wrap{
+    display:none !important;
+  }
+  html body .saas-topbar .saas-header-btn,
+  html body .saas-topbar .saas-header-pill,
+  html body.traceops-premium-shell .saas-topbar .saas-header-btn,
+  html body.traceops-premium-shell .saas-topbar .saas-header-pill{
+    height:38px !important;
+    min-height:38px !important;
+    padding:0 11px !important;
+    font-size:10.5px !important;
+  }
+}
+@media(max-width:560px){
+  :root{ --smtinel-topbar-h:60px; }
+  html body .saas-topbar,
+  html body .saas-topbar.sidebar-collapsed,
+  html body.traceops-premium-shell .saas-topbar,
+  html body.traceops-premium-shell .saas-topbar.sidebar-collapsed{
+    padding:7px 10px !important;
+    gap:8px !important;
+  }
+  html body .saas-topbar-actions,
+  html body.traceops-premium-shell .saas-topbar-actions{
+    justify-content:flex-start !important;
+  }
+  html body .saas-topbar .saas-header-btn,
+  html body .saas-topbar .saas-header-pill,
+  html body.traceops-premium-shell .saas-topbar .saas-header-btn,
+  html body.traceops-premium-shell .saas-topbar .saas-header-pill{
+    height:36px !important;
+    min-height:36px !important;
+    padding:0 10px !important;
+  }
+}
+</style>
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
