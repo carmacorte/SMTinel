@@ -36303,6 +36303,122 @@ html body [data-traceops-rcca-form="1"] [style*="position: sticky"][style*="bott
 })();
 </script>
 
+<style id="smtinel-command-center-lite-hero-critical-v1">
+/* Command Center: first paint without transparent hero hotspots or heavy artwork decode. */
+html body #smtinel-command-center.smtinel-command-center,
+html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  margin:0 auto 24px !important;
+  gap:14px !important;
+  padding:0 !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas,
+html body #smtinel-command-center.smtinel-command-center .smtinel-cc-canvas,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas{
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  height:clamp(340px,52svh,620px) !important;
+  min-height:0 !important;
+  max-height:620px !important;
+  aspect-ratio:1536 / 674 !important;
+  margin:0 auto 14px !important;
+  transform:none !important;
+  border-radius:24px !important;
+  border:1px solid rgba(57,64,34,.14) !important;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(31,95,153,.14), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(34,166,101,.16), transparent 31%),
+    radial-gradient(circle at 55% 78%, rgba(242,184,7,.14), transparent 36%),
+    linear-gradient(135deg,#f7faf7 0%,#edf4f3 48%,#f8f4ee 100%) !important;
+  background-size:auto !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+  box-shadow:0 14px 34px rgba(9,16,6,.08) !important;
+  overflow:hidden !important;
+  isolation:isolate !important;
+  contain:layout paint style !important;
+  pointer-events:none !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas::before,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  background-image:
+    linear-gradient(to right, rgba(57,64,34,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(57,64,34,.045) 1px, transparent 1px) !important;
+  background-size:42px 42px !important;
+  opacity:.58 !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas::after,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::after{
+  content:"" !important;
+  position:absolute !important;
+  left:8% !important;
+  right:8% !important;
+  top:50% !important;
+  height:2px !important;
+  transform:translateY(-50%) !important;
+  pointer-events:none !important;
+  background:linear-gradient(90deg, transparent, rgba(31,95,153,.35), rgba(34,166,101,.32), transparent) !important;
+  box-shadow:0 0 26px rgba(31,95,153,.12) !important;
+  opacity:.9 !important;
+}
+html body #smtinel-command-center .smtinel-cc-vignette,
+html body #smtinel-command-center .smtinel-cc-title,
+html body #smtinel-command-center .smtinel-cc-kpi-strip,
+html body #smtinel-command-center .smtinel-cc-hotspot,
+html body #smtinel-command-center .smtinel-cc-hotspot-glass,
+html body #smtinel-command-center .smtinel-cc-pulse{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  animation:none !important;
+}
+html body #smtinel-command-center .smtinel-cc-system,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system{
+  position:relative !important;
+  z-index:1 !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  margin:0 auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:14px !important;
+}
+@media(max-width:820px){
+  html body #smtinel-command-center.smtinel-command-center,
+  html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 auto 18px !important;
+    padding:0 8px 96px !important;
+  }
+  html body #smtinel-command-center .smtinel-cc-canvas,
+  html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas{
+    width:100% !important;
+    height:clamp(260px,42dvh,420px) !important;
+    max-height:420px !important;
+    border-radius:18px !important;
+    margin:0 auto 12px !important;
+  }
+  html body #smtinel-command-center .smtinel-cc-system,
+  html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system{
+    grid-template-columns:1fr !important;
+    width:100% !important;
+  }
+}
+</style>
+
 <script>
 function _s2dismiss(){
   localStorage.setItem("smtinel_v2_onboarding_seen","1");
@@ -44489,6 +44605,121 @@ html body.traceops-premium-shell .main-content.expanded{
     height:36px !important;
     min-height:36px !important;
     padding:0 10px !important;
+  }
+}
+</style>
+<style id="smtinel-command-center-lite-hero-final-v1">
+/* Final priority mirror: keep Command Center hero lightweight after all late patches load. */
+html body #smtinel-command-center.smtinel-command-center,
+html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  margin:0 auto 24px !important;
+  gap:14px !important;
+  padding:0 !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas,
+html body #smtinel-command-center.smtinel-command-center .smtinel-cc-canvas,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas{
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  height:clamp(340px,52svh,620px) !important;
+  min-height:0 !important;
+  max-height:620px !important;
+  aspect-ratio:1536 / 674 !important;
+  margin:0 auto 14px !important;
+  transform:none !important;
+  border-radius:24px !important;
+  border:1px solid rgba(57,64,34,.14) !important;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(31,95,153,.14), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(34,166,101,.16), transparent 31%),
+    radial-gradient(circle at 55% 78%, rgba(242,184,7,.14), transparent 36%),
+    linear-gradient(135deg,#f7faf7 0%,#edf4f3 48%,#f8f4ee 100%) !important;
+  background-size:auto !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+  box-shadow:0 14px 34px rgba(9,16,6,.08) !important;
+  overflow:hidden !important;
+  isolation:isolate !important;
+  contain:layout paint style !important;
+  pointer-events:none !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas::before,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  background-image:
+    linear-gradient(to right, rgba(57,64,34,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(57,64,34,.045) 1px, transparent 1px) !important;
+  background-size:42px 42px !important;
+  opacity:.58 !important;
+}
+html body #smtinel-command-center .smtinel-cc-canvas::after,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::after{
+  content:"" !important;
+  position:absolute !important;
+  left:8% !important;
+  right:8% !important;
+  top:50% !important;
+  height:2px !important;
+  transform:translateY(-50%) !important;
+  pointer-events:none !important;
+  background:linear-gradient(90deg, transparent, rgba(31,95,153,.35), rgba(34,166,101,.32), transparent) !important;
+  box-shadow:0 0 26px rgba(31,95,153,.12) !important;
+  opacity:.9 !important;
+}
+html body #smtinel-command-center .smtinel-cc-vignette,
+html body #smtinel-command-center .smtinel-cc-title,
+html body #smtinel-command-center .smtinel-cc-kpi-strip,
+html body #smtinel-command-center .smtinel-cc-hotspot,
+html body #smtinel-command-center .smtinel-cc-hotspot-glass,
+html body #smtinel-command-center .smtinel-cc-pulse{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  animation:none !important;
+}
+html body #smtinel-command-center .smtinel-cc-system,
+html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system,
+html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system{
+  position:relative !important;
+  z-index:1 !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  width:min(100%,1260px) !important;
+  max-width:1260px !important;
+  margin:0 auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:14px !important;
+}
+@media(max-width:820px){
+  html body #smtinel-command-center.smtinel-command-center,
+  html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 auto 18px !important;
+    padding:0 8px 96px !important;
+  }
+  html body #smtinel-command-center .smtinel-cc-canvas,
+  html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas{
+    width:100% !important;
+    height:clamp(260px,42dvh,420px) !important;
+    max-height:420px !important;
+    border-radius:18px !important;
+    margin:0 auto 12px !important;
+  }
+  html body #smtinel-command-center .smtinel-cc-system,
+  html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-system{
+    grid-template-columns:1fr !important;
+    width:100% !important;
   }
 }
 </style>
