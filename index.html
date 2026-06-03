@@ -36304,7 +36304,7 @@ html body [data-traceops-rcca-form="1"] [style*="position: sticky"][style*="bott
 </script>
 
 <style id="smtinel-command-center-lite-hero-critical-v1">
-/* Command Center: first paint without transparent hero hotspots or heavy artwork decode. */
+/* Command Center: keep the original hero image, without transparent hotspot overlays. */
 html body #smtinel-command-center.smtinel-command-center,
 html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center,
 html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
@@ -36328,12 +36328,7 @@ html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-c
   transform:none !important;
   border-radius:24px !important;
   border:1px solid rgba(57,64,34,.14) !important;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(31,95,153,.14), transparent 30%),
-    radial-gradient(circle at 82% 18%, rgba(34,166,101,.16), transparent 31%),
-    radial-gradient(circle at 55% 78%, rgba(242,184,7,.14), transparent 36%),
-    linear-gradient(135deg,#f7faf7 0%,#edf4f3 48%,#f8f4ee 100%) !important;
-  background-size:auto !important;
+  background-size:cover !important;
   background-position:center center !important;
   background-repeat:no-repeat !important;
   box-shadow:0 14px 34px rgba(9,16,6,.08) !important;
@@ -36344,29 +36339,13 @@ html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-c
 }
 html body #smtinel-command-center .smtinel-cc-canvas::before,
 html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::before{
-  content:"" !important;
-  position:absolute !important;
-  inset:0 !important;
-  pointer-events:none !important;
-  background-image:
-    linear-gradient(to right, rgba(57,64,34,.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(57,64,34,.045) 1px, transparent 1px) !important;
-  background-size:42px 42px !important;
-  opacity:.58 !important;
+  content:none !important;
+  display:none !important;
 }
 html body #smtinel-command-center .smtinel-cc-canvas::after,
 html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::after{
-  content:"" !important;
-  position:absolute !important;
-  left:8% !important;
-  right:8% !important;
-  top:50% !important;
-  height:2px !important;
-  transform:translateY(-50%) !important;
-  pointer-events:none !important;
-  background:linear-gradient(90deg, transparent, rgba(31,95,153,.35), rgba(34,166,101,.32), transparent) !important;
-  box-shadow:0 0 26px rgba(31,95,153,.12) !important;
-  opacity:.9 !important;
+  content:none !important;
+  display:none !important;
 }
 html body #smtinel-command-center .smtinel-cc-vignette,
 html body #smtinel-command-center .smtinel-cc-title,
@@ -44609,7 +44588,7 @@ html body.traceops-premium-shell .main-content.expanded{
 }
 </style>
 <style id="smtinel-command-center-lite-hero-final-v1">
-/* Final priority mirror: keep Command Center hero lightweight after all late patches load. */
+/* Final priority mirror: preserve the original hero image and remove transparent overlays. */
 html body #smtinel-command-center.smtinel-command-center,
 html body.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center,
 html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-center.smtinel-command-center{
@@ -44633,12 +44612,7 @@ html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-c
   transform:none !important;
   border-radius:24px !important;
   border:1px solid rgba(57,64,34,.14) !important;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(31,95,153,.14), transparent 30%),
-    radial-gradient(circle at 82% 18%, rgba(34,166,101,.16), transparent 31%),
-    radial-gradient(circle at 55% 78%, rgba(242,184,7,.14), transparent 36%),
-    linear-gradient(135deg,#f7faf7 0%,#edf4f3 48%,#f8f4ee 100%) !important;
-  background-size:auto !important;
+  background-size:cover !important;
   background-position:center center !important;
   background-repeat:no-repeat !important;
   box-shadow:0 14px 34px rgba(9,16,6,.08) !important;
@@ -44649,29 +44623,13 @@ html body.traceops-premium-shell.smtinel-command-center-focus #smtinel-command-c
 }
 html body #smtinel-command-center .smtinel-cc-canvas::before,
 html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::before{
-  content:"" !important;
-  position:absolute !important;
-  inset:0 !important;
-  pointer-events:none !important;
-  background-image:
-    linear-gradient(to right, rgba(57,64,34,.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(57,64,34,.045) 1px, transparent 1px) !important;
-  background-size:42px 42px !important;
-  opacity:.58 !important;
+  content:none !important;
+  display:none !important;
 }
 html body #smtinel-command-center .smtinel-cc-canvas::after,
 html body.smtinel-command-center-focus #smtinel-command-center .smtinel-cc-canvas::after{
-  content:"" !important;
-  position:absolute !important;
-  left:8% !important;
-  right:8% !important;
-  top:50% !important;
-  height:2px !important;
-  transform:translateY(-50%) !important;
-  pointer-events:none !important;
-  background:linear-gradient(90deg, transparent, rgba(31,95,153,.35), rgba(34,166,101,.32), transparent) !important;
-  box-shadow:0 0 26px rgba(31,95,153,.12) !important;
-  opacity:.9 !important;
+  content:none !important;
+  display:none !important;
 }
 html body #smtinel-command-center .smtinel-cc-vignette,
 html body #smtinel-command-center .smtinel-cc-title,
