@@ -13628,6 +13628,9 @@ function App() {
     var yieldWeekRefreshArr = _useState(0);
     var yieldWeekRefreshKey = yieldWeekRefreshArr[0];
     var setYieldWeekRefreshKey = yieldWeekRefreshArr[1];
+    var yieldWeekLocalFiltersArr = _useState({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", sn: "" });
+    var yieldWeekLocalFilters = yieldWeekLocalFiltersArr[0];
+    var setYieldWeekLocalFilters = yieldWeekLocalFiltersArr[1];
     var isMobile = function () { return window.innerWidth <= 900; };
     function yieldText(key) {
         var dict = {
@@ -29911,6 +29914,7 @@ body.traceops-premium-shell [class*="impact"]{
             return "";
         }
         function ybwRawRows() {
+            if (yieldFlowModel && Array.isArray(yieldFlowModel.ftRows) && yieldFlowModel.ftRows.length) return yieldFlowModel.ftRows;
             var pools = [], snap;
             try { if (Array.isArray(window.TRACEOPS_YIELD_FT_ROWS)) pools.push(window.TRACEOPS_YIELD_FT_ROWS); } catch (_) {}
             try {
@@ -29921,6 +29925,8 @@ body.traceops-premium-shell [class*="impact"]{
         }
         function ybwStation(row) { return String(ybwPick(row, ["station", "Station", "testArea", "Test Area", "TEST AREA", "area", "Area", "station_name", "Station Name", "process", "Process", "sfcStation", "SFC Station"])).trim(); }
         function ybwWeek(row) { return String(ybwPick(row, ["week", "Week", "ciscoWeek", "Cisco Week", "fiscalWeek", "Fiscal Week", "FiscalWeek", "workweek", "Work Week", "date", "Date", "testDate", "Test Date", "recTime", "Rectime", "created_at"])).trim() || "No Week"; }
+        function ybwWo(row) { return String(ybwPick(row, ["wo", "WO", "workOrder", "Work Order", "WORKORDER", "work_order"])).trim() || "N/D"; }
+        function ybwSn(row) { return traceOpsYieldCleanSn(ybwPick(row, ["sn", "SN", "serial", "Serial", "serialNumber", "Serial Number", "SerialNumber", "sysserialno", "syserialno", "parentsernum", "partsernum", "bridgeKey", "boxsn", "BOXSN"])); }
         function ybwResult(row) {
             var x = String(ybwPick(row, ["result", "Result", "status", "Status", "PASSFAIL", "PassFail", "pass_fail", "testStatus", "Test Status"])).toUpperCase();
             var f = String(ybwPick(row, ["testInfo", "Test Info", "failureMode", "Failure Mode", "fail_code", "Fail Code", "failingTestName", "Failing Test Name"])).trim();
@@ -29933,12 +29939,34 @@ body.traceops-premium-shell [class*="impact"]{
         function ybwQty(row) { return ybwNum(ybwPick(row, ["Board Qty", "boardQty", "qty", "Qty", "quantity", "Quantity", "count", "Count"]), 1) || 1; }
         function ybwGoal(row) { var g = ybwPick(row, ["GOAL", "Goal", "goal", "target", "Target", "ICT GOAL", "AOI GOAL", "FPY GOAL", "Yield GOAL"]); return g === "" ? 98 : ybwNum(g, 98); }
         function ybwClass(y, g) { return y < g ? "crit" : (y < 98 ? "warn" : "ok"); }
-        function ybwStations(rows) { var m = {}; (rows || []).forEach(function (r) { var s = ybwStation(r).toUpperCase(); if (s) m[s] = true; }); return Object.keys(m).sort(); }
-        function ybwData(rows, st) {
-            var map = {}, selected = String(st || "").toUpperCase();
+        function ybwUnique(rows, getter) { var m = {}; (rows || []).forEach(function (r) { var v = String(getter(r) || "").trim(); if (v && v !== "N/D") m[v] = true; }); return Object.keys(m).sort(function(a,b){ return String(a).localeCompare(String(b)); }); }
+        function ybwMatches(value, selected) { return !selected || selected === "ALL" || String(value || "").toUpperCase() === String(selected || "").toUpperCase(); }
+        function ybwLocalFilteredRows(rows) {
+            var lf = yieldWeekLocalFilters || {};
+            var sn = traceOpsYieldCleanSn(lf.sn || "");
+            return (rows || []).filter(function(r) {
+                return ybwMatches(ybwWeek(r), lf.week) &&
+                    ybwMatches(ybwStation(r), lf.station) &&
+                    ybwMatches(ybwUut(r), lf.uut) &&
+                    ybwMatches(ybwWo(r), lf.wo) &&
+                    ybwMatches(ybwResult(r), lf.result) &&
+                    (!sn || String(ybwSn(r) || "").indexOf(sn) >= 0);
+            });
+        }
+        function ybwModalRows(rows, title, subtitle) {
+            var seen = {};
+            var out = (rows || []).map(function(r, idx) {
+                var sn = ybwSn(r) || ("ROW-" + (idx + 1));
+                var key = sn + "|" + ybwWeek(r) + "|" + ybwWo(r) + "|" + ybwResult(r);
+                if (seen[key]) return null;
+                seen[key] = true;
+                return { sn: sn, wo: ybwWo(r), sku: ybwUut(r), family: ybwUut(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: String(ybwPick(r, ["testInfo", "Test Info", "failureMode", "Failure Mode", "failingTestName", "Failing Test Name"]) || ybwResult(r)), location: ybwLoc(r), source: "Yield by Week detail" };
+            }).filter(Boolean).slice(0, 1000);
+            setYieldSerialModal({ title: title, subtitle: subtitle || "Yield by Week detail · filtros activos aplicados", rows: out });
+        }
+        function ybwData(rows) {
+            var map = {};
             (rows || []).forEach(function (r) {
-                var sr = ybwStation(r).toUpperCase();
-                if (selected && sr !== selected) return;
                 var w = ybwWeek(r), key = w + "|" + ybwUut(r) + "|" + ybwLoc(r), n = ybwQty(r);
                 if (!map[key]) map[key] = { week: w, uuttype: ybwUut(r), location: ybwLoc(r), pass: 0, fail: 0, total: 0, boardQty: 0, goal: ybwGoal(r) };
                 map[key].total += n; map[key].boardQty += n;
@@ -29959,7 +29987,7 @@ body.traceops-premium-shell [class*="impact"]{
             if (m) return m[1].slice(2) + " Q" + m[2] + " W" + m[3];
             return raw.length > 18 ? raw.replace(/\s+/g, " ").slice(0, 17) + "..." : raw;
         }
-        function ybwSvg(weekly) {
+        function ybwSvg(weekly, detailRows) {
             var W = Math.max(1020, weekly.length * 118 + 170), H = 440, L = 72, R = 54, T = 46, CH = 210, base = T + CH;
             var maxQty = Math.max(1, Math.max.apply(null, weekly.map(function (r) { return r.total; }))), step = (W - L - R) / Math.max(1, weekly.length), barW = Math.max(22, Math.min(42, step * .34));
             function x(i) { return L + step * i + step / 2; }
@@ -29974,23 +30002,34 @@ body.traceops-premium-shell [class*="impact"]{
                 var labelY = Math.max(T + 15, yp - 11 - ((i % 2) * 17));
                 if (i && Math.abs(yPct(weekly[i - 1].yieldPct) - yp) < 20) labelY -= 16;
                 ypts.push(xi + "," + yp); gpts.push(xi + "," + gp);
-                nodes.push(h("rect", { key: "p" + i, x: xi - barW / 2, y: py, width: barW, height: Math.max(0, passH), fill: "#00B050" }));
-                nodes.push(h("rect", { key: "f" + i, x: xi - barW / 2, y: fy, width: barW, height: Math.max(0, failH), fill: "#FF0000" }));
+                var weekRows = (detailRows || []).filter(function(row){ return ybwWeek(row) === r.week; });
+                var openWeek = function(){ ybwModalRows(weekRows, r.week + " · Yield by Week", "PASS " + traceOpsYieldFlowFmt(r.pass) + " · FAIL " + traceOpsYieldFlowFmt(r.fail) + " · Yield " + ybwPct(r.yieldPct)); };
+                nodes.push(h("rect", { key: "p" + i, x: xi - barW / 2, y: py, width: barW, height: Math.max(0, passH), fill: "#00B050", style: { cursor: "pointer" }, onClick: openWeek }));
+                nodes.push(h("rect", { key: "f" + i, x: xi - barW / 2, y: fy, width: barW, height: Math.max(0, failH), fill: "#FF0000", style: { cursor: "pointer" }, onClick: openWeek }));
                 nodes.push(h("text", { key: "l" + i, x: xi - 4, y: base + 30, transform: "rotate(-32 " + (xi - 4) + " " + (base + 30) + ")", textAnchor: "end", fontSize: 11, fontWeight: 900, fill: "#102A43" }, [h("title", { key: "lt" + i }, ybwEsc(r.week)), ybwEsc(ybwShortWeekLabel(r.week))]));
-                nodes.push(h("text", { key: "v" + i, x: xi, y: labelY, textAnchor: "middle", fontSize: 11, fontWeight: 900, fill: r.yieldPct >= r.goal ? "#00B050" : "#FF0000" }, (r.yieldPct >= r.goal ? "UP " : "DOWN ") + ybwPct(r.yieldPct)));
+                nodes.push(h("text", { key: "v" + i, x: xi, y: labelY, textAnchor: "middle", fontSize: 11, fontWeight: 900, fill: r.yieldPct >= r.goal ? "#00B050" : "#FF0000", style: { cursor: "pointer" }, onClick: openWeek }, (r.yieldPct >= r.goal ? "UP " : "DOWN ") + ybwPct(r.yieldPct)));
             });
             nodes.push(h("polyline", { key: "goal", fill: "none", stroke: "#FFC000", strokeWidth: 3, points: gpts.join(" ") }));
             nodes.push(h("polyline", { key: "yield", fill: "none", stroke: "#0070C0", strokeWidth: 4, points: ypts.join(" ") }));
-            weekly.forEach(function (r, i) { nodes.push(h("circle", { key: "c" + i, cx: x(i), cy: yPct(r.yieldPct), r: 4, fill: "#0070C0" })); });
+            weekly.forEach(function (r, i) { var openWeek = function(){ ybwModalRows((detailRows || []).filter(function(row){ return ybwWeek(row) === r.week; }), r.week + " · Yield by Week", "Yield " + ybwPct(r.yieldPct)); }; nodes.push(h("circle", { key: "c" + i, cx: x(i), cy: yPct(r.yieldPct), r: 4, fill: "#0070C0", style: { cursor: "pointer" }, onClick: openWeek })); });
             return h("div", { style: { overflowX: "auto", marginTop: 12, border: "1px solid #E0E9F6", borderRadius: 18, padding: 12, background: "#fff" } }, h("svg", { viewBox: "0 0 " + W + " " + H, style: { minWidth: Math.min(W, 1180), width: "100%", height: 440, display: "block", overflow: "visible" } }, nodes));
         }
         var refreshTouch = yieldWeekRefreshKey;
-        var raw = ybwRawRows();
-        var stations = ybwStations(raw);
-        var selectedStation = stations.indexOf(String(yieldWeekStation || "").toUpperCase()) >= 0 ? String(yieldWeekStation || "").toUpperCase() : (stations[0] || "");
-        var rows = selectedStation ? ybwData(raw, selectedStation) : [];
+        var scopedRaw = ybwRawRows();
+        var localRows = ybwLocalFilteredRows(scopedRaw);
+        var ybwOptions = {
+            week: ybwUnique(scopedRaw, ybwWeek),
+            station: ybwUnique(scopedRaw, ybwStation),
+            uut: ybwUnique(scopedRaw, ybwUut),
+            wo: ybwUnique(scopedRaw, ybwWo).slice(0, 500)
+        };
+        var selectedStation = (yieldWeekLocalFilters.station && yieldWeekLocalFilters.station !== "ALL") ? yieldWeekLocalFilters.station : "ALL";
+        if (selectedStation !== "ALL" && ybwOptions.station.indexOf(selectedStation) < 0) selectedStation = "ALL";
+        var rows = ybwData(localRows);
         var weekly = ybwWeekly(rows);
         var pass = rows.reduce(function (a, r) { return a + r.pass; }, 0), fail = rows.reduce(function (a, r) { return a + r.fail; }, 0), total = pass + fail, y = total ? pass / total * 100 : 0, g = rows.reduce(function (a, r) { return a + r.goal; }, 0) / Math.max(1, rows.length), cls = ybwClass(y, g);
+        function updateYbwLocal(key, value) { setYieldWeekLocalFilters(function(prev){ var next = Object.assign({}, prev); next[key] = value || (key === "sn" ? "" : "ALL"); return next; }); }
+        function resetYbwLocal() { setYieldWeekLocalFilters({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", sn: "" }); setYieldWeekStation("AOI"); }
         var card = { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, padding: 18, marginBottom: 14, boxShadow: "0 12px 28px rgba(15,42,68,.06)" };
         return h("div", { id: "yieldweek-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } }, [
             h("section", { key: "head", style: card }, [
@@ -29999,19 +30038,39 @@ body.traceops-premium-shell [class*="impact"]{
                     h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Regresar a Yield Flow")
                 ]),
                 h("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 16 } }, [
-                    h("select", { value: selectedStation, onChange: function (e) { setYieldWeekStation(e.target.value); }, style: { height: 40, minWidth: 230, border: "1px solid #D8E6F7", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 900, background: "#fff", color: "#102A43" } }, stations.length ? stations.map(function (s) { return h("option", { key: s, value: s }, s); }) : h("option", { value: "" }, "No Test Areas loaded")),
                     h("button", { type: "button", onClick: function () { setYieldWeekRefreshKey(function (x) { return x + 1; }); }, style: { height: 40, border: "1px solid #D8E6F7", borderRadius: 12, background: "#fff", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Refresh"),
+                    h("button", { type: "button", onClick: function () { ybwModalRows(localRows, "Yield by Week · Scope detail", "Rows " + traceOpsYieldFlowFmt(localRows.length) + " · filtros Yield Flow + filtros locales"); }, style: { height: 40, border: "1px solid #CFE0FB", borderRadius: 12, background: "#EAF2FF", color: "#1F3A5F", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "View detail"),
                     h("button", { type: "button", onClick: function () { ybwDownload("SMTinel_Yield_by_Week.csv", "text/csv;charset=utf-8", ybwCsv(rows, selectedStation)); }, style: { height: 40, border: 0, borderRadius: 12, background: "#1F5F99", color: "#fff", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Export CSV")
                 ])
             ]),
-            !rows.length ? h("section", { key: "empty", style: card }, "Carga el ZIP en Yield Flow primero. Despues abre este modulo para calcular Yield by Week bajo demanda.") : h("section", { key: "body", style: card }, [
+            h("section", { key: "local_filters", style: card }, [
+                h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 } }, [
+                    h("div", null, [h("div", { style: { fontSize: 13.5, fontWeight: 900, color: "#102A43" } }, "Yield by Week detail filters"), h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Primero respeta los filtros de Yield Flow; estos filtros solo refinan el detalle del grafico.")]),
+                    h("button", { type: "button", onClick: resetYbwLocal, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "8px 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Reset local")
+                ]),
+                h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(3,minmax(0,1fr))", gap: 10 } }, [
+                    { key: "week", label: "Cisco Week", items: ybwOptions.week },
+                    { key: "station", label: "Test Area / Station", items: ybwOptions.station },
+                    { key: "uut", label: "Model / UUT", items: ybwOptions.uut },
+                    { key: "wo", label: "Work Order", items: ybwOptions.wo },
+                    { key: "result", label: "Result", items: ["PASS", "FAIL"] },
+                    { key: "sn", label: "Serial Number", type: "serial" }
+                ].map(function(f){
+                    return h("label", { key: "ybw_filter_" + f.key, style: { display: "flex", flexDirection: "column", gap: 5, fontSize: 10, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".04em" } }, [
+                        f.label,
+                        f.type === "serial" ? h("input", { type: "search", value: yieldWeekLocalFilters.sn || "", onChange: function(e){ updateYbwLocal("sn", e.target.value); }, onBlur: function(e){ updateYbwLocal("sn", traceOpsYieldCleanSn(e.target.value)); }, placeholder: "SN / barcode", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 800, color: "#102A43", background: "#fff", outline: "none" } }) :
+                        h("select", { value: yieldWeekLocalFilters[f.key] || "ALL", onChange: function(e){ updateYbwLocal(f.key, e.target.value || "ALL"); if (f.key === "station") setYieldWeekStation(e.target.value || "AOI"); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 900, color: "#102A43", background: "#fff", outline: "none", cursor: "pointer" } }, [h("option", { key: f.key + "_ALL", value: "ALL" }, "All")].concat((f.items || []).map(function(opt){ return h("option", { key: f.key + "_" + String(opt), value: opt }, opt); })))
+                    ]);
+                }))
+            ]),
+            !rows.length ? h("section", { key: "empty", style: card }, scopedRaw.length ? "No hay filas para los filtros locales actuales. Restablece filtros locales o cambia el scope de Yield Flow." : "Carga el ZIP en Yield Flow primero. Despues abre este modulo para calcular Yield by Week bajo demanda.") : h("section", { key: "body", style: card }, [
                 h("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 } }, [
-                    h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Test Area"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18 } }, selectedStation)]),
+                    h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Scope rows"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18 } }, traceOpsYieldFlowFmt(localRows.length))]),
                     h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Total Qty"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18 } }, total.toLocaleString())]),
                     h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Fail Qty"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18, color: fail ? "#C44141" : "#1A7A3C" } }, fail.toLocaleString())]),
                     h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Yield"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18, color: cls === "crit" ? "#C44141" : (cls === "warn" ? "#B45309" : "#1A7A3C") } }, ybwPct(y))])
                 ]),
-                ybwSvg(weekly),
+                ybwSvg(weekly, localRows),
                 h("div", { style: { marginTop: 14, border: "1px solid #E0E9F6", borderRadius: 16, overflow: "auto", maxHeight: 340 } }, h("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 1040 } }, [
                     h("thead", null, h("tr", null, ["Week", "Test Area", "Uuttype", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
                     h("tbody", null, rows.slice(0, 120).map(function (r, i) { var c = ybwClass(r.yieldPct, r.goal); return h("tr", { key: i }, [h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", whiteSpace: "nowrap" } }, h("b", null, r.week)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, selectedStation), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.uuttype), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.location), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", color: c === "crit" ? "#C44141" : (c === "warn" ? "#B45309" : "#1A7A3C"), fontWeight: 900 } }, ybwPct(r.yieldPct)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.goal)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.delta)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.boardQty), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.fail), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.pass), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.total)]); }))
