@@ -10044,6 +10044,8 @@ function traceOpsYieldBuildDbModelMap(rows) {
     (rows || []).forEach(function (row) {
         var sku = traceOpsYieldDbModelSku(row);
         var family = traceOpsYieldDbModelFamily(row);
+        if (!sku) sku = String(traceOpsYieldPick(row, ["MODEL", "model"]) || "").trim();
+        if (!family) family = String(traceOpsYieldPick(row, ["CODENAME", "Codename", "CodeName", "Code Name"]) || "").trim();
         var bu = traceOpsYieldNormalizeBU(traceOpsYieldDbModelBU(row));
         if (!sku && !family)
             return;
@@ -10064,11 +10066,30 @@ function traceOpsYieldBuildDbModelMap(rows) {
     TRACEOPS_YIELD_DB_MODEL_OPTIONS = opts;
     return map;
 }
+function traceOpsYieldPartNumberCandidates(value) {
+    var raw = String(value || "").trim();
+    var out = [], seen = {};
+    function add(v) {
+        v = String(v || "").trim();
+        if (!v) return;
+        [v, traceOpsYieldCompact(v)].forEach(function(x) {
+            if (x && !seen[x]) { seen[x] = true; out.push(x); }
+        });
+    }
+    add(raw);
+    (raw.match(/\b\d{2,4}-\d{3,7}(?:-\d{1,3})?\b/g) || []).forEach(add);
+    (raw.match(/\b\d{6,12}(?:-\d{1,3})?\b/g) || []).forEach(add);
+    return out;
+}
 function traceOpsYieldDbLookup(sku) {
     var map = TRACEOPS_YIELD_DB_MODEL_MAP || {};
     if (!sku)
         return null;
-    return map[String(sku)] || map[traceOpsYieldCompact(sku)] || null;
+    var candidates = traceOpsYieldPartNumberCandidates(sku);
+    for (var i = 0; i < candidates.length; i++) {
+        if (map[candidates[i]]) return map[candidates[i]];
+    }
+    return null;
 }
 function traceOpsYieldLooksLikeSku(value) {
     var v = String(value || "").trim();
@@ -10228,7 +10249,7 @@ function traceOpsYieldBuildCesiumRows(cesiumRows, snToSfc, ciscoCalendarMap) {
         var machine = String(traceOpsYieldPick(row, ["ID machine", "MACHINE", "Machine", "Tester", "Equipo"]) || "").trim();
         var uutType = String(traceOpsYieldPick(row, ["moduleno", "UUTTYPE", "UUT Type", "UUTType", "UUT", "Model"]) || "").trim();
         var assyPn = String(traceOpsYieldPick(row, ["parentsernum2", "PARTNUM2", "Assy Part Number", "TAN", "Part Number", "PARTNUM", "PN"]) || "").trim();
-        var db = traceOpsYieldApplyDbModel(boardPn || sfc.sku, sfc.family, sfc.bu);
+        var db = traceOpsYieldApplyDbModel(uutType || boardPn || assyPn || sfc.sku, sfc.family, sfc.bu);
         out.push({
             sn: bridgeKey,
             cesiumSn: sn || "",
@@ -10239,8 +10260,8 @@ function traceOpsYieldBuildCesiumRows(cesiumRows, snToSfc, ciscoCalendarMap) {
             wo: sfc.wo || "",
             sfcSn: sfc.sfcSn || "",
             boxsn: sfc.boxsn || bridgeKey,
-            sku: db.sku || boardPn || sfc.sku || "N/A",
-            family: db.family || sfc.family || boardPn || "N/A",
+            sku: db.sku || uutType || boardPn || assyPn || sfc.sku || "N/A",
+            family: db.family || sfc.family || uutType || boardPn || "N/A",
             bu: db.bu || sfc.bu || traceOpsYieldInferBU("", sfc.family, sfc.sku),
             line: sfc.line || "",
             buildStartDate: sfc.buildStartDate || "",
@@ -29935,6 +29956,13 @@ body.traceops-premium-shell [class*="impact"]{
             return f && !/^(PASS|OK|NA|N\/A|NONE|0|-|)$/i.test(f) ? "FAIL" : "PASS";
         }
         function ybwUut(row) { return String(ybwPick(row, ["uuttype", "Uuttype", "uutType", "UUTTYPE", "model", "Model", "sku", "SKU", "partNumber", "Part Number", "pn", "PN"])).trim() || "N/D"; }
+        function ybwProductFamily(row) {
+            var explicit = traceOpsYieldCleanFamilyLabel(ybwPick(row, ["family", "Family", "productFamily", "Product Family", "modelName", "Model Name"]));
+            var uut = ybwUut(row);
+            var db = traceOpsYieldDbLookup(uut || ybwPick(row, ["boardPn", "Board_P/N", "assyPartNumber", "Assy Part Number", "sku", "SKU"]));
+            var fam = traceOpsYieldSafeFamily(db && db.family, explicit, (db && db.sku) || uut);
+            return traceOpsYieldCleanFamilyLabel(fam || explicit || uut || "N/D");
+        }
         function ybwLoc(row) { return String(ybwPick(row, ["location", "Location", "site", "Site", "loc", "LOC"])).trim() || "FJZ"; }
         function ybwQty(row) { return ybwNum(ybwPick(row, ["Board Qty", "boardQty", "qty", "Qty", "quantity", "Quantity", "count", "Count"]), 1) || 1; }
         function ybwGoal(row) { var g = ybwPick(row, ["GOAL", "Goal", "goal", "target", "Target", "ICT GOAL", "AOI GOAL", "FPY GOAL", "Yield GOAL"]); return g === "" ? 98 : ybwNum(g, 98); }
@@ -29947,7 +29975,7 @@ body.traceops-premium-shell [class*="impact"]{
             return (rows || []).filter(function(r) {
                 return ybwMatches(ybwWeek(r), lf.week) &&
                     ybwMatches(ybwStation(r), lf.station) &&
-                    ybwMatches(ybwUut(r), lf.uut) &&
+                    ybwMatches(ybwProductFamily(r), lf.uut) &&
                     ybwMatches(ybwWo(r), lf.wo) &&
                     ybwMatches(ybwResult(r), lf.result) &&
                     (!sn || String(ybwSn(r) || "").indexOf(sn) >= 0);
@@ -29960,15 +29988,15 @@ body.traceops-premium-shell [class*="impact"]{
                 var key = sn + "|" + ybwWeek(r) + "|" + ybwWo(r) + "|" + ybwResult(r);
                 if (seen[key]) return null;
                 seen[key] = true;
-                return { sn: sn, wo: ybwWo(r), sku: ybwUut(r), family: ybwUut(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: String(ybwPick(r, ["testInfo", "Test Info", "failureMode", "Failure Mode", "failingTestName", "Failing Test Name"]) || ybwResult(r)), location: ybwLoc(r), source: "Yield by Week detail" };
+                return { sn: sn, wo: ybwWo(r), sku: ybwUut(r), family: ybwProductFamily(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: String(ybwPick(r, ["testInfo", "Test Info", "failureMode", "Failure Mode", "failingTestName", "Failing Test Name"]) || ybwResult(r)), location: ybwLoc(r), source: "Yield by Week detail" };
             }).filter(Boolean).slice(0, 1000);
             setYieldSerialModal({ title: title, subtitle: subtitle || "Yield by Week detail · filtros activos aplicados", rows: out });
         }
         function ybwData(rows) {
             var map = {};
             (rows || []).forEach(function (r) {
-                var w = ybwWeek(r), key = w + "|" + ybwUut(r) + "|" + ybwLoc(r), n = ybwQty(r);
-                if (!map[key]) map[key] = { week: w, uuttype: ybwUut(r), location: ybwLoc(r), pass: 0, fail: 0, total: 0, boardQty: 0, goal: ybwGoal(r) };
+                var w = ybwWeek(r), productFamily = ybwProductFamily(r), key = w + "|" + productFamily + "|" + ybwLoc(r), n = ybwQty(r);
+                if (!map[key]) map[key] = { week: w, uuttype: productFamily, location: ybwLoc(r), pass: 0, fail: 0, total: 0, boardQty: 0, goal: ybwGoal(r) };
                 map[key].total += n; map[key].boardQty += n;
                 if (ybwResult(r) === "FAIL") map[key].fail += n; else map[key].pass += n;
             });
@@ -29979,7 +30007,7 @@ body.traceops-premium-shell [class*="impact"]{
             rows.forEach(function (r) { if (!wk[r.week]) wk[r.week] = { week: r.week, pass: 0, fail: 0, total: 0, goal: r.goal }; wk[r.week].pass += r.pass; wk[r.week].fail += r.fail; wk[r.week].total += r.total; wk[r.week].goal = r.goal; });
             return Object.keys(wk).map(function (k) { var r = wk[k]; r.yieldPct = r.total ? r.pass / r.total * 100 : 0; r.delta = r.yieldPct - r.goal; return r; }).sort(function (a, b) { return String(a.week).localeCompare(String(b.week)); });
         }
-        function ybwCsv(rows, st) { var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }; var head = ["Week", "Test Area", "Uuttype", "Location", "Avg Yield", "Board Qty", "Fail Qty", "Pass Qty", "Total Qty", "Yield", "Goal", "Delta"]; return [head.join(",")].concat(rows.map(function (r) { return [r.week, st, r.uuttype, r.location, ybwPct(r.yieldPct), r.boardQty, r.fail, r.pass, r.total, ybwPct(r.yieldPct), ybwPct(r.goal), ybwPct(r.delta)].map(q).join(","); })).join("\n"); }
+        function ybwCsv(rows, st) { var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }; var head = ["Week", "Test Area", "Product Family", "Location", "Avg Yield", "Board Qty", "Fail Qty", "Pass Qty", "Total Qty", "Yield", "Goal", "Delta"]; return [head.join(",")].concat(rows.map(function (r) { return [r.week, st, r.uuttype, r.location, ybwPct(r.yieldPct), r.boardQty, r.fail, r.pass, r.total, ybwPct(r.yieldPct), ybwPct(r.goal), ybwPct(r.delta)].map(q).join(","); })).join("\n"); }
         function ybwDownload(name, type, content) { var a = document.createElement("a"), b = new Blob([content], { type: type }); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
         function ybwShortWeekLabel(label) {
             var raw = String(label == null ? "" : label).trim();
@@ -30020,7 +30048,7 @@ body.traceops-premium-shell [class*="impact"]{
         var ybwOptions = {
             week: ybwUnique(scopedRaw, ybwWeek),
             station: ybwUnique(scopedRaw, ybwStation),
-            uut: ybwUnique(scopedRaw, ybwUut),
+            uut: ybwUnique(scopedRaw, ybwProductFamily),
             wo: ybwUnique(scopedRaw, ybwWo).slice(0, 500)
         };
         var selectedStation = (yieldWeekLocalFilters.station && yieldWeekLocalFilters.station !== "ALL") ? yieldWeekLocalFilters.station : "ALL";
@@ -30051,7 +30079,7 @@ body.traceops-premium-shell [class*="impact"]{
                 h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(3,minmax(0,1fr))", gap: 10 } }, [
                     { key: "week", label: "Cisco Week", items: ybwOptions.week },
                     { key: "station", label: "Test Area / Station", items: ybwOptions.station },
-                    { key: "uut", label: "Model / UUT", items: ybwOptions.uut },
+                    { key: "uut", label: "Product Family", items: ybwOptions.uut },
                     { key: "wo", label: "Work Order", items: ybwOptions.wo },
                     { key: "result", label: "Result", items: ["PASS", "FAIL"] },
                     { key: "sn", label: "Serial Number", type: "serial" }
@@ -30072,7 +30100,7 @@ body.traceops-premium-shell [class*="impact"]{
                 ]),
                 ybwSvg(weekly, localRows),
                 h("div", { style: { marginTop: 14, border: "1px solid #E0E9F6", borderRadius: 16, overflow: "auto", maxHeight: 340 } }, h("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 1040 } }, [
-                    h("thead", null, h("tr", null, ["Week", "Test Area", "Uuttype", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
+                    h("thead", null, h("tr", null, ["Week", "Test Area", "Product Family", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
                     h("tbody", null, rows.slice(0, 120).map(function (r, i) { var c = ybwClass(r.yieldPct, r.goal); return h("tr", { key: i }, [h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", whiteSpace: "nowrap" } }, h("b", null, r.week)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, selectedStation), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.uuttype), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.location), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", color: c === "crit" ? "#C44141" : (c === "warn" ? "#B45309" : "#1A7A3C"), fontWeight: 900 } }, ybwPct(r.yieldPct)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.goal)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.delta)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.boardQty), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.fail), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.pass), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.total)]); }))
                 ]))
             ])
