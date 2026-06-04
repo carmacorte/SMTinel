@@ -14013,7 +14013,7 @@ function App() {
     var setMaintenanceForm = maintenanceFormArr[1];
     var translations = {
         en: {
-            brandSubtitle: "Operational Quality Intelligence with RCCA/8D discipline",
+            brandSubtitle: "Quality Intelligence",
             startExport: "Start with your WhatsApp export",
             startExportShort: "Export ZIP",
             recentAnalyses: "See recent analyses",
@@ -14039,7 +14039,7 @@ function App() {
             langLabel: "Language"
         },
         es: {
-            brandSubtitle: "Inteligencia operativa con disciplina RCCA/8D",
+            brandSubtitle: "Quality Intelligence",
             startExport: "Comenzar con export de WhatsApp",
             startExportShort: "Exportar ZIP",
             recentAnalyses: "Ver análisis recientes",
@@ -29995,19 +29995,21 @@ body.traceops-premium-shell [class*="impact"]{
         function ybwData(rows) {
             var map = {};
             (rows || []).forEach(function (r) {
-                var w = ybwWeek(r), productFamily = ybwProductFamily(r), key = w + "|" + productFamily + "|" + ybwLoc(r), n = ybwQty(r);
-                if (!map[key]) map[key] = { week: w, uuttype: productFamily, location: ybwLoc(r), pass: 0, fail: 0, total: 0, boardQty: 0, goal: ybwGoal(r) };
+                var w = ybwWeek(r), productFamily = ybwProductFamily(r), sku = ybwUut(r), key = w + "|" + productFamily + "|" + ybwLoc(r), n = ybwQty(r);
+                if (!map[key]) map[key] = { week: w, uuttype: productFamily, location: ybwLoc(r), pass: 0, fail: 0, total: 0, boardQty: 0, goal: ybwGoal(r), skuMap: {} };
+                if (sku && sku !== "N/D") map[key].skuMap[sku] = true;
                 map[key].total += n; map[key].boardQty += n;
                 if (ybwResult(r) === "FAIL") map[key].fail += n; else map[key].pass += n;
             });
-            return Object.keys(map).map(function (k) { var r = map[k]; r.yieldPct = r.total ? r.pass / r.total * 100 : 0; r.delta = r.yieldPct - r.goal; return r; }).sort(function (a, b) { return String(a.week).localeCompare(String(b.week)) || a.yieldPct - b.yieldPct; });
+            return Object.keys(map).map(function (k) { var r = map[k], skus = Object.keys(r.skuMap || {}).sort(); r.skuList = skus.slice(0, 4).join(", ") || "N/D"; r.skuOverflow = Math.max(0, skus.length - 4); r.yieldPct = r.total ? r.pass / r.total * 100 : 0; r.delta = r.yieldPct - r.goal; return r; }).sort(function (a, b) { return String(a.week).localeCompare(String(b.week)) || a.yieldPct - b.yieldPct; });
         }
         function ybwWeekly(rows) {
             var wk = {};
             rows.forEach(function (r) { if (!wk[r.week]) wk[r.week] = { week: r.week, pass: 0, fail: 0, total: 0, goal: r.goal }; wk[r.week].pass += r.pass; wk[r.week].fail += r.fail; wk[r.week].total += r.total; wk[r.week].goal = r.goal; });
             return Object.keys(wk).map(function (k) { var r = wk[k]; r.yieldPct = r.total ? r.pass / r.total * 100 : 0; r.delta = r.yieldPct - r.goal; return r; }).sort(function (a, b) { return String(a.week).localeCompare(String(b.week)); });
         }
-        function ybwCsv(rows, st) { var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }; var head = ["Week", "Test Area", "Product Family", "Location", "Avg Yield", "Board Qty", "Fail Qty", "Pass Qty", "Total Qty", "Yield", "Goal", "Delta"]; return [head.join(",")].concat(rows.map(function (r) { return [r.week, st, r.uuttype, r.location, ybwPct(r.yieldPct), r.boardQty, r.fail, r.pass, r.total, ybwPct(r.yieldPct), ybwPct(r.goal), ybwPct(r.delta)].map(q).join(","); })).join("\n"); }
+        function ybwSkuLabel(r) { return (r.skuList || "N/D") + (r.skuOverflow ? " +" + r.skuOverflow : ""); }
+        function ybwCsv(rows, st) { var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }; var head = ["Week", "Test Area", "Product Family", "SKU / PN", "Location", "Avg Yield", "Board Qty", "Fail Qty", "Pass Qty", "Total Qty", "Yield", "Goal", "Delta"]; return [head.join(",")].concat(rows.map(function (r) { return [r.week, st, r.uuttype, ybwSkuLabel(r), r.location, ybwPct(r.yieldPct), r.boardQty, r.fail, r.pass, r.total, ybwPct(r.yieldPct), ybwPct(r.goal), ybwPct(r.delta)].map(q).join(","); })).join("\n"); }
         function ybwDownload(name, type, content) { var a = document.createElement("a"), b = new Blob([content], { type: type }); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
         function ybwShortWeekLabel(label) {
             var raw = String(label == null ? "" : label).trim();
@@ -30100,8 +30102,8 @@ body.traceops-premium-shell [class*="impact"]{
                 ]),
                 ybwSvg(weekly, localRows),
                 h("div", { style: { marginTop: 14, border: "1px solid #E0E9F6", borderRadius: 16, overflow: "auto", maxHeight: 340 } }, h("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 1040 } }, [
-                    h("thead", null, h("tr", null, ["Week", "Test Area", "Product Family", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
-                    h("tbody", null, rows.slice(0, 120).map(function (r, i) { var c = ybwClass(r.yieldPct, r.goal); return h("tr", { key: i }, [h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", whiteSpace: "nowrap" } }, h("b", null, r.week)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, selectedStation), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.uuttype), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.location), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", color: c === "crit" ? "#C44141" : (c === "warn" ? "#B45309" : "#1A7A3C"), fontWeight: 900 } }, ybwPct(r.yieldPct)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.goal)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.delta)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.boardQty), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.fail), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.pass), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.total)]); }))
+                    h("thead", null, h("tr", null, ["Week", "Test Area", "Product Family", "SKU / PN", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
+                    h("tbody", null, rows.slice(0, 120).map(function (r, i) { var c = ybwClass(r.yieldPct, r.goal), skuLabel = ybwSkuLabel(r); return h("tr", { key: i }, [h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", whiteSpace: "nowrap" } }, h("b", null, r.week)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, selectedStation), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.uuttype), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, title: skuLabel }, skuLabel), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.location), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0", color: c === "crit" ? "#C44141" : (c === "warn" ? "#B45309" : "#1A7A3C"), fontWeight: 900 } }, ybwPct(r.yieldPct)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.goal)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, ybwPct(r.delta)), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.boardQty), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.fail), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.pass), h("td", { style: { padding: 9, borderBottom: "1px solid #EEF4F0" } }, r.total)]); }))
                 ]))
             ])
         ]);
@@ -44480,7 +44482,7 @@ html body.traceops-premium-shell .saas-topbar.sidebar-collapsed{
   height:var(--smtinel-topbar-h) !important;
   min-height:var(--smtinel-topbar-h) !important;
   display:grid !important;
-  grid-template-columns:minmax(290px,36vw) minmax(0,1fr) !important;
+  grid-template-columns:minmax(230px,26vw) minmax(0,1fr) !important;
   align-items:center !important;
   gap:16px !important;
   padding:10px clamp(16px,2vw,28px) !important;
@@ -44527,7 +44529,7 @@ html body.traceops-premium-shell .app-logo-frame.topbar-logo{
 html body .saas-topbar-brand,
 html body.traceops-premium-shell .saas-topbar-brand{
   min-width:0 !important;
-  max-width:100% !important;
+  max-width:min(220px,22vw) !important;
   display:flex !important;
   flex-direction:column !important;
   justify-content:center !important;
@@ -44549,6 +44551,7 @@ html body.traceops-premium-shell .saas-topbar-subtitle{
   white-space:nowrap !important;
   overflow:hidden !important;
   text-overflow:ellipsis !important;
+  max-width:180px !important;
 }
 html body .saas-topbar-actions,
 html body.traceops-premium-shell .saas-topbar-actions{
@@ -44572,6 +44575,22 @@ html body.traceops-premium-shell .saas-topbar-actions::-webkit-scrollbar{
 html body .saas-topbar-actions > *,
 html body.traceops-premium-shell .saas-topbar-actions > *{
   flex:0 0 auto !important;
+}
+@media(max-width:1280px){
+  html body .saas-topbar,
+  html body .saas-topbar.sidebar-collapsed,
+  html body.traceops-premium-shell .saas-topbar,
+  html body.traceops-premium-shell .saas-topbar.sidebar-collapsed{
+    grid-template-columns:minmax(190px,22vw) minmax(0,1fr) !important;
+  }
+  html body .saas-topbar-subtitle,
+  html body.traceops-premium-shell .saas-topbar-subtitle{
+    display:none !important;
+  }
+  html body .saas-topbar-brand,
+  html body.traceops-premium-shell .saas-topbar-brand{
+    max-width:150px !important;
+  }
 }
 html body .saas-topbar .saas-menu-btn,
 html body .saas-topbar .saas-header-btn,
