@@ -13649,7 +13649,7 @@ function App() {
     var yieldWeekRefreshArr = _useState(0);
     var yieldWeekRefreshKey = yieldWeekRefreshArr[0];
     var setYieldWeekRefreshKey = yieldWeekRefreshArr[1];
-    var yieldWeekLocalFiltersArr = _useState({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", sn: "" });
+    var yieldWeekLocalFiltersArr = _useState({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", testInfo: "ALL", sn: "" });
     var yieldWeekLocalFilters = yieldWeekLocalFiltersArr[0];
     var setYieldWeekLocalFilters = yieldWeekLocalFiltersArr[1];
     var isMobile = function () { return window.innerWidth <= 900; };
@@ -29955,6 +29955,14 @@ body.traceops-premium-shell [class*="impact"]{
             if (/\bPASS|PASSED|OK\b|\bP\b/.test(x)) return "PASS";
             return f && !/^(PASS|OK|NA|N\/A|NONE|0|-|)$/i.test(f) ? "FAIL" : "PASS";
         }
+        function ybwFailureMode(row) {
+            var value = traceOpsYieldCleanFailureSignal([
+                ybwPick(row, ["failureMode", "Failure Mode", "rootCause", "Root Cause", "symptom", "Symptom"]),
+                ybwPick(row, ["testInfo", "Test Info", "TEST INFO", "TEST_INFO", "testinfo"]),
+                ybwPick(row, ["failingTestName", "Failing Test Name", "FailingTestName", "testName", "Test Name"])
+            ]);
+            return value && value !== "N/D" ? value : "Sin Test Info";
+        }
         function ybwUut(row) { return String(ybwPick(row, ["uuttype", "Uuttype", "uutType", "UUTTYPE", "model", "Model", "sku", "SKU", "partNumber", "Part Number", "pn", "PN"])).trim() || "N/D"; }
         function ybwProductFamily(row) {
             var explicit = traceOpsYieldCleanFamilyLabel(ybwPick(row, ["family", "Family", "productFamily", "Product Family", "modelName", "Model Name"]));
@@ -29978,6 +29986,7 @@ body.traceops-premium-shell [class*="impact"]{
                     ybwMatches(ybwProductFamily(r), lf.uut) &&
                     ybwMatches(ybwWo(r), lf.wo) &&
                     ybwMatches(ybwResult(r), lf.result) &&
+                    ybwMatches(ybwFailureMode(r), lf.testInfo) &&
                     (!sn || String(ybwSn(r) || "").indexOf(sn) >= 0);
             });
         }
@@ -29988,9 +29997,43 @@ body.traceops-premium-shell [class*="impact"]{
                 var key = sn + "|" + ybwWeek(r) + "|" + ybwWo(r) + "|" + ybwResult(r);
                 if (seen[key]) return null;
                 seen[key] = true;
-                return { sn: sn, wo: ybwWo(r), sku: ybwUut(r), family: ybwProductFamily(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: String(ybwPick(r, ["testInfo", "Test Info", "failureMode", "Failure Mode", "failingTestName", "Failing Test Name"]) || ybwResult(r)), location: ybwLoc(r), source: "Yield by Week detail" };
+                return { sn: sn, wo: ybwWo(r), sku: ybwUut(r), family: ybwProductFamily(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: ybwFailureMode(r) || ybwResult(r), location: ybwLoc(r), source: "Yield by Week detail" };
             }).filter(Boolean).slice(0, 1000);
             setYieldSerialModal({ title: title, subtitle: subtitle || "Yield by Week detail · filtros activos aplicados", rows: out });
+        }
+        function ybwFailurePareto(rows) {
+            var map = {}, total = 0;
+            (rows || []).forEach(function(r) {
+                if (ybwResult(r) !== "FAIL") return;
+                var mode = ybwFailureMode(r), key = String(mode || "Sin Test Info").toUpperCase(), sn = ybwSn(r), qty = ybwQty(r);
+                if (!map[key]) map[key] = { name: mode, qty: 0, snMap: {}, rows: [], weekMap: {}, stationMap: {}, skuMap: {} };
+                map[key].qty += qty; map[key].rows.push(r); total += qty;
+                if (sn) map[key].snMap[sn] = true;
+                map[key].weekMap[ybwWeek(r)] = true;
+                map[key].stationMap[ybwStation(r) || "N/D"] = true;
+                map[key].skuMap[ybwUut(r)] = true;
+            });
+            return { total: total, rows: Object.keys(map).map(function(k) { var x = map[k], snCount = Object.keys(x.snMap || {}).length; return { name: x.name, qty: x.qty, snCount: snCount || x.rows.length, pct: total ? x.qty / total * 100 : 0, rows: x.rows, weeks: Object.keys(x.weekMap || {}).sort(), stations: Object.keys(x.stationMap || {}).sort(), skus: Object.keys(x.skuMap || {}).sort() }; }).sort(function(a,b){ return b.qty - a.qty || String(a.name).localeCompare(String(b.name)); }) };
+        }
+        function ybwRenderTopOffenders(pareto) {
+            var list = (pareto && pareto.rows || []).slice(0, 8), max = Math.max(1, list.reduce(function(a,r){ return Math.max(a, Number(r.qty || 0)); }, 0));
+            return h("section", { key: "top_offenders", style: Object.assign({}, card, { padding: 0, overflow: "hidden" }) }, [
+                h("div", { key: "hdr", style: { padding: "14px 18px", background: "#F7FAFF", borderBottom: "1px solid #ECF3FF", display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" } }, [
+                    h("div", null, [h("div", { style: { fontSize: 14, fontWeight: 900, color: "#102A43" } }, "Top Offenders - Pareto por modo de falla"), h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Respeta filtros Yield Flow + filtros locales. Agrupa FAIL por Test Info / Failure Mode.")]),
+                    h("span", { style: { border: "1px solid #F1B5AE", background: "#FFF7F5", color: "#A43B2E", borderRadius: 999, padding: "5px 9px", fontSize: 10, fontWeight: 900 } }, traceOpsYieldFlowFmt((pareto && pareto.total) || 0) + " fail qty")
+                ]),
+                h("div", { key: "body", style: { padding: 14, display: "grid", gap: 9 } }, list.length ? list.map(function(row, idx) {
+                    var width = Math.max(4, Math.min(100, row.qty / max * 100));
+                    var modalRows = (row.rows || []).map(function(r, i){ return { sn: ybwSn(r) || ("ROW-" + (i + 1)), wo: ybwWo(r), sku: ybwUut(r), family: ybwProductFamily(r), week: ybwWeek(r), station: ybwStation(r) || "N/D", status: ybwResult(r), symptom: ybwFailureMode(r), location: ybwLoc(r), source: "Yield by Week Top Offenders" }; });
+                    return h("article", { key: row.name + idx, style: { border: "1px solid " + (idx < 3 ? "#F1B5AE" : "#D9E6F7"), background: idx < 3 ? "#FFFDFB" : "#FBFDFF", borderRadius: 13, padding: "10px 12px", display: "grid", gap: 7 } }, [
+                        h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "minmax(0,1fr) auto", gap: 8, alignItems: "center" } }, [
+                            h("div", { style: { minWidth: 0 } }, [h("button", { type: "button", onClick: function(){ setYieldSerialModal({ title: row.name, subtitle: "Top Offender - " + traceOpsYieldFlowFmt(row.qty) + " fail qty - " + traceOpsYieldFlowFmt(row.snCount) + " SN", rows: modalRows }); }, style: { display: "block", maxWidth: "100%", border: 0, background: "transparent", padding: 0, color: "#102A43", fontSize: 11.5, fontWeight: 900, textAlign: "left", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: "#CFE0FB" } }, (idx + 1) + ") " + row.name), h("div", { style: { marginTop: 4, color: "#5F766C", fontSize: 10.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, "Week " + ((row.weeks || []).slice(0, 3).join(", ") || "N/D") + " - Station " + ((row.stations || []).slice(0, 2).join(", ") || "N/D") + " - SKU " + ((row.skus || []).slice(0, 2).join(", ") || "N/D"))]),
+                            h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobile() ? "flex-start" : "flex-end" } }, [h("span", { style: { borderRadius: 999, padding: "4px 8px", background: "#FFF7F5", color: "#A43B2E", border: "1px solid #F1B5AE", fontSize: 10, fontWeight: 900, whiteSpace: "nowrap" } }, traceOpsYieldFlowFmt(row.qty) + " fail"), h("span", { style: { borderRadius: 999, padding: "4px 8px", background: "#EEF5FF", color: "#1F3A5F", border: "1px solid #CFE0FB", fontSize: 10, fontWeight: 900, whiteSpace: "nowrap" } }, traceOpsYieldFlowFmt(row.snCount) + " SN"), h("span", { style: { borderRadius: 999, padding: "4px 8px", background: "#F8FAFC", color: "#526678", border: "1px solid #E1E8F0", fontSize: 10, fontWeight: 900, whiteSpace: "nowrap" } }, ybwPct(row.pct))])
+                        ]),
+                        h("div", { style: { height: 8, background: "#EEF3F8", borderRadius: 999, overflow: "hidden" } }, h("div", { style: { width: width + "%", height: "100%", background: idx < 3 ? "linear-gradient(90deg,#A43B2E,#D9A441)" : "linear-gradient(90deg,#1F6FEB,#2EAADC)", borderRadius: 999 } }))
+                    ]);
+                }) : h("div", { style: { border: "1px dashed #D9E6F7", borderRadius: 12, padding: 14, color: "#5F766C", fontSize: 11.5 } }, "No hay FAIL con Test Info / modo de falla en el scope actual."))
+            ]);
         }
         function ybwData(rows) {
             var map = {};
@@ -30051,15 +30094,17 @@ body.traceops-premium-shell [class*="impact"]{
             week: ybwUnique(scopedRaw, ybwWeek),
             station: ybwUnique(scopedRaw, ybwStation),
             uut: ybwUnique(scopedRaw, ybwProductFamily),
-            wo: ybwUnique(scopedRaw, ybwWo).slice(0, 500)
+            wo: ybwUnique(scopedRaw, ybwWo).slice(0, 500),
+            testInfo: ybwUnique(scopedRaw.filter(function(r){ return ybwResult(r) === "FAIL"; }), ybwFailureMode).slice(0, 500)
         };
         var selectedStation = (yieldWeekLocalFilters.station && yieldWeekLocalFilters.station !== "ALL") ? yieldWeekLocalFilters.station : "ALL";
         if (selectedStation !== "ALL" && ybwOptions.station.indexOf(selectedStation) < 0) selectedStation = "ALL";
         var rows = ybwData(localRows);
         var weekly = ybwWeekly(rows);
+        var topOffenderPareto = ybwFailurePareto(localRows);
         var pass = rows.reduce(function (a, r) { return a + r.pass; }, 0), fail = rows.reduce(function (a, r) { return a + r.fail; }, 0), total = pass + fail, y = total ? pass / total * 100 : 0, g = rows.reduce(function (a, r) { return a + r.goal; }, 0) / Math.max(1, rows.length), cls = ybwClass(y, g);
         function updateYbwLocal(key, value) { setYieldWeekLocalFilters(function(prev){ var next = Object.assign({}, prev); next[key] = value || (key === "sn" ? "" : "ALL"); return next; }); }
-        function resetYbwLocal() { setYieldWeekLocalFilters({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", sn: "" }); setYieldWeekStation("AOI"); }
+        function resetYbwLocal() { setYieldWeekLocalFilters({ week: "ALL", station: "ALL", uut: "ALL", wo: "ALL", result: "ALL", testInfo: "ALL", sn: "" }); setYieldWeekStation("AOI"); }
         var card = { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, padding: 18, marginBottom: 14, boxShadow: "0 12px 28px rgba(15,42,68,.06)" };
         return h("div", { id: "yieldweek-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } }, [
             h("section", { key: "head", style: card }, [
@@ -30084,6 +30129,7 @@ body.traceops-premium-shell [class*="impact"]{
                     { key: "uut", label: "Product Family", items: ybwOptions.uut },
                     { key: "wo", label: "Work Order", items: ybwOptions.wo },
                     { key: "result", label: "Result", items: ["PASS", "FAIL"] },
+                    { key: "testInfo", label: "Test Info / Failure Mode", items: ybwOptions.testInfo },
                     { key: "sn", label: "Serial Number", type: "serial" }
                 ].map(function(f){
                     return h("label", { key: "ybw_filter_" + f.key, style: { display: "flex", flexDirection: "column", gap: 5, fontSize: 10, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".04em" } }, [
@@ -30100,6 +30146,7 @@ body.traceops-premium-shell [class*="impact"]{
                     h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Fail Qty"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18, color: fail ? "#C44141" : "#1A7A3C" } }, fail.toLocaleString())]),
                     h("div", { style: { border: "1px solid #E0E9F6", borderRadius: 15, padding: 11, background: "#FAFCFF" } }, [h("span", { style: { fontSize: 9, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: "#5F766C" } }, "Yield"), h("b", { style: { display: "block", marginTop: 5, fontSize: 18, color: cls === "crit" ? "#C44141" : (cls === "warn" ? "#B45309" : "#1A7A3C") } }, ybwPct(y))])
                 ]),
+                ybwRenderTopOffenders(topOffenderPareto),
                 ybwSvg(weekly, localRows),
                 h("div", { style: { marginTop: 14, border: "1px solid #E0E9F6", borderRadius: 16, overflow: "auto", maxHeight: 340 } }, h("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 1040 } }, [
                     h("thead", null, h("tr", null, ["Week", "Test Area", "Product Family", "SKU / PN", "Location", "Yield", "Goal", "Delta", "Board Qty", "Fail", "Pass", "Total"].map(function (x) { return h("th", { key: x, style: { padding: 9, background: "#F7FAFF", color: "#5F766C", borderBottom: "1px solid #E8F0FA", fontSize: 9, fontWeight: 900, textAlign: "left", textTransform: "uppercase" } }, x); }))),
