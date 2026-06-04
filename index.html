@@ -10034,10 +10034,24 @@ function traceOpsYieldDbModelSku(row) {
     return String(traceOpsYieldPick(row, ["skuno", "SkuNo", "SKU", "P_NO", "P NO", "Part Number", "PN", "Model", "Modelo", "Key_Fail_SKU", "Key Fail SKU", "Product Number", "Number Model", "Model Number"]) || "").trim();
 }
 function traceOpsYieldDbModelFamily(row) {
-    return String(traceOpsYieldPick(row, ["Product Family", "Prodcut Family", "Model Name", "Nombre del Modelo", "Nombre Modelo", "Family", "UUTType", "UUT Type", "UUT Type Name", "Product Family Name", "Description", "Descripcion", "Descripción"]) || "").trim();
+    return traceOpsYieldPickProductFamily(row, "");
 }
 function traceOpsYieldDbModelBU(row) {
     return String(traceOpsYieldPick(row, ["BU", "Business Unit", "BU Name", "BusinessUnit", "Unidad Negocio", "Unidad de Negocio", "Division", "División"]) || "").trim();
+}
+function traceOpsYieldPickProductFamily(row, fallback) {
+    var value = traceOpsYieldPick(row, [
+        "Product Family", "Prodcut Family", "ProductFamily", "Product_Family", "PRODUCT_FAMILY", "[Product Family]", "[product family]",
+        "Product Family Name", "ProductFamilyName", "PRODUCT_FAMILY_NAME",
+        "Model Name", "ModelName", "MODEL_NAME", "Nombre del Modelo", "Nombre Modelo", "Nombre",
+        "Family", "FAMILY", "Product", "PRODUCT",
+        "UUTTYPE", "UUTType", "UUT Type", "UUT Type Name", "UUTTYPE_NAME", "UUT Type Description",
+        "CODENAME", "Codename", "CodeName", "Code Name",
+        "Description", "DESCRIPTION", "Descripcion", "Descripción"
+    ]);
+    value = String(value || "").trim();
+    if (value) return value;
+    return String(fallback || "").trim();
 }
 function traceOpsYieldBuildDbModelMap(rows) {
     var map = {}, opts = [], seen = {};
@@ -10625,7 +10639,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         if (!wo)
             return;
         var sku = String(traceOpsYieldPick(row, ["P_NO", "skuno", "SkuNo", "SKU", "model", "part number", "pn", "Product", "Modelo"]) || "").trim();
-        var family = String(traceOpsYieldPick(row, ["Prodcut Family", "Product Family", "Model Name", "Nombre del Modelo", "Product Family Name", "Family", "Nombre"]) || sku || "N/A").trim();
+        var family = traceOpsYieldPickProductFamily(row, sku || "N/A");
         var dbWork = traceOpsYieldApplyDbModel(sku, family, traceOpsYieldPick(row, ["BU", "Business Unit", "BU Name", "BusinessUnit"]));
         sku = dbWork.sku || sku;
         family = dbWork.family || family;
@@ -10647,7 +10661,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         var boxSn = traceOpsYieldPickBoxSn(row);
         var wo = traceOpsYieldCleanWo(traceOpsYieldPick(row, ["WorkOrderNo", "workorderno", "Work Order", "Work Order to search", "WO Number", "WO NO", "WO_NO", "WO", "WorkOrder", "Orden", "Order"]));
         var sku = String(traceOpsYieldPick(row, ["skuno", "SkuNo", "SKU", "model", "part number", "pn", "Modelo"]) || "").trim();
-        var family = String(traceOpsYieldPick(row, ["Product Family", "Prodcut Family", "Model Name", "Nombre del Modelo", "Family"]) || "").trim();
+        var family = traceOpsYieldPickProductFamily(row, "");
         var event = String(traceOpsYieldPick(row, ["currentevent", "Current Event", "Event", "Station", "Current Station", "Proceso Actual", "Current Process"]) || "").trim();
         var eventTime = traceOpsYieldParseDate(traceOpsYieldPick(row, ["lasteditdt", "Last Edit DT", "Current Event Time", "Event Time", "Timestamp", "DateTime", "Date Time", "Rec Time", "Fecha Hora", "Fecha"]));
         var line = String(traceOpsYieldPick(row, ["Line ID", "Line", "productionline", "Linea", "Línea"]) || "").trim();
@@ -10786,7 +10800,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
         // and must not reassign the serial to a different model or BU.
         var repairSku = String(traceOpsYieldPick(row, ["SkuNo", "Key_Fail_SKU", "Key Fail SKU", "skuno", "sku", "model", "part number", "pn", "Modelo"]) || "").trim();
         var sku = String((sfc && sfc.sku) || repairSku || "").trim();
-        var family = String((sfc && sfc.family) || traceOpsYieldPick(row, ["ModelName", "Model Name", "Product Family", "Prodcut Family", "Family", "Nombre del Modelo"]) || sku || "N/A").trim();
+        var family = String((sfc && sfc.family) || traceOpsYieldPickProductFamily(row, sku || "N/A") || sku || "N/A").trim();
         var rootCauseRaw = String(traceOpsYieldPick(row, ["Root Cause", "RootCause", "Root Cause EN", "Rootcause EN", "Rootcause_EN", "Rootcause ESP", "Rootcause", "Defect", "Failure", "Failure Mode", "Falla", "Defecto"]) || "").trim();
         var repairSymptomRaw = String(traceOpsYieldPick(row, ["FailSymptom", "Fail Symptom", "Failure Symptom", "Symptom", "Test Symptom", "testinfo", "Failing Test Name", "Fail Test Name", "Failed Test Name", "TESTNAME", "TestName", "Test Name", "Failure Name"]) || "").trim();
         var inferredRepairMode = traceOpsYieldInferRepairModeFromRow(row);
@@ -10897,7 +10911,7 @@ function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMet
             sn: sn,
             wo: sfc.wo || "",
             sku: sfc.sku || traceOpsYieldPick(repList[0] || {}, ["SkuNo", "Key_Fail_SKU", "Key Fail SKU", "skuno", "sku", "model", "part number", "pn", "Modelo"]) || "N/A",
-            family: sfc.family || traceOpsYieldPick(repList[0] || {}, ["ModelName", "Model Name", "Product Family", "Prodcut Family", "Family", "Nombre del Modelo"]) || "N/A",
+            family: sfc.family || traceOpsYieldPickProductFamily(repList[0] || {}, "N/A") || "N/A",
             symptom: traceOpsYieldTopRootcauseFromRepairs(repList),
             location: traceOpsYieldFailLocationsFromRepairs(repList),
             componentCode: topComponentInfo.componentCode,
