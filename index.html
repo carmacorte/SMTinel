@@ -27737,6 +27737,60 @@ body:has(#recovery-section) .main-content.expanded{
         if (!isFinite(v) || v <= 0) return "0";
         try { return Math.round(v).toLocaleString('en-US'); } catch (_) { return String(Math.round(v)); }
     }
+    function traceOpsBoardPptPick(row, keys) {
+        row = row || {};
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (row[k] != null && String(row[k]).trim() !== "") return row[k];
+        }
+        return "";
+    }
+    function traceOpsBoardPptLineFromStationCode(stationValue) {
+        var raw = String(stationValue || "").trim().toUpperCase();
+        if (!raw) return "";
+        var directMap = {
+            P21S1: "L1", P21S2: "L2", P21S3: "L3", P21S4: "L4", P21S5: "L5",
+            P21S6: "L6", P21S7: "L7", P21S8: "L8", P21S9: "L9", P21SA: "L10",
+            P21SB: "L11", P21SC: "L12", P21SD: "L13", P21SE: "L14", P21SF: "L15",
+            P21SG: "L16", P21SH: "L17", P21SI: "L18", P21SJ: "L19", P21SK: "L20"
+        };
+        var m = raw.match(/\b(P\d{2}S[0-9A-Z])/);
+        if (m && directMap[m[1]]) return directMap[m[1]];
+        var m2 = raw.match(/\bL(?:INE)?\s*[-_ ]?([0-9]{1,2})\b/i);
+        if (m2) return "L" + Number(m2[1]);
+        return "";
+    }
+    function traceOpsBoardPptSerialLineValue(row, ctx) {
+        row = row || {}; ctx = ctx || {};
+        var direct = traceOpsBoardPptPick(row, [
+            "line", "Line", "LINE", "lineId", "Line Id", "Line ID", "LINE_ID",
+            "productionline", "Production Line", "ProdLine", "Linea", "Línea", "linea"
+        ]) || traceOpsBoardPptPick(ctx, ["line", "Line", "LINE", "lineId", "Line ID", "Linea", "Línea", "linea"]);
+        direct = String(direct || "").trim();
+        if (direct && direct.toUpperCase() !== "N/D" && direct.toUpperCase() !== "NA" && direct.toUpperCase() !== "N/A") return direct;
+        var stationValue = traceOpsBoardPptPick(row, [
+            "station", "Station", "STATION", "teststation", "Test Station", "TESTSTATION",
+            "sfcstation", "SFC Station", "SFCSTATION", "currentevent", "Current Event", "evento", "Event"
+        ]) || traceOpsBoardPptPick(ctx, ["station", "Station", "STATION", "testStation", "sfcstation", "currentevent"]);
+        return traceOpsBoardPptLineFromStationCode(stationValue) || "N/D";
+    }
+    function traceOpsBoardPptBuildLineSummary(snRows, ctx) {
+        var seen = {};
+        (snRows || []).forEach(function(r){
+            var ln = traceOpsBoardPptSerialLineValue(r, ctx);
+            if (ln && ln !== "N/D") seen[String(ln).trim()] = true;
+        });
+        if (!Object.keys(seen).length) {
+            var fallback = traceOpsBoardPptSerialLineValue({}, ctx);
+            return fallback || "N/D";
+        }
+        var lines = Object.keys(seen).sort(function(a,b){
+            var na = Number(String(a).replace(/\D/g, ""));
+            var nb = Number(String(b).replace(/\D/g, ""));
+            return (na || 999) - (nb || 999) || String(a).localeCompare(String(b));
+        });
+        return lines.length > 3 ? lines.slice(0,3).join(", ") + " +" + (lines.length - 3) : lines.join(", ");
+    }
     function traceOpsBoardPptComponentTitle(componentType, desc) {
         var t = traceOpsBoardPptCleanText(componentType || "", 36);
         if (t && t !== "N/D") return t;
@@ -28006,6 +28060,7 @@ body:has(#recovery-section) .main-content.expanded{
         var modelName = firstSn.family || firstSn.ModelName || firstSn.model || ctx.family || ctx.model || "N/D";
         var wo = firstSn.wo || ctx.wo || "N/D";
         var station = firstSn.station || ctx.station || "N/D";
+        var line = traceOpsBoardPptBuildLineSummary(snList, ctx);
         var failureMode = selectedStat.description || selectedStat.failureMode || ctx.mode || "Component failure";
         var componentCode = selectedStat.componentCode || firstSn.componentCode || firstSn.componentPn || firstSn.partNumber || "N/D";
         var componentType = selectedStat.componentType || firstSn.componentType || traceOpsQualityAlertInferComponentType(selectedStat.componentDescription || firstSn.componentDescription || "") || "N/D";
@@ -28139,7 +28194,7 @@ body:has(#recovery-section) .main-content.expanded{
             var snColor = affectedSerials >= 10 ? C.crit : (affectedSerials >= 5 ? C.high : C.med);
             card(4.95, 1.05, 2.05, 1.05, C.critBg, snColor, 'Affected SN', C.wine);
             text(String(affectedSerials), 5.15, 1.36, 0.70, 0.38, { fontSize:26, bold:true, color:C.crit, fontFace:'Inter' });
-            text('WOs: ' + affectedWos + '\nStation: ' + station, 5.90, 1.34, 0.95, 0.36, { fontSize:8.5, bold:true, color:C.ink2, fontFace:'Inter' });
+            text('WOs: ' + affectedWos + '\nLine: ' + line + '\nStation: ' + station, 5.90, 1.28, 0.95, 0.52, { fontSize:7.6, bold:true, color:C.ink2, fontFace:'Inter', fit:'shrink' });
 
             // === CARD 3: Failure Rate v2.2 — Valor grande centrado ===
             card(7.15, 1.05, 2.10, 1.05, C.surface, C.gold, 'Failure Rate', C.muted2);
@@ -28240,7 +28295,7 @@ body:has(#recovery-section) .main-content.expanded{
                 text('No serial numbers available', 9.50, 4.0, 3.50, 0.30, { fontSize:10, color:C.muted2, align:'center' });
             } else {
                 // Grid de chips en 2 columnas
-                var chipW = 1.60;
+                var chipW = 1.68;
                 var chipH = 0.22;
                 var chipGapX = 0.10;
                 var chipGapY = 0.08;
@@ -28250,12 +28305,14 @@ body:has(#recovery-section) .main-content.expanded{
                 displayList.forEach(function(s, idx) {
                     var serial = s.serial || s.sn || s.SN || s.SerialNumber || "";
                     if (!serial) return;
+                    var serialLine = traceOpsBoardPptSerialLineValue(s, ctx);
+                    var serialLabel = serialLine && serialLine !== "N/D" ? (serial + " · " + serialLine) : serial;
                     var col = idx % 2;
                     var row = Math.floor(idx / 2);
                     var cx = 9.50 + col * (chipW + chipGapX);
                     var cy = 2.50 + row * (chipH + chipGapY);
 
-                    chip(serial, cx, cy, chipW, C.primary, C.surface2);
+                    chip(serialLabel, cx, cy, chipW, C.primary, C.surface2);
                 });
 
                 if (snList.length > maxChips) {
