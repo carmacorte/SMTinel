@@ -12749,11 +12749,17 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
             return true;
         return String(item.bu || "").toUpperCase().indexOf("NGFW") >= 0;
     }).map(function (r) {
-        // SFC-derived rows are authoritative for filter identity.
-        // DB catalog is not allowed to move a model between BUs or replace Product Family.
-        var sku = String(r.sku || '').trim();
-        var family = traceOpsYieldCleanFamilyLabel(r.family || r.model);
-        var bu = r.bu ? traceOpsYieldNormalizeBU(r.bu) : traceOpsYieldInferBU('', family, sku);
+        // SFC-derived rows are authoritative for scope, but many SFC/Cesium rows only carry SKU.
+        // Enrich missing/invalid Product Family from DB_Model so codes like SHENFIELD appear in filters.
+        var sku = String(r.sku || r.skuno || r.SkuNo || r.model || '').trim();
+        var dbInfo = traceOpsYieldDbLookup(sku);
+        var rawFamily = traceOpsYieldCleanFamilyLabel(
+            r.family || r.productFamily || r.ProductFamily || r['Product Family'] ||
+            r.modelName || r.ModelName || r['Model Name'] || r.model || ''
+        );
+        var dbFamily = traceOpsYieldCleanFamilyLabel(dbInfo && (dbInfo.family || dbInfo.codename || dbInfo.CODENAME));
+        var family = traceOpsYieldSafeFamily(rawFamily, dbFamily, sku);
+        var bu = r.bu ? traceOpsYieldNormalizeBU(r.bu) : traceOpsYieldNormalizeBU((dbInfo && dbInfo.bu) || traceOpsYieldInferBU('', family, sku));
         return Object.assign({}, r, { sku: sku || 'N/A', family: traceOpsYieldCleanFamilyLabel(family) || sku || 'N/A', bu: bu, buLabel: bu });
     });
     function rowMatchesCurrentScope(r, ignoreKey) {
