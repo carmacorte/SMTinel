@@ -48784,6 +48784,159 @@ html body .traceops-recovery{
 })();
 </script>
 
+
+
+<!-- =========================================================
+     SMTinel Yield Flow Import Loader - Full Proportion Hero
+     Makes ZIP import hero wider and proportional to the page
+========================================================= -->
+<style id="smtinel-yield-loader-full-proportion-v1">
+/* Full screen stage */
+.traceops-yf-import-overlay.smtinel-wait-overlay{
+  padding:clamp(18px,3vh,42px) clamp(18px,4vw,72px) max(118px, calc(env(safe-area-inset-bottom, 0px) + 104px)) !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(45,105,170,.12), transparent 42%),
+    linear-gradient(180deg,#02060c 0%,#020812 100%) !important;
+}
+
+/* Main loader hero: desktop wide cinematic panel */
+.traceops-yf-import-card.smtinel-wait-card{
+  width:min(82vw, 1540px) !important;
+  height:min(72vh, 760px) !important;
+  min-height:520px !important;
+  max-height:calc(100dvh - 160px) !important;
+  aspect-ratio:16 / 9 !important;
+  border-radius:34px !important;
+  border:1.5px solid rgba(245,249,255,.78) !important;
+  box-shadow:
+    0 34px 96px rgba(0,0,0,.50),
+    0 0 0 1px rgba(89,210,255,.20),
+    inset 0 1px 0 rgba(255,255,255,.46) !important;
+}
+
+/* Hero image fills the whole card */
+.traceops-yf-import-card.smtinel-wait-card .smtinel-wait-hero,
+.smtinel-wait-hero{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  transform:scale(1.015) !important;
+}
+
+/* Lighter cinematic vignette, less cropping feel */
+.smtinel-wait-card::before{
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.02) 46%,rgba(0,0,0,.34)),
+    radial-gradient(circle at 50% 54%,rgba(42,205,255,.15),transparent 30%),
+    linear-gradient(90deg,rgba(0,0,0,.22),transparent 18%,transparent 82%,rgba(0,0,0,.22)) !important;
+}
+
+/* Progress panel should also use the width proportion */
+.smtinel-wait-panel{
+  left:8.8% !important;
+  right:8.8% !important;
+  bottom:clamp(34px,6vh,68px) !important;
+  padding:clamp(20px,2.4vw,34px) clamp(22px,2.8vw,42px) clamp(18px,2.1vw,30px) !important;
+  border-radius:30px !important;
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.82),rgba(238,245,250,.62) 48%,rgba(255,255,255,.72)) !important;
+  backdrop-filter:blur(22px) saturate(1.42) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.42) !important;
+}
+
+/* Text scales for wide loader */
+.smtinel-wait-topline span{
+  font-size:clamp(12px,1.05vw,16px) !important;
+}
+.smtinel-wait-topline strong{
+  font-size:clamp(42px,4.6vw,76px) !important;
+}
+.smtinel-wait-panel h2{
+  font-size:clamp(38px,4.2vw,68px) !important;
+  max-width:78% !important;
+}
+.smtinel-wait-panel p{
+  font-size:clamp(16px,1.35vw,24px) !important;
+  max-width:82% !important;
+}
+.smtinel-wait-bar{
+  height:13px !important;
+  min-height:13px !important;
+}
+.smtinel-wait-footer span{
+  font-size:clamp(11px,.95vw,15px) !important;
+}
+
+/* Mid screens */
+@media (max-width:1100px){
+  .traceops-yf-import-overlay.smtinel-wait-overlay{
+    padding:24px 18px max(112px, calc(env(safe-area-inset-bottom, 0px) + 98px)) !important;
+  }
+  .traceops-yf-import-card.smtinel-wait-card{
+    width:min(94vw, 980px) !important;
+    height:min(70vh, 660px) !important;
+    min-height:500px !important;
+    aspect-ratio:4 / 3 !important;
+  }
+  .smtinel-wait-panel{
+    left:6.5% !important;
+    right:6.5% !important;
+    bottom:32px !important;
+  }
+  .smtinel-wait-panel h2{
+    font-size:clamp(32px,6vw,52px) !important;
+    max-width:100% !important;
+  }
+  .smtinel-wait-panel p{
+    max-width:100% !important;
+  }
+}
+
+/* Mobile: keep usability, still larger than previous portrait card */
+@media (max-width:640px){
+  .traceops-yf-import-overlay.smtinel-wait-overlay{
+    padding:14px 10px max(100px, calc(env(safe-area-inset-bottom, 0px) + 88px)) !important;
+  }
+  .traceops-yf-import-card.smtinel-wait-card{
+    width:calc(100vw - 20px) !important;
+    height:min(76vh, 720px) !important;
+    min-height:560px !important;
+    aspect-ratio:auto !important;
+    border-radius:30px !important;
+  }
+  .smtinel-wait-panel{
+    left:5.5% !important;
+    right:5.5% !important;
+    bottom:24px !important;
+    padding:17px 16px 15px !important;
+    border-radius:24px !important;
+  }
+  .smtinel-wait-topline span{
+    font-size:11px !important;
+    letter-spacing:.18em !important;
+  }
+  .smtinel-wait-topline strong{
+    font-size:38px !important;
+  }
+  .smtinel-wait-panel h2{
+    font-size:34px !important;
+  }
+  .smtinel-wait-panel p{
+    font-size:15px !important;
+  }
+  .smtinel-wait-footer{
+    gap:8px !important;
+  }
+  .smtinel-wait-footer span{
+    letter-spacing:.14em !important;
+    font-size:10px !important;
+  }
+}
+</style>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
