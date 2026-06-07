@@ -29538,58 +29538,64 @@ body:has(#recovery-section) .main-content.expanded{
             ]);
         }
         function renderGMRecoveryTraceabilityLayout(){
-            function cleanSignatureValue(value){
+            function bentoClean(value){
                 if (value == null || typeof value === 'object') return '';
                 var text = String(value).replace(/\s+/g,' ').trim();
                 if (!text) return '';
                 var upper = text.toUpperCase();
                 if (upper === 'N/D' || upper === 'ND' || upper === 'NULL' || upper === 'UNDEFINED' || upper === '[OBJECT OBJECT]' || upper === 'NAN') return '';
-                var noise = ['YIELD_FLOW_FILTERS_ACTIVE','YIELD FLOW FILTERS ACTIVE','COMMAND_CENTER','COMMAND CENTER','BOARD_IMPACT','BOARD IMPACT','RECOVERY INTEL','YIELD FLOW','STORYLINE','RCCA','MORE','EXPORT','DOWNLOAD','START WITH YOUR'];
+                var noise = ['YIELD_FLOW_FILTERS_ACTIVE','YIELD FLOW FILTERS ACTIVE','COMMAND_CENTER','COMMAND CENTER','BOARD_IMPACT','BOARD IMPACT','RECOVERY INTEL','YIELD FLOW','STORYLINE','RCCA','MORE','EXPORT','DOWNLOAD','START WITH YOUR','VISIBLE INCIDENTS'];
                 for (var i=0;i<noise.length;i++){ if (upper === noise[i] || upper.indexOf(noise[i] + ' ') === 0) return ''; }
-                text = text.replace(/\b(Command Center|Board Impact|Yield Flow|Recovery Intel|Storyline|RCCA|More)\b/gi,'').replace(/[<>]/g,'').replace(/\s+/g,' ').trim();
-                return text;
+                return text.replace(/\b(Command Center|Board Impact|Yield Flow|Recovery Intel|Storyline|RCCA|More)\b/gi,'').replace(/[<>]/g,'').replace(/\s+/g,' ').trim();
             }
-            function sigToken(value){
-                var text = cleanSignatureValue(value);
+            function bentoToken(value){
+                var text = bentoClean(value);
                 if (!text) return '';
                 try { text = text.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){}
                 return text.replace(/[^\w\s-]/g,' ').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase();
             }
-            function normalizeFailureMode(value){
-                var t = sigToken(value);
-                return t.replace(/^FAILED_/,'').replace(/_TEST_INFO$/,'');
-            }
+            function bentoFailure(value){ return bentoToken(value).replace(/^FAILED_/,'').replace(/_TEST_INFO$/,''); }
             function firstClean(){
-                for (var i=0;i<arguments.length;i++){ var v = cleanSignatureValue(arguments[i]); if (v) return v; }
+                for (var i=0;i<arguments.length;i++){ var v = bentoClean(arguments[i]); if (v) return v; }
                 return '';
             }
             function firstToken(){
-                for (var i=0;i<arguments.length;i++){ var v = sigToken(arguments[i]); if (v) return v; }
+                for (var i=0;i<arguments.length;i++){ var v = bentoToken(arguments[i]); if (v) return v; }
                 return '';
             }
-            function num(v){ var n = Number(v || 0); return isFinite(n) ? n : 0; }
-            function addMap(map,key,qty){ key = cleanSignatureValue(key); if(key) map[key] = (map[key] || 0) + Math.max(1,num(qty||1)); }
-            function topKey(map){ var keys = Object.keys(map||{}); if(!keys.length) return 'N/D'; keys.sort(function(a,b){ return num(map[b])-num(map[a]) || String(a).localeCompare(String(b)); }); return keys[0] || 'N/D'; }
-            function shortSignature(s){ s = cleanSignatureValue(s) || 'UNCLASSIFIED_SYMPTOM'; return s.length > 60 ? s.slice(0,57).replace(/\s+\S*$/,'') + '...' : s; }
-            function dateObj(v){ v = cleanSignatureValue(v); if(!v) return null; try{ var d = new Date(v); if(!isNaN(d.getTime())) return d; }catch(_){} return null; }
-            function dateText(v){ var d = dateObj(v); return d ? d.toISOString().slice(0,10) : (cleanSignatureValue(v) || 'N/D'); }
+            function n(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
+            function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+            function pct(v,d){ return d > 0 ? Math.round(v / d * 100) : 0; }
+            function addMap(map,key,qty){ key = bentoClean(key); if (key) map[key] = (map[key] || 0) + Math.max(1,n(qty || 1)); }
+            function topEntry(map){
+                var keys = Object.keys(map || {});
+                if (!keys.length) return {key:'N/D',value:0,pct:0};
+                var total = keys.reduce(function(s,k){ return s + n(map[k]); },0);
+                keys.sort(function(a,b){ return n(map[b])-n(map[a]) || String(a).localeCompare(String(b)); });
+                var key = keys[0] || 'N/D';
+                return {key:key,value:n(map[key]),pct:pct(n(map[key]),total)};
+            }
+            function topKey(map){ return topEntry(map).key; }
+            function shortSig(s){ s = bentoClean(s) || 'UNCLASSIFIED_SYMPTOM'; return s.length > 60 ? s.slice(0,57).replace(/\s+\S*$/,'') + '...' : s; }
+            function dateObj(v){ v = bentoClean(v); if(!v) return null; try{ var d = new Date(v); if(!isNaN(d.getTime())) return d; }catch(_){} return null; }
+            function dateText(v){ var d = dateObj(v); return d ? d.toISOString().slice(0,10) : (bentoClean(v) || 'N/D'); }
             function firstDate(a,b){ if(!a) return b||''; if(!b) return a||''; var da=dateObj(a), db=dateObj(b); return da && db && db < da ? b : a; }
             function lastDate(a,b){ if(!a) return b||''; if(!b) return a||''; var da=dateObj(a), db=dateObj(b); return da && db && db > da ? b : a; }
             function ageDays(row){
                 row = row || {};
-                if(row.agingDays != null) return num(row.agingDays);
-                if(row.ageDays != null) return num(row.ageDays);
-                if(row.aging != null) return num(row.aging);
-                if(row.agingHours != null) return Math.max(0,num(row.agingHours)/24);
+                if (row.agingDays != null) return n(row.agingDays);
+                if (row.ageDays != null) return n(row.ageDays);
+                if (row.aging != null) return n(row.aging);
+                if (row.agingHours != null) return Math.max(0,n(row.agingHours)/24);
                 var d = dateObj(firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.repairTime,row.lastSeen));
                 return d ? Math.max(0,(Date.now()-d.getTime())/864e5) : null;
             }
             function bucket(days){
-                if(days == null || !isFinite(days)) return '';
-                if(days <= 30) return 'fresh';
-                if(days <= 60) return 'age31_60';
-                if(days <= 90) return 'age61_90';
-                if(days <= 365) return 'age91_365';
+                if (days == null || !isFinite(days)) return '';
+                if (days <= 30) return 'fresh';
+                if (days <= 60) return 'age31_60';
+                if (days <= 90) return 'age61_90';
+                if (days <= 365) return 'age91_365';
                 return 'ageOver365';
             }
             function normalizeSeed(row){
@@ -29611,16 +29617,14 @@ body:has(#recovery-section) .main-content.expanded{
                     wo:firstClean(row.wo,row.workOrder,row.WO),
                     sn:firstClean(row.sn,row.SN,row.serial,row.serialNumber,row.serial_number),
                     eventTime:firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.lastSeen),
-                    rootCauseHypothesis:firstClean(row.rootCauseHypothesis,row.rootCause),
-                    containmentAction:firstClean(row.containmentAction,row.containment),
-                    correctiveAction:firstClean(row.correctiveAction,row.corrective),
-                    preventiveAction:firstClean(row.preventiveAction,row.preventive),
-                    owner:firstClean(row.owner,row.responsible)
+                    recovered:n(row.recoveredUnits || row.recovered || row.goodQty || row.passQty),
+                    disposed:n(row.disposedUnits || row.disposed || row.scrapQty || row.closedQty),
+                    remaining:n(row.remainingUnits || row.remaining || row.openQty)
                 };
             }
             function buildExecutiveSignature(row){
                 row = normalizeSeed(row);
-                var failure = normalizeFailureMode(row.failureMode || row.defectType);
+                var failure = bentoFailure(row.failureMode || row.defectType);
                 var error = firstToken(row.errorCode);
                 var station = firstToken(row.station);
                 var process = firstToken(row.process);
@@ -29628,65 +29632,147 @@ body:has(#recovery-section) .main-content.expanded{
                 var component = firstToken(row.component);
                 var core = failure || error || [station,process].filter(Boolean).join('|') || 'UNCLASSIFIED_SYMPTOM';
                 var parts = [core];
-                if(refdes && core.indexOf(refdes) < 0) parts.push(refdes);
-                else if(!refdes && component && core.indexOf(component) < 0) parts.push(component);
+                if (refdes && core.indexOf(refdes) < 0) parts.push(refdes);
+                else if (!refdes && component && core.indexOf(component) < 0) parts.push(component);
                 var sig = parts.join(' | ');
-                if(sig.length > 60) sig = sig.slice(0,60).replace(/\s+\S*$/,'').replace(/\s+\|$/,'').trim();
+                if (sig.length > 60) sig = sig.slice(0,60).replace(/\s+\S*$/,'').replace(/\s+\|$/,'').trim();
                 return sig || 'UNCLASSIFIED_SYMPTOM';
             }
             function buildEngineeringSignature(row){
                 row = normalizeSeed(row);
-                var parts = [row.customer,row.bu,row.model,row.partNumber,row.line,row.station,row.failureMode||row.defectType,row.refdes||row.component,row.errorCode,row.process].map(sigToken).filter(Boolean);
-                var unique = []; parts.forEach(function(p){ if(p && p !== 'ND' && unique.indexOf(p) < 0) unique.push(p); });
+                var parts = [row.customer,row.bu,row.model,row.partNumber,row.line,row.station,row.failureMode||row.defectType,row.refdes||row.component,row.errorCode,row.process].map(bentoToken).filter(Boolean);
+                var unique = [];
+                parts.forEach(function(p){ if (p && p !== 'ND' && unique.indexOf(p) < 0) unique.push(p); });
                 return unique.length ? unique.join('|') : buildExecutiveSignature(row);
             }
-            function mainFailure(){ var f = topFailures && topFailures[0] ? topFailures[0] : {}; return firstClean(f.failureMode,f.mode,f.testinfo,f.symptom,f.defectType,'Unclassified Failure'); }
+            function mainFailure(){
+                var f = topFailures && topFailures[0] ? topFailures[0] : {};
+                return firstClean(f.failureMode,f.mode,f.testinfo,f.symptom,f.defectType,'Unclassified Failure');
+            }
             function ensureProblem(groups, seed){
                 seed = normalizeSeed(seed);
                 var execSig = buildExecutiveSignature(seed);
                 if(!groups[execSig]){
-                    groups[execSig] = {executiveSignature:execSig,shortExecutiveSignature:shortSignature(execSig),engineeringSignatures:{},totalBonepileUnits:0,freshInputUnits:0,agedUnits31Plus:0,oldUnits91Plus:0,longTermUnits365Plus:0,age31_60:0,age61_90:0,last7:0,last30:0,last90:0,previous30:0,affectedWOsMap:{},affectedSerialsMap:{},stations:{},models:{},lines:{},failureModes:{},firstSeen:'',lastSeen:'',samples:[]};
+                    groups[execSig] = {
+                        executiveSignature:execSig, shortExecutiveSignature:shortSig(execSig), engineeringSignatures:{},
+                        totalBonepileUnits:0, freshInputUnits:0, agedUnits31Plus:0, oldUnits91Plus:0, longTermUnits365Plus:0,
+                        age31_60:0, age61_90:0, last7:0, last30:0, last90:0, previous30:0, agedGrowth30d:0,
+                        affectedWOsMap:{}, affectedSerialsMap:{}, stations:{}, lines:{}, wos:{}, models:{}, processes:{}, failureModes:{},
+                        freshStations:{}, freshLines:{}, freshWos:{}, freshModels:{}, freshProcesses:{},
+                        firstSeen:'', lastSeen:'', samples:[], recoveredUnits:0, disposedUnits:0, remainingExplicit:0
+                    };
                 }
                 return groups[execSig];
             }
             function addProblem(groups, seed, qty, bkt, days){
-                qty = Math.max(0,num(qty)); if(!qty) return;
+                qty = Math.max(0,n(qty)); if(!qty) return;
                 seed = normalizeSeed(seed);
                 var g = ensureProblem(groups, seed);
                 var eng = buildEngineeringSignature(seed);
                 g.engineeringSignatures[eng] = (g.engineeringSignatures[eng] || 0) + qty;
-                if(bkt === 'fresh') g.freshInputUnits += qty;
-                else {
+                if (bkt === 'fresh') {
+                    g.freshInputUnits += qty;
+                    addMap(g.freshStations,seed.station,qty); addMap(g.freshLines,seed.line,qty); addMap(g.freshWos,seed.wo,qty); addMap(g.freshModels,seed.model,qty); addMap(g.freshProcesses,seed.process,qty);
+                } else {
                     g.agedUnits31Plus += qty; g.totalBonepileUnits += qty;
-                    if(bkt === 'age31_60') g.age31_60 += qty;
-                    else if(bkt === 'age61_90') g.age61_90 += qty;
-                    else if(bkt === 'age91_365') g.oldUnits91Plus += qty;
-                    else if(bkt === 'ageOver365'){ g.oldUnits91Plus += qty; g.longTermUnits365Plus += qty; }
+                    if (bkt === 'age31_60') g.age31_60 += qty;
+                    else if (bkt === 'age61_90') g.age61_90 += qty;
+                    else if (bkt === 'age91_365') g.oldUnits91Plus += qty;
+                    else if (bkt === 'ageOver365') { g.oldUnits91Plus += qty; g.longTermUnits365Plus += qty; }
                     else g.age31_60 += qty;
                 }
-                if(days != null && isFinite(days)){
-                    if(days <= 7) g.last7 += qty;
-                    if(days <= 30) g.last30 += qty;
-                    if(days <= 90) g.last90 += qty;
-                    if(days > 30 && days <= 60) g.previous30 += qty;
+                if (days != null && isFinite(days)) {
+                    if (days <= 7) g.last7 += qty;
+                    if (days <= 30) g.last30 += qty;
+                    if (days <= 90) g.last90 += qty;
+                    if (days > 30 && days <= 60) { g.previous30 += qty; g.agedGrowth30d += qty; }
                 }
-                addMap(g.affectedWOsMap,seed.wo,qty); addMap(g.affectedSerialsMap,seed.sn,qty); addMap(g.stations,seed.station,qty); addMap(g.models,seed.model,qty); addMap(g.lines,seed.line,qty); addMap(g.failureModes,seed.failureMode||seed.defectType,qty);
+                addMap(g.affectedWOsMap,seed.wo,qty); addMap(g.affectedSerialsMap,seed.sn,qty); addMap(g.stations,seed.station,qty); addMap(g.lines,seed.line,qty); addMap(g.wos,seed.wo,qty); addMap(g.models,seed.model,qty); addMap(g.processes,seed.process,qty); addMap(g.failureModes,seed.failureMode||seed.defectType,qty);
+                g.recoveredUnits += seed.recovered || 0;
+                g.disposedUnits += seed.disposed || 0;
+                g.remainingExplicit += seed.remaining || 0;
                 if(seed.eventTime){ g.firstSeen = firstDate(g.firstSeen,seed.eventTime); g.lastSeen = lastDate(g.lastSeen,seed.eventTime); }
                 if(g.samples.length < 8) g.samples.push(seed);
             }
-            function classifyTrend(g){ if(g.last30 > g.previous30 * 1.15 && g.last30 > 0) return 'Increasing'; if(g.last30 < g.previous30 * 0.85 && g.previous30 > 0) return 'Decreasing'; return 'Stable'; }
-            function classifyStatus(g){ if(g.freshInputUnits > 0 && g.oldUnits91Plus > 0) return 'CRITICAL_RECURRENCE'; if(g.freshInputUnits > 0 && g.agedUnits31Plus > 0) return 'ACTIVE'; if(g.freshInputUnits === 0 && g.agedUnits31Plus > 0) return 'CONTAINED'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'WATCHLIST'; return 'CLOSED'; }
-            function classifySeverity(g){ if(g.oldUnits91Plus > 0 && g.freshInputUnits > 0) return 'CRITICAL'; if(g.agedUnits31Plus > 0 && g.freshInputUnits > 0) return 'HIGH'; if(g.agedUnits31Plus > 0 && g.freshInputUnits === 0) return 'MEDIUM'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'LOW'; return 'LOW'; }
-            function rootCauseStatus(status){ if(status === 'ACTIVE' || status === 'CRITICAL_RECURRENCE') return 'Root Cause Not Contained'; if(status === 'CONTAINED') return 'Recovery Only'; if(status === 'WATCHLIST') return 'Emerging Signal'; return 'Closed / No Action'; }
-            function recommendedAction(status){ if(status === 'CRITICAL_RECURRENCE') return 'Containment at source + oldest recovery'; if(status === 'ACTIVE') return 'Containment at source + recovery'; if(status === 'CONTAINED') return 'Recovery burn-down'; if(status === 'WATCHLIST') return 'Monitor and validate repeatability'; return 'No action'; }
-            function riskScore(g,status,trend){
-                var freshWeight = Math.min(42, Math.log10(g.freshInputUnits + 1) * 20);
-                var oldWeight = Math.min(24, Math.log10(g.oldUnits91Plus + 1) * 12);
-                var bonepileWeight = Math.min(18, Math.log10(g.agedUnits31Plus + 1) * 8);
-                var trendWeight = trend === 'Increasing' ? 12 : (trend === 'Stable' ? 4 : 0);
-                var criticalityWeight = status === 'CRITICAL_RECURRENCE' ? 22 : (status === 'ACTIVE' ? 12 : (status === 'CONTAINED' ? 2 : 0));
-                if(status === 'WATCHLIST') bonepileWeight = 0;
-                return Math.min(100, Math.round(freshWeight + oldWeight + bonepileWeight + trendWeight + criticalityWeight));
+            function trend(g){
+                if(g.last30 > g.previous30 * 1.15 && g.last30 > 0) return 'Increasing';
+                if(g.last30 < g.previous30 * 0.85 && g.previous30 > 0) return 'Decreasing';
+                return 'Stable';
+            }
+            function velocity(g,t){
+                if(g.last30 <= 0 && g.last7 <= 0) return 'NO_RECENT_INPUT';
+                if(t === 'Increasing' || (g.last7 > 0 && g.last7 / Math.max(1,g.last30) > 0.35)) return 'ACCELERATING';
+                if(t === 'Decreasing') return 'DECLINING';
+                return 'STABLE';
+            }
+            function status(g){
+                if(g.freshInputUnits > 0 && g.oldUnits91Plus > 0) return 'CRITICAL_RECURRENCE';
+                if(g.freshInputUnits > 0 && g.agedUnits31Plus > 0) return 'ACTIVE';
+                if(g.freshInputUnits === 0 && g.agedUnits31Plus > 0) return 'CONTAINED';
+                if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'WATCHLIST';
+                return 'CLOSED';
+            }
+            function severity(g){
+                if(g.oldUnits91Plus > 0 && g.freshInputUnits > 0) return 'CRITICAL';
+                if(g.agedUnits31Plus > 0 && g.freshInputUnits > 0) return 'HIGH';
+                if(g.agedUnits31Plus > 0 && g.freshInputUnits === 0) return 'MEDIUM';
+                if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'LOW';
+                return 'LOW';
+            }
+            function rootCauseStatus(s){ if(s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') return 'Root Cause Not Contained'; if(s === 'CONTAINED') return 'Recovery Only'; if(s === 'WATCHLIST') return 'Emerging Signal'; return 'Closed / No Action'; }
+            function sourceIntel(g){
+                var station = topEntry(g.freshStations); if(station.key === 'N/D') station = topEntry(g.stations);
+                var line = topEntry(g.freshLines); if(line.key === 'N/D') line = topEntry(g.lines);
+                var wo = topEntry(g.freshWos); if(wo.key === 'N/D') wo = topEntry(g.wos);
+                var model = topEntry(g.freshModels); if(model.key === 'N/D') model = topEntry(g.models);
+                var process = topEntry(g.freshProcesses); if(process.key === 'N/D') process = topEntry(g.processes);
+                var contribution = Math.max(station.pct,line.pct,wo.pct,model.pct,process.pct);
+                var primary = station.pct >= Math.max(line.pct,wo.pct,model.pct,process.pct) ? station.key : (line.pct >= Math.max(wo.pct,model.pct,process.pct) ? line.key : (wo.pct >= Math.max(model.pct,process.pct) ? wo.key : (model.pct >= process.pct ? model.key : process.key)));
+                return {primarySourceStation:station.key,primarySourceLine:line.key,primarySourceWO:wo.key,primarySourceModel:model.key,primaryProcess:process.key,sourceContributionPct:contribution,primarySource:primary || 'N/D',sourceBadge:contribution >= 50 ? 'Source Identified' : 'Distributed Source'};
+            }
+            function recoveryEffectiveness(g,s,v){
+                var original = Math.max(g.agedUnits31Plus + g.recoveredUnits + g.disposedUnits, g.agedUnits31Plus);
+                var current = g.agedUnits31Plus;
+                var recovered = g.recoveredUnits;
+                var disposed = g.disposedUnits;
+                var remaining = g.remainingExplicit || current;
+                var burned = Math.max(0, original - current);
+                var burnDownPct = pct(burned, original);
+                var explicit = (recovered + disposed + g.remainingExplicit) > 0;
+                var state = 'UNKNOWN';
+                if(s === 'CONTAINED' && current >= 0) state = 'EFFECTIVE';
+                if((s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') && (burnDownPct > 0 || recovered + disposed > 0)) state = 'PARTIAL';
+                if((s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') && v === 'ACCELERATING') state = 'INEFFECTIVE';
+                if(!explicit && current <= 0 && g.freshInputUnits <= 0) state = 'UNKNOWN';
+                return {originalBonepile:original,currentBonepile:current,recoveredUnits:recovered,disposedUnits:disposed,remainingUnits:remaining,burnDownPct:burnDownPct,recoveryEffectiveness:state};
+            }
+            function impactScore(p){
+                var freshFactor = clamp(p.freshInputUnits / Math.max(1,p.__maxFresh) * 100,0,100) * 0.30;
+                var oldFactor = clamp(p.oldUnits91Plus / Math.max(1,p.__maxOld) * 100,0,100) * 0.20;
+                var traceFactor = clamp((p.affectedSerials + p.affectedWOs*5) / Math.max(1,p.__maxTrace) * 100,0,100) * 0.15;
+                var velocityFactor = (p.velocityStatus === 'ACCELERATING' ? 100 : p.velocityStatus === 'STABLE' ? 62 : p.velocityStatus === 'DECLINING' ? 28 : 0) * 0.15;
+                var severityFactor = (p.severity === 'CRITICAL' ? 100 : p.severity === 'HIGH' ? 78 : p.severity === 'MEDIUM' ? 42 : 22) * 0.10;
+                var recoveryFactor = (p.recoveryEffectiveness === 'INEFFECTIVE' ? 100 : p.recoveryEffectiveness === 'PARTIAL' ? 68 : p.recoveryEffectiveness === 'UNKNOWN' ? 42 : 10) * 0.10;
+                var score = freshFactor + oldFactor + traceFactor + velocityFactor + severityFactor + recoveryFactor;
+                if(p.status === 'CRITICAL_RECURRENCE') score += 8;
+                if(p.sourceContributionPct > 50) score += 4;
+                if(p.status === 'CONTAINED') score *= 0.72;
+                return clamp(Math.round(score),0,100);
+            }
+            function band(score){ return score >= 90 ? 'Critical' : score >= 70 ? 'High' : score >= 40 ? 'Watch' : 'Healthy'; }
+            function focus(p){
+                if(p.recoveryEffectiveness === 'INEFFECTIVE') return 'Escalate recovery execution and verify root cause containment.';
+                if((p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') && p.velocityStatus === 'ACCELERATING') return 'Apply containment at ' + p.primarySource + ' before recovery.';
+                if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return 'Containment at source + recovery burn-down.';
+                if(p.status === 'CONTAINED') return 'Recovery burn-down. Source appears contained.';
+                if(p.status === 'WATCHLIST') return 'Monitor and validate repeatability.';
+                return 'No immediate recovery action.';
+            }
+            function exitCriteria(p){
+                if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return ['No fresh input with same signature.','Source containment verified.','Aged bucket burn-down started.','Retest disposition validated.'];
+                if(p.status === 'CONTAINED') return ['Bonepile below target.','No recurrence after recovery.','Effectiveness confirmed.'];
+                if(p.status === 'WATCHLIST') return ['No repeat within monitoring window.','Escalate if fresh input repeats.'];
+                return ['No fresh input.','No aged WIP.'];
             }
             function buildProblems(){
                 var groups = {};
@@ -29700,7 +29786,7 @@ body:has(#recovery-section) .main-content.expanded{
                 (serials || []).forEach(function(row){
                     var seed = normalizeSeed(row);
                     var days = ageDays(row);
-                    var b = bucket(days) || (num(row && row.reentry) > 0 ? 'age31_60' : 'fresh');
+                    var b = bucket(days) || (n(row && row.reentry) > 0 ? 'age31_60' : 'fresh');
                     addProblem(groups,seed,1,b,days);
                 });
                 stationRowsScoped.forEach(function(r){
@@ -29713,37 +29799,107 @@ body:has(#recovery-section) .main-content.expanded{
                     addProblem(groups,seed,bucketStationValue(r,'ageOver365'),'ageOver365',420);
                 });
                 var list = Object.keys(groups).map(function(k){
-                    var g = groups[k], status = classifyStatus(g), severity = classifySeverity(g), trend = classifyTrend(g), score = riskScore(g,status,trend);
-                    var trendIcon = trend === 'Increasing' ? '↑' : (trend === 'Decreasing' ? '↓' : '→');
-                    return Object.assign({},g,{engineeringSignaturesList:Object.keys(g.engineeringSignatures).sort(function(a,b){return g.engineeringSignatures[b]-g.engineeringSignatures[a];}),affectedWOs:Object.keys(g.affectedWOsMap).length,affectedSerials:Object.keys(g.affectedSerialsMap).length||Math.round(g.agedUnits31Plus+g.freshInputUnits),topStation:topKey(g.stations),topModel:topKey(g.models),topLine:topKey(g.lines),topFailureMode:topKey(g.failureModes),firstSeenText:dateText(g.firstSeen),lastSeenText:dateText(g.lastSeen),trend7d:g.last7,trend30d:g.last30,trend90d:g.last90,trend:trend,trendIcon:trendIcon,status:status,severity:severity,rootCauseStatus:rootCauseStatus(status),recommendedAction:recommendedAction(status),riskScore:score,contributionBase:g.agedUnits31Plus+g.freshInputUnits});
+                    var g = groups[k], tr = trend(g), v = velocity(g,tr), s = status(g), sev = severity(g), src = sourceIntel(g), eff = recoveryEffectiveness(g,s,v);
+                    return Object.assign({},g,src,eff,{
+                        engineeringSignaturesList:Object.keys(g.engineeringSignatures).sort(function(a,b){return g.engineeringSignatures[b]-g.engineeringSignatures[a];}),
+                        affectedWOs:Object.keys(g.affectedWOsMap).length, affectedSerials:Object.keys(g.affectedSerialsMap).length || Math.round(g.agedUnits31Plus+g.freshInputUnits),
+                        topStation:topKey(g.stations),topModel:topKey(g.models),topLine:topKey(g.lines),topFailureMode:topKey(g.failureModes),
+                        firstSeenText:dateText(g.firstSeen),lastSeenText:dateText(g.lastSeen),
+                        velocity7d:g.last7,velocity30d:g.last30,velocity90d:g.last90,trend:tr,trendIcon:tr==='Increasing'?'↑':(tr==='Decreasing'?'↓':'→'),
+                        velocityStatus:v,velocityIcon:v==='ACCELERATING'?'↑':(v==='DECLINING'?'↓':(v==='NO_RECENT_INPUT'?'✓':'→')),
+                        status:s,severity:sev,rootCauseStatus:rootCauseStatus(s)
+                    });
                 }).filter(function(p){ return p.freshInputUnits > 0 || p.agedUnits31Plus > 0; });
-                list.sort(function(a,b){ return b.riskScore-a.riskScore || b.freshInputUnits-a.freshInputUnits || b.oldUnits91Plus-a.oldUnits91Plus || b.agedUnits31Plus-a.agedUnits31Plus || String(a.executiveSignature).localeCompare(String(b.executiveSignature)); });
+                var maxFresh = Math.max.apply(null,[1].concat(list.map(function(p){return p.freshInputUnits;})));
+                var maxOld = Math.max.apply(null,[1].concat(list.map(function(p){return p.oldUnits91Plus;})));
+                var maxTrace = Math.max.apply(null,[1].concat(list.map(function(p){return p.affectedSerials + p.affectedWOs*5;})));
+                list.forEach(function(p){
+                    p.__maxFresh=maxFresh; p.__maxOld=maxOld; p.__maxTrace=maxTrace;
+                    p.businessImpactScore=impactScore(p); p.businessImpactBand=band(p.businessImpactScore); p.recommendedFocus=focus(p); p.exitCriteria=exitCriteria(p);
+                });
+                list.sort(function(a,b){ return b.businessImpactScore-a.businessImpactScore || b.freshInputUnits-a.freshInputUnits || b.oldUnits91Plus-a.oldUnits91Plus || b.agedUnits31Plus-a.agedUnits31Plus; });
                 return list;
             }
-            function healthIndex(problems){ var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length; var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length; var inc=problems.filter(function(p){return p.trend==='Increasing';}).length; var score=Math.max(0,Math.round(100-active*5-critical*12-inc*2)); return {score:score,label:score<55?'Critical':(score<80?'Needs Attention':'Controlled')}; }
-            function generatePlan(p){ return ['# Recovery Plan - '+p.executiveSignature,'','## Current Condition','- Executive Signature: '+p.executiveSignature,'- Status: '+p.status,'- Severity: '+p.severity,'- Risk Score: '+p.riskScore,'- Bonepile Units: '+fmt(p.agedUnits31Plus),'- Fresh Input Units: '+fmt(p.freshInputUnits),'- Old 91D+ Units: '+fmt(p.oldUnits91Plus),'- Top Station: '+p.topStation,'- Top Model: '+p.topModel,'- Trend: '+p.trendIcon+' '+p.trend,'','## Why It Is Still Active',(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE')?'Fresh units with the same symptom are still entering the system while aged bonepile exists. Recovery alone will not solve the problem.':(p.status==='CONTAINED'?'No fresh input is currently detected for this aged symptom. Focus can shift from containment to recovery burn-down.':'Fresh input is present without significant aged bonepile. Monitor closely before it becomes a long-term recovery issue.'),'','## Containment Actions','- Apply containment gate at source.','- Apply 100% inspection at the detection station.','- Segregate fresh affected units.','- Review recent station, recipe, material, fixture and program changes.','- Stop releasing recovered units until containment is validated.','','## Recovery Actions','- Prioritize oldest 91D+ units first.','- Separate aged WIP by bucket.','- Assign station owner and recovery owner.','- Track daily burn-down by executive signature.','- Verify retest results before release.','','## Owner Recommendation',p.topStation!=='N/D'?'Primary owner: station/process owner for '+p.topStation+'. Quality owner validates recurrence closure.':'Primary owner: SMT Process. Quality owner validates recurrence closure.','','## Effectiveness Verification','- No fresh input with same Executive Signature for the defined monitoring period.','- Trend is stable or decreasing over 7D / 30D / 90D.','- 91D+ bucket is reducing.','- No recurrence after recovered units are released.','','## Expected Exit Criteria','- Fresh Input Units = 0.','- Root Cause Status = Contained or Recovery Only.','- Recovery burn-down plan is active and tracked.','- Recovered units pass verification and disposition checks.','','## Engineering Signature Breakdown',(p.engineeringSignaturesList||[]).slice(0,10).map(function(s){return '- '+s;}).join('\n') || '- N/D',''].join('\n'); }
-            function downloadPlan(p){ recoveryDownloadText('Recovery_Plan_'+sigToken(p.executiveSignature).slice(0,120)+'.md',generatePlan(p),'text/markdown;charset=utf-8;'); }
-            function exportRankingTsv(problems){ var headers=['Rank','Executive Signature','Engineering Signature','Status','Severity','Risk Score','Bonepile Units','Fresh Input Units','Old 91D+','Top Station','Top Model','Trend','Root Cause Status','Recommended Action']; var rows=problems.map(function(p,i){return [i+1,p.executiveSignature,(p.engineeringSignaturesList||[''])[0]||'',p.status,p.severity,p.riskScore,p.agedUnits31Plus,p.freshInputUnits,p.oldUnits91Plus,p.topStation,p.topModel,p.trend,p.rootCauseStatus,p.recommendedAction];}); var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n'); recoveryDownloadText('Recovery_Intel_Problem_Ranking.tsv',tsv,'text/tab-separated-values;charset=utf-8;'); }
-            function metric(label,value,sub,tone,iconKind){ return h('article',{className:'prr-metric '+(tone||'')},[h('i',null,icon(iconKind||'grid')),h('div',null,[h('span',null,label),h('b',null,value),h('small',null,sub||'')])]); }
-            function statusBadge(s){ return h('span',{className:'prr-status '+String(s||'').toLowerCase().replace(/_/g,'-')},String(s||'N/D').replace(/_/g,' ')); }
-            function severityBadge(s){ return h('span',{className:'prr-sev '+String(s||'LOW').toLowerCase()},s||'LOW'); }
-            function riskBadge(score){ return h('span',{className:'prr-risk '+(score>=80?'hot':score>=55?'warn':'calm')},'Risk '+score); }
-            function rankCard(p,idx,selectedKey){ var sel=selectedKey===p.executiveSignature; return h('article',{key:'prr-card-'+idx,className:'prr-card '+String(p.status).toLowerCase().replace(/_/g,'-')+(sel?' selected':''),title:(p.engineeringSignaturesList||[])[0]||p.executiveSignature},[h('div',{className:'prr-card-head'},[h('b',{className:'prr-rank'},'#'+(idx+1)),severityBadge(p.severity),statusBadge(p.status),riskBadge(p.riskScore)]),h('h3',null,p.shortExecutiveSignature),h('div',{className:'prr-card-grid'},[h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(p.agedUnits31Plus))]),h('span',null,[h('em',null,'Fresh'),h('b',null,fmt(p.freshInputUnits))]),h('span',null,[h('em',null,'Old 91D+'),h('b',null,fmt(p.oldUnits91Plus))]),h('span',null,[h('em',null,'Trend'),h('b',null,p.trendIcon+' '+p.trend)])]),h('dl',null,[h('dt',null,'Top Station'),h('dd',null,p.topStation),h('dt',null,'Top Model'),h('dd',null,p.topModel),h('dt',null,'Root Cause'),h('dd',null,p.rootCauseStatus)]),h('p',null,p.recommendedAction),h('button',{type:'button',onClick:function(){window.__SMTINEL_PRR_SELECTED=p.executiveSignature;requestRender();}},'View Detail')]); }
-            function detailPanel(p){ if(!p) return h('section',{className:'prr-detail empty'},'Select a recurring problem to view detail.'); var models=Object.keys(p.models||{}).slice(0,8), lines=Object.keys(p.lines||{}).slice(0,8), stations=Object.keys(p.stations||{}).slice(0,8), wos=Object.keys(p.affectedWOsMap||{}).slice(0,12); return h('section',{className:'prr-detail'},[h('div',{className:'prr-detail-head'},[h('div',null,[h('span',null,'Problem Detail'),h('h3',null,p.executiveSignature)]),h('button',{type:'button',onClick:function(){downloadPlan(p);}},'Generate Recovery Plan')]),h('div',{className:'prr-detail-grid'},[h('article',null,[h('b',null,'Engineering Signature Breakdown'),h('ul',null,(p.engineeringSignaturesList||[]).slice(0,8).map(function(s){return h('li',{key:s},s);}))]),h('article',null,[h('b',null,'Affected Models'),h('p',null,models.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Lines'),h('p',null,lines.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Stations'),h('p',null,stations.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected WOs'),h('p',null,wos.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Serials'),h('p',null,fmt(p.affectedSerials))])]),h('div',{className:'prr-compare'},[h('span',null,[h('em',null,'Fresh vs Aged'),h('b',null,fmt(p.freshInputUnits)+' / '+fmt(p.agedUnits31Plus))]),h('span',null,[h('em',null,'First Seen'),h('b',null,p.firstSeenText)]),h('span',null,[h('em',null,'Last Seen'),h('b',null,p.lastSeenText)]),h('span',null,[h('em',null,'Trend 7D / 30D / 90D'),h('b',null,fmt(p.trend7d)+' / '+fmt(p.trend30d)+' / '+fmt(p.trend90d))])]),h('div',{className:'prr-rec'},[h('article',null,[h('b',null,'Recommended containment'),h('p',null,(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE')?'Execute containment at source station, apply 100% inspection and segregate fresh affected units.':'Containment monitoring only; no active fresh-to-aged recurrence is confirmed.')]),h('article',null,[h('b',null,'Recommended recovery plan'),h('p',null,p.status==='WATCHLIST'?'Monitor early signal and prevent aging.':'Prioritize 91D+ and highest volume aged units, track burn-down by executive signature.')])])]); }
+            function healthIndex(problems){
+                var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length;
+                var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length;
+                var accel=problems.filter(function(p){return p.velocityStatus==='ACCELERATING';}).length;
+                var score=Math.max(0,Math.round(100-active*5-critical*12-accel*3));
+                return {score:score,label:score<55?'Critical':(score<80?'Watch':'Healthy')};
+            }
+            function gmBullets(problems){
+                var top = problems[0] || null;
+                if(!top) return ['No active recovery priority detected.','No concentrated source identified.','Continue monitoring fresh input.'];
+                return [
+                    'Biggest active issue: ' + top.executiveSignature + ' with ' + fmt(top.agedUnits31Plus) + ' aged units and ' + fmt(top.freshInputUnits) + ' fresh units.',
+                    top.sourceContributionPct > 0 ? ('Main source: ' + top.primarySource + ' contributes ' + top.sourceContributionPct + '% of current input.') : 'Main source: distributed across multiple sources.',
+                    (top.status === 'ACTIVE' || top.status === 'CRITICAL_RECURRENCE') ? 'Decision: stop new input before recovery can be effective.' : 'Decision: focus recovery burn-down and monitor recurrence.'
+                ];
+            }
+            function makePlan(p, bullets){
+                return ['# Recovery Prioritization Plan - '+p.executiveSignature,'','## Executive Summary','- Business Impact Score: '+p.businessImpactScore+' / 100','- Recommended Focus: '+p.recommendedFocus,'- Primary Source: '+p.primarySource+' ('+p.sourceContributionPct+'%)','','## Source Intelligence','- Primary Station: '+p.primarySourceStation,'- Primary Line: '+p.primarySourceLine,'- Primary WO: '+p.primarySourceWO,'- Primary Model: '+p.primarySourceModel,'- Source Type: '+p.sourceBadge,'','## Problem Velocity','- 7D: '+fmt(p.velocity7d),'- 30D: '+fmt(p.velocity30d),'- 90D: '+fmt(p.velocity90d),'- Velocity Status: '+p.velocityIcon+' '+p.velocityStatus,'','## Recovery Effectiveness','- Current Bonepile: '+fmt(p.currentBonepile),'- Burn-down: '+p.burnDownPct+'%','- Effectiveness: '+p.recoveryEffectiveness,'','## Containment Strategy',p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'?'Apply containment at '+p.primarySource+' and verify no fresh input continues.':'Containment monitoring only.','','## Recovery Strategy',p.status==='WATCHLIST'?'Monitor and prevent aging.':'Prioritize 91D+ units and track burn-down by Executive Signature.','','## Exit Criteria',p.exitCriteria.map(function(x){return '- '+x;}).join('\n'),'','## What To Tell GM',bullets.map(function(x){return '- '+x;}).join('\n'),''].join('\n');
+            }
+            function downloadPlan(p, bullets){ recoveryDownloadText('Recovery_Command_Center_Plan_'+bentoToken(p.executiveSignature).slice(0,120)+'.md',makePlan(p,bullets),'text/markdown;charset=utf-8;'); }
+            function exportBentoTsv(problems){
+                var headers=['Rank','Executive Signature','Business Impact Score','Status','Severity','Fresh Input','Bonepile 31D+','Old 91D+','Primary Source','Primary Source Station','Top WO','Top Line','Source Contribution %','Velocity','Recovery Effectiveness','Recommended Focus'];
+                var rows=problems.map(function(p,i){return [i+1,p.executiveSignature,p.businessImpactScore,p.status,p.severity,p.freshInputUnits,p.agedUnits31Plus,p.oldUnits91Plus,p.primarySource,p.primarySourceStation,p.primarySourceWO,p.primarySourceLine,p.sourceContributionPct,p.velocityStatus,p.recoveryEffectiveness,p.recommendedFocus];});
+                var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n');
+                recoveryDownloadText('Recovery_Command_Center_Bento.tsv',tsv,'text/tab-separated-values;charset=utf-8;');
+            }
+            function badge(text,cls){ return h('span',{className:'bento-badge '+(cls||'')},text); }
+            function mini(label,value,sub){ return h('span',{className:'bento-mini'},[h('em',null,label),h('b',null,value),sub?h('small',null,sub):null]); }
+            function problemCard(p,i,selectedKey){
+                var sel=selectedKey===p.executiveSignature;
+                return h('article',{className:'bento-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;requestRender();}},[
+                    h('div',{className:'bento-problem-top'},[h('b',null,'#'+(i+1)),badge(p.severity,p.severity.toLowerCase()),badge(p.status,'status')]),
+                    h('h4',null,p.shortExecutiveSignature),
+                    h('div',{className:'bento-problem-score'},[h('strong',null,p.businessImpactScore),h('span',null,'Business Impact')]),
+                    h('div',{className:'bento-problem-grid'},[mini('Bonepile',fmt(p.agedUnits31Plus)),mini('Fresh',fmt(p.freshInputUnits)),mini('Source',p.primarySource),mini('Velocity',p.velocityIcon+' '+p.velocityStatus)]),
+                    h('p',null,p.recommendedFocus)
+                ]);
+            }
+            function detailDrawer(p,bullets){
+                if(!p) return null;
+                return h('aside',{className:'bento-drawer'},[
+                    h('div',{className:'bento-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';requestRender();}},'×')]),
+                    h('h3',null,p.executiveSignature),
+                    h('div',{className:'bento-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),
+                    h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),
+                    h('section',null,[h('h4',null,'Velocity'),mini('7D',fmt(p.velocity7d)),mini('30D',fmt(p.velocity30d)),mini('90D',fmt(p.velocity90d)),mini('Status',p.velocityIcon+' '+p.velocityStatus)]),
+                    h('section',null,[h('h4',null,'Recovery Effectiveness'),mini('Bonepile',fmt(p.currentBonepile)),mini('Burn-down',p.burnDownPct+'%'),mini('Status',p.recoveryEffectiveness)]),
+                    h('section',null,[h('h4',null,'Affected Scope'),mini('WOs',fmt(p.affectedWOs)),mini('Serials',fmt(p.affectedSerials)),mini('Model',p.topModel),mini('Station',p.topStation)]),
+                    h('section',null,[h('h4',null,'Containment Plan'),h('p',null,p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'?'Apply containment at '+p.primarySource+'. Segregate fresh input and validate station control.':'Monitor source and prevent recurrence.')]),
+                    h('section',null,[h('h4',null,'Recovery Plan'),h('p',null,p.status==='WATCHLIST'?'Prevent aging by monitoring repeated input.':'Prioritize oldest bucket and track burn-down daily.')]),
+                    h('button',{type:'button',className:'bento-primary',onClick:function(){downloadPlan(p,bullets);}},'Generate Recovery Plan')
+                ]);
+            }
 
             var problems=buildProblems();
-            var selectedKey=window.__SMTINEL_PRR_SELECTED || (problems[0]&&problems[0].executiveSignature);
+            var selectedKey=window.__SMTINEL_BENTO_SELECTED || (problems[0]&&problems[0].executiveSignature);
             var selected=problems.filter(function(p){return p.executiveSignature===selectedKey;})[0] || problems[0] || null;
-            var activeProblems=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';});
-            var criticalProblems=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';});
-            var containedProblems=problems.filter(function(p){return p.status==='CONTAINED';});
-            var freshAtRisk=problems.reduce(function(s,p){return s+((p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'||p.status==='WATCHLIST')?p.freshInputUnits:0);},0);
-            var largestActive=activeProblems.slice().sort(function(a,b){return b.agedUnits31Plus-a.agedUnits31Plus||b.freshInputUnits-a.freshInputUnits;})[0]||null;
-            var totalRiskBase=problems.reduce(function(s,p){return s+p.contributionBase;},0);
-            var largestContribution=largestActive&&totalRiskBase?Math.round(largestActive.contributionBase/totalRiskBase*100):0;
+            var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';});
+            var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';});
+            var contained=problems.filter(function(p){return p.status==='CONTAINED';});
+            var watch=problems.filter(function(p){return p.status==='WATCHLIST';});
+            var accelerating=problems.filter(function(p){return p.velocityStatus==='ACCELERATING';});
             var health=healthIndex(problems);
-            var interpretation=activeProblems.length?'Recovery alone will not solve the problem. Fresh units with the same symptom are still entering the system. Containment at source must be executed before recovery can be effective.':(containedProblems.length?'No fresh input detected for aged symptoms. Focus can shift from containment to recovery burn-down.':'Fresh symptoms detected without aged bonepile. Monitor closely before they become long-term recovery issues.');
-            return h('section',{className:'prr-engine'},[h('div',{className:'prr-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Problem Recurrence Ranking Engine'),h('h2',null,'Ranking ejecutivo de problemas vivos'),h('p',null,'Agrupa síntomas por Executive Signature corta, elimina ruido de filtros/UI y prioriza contención y recovery por riesgo operativo.')]),h('div',{className:'prr-toolbar'},[h('button',{type:'button',onClick:function(){exportRankingTsv(problems);}},'Export TSV'),h('button',{type:'button',onClick:function(){if(selected)downloadPlan(selected);},className:'primary'},'Generate Recovery Plan')])]),h('div',{className:'prr-kpis'},[metric('Active Problems',fmt(activeProblems.length),'Fresh + aged recurrence','red','warn'),metric('Critical Recurrences',fmt(criticalProblems.length),'Fresh + 91D+','orange','warn'),metric('Largest Active Problem',largestActive?largestActive.shortExecutiveSignature:'N/D',largestActive?('Bonepile '+fmt(largestActive.agedUnits31Plus)+' · Fresh '+fmt(largestActive.freshInputUnits)+' · '+largestContribution+'%'):'No active recurrence','blue','grid'),metric('Fresh Input at Risk',fmt(freshAtRisk),'fresh units tied to risk','purple','clock'),metric('Contained Problems',fmt(containedProblems.length),'recovery only','green','shield'),metric('Problem Health Index',fmt(health.score)+'/100',health.label,health.score<55?'red':(health.score<80?'orange':'green'),'grid')]),h('section',{className:'prr-meaning'},[h('h3',null,'What this means'),h('p',null,interpretation)]),h('section',{className:'prr-top'},[h('div',{className:'prr-section-head'},[h('h3',null,'Top Recurring Problems'),h('span',null,'Ranked by Risk Score')]),h('div',{className:'prr-card-grid'},problems.length?problems.slice(0,10).map(function(p,i){return rankCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No problem recurrence signatures detected.'))]),detailPanel(selected),h('section',{className:'prr-matrix'},[h('div',{className:'prr-section-head'},[h('h3',null,'Problem Status Matrix'),h('span',null,'Executive signature shown; engineering signature exported and available in detail.')]),h('div',{className:'prr-table-wrap'},h('table',{className:'prr-table'},[h('thead',null,h('tr',null,['Rank','Severity','Status','Executive Signature','Risk Score','Bonepile Units','Fresh Units','91D+ Units','Affected WO','Affected Serials','Top Station','Top Model','Trend','Root Cause Status','Recommended Action'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,50).map(function(p,i){return h('tr',{key:'prr-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,severityBadge(p.severity)),h('td',null,statusBadge(p.status)),h('td',{title:(p.engineeringSignaturesList||[])[0]||p.executiveSignature},p.shortExecutiveSignature),h('td',null,riskBadge(p.riskScore)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,fmt(p.affectedWOs)),h('td',null,fmt(p.affectedSerials)),h('td',null,p.topStation),h('td',null,p.topModel),h('td',null,h('span',{className:'prr-trend '+p.trend.toLowerCase()},p.trendIcon+' '+p.trend)),h('td',null,p.rootCauseStatus),h('td',null,p.recommendedAction)]);} ))]))])]);
+            var largest=active[0] || problems[0] || null;
+            var bullets=gmBullets(problems);
+            return h('section',{className:'bento-recovery'},[
+                h('div',{className:'bento-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'SMTinel Recovery Command Center'),h('h2',null,'Recovery Intel Bento Enterprise'),h('p',null,'Identifica el problema que requiere atención inmediata sin leer tablas.')]),h('div',{className:'bento-actions'},[h('button',{type:'button',onClick:function(){exportBentoTsv(problems);}},'Export TSV'),h('button',{type:'button',onClick:function(){if(selected)downloadPlan(selected,bullets);}},'Generate Recovery Plan')])]),
+                h('div',{className:'bento-grid'},[
+                    h('article',{className:'bento-card health'},[h('span',null,'Recovery Health'),h('b',null,health.score),badge(health.label,health.label.toLowerCase())]),
+                    h('article',{className:'bento-card critical'},[h('span',null,'Critical Matches'),h('b',null,fmt(critical.length)),h('div',null,[mini('Fresh Input',fmt(critical.reduce(function(s,p){return s+p.freshInputUnits;},0))),mini('Old 91D+',fmt(critical.reduce(function(s,p){return s+p.oldUnits91Plus;},0)))])]),
+                    h('article',{className:'bento-card active'},[h('span',null,'Active Recurrence'),h('b',null,fmt(active.length)),h('div',null,[mini('Accelerating',fmt(accelerating.length)),mini('Contained',fmt(contained.length)),mini('Watchlist',fmt(watch.length))])]),
+                    h('article',{className:'bento-card largest'},[h('span',null,'Largest Active Problem'),h('h3',null,largest?largest.shortExecutiveSignature:'N/D'),h('div',{className:'bento-largest-score'},[h('b',null,largest?largest.businessImpactScore:'0'),h('em',null,'Business Impact')]),h('div',{className:'bento-largest-grid'},[mini('Bonepile',largest?fmt(largest.agedUnits31Plus):'0'),mini('Fresh Input',largest?fmt(largest.freshInputUnits):'0'),mini('Oldest Bucket',largest?fmt(largest.oldUnits91Plus):'0'),mini('Velocity',largest?largest.velocityIcon+' '+largest.velocityStatus:'N/D')])]),
+                    h('article',{className:'bento-card source'},[h('span',null,'Source Intelligence'),h('h3',null,largest?largest.primarySource:'N/D'),h('b',null,largest?largest.sourceContributionPct+'%':'0%'),h('div',null,[mini('Top WO',largest?largest.primarySourceWO:'N/D'),mini('Top Line',largest?largest.primarySourceLine:'N/D'),mini('Status',largest?largest.sourceBadge:'N/D')])]),
+                    h('article',{className:'bento-card gm'},[h('span',null,'What To Tell GM'),h('ul',null,bullets.map(function(x){return h('li',{key:x},x);} ))]),
+                    h('article',{className:'bento-card action'},[h('span',null,'Recommended Action'),h('div',{className:'bento-action-grid'},[h('div',null,[h('b',null,'STOP NEW INPUT'),h('p',null,largest?'Apply containment at '+largest.primarySource+'.':'No active source.')]),h('div',null,[h('b',null,'RECOVERY'),h('p',null,'Prioritize 91D+ and highest impact backlog.')]),h('div',null,[h('b',null,'VERIFY'),h('p',null,'Validate source containment before release.')])])])
+                ]),
+                h('section',{className:'bento-board'},[h('div',{className:'bento-section-head'},[h('h3',null,'Recovery Priority Board'),h('span',null,'Bento cards ranked by business impact')]),h('div',{className:'bento-board-grid'},problems.length?problems.slice(0,12).map(function(p,i){return problemCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No recovery priorities detected.'))]),
+                detailDrawer(selected,bullets),
+                h('details',{className:'bento-advanced'},[h('summary',null,'Advanced Analysis'),h('div',{className:'bento-table-wrap'},h('table',{className:'bento-table'},[h('thead',null,h('tr',null,['Rank','Severity','Status','Executive Signature','Business Impact','Fresh Input','Bonepile','Old 91D+','Source','Velocity','Recovery','Recommended Focus'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'bento-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,p.severity),h('td',null,p.status),h('td',null,p.shortExecutiveSignature),h('td',null,p.businessImpactScore),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,p.primarySource),h('td',null,p.velocityIcon+' '+p.velocityStatus),h('td',null,p.recoveryEffectiveness),h('td',null,p.recommendedFocus)]);} ))]))])
+            ]);
         }
 
         function recoveryExportCsvCell(value){
@@ -50492,6 +50648,79 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
 #recovery-section .prr-trend.decreasing{color:#64e89f;font-weight:900}
 @media(max-width:1320px){#recovery-section .prr-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}#recovery-section .prr-card-grid{grid-template-columns:1fr}#recovery-section .prr-detail-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){#recovery-section .prr-hero,.prr-detail-head{flex-direction:column}#recovery-section .prr-kpis,#recovery-section .prr-detail-grid,#recovery-section .prr-compare,#recovery-section .prr-rec{grid-template-columns:1fr}#recovery-section .prr-card .prr-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+
+<!-- SMTinel Recovery Command Center Bento Enterprise -->
+<style id="smtinel-recovery-bento-enterprise-style">
+:root{--text-primary:#102A43;--text-secondary:#334E68;--text-muted:#627D98;--text-inverse:#FFFFFF}
+#recovery-section.ri-visual-map{background:#eef4fb!important;color:var(--text-primary)!important;border:0!important;border-radius:0!important;padding:18px!important}
+#recovery-section .ri-vm-shell,#recovery-section .ri-aging-match,#recovery-section .ri-gm-layout,#recovery-section .ri-bm-layout,#recovery-section .pr-engine,#recovery-section .prr-engine,#recovery-section .rpi-engine{display:none!important}
+#recovery-section .bento-recovery{display:flex;flex-direction:column;gap:16px;position:relative;color:var(--text-primary)}
+#recovery-section .bento-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;background:linear-gradient(135deg,#071A33,#102A43 58%,#081524);border:1px solid rgba(80,135,190,.26);border-radius:26px;padding:22px 24px;box-shadow:0 22px 60px rgba(16,42,67,.22);color:#fff;overflow:hidden;position:relative}
+#recovery-section .bento-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;opacity:.55}
+#recovery-section .bento-hero>*{position:relative;z-index:1}
+#recovery-section .bento-hero h2{margin:4px 0;color:#fff!important;font-size:32px;letter-spacing:-.04em}
+#recovery-section .bento-hero p{margin:0;color:rgba(255,255,255,.82);font-size:14px}
+#recovery-section .bento-actions{display:flex;gap:10px;flex-wrap:wrap}
+#recovery-section .bento-actions button,#recovery-section .bento-primary{border:1px solid rgba(210,232,255,.24);background:#1f6feb;color:#fff;border-radius:999px;padding:11px 16px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 10px 22px rgba(31,111,235,.18)}
+#recovery-section .bento-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(170px,auto);gap:14px}
+#recovery-section .bento-card,#recovery-section .bento-board,#recovery-section .bento-advanced,#recovery-section .bento-drawer{background:rgba(255,255,255,.88);border:1px solid rgba(178,196,214,.62);border-radius:26px;padding:18px;box-shadow:0 18px 44px rgba(16,42,67,.10),inset 0 1px 0 rgba(255,255,255,.90);backdrop-filter:blur(18px) saturate(1.2);color:var(--text-primary)}
+#recovery-section .bento-card>span,#recovery-section .bento-section-head span{display:block;color:var(--text-muted);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+#recovery-section .bento-card b{color:var(--text-primary)}
+#recovery-section .bento-card.health b{display:block;font-size:70px;line-height:.95;margin:12px 0 8px}
+#recovery-section .bento-card.critical{border-color:rgba(255,107,107,.55)}
+#recovery-section .bento-card.critical>b,#recovery-section .bento-card.active>b,#recovery-section .bento-card.source>b{display:block;font-size:48px;margin:10px 0;color:var(--text-primary)}
+#recovery-section .bento-card.largest{grid-column:span 2;min-height:260px}
+#recovery-section .bento-card.largest h3,#recovery-section .bento-card.source h3{margin:10px 0;color:var(--text-primary);font-size:28px;line-height:1.05;letter-spacing:-.03em}
+#recovery-section .bento-largest-score{display:flex;gap:10px;align-items:end;margin:12px 0}
+#recovery-section .bento-largest-score b{font-size:72px;line-height:.9}
+#recovery-section .bento-largest-score em{color:var(--text-secondary);font-style:normal;font-weight:900;margin-bottom:8px}
+#recovery-section .bento-largest-grid,#recovery-section .bento-card>div,#recovery-section .bento-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#recovery-section .bento-mini{display:block;background:#f4f8fc;border:1px solid rgba(178,196,214,.56);border-radius:18px;padding:12px;min-width:0}
+#recovery-section .bento-mini em{display:block;color:var(--text-muted);font-size:10px;font-style:normal;font-weight:900;text-transform:uppercase}
+#recovery-section .bento-mini b{display:block;color:var(--text-primary);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .bento-mini small{display:block;color:var(--text-secondary);font-size:10px;margin-top:2px}
+#recovery-section .bento-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:950;color:#fff;background:#1f6feb}
+#recovery-section .bento-badge.healthy{background:#22c55e}.bento-badge.watch{background:#f59e0b}.bento-badge.critical{background:#ef4444}
+#recovery-section .bento-badge.high{background:#ffb84d;color:#102A43}.bento-badge.medium{background:#ffd93d;color:#102A43}.bento-badge.low{background:#4d96ff}
+#recovery-section .bento-badge.status{background:#334E68}
+#recovery-section .bento-card.gm{grid-column:span 2}
+#recovery-section .bento-card.gm ul{margin:12px 0 0;padding-left:20px;color:var(--text-secondary);font-size:15px;line-height:1.55}
+#recovery-section .bento-card.action .bento-action-grid{grid-template-columns:1fr;gap:10px;margin-top:12px}
+#recovery-section .bento-action-grid div{background:#f4f8fc;border:1px solid rgba(178,196,214,.56);border-radius:18px;padding:12px}
+#recovery-section .bento-action-grid b{display:block;color:var(--text-primary);font-size:12px}
+#recovery-section .bento-action-grid p{margin:4px 0 0;color:var(--text-secondary);font-size:12px}
+#recovery-section .bento-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+#recovery-section .bento-section-head h3{margin:0;color:var(--text-primary);font-size:18px}
+#recovery-section .bento-board-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+#recovery-section .bento-problem-card{background:#fff;border:1px solid rgba(178,196,214,.64);border-left:5px solid #4d96ff;border-radius:22px;padding:16px;box-shadow:0 12px 30px rgba(16,42,67,.08);cursor:pointer;color:var(--text-primary)}
+#recovery-section .bento-problem-card.critical{border-left-color:#ff6b6b}.bento-problem-card.high{border-left-color:#ffb84d}.bento-problem-card.medium{border-left-color:#ffd93d}.bento-problem-card.low{border-left-color:#4d96ff}
+#recovery-section .bento-problem-card.selected{outline:2px solid #1f6feb;box-shadow:0 0 0 5px rgba(31,111,235,.14)}
+#recovery-section .bento-problem-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#recovery-section .bento-problem-top>b{background:#102A43;color:#fff;border-radius:10px;padding:5px 8px}
+#recovery-section .bento-problem-card h4{margin:12px 0;color:var(--text-primary);font-size:20px;line-height:1.14}
+#recovery-section .bento-problem-score{display:flex;align-items:end;gap:8px;margin-bottom:10px}
+#recovery-section .bento-problem-score strong{font-size:44px;color:var(--text-primary);line-height:.9}
+#recovery-section .bento-problem-score span{color:var(--text-muted);font-size:11px;font-weight:900;text-transform:uppercase}
+#recovery-section .bento-problem-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#recovery-section .bento-problem-card p{margin:12px 0 0;color:var(--text-secondary);font-size:13px;line-height:1.35}
+#recovery-section .bento-drawer{position:fixed;right:24px;top:90px;bottom:96px;width:min(460px,calc(100vw - 32px));z-index:50;overflow:auto}
+#recovery-section .bento-drawer-head{display:flex;justify-content:space-between;align-items:center;color:var(--text-muted);font-size:11px;font-weight:950;text-transform:uppercase}
+#recovery-section .bento-drawer-head button{border:0;background:#102A43;color:#fff;border-radius:999px;width:32px;height:32px;cursor:pointer}
+#recovery-section .bento-drawer h3{color:var(--text-primary);font-size:24px;margin:10px 0}
+#recovery-section .bento-drawer-score b{font-size:64px;color:var(--text-primary)}
+#recovery-section .bento-drawer-score span{color:var(--text-secondary);font-weight:900}
+#recovery-section .bento-drawer section{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#recovery-section .bento-drawer h4{grid-column:1/-1;margin:0;color:var(--text-primary)}
+#recovery-section .bento-drawer p{color:var(--text-secondary);margin:0;line-height:1.35}
+#recovery-section .bento-advanced summary{cursor:pointer;color:var(--text-primary);font-weight:950;font-size:16px}
+#recovery-section .bento-table-wrap{overflow:auto;margin-top:12px;border-radius:18px;border:1px solid rgba(178,196,214,.62)}
+#recovery-section .bento-table{width:100%;border-collapse:collapse;color:var(--text-primary);font-size:12px;min-width:1180px;background:#fff}
+#recovery-section .bento-table th{background:#eef4fb;color:var(--text-primary);text-align:left;padding:10px;border-bottom:1px solid rgba(178,196,214,.62)}
+#recovery-section .bento-table td{padding:10px;color:var(--text-secondary);border-bottom:1px solid rgba(178,196,214,.42)}
+@media(max-width:1100px){#recovery-section .bento-grid{grid-template-columns:1fr}#recovery-section .bento-card.largest,#recovery-section .bento-card.gm{grid-column:auto}#recovery-section .bento-drawer{position:static;width:auto;max-height:none}}
+@media(max-width:760px){#recovery-section.ri-visual-map{padding:10px!important}#recovery-section .bento-hero{flex-direction:column}#recovery-section .bento-largest-grid,#recovery-section .bento-card>div,#recovery-section .bento-problem-grid,#recovery-section .bento-drawer section{grid-template-columns:1fr}}
 </style>
 
 </body>
