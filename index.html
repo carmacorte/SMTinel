@@ -29538,57 +29538,54 @@ body:has(#recovery-section) .main-content.expanded{
             ]);
         }
         function renderGMRecoveryTraceabilityLayout(){
-            function riClean(v){
+            function prClean(v){
                 if (v == null) return '';
                 if (typeof v === 'object') return '';
                 v = String(v).replace(/\s+/g,' ').trim();
                 if (!v || /^N\/?D$/i.test(v) || /^ALL$/i.test(v) || /^undefined$/i.test(v) || /^null$/i.test(v) || /^\[object Object\]$/i.test(v)) return '';
                 return v;
             }
-            function riSlug(v){
-                v = riClean(v) || 'ND';
-                try { v = v.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_) {}
-                return v.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase() || 'ND';
-            }
-            function riPick(){
-                for (var i=0;i<arguments.length;i++){ var v=riClean(arguments[i]); if(v) return v; }
+            function prPick(){
+                for (var i=0;i<arguments.length;i++){
+                    var v = prClean(arguments[i]);
+                    if (v) return v;
+                }
                 return 'N/D';
             }
-            function riNum(v){ var n = Number(v || 0); return isFinite(n) ? n : 0; }
-            function riTop(map){
-                var keys = Object.keys(map || {});
-                if (!keys.length) return 'N/D';
-                keys.sort(function(a,b){ return riNum(map[b]) - riNum(map[a]) || String(a).localeCompare(String(b)); });
-                return keys[0] || 'N/D';
+            function prNum(v){
+                var n = Number(v || 0);
+                return isFinite(n) ? n : 0;
             }
-            function riFirstDate(a,b){
-                if (!a) return b || '';
-                if (!b) return a || '';
-                try { return new Date(a) <= new Date(b) ? a : b; } catch(_) { return a; }
+            function prSlug(v){
+                v = prClean(v) || 'ND';
+                try { v = v.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){}
+                return v.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase() || 'ND';
             }
-            function riLastDate(a,b){
-                if (!a) return b || '';
-                if (!b) return a || '';
-                try { return new Date(a) >= new Date(b) ? a : b; } catch(_) { return a; }
-            }
-            function riDateOnly(v){
-                v = riClean(v);
-                if (!v) return 'N/D';
-                try { var d = new Date(v); if (!isNaN(d.getTime())) return d.toISOString().slice(0,10); } catch(_) {}
-                return v;
-            }
-            function riAgeDays(row){
-                row = row || {};
-                if (row.agingDays != null) return riNum(row.agingDays);
-                if (row.ageDays != null) return riNum(row.ageDays);
-                if (row.agingHours != null) return Math.max(0, riNum(row.agingHours) / 24);
-                var dt = riPick(row.eventTime, row.recordTime, row.date, row.time, row.createdAt);
-                if (dt !== 'N/D') {
-                    try { var d = new Date(dt); if (!isNaN(d.getTime())) return Math.max(0, (Date.now() - d.getTime()) / 864e5); } catch(_) {}
-                }
+            function prDate(v){
+                v = prClean(v);
+                if (!v) return '';
+                try {
+                    var d = new Date(v);
+                    if (!isNaN(d.getTime())) return d;
+                } catch(_){}
                 return null;
             }
-            function riBucketFromDays(days){
+            function prDateText(v){
+                var d = prDate(v);
+                if (d) return d.toISOString().slice(0,10);
+                return prClean(v) || 'N/D';
+            }
+            function prAgeDays(row){
+                row = row || {};
+                if (row.agingDays != null) return prNum(row.agingDays);
+                if (row.ageDays != null) return prNum(row.ageDays);
+                if (row.aging != null) return prNum(row.aging);
+                if (row.agingHours != null) return Math.max(0, prNum(row.agingHours) / 24);
+                var d = prDate(prPick(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.repairTime,row.lastSeen));
+                if (d) return Math.max(0,(Date.now() - d.getTime()) / 864e5);
+                return null;
+            }
+            function prBucket(days){
                 if (days == null || !isFinite(days)) return '';
                 if (days <= 30) return 'fresh';
                 if (days <= 60) return 'age31_60';
@@ -29596,33 +29593,50 @@ body:has(#recovery-section) .main-content.expanded{
                 if (days <= 365) return 'age91_365';
                 return 'ageOver365';
             }
-            function riSignatureFrom(obj){
+            function prTop(map){
+                var keys = Object.keys(map || {});
+                if (!keys.length) return 'N/D';
+                keys.sort(function(a,b){ return prNum(map[b])-prNum(map[a]) || String(a).localeCompare(String(b)); });
+                return keys[0] || 'N/D';
+            }
+            function prFirst(a,b){
+                if (!a) return b || '';
+                if (!b) return a || '';
+                var da = prDate(a), db = prDate(b);
+                if (da && db) return da <= db ? a : b;
+                return a;
+            }
+            function prLast(a,b){
+                if (!a) return b || '';
+                if (!b) return a || '';
+                var da = prDate(a), db = prDate(b);
+                if (da && db) return da >= db ? a : b;
+                return a;
+            }
+            function prSignature(obj){
                 obj = obj || {};
                 var parts = [
-                    obj.customer,
-                    obj.bu,
-                    obj.model || obj.family || obj.sku,
-                    obj.failureMode || obj.defectType || obj.symptom || obj.mode || obj.testinfo,
-                    obj.refdes || obj.location || obj.ref || obj.component,
+                    obj.failureMode || obj.defectType || obj.symptom || obj.mode || obj.testinfo || obj.errorCode,
+                    obj.refdes || obj.referenceDesignator || obj.location || obj.ref || obj.component,
+                    obj.component,
                     obj.station || obj.currentEvent || obj.event || obj.testArea || obj.area,
                     obj.errorCode || obj.error || obj.errorcode,
                     obj.process || obj.processArea,
                     obj.boardSide || obj.side
-                ].map(riSlug).filter(function(x){ return x && x !== 'ND'; });
-
+                ].map(prSlug).filter(function(x){ return x && x !== 'ND'; });
                 var compact = [];
                 parts.forEach(function(p){ if (compact.indexOf(p) < 0) compact.push(p); });
                 return compact.length ? compact.join('|') : 'UNCLASSIFIED_SYMPTOM';
             }
-            function riMainFailure(){
+            function prMainFailure(){
                 var f = topFailures && topFailures[0] ? topFailures[0] : {};
-                return riPick(f.failureMode, f.mode, f.testinfo, f.symptom, 'Unclassified Failure');
+                return prPick(f.failureMode, f.mode, f.testinfo, f.symptom, f.defectType, 'Unclassified Failure');
             }
-            function riEnsureGroup(groups, signature, seed){
-                seed = seed || {};
-                if (!groups[signature]) {
-                    groups[signature] = {
-                        signature: signature,
+            function prEnsure(groups, seed){
+                var sig = prSignature(seed);
+                if (!groups[sig]) {
+                    groups[sig] = {
+                        signature: sig,
                         total: 0,
                         fresh: 0,
                         aged: 0,
@@ -29630,29 +29644,37 @@ body:has(#recovery-section) .main-content.expanded{
                         age61_90: 0,
                         age91_365: 0,
                         ageOver365: 0,
+                        last7: 0,
+                        last30: 0,
+                        last90: 0,
+                        previous30: 0,
                         workOrders: {},
                         serials: {},
                         stations: {},
                         models: {},
                         firstSeen: '',
                         lastSeen: '',
-                        failureMode: riPick(seed.failureMode, seed.defectType, seed.symptom, seed.mode, riMainFailure()),
-                        refdes: riPick(seed.refdes, seed.location, seed.ref, seed.component),
-                        component: riPick(seed.component, seed.location, seed.refdes, seed.ref),
-                        process: riPick(seed.process, 'SMT'),
-                        boardSide: riPick(seed.boardSide, seed.side),
-                        customer: riPick(seed.customer, 'Cisco'),
-                        bu: riPick(seed.bu),
-                        sourceRows: []
+                        failureMode: prPick(seed.failureMode, seed.defectType, seed.symptom, seed.mode, prMainFailure()),
+                        defectType: prPick(seed.defectType, seed.failureMode, seed.symptom, seed.mode, prMainFailure()),
+                        refdes: prPick(seed.refdes, seed.referenceDesignator, seed.location, seed.ref, seed.component),
+                        component: prPick(seed.component, seed.location, seed.refdes, seed.referenceDesignator),
+                        stationSeed: prPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area),
+                        process: prPick(seed.process, seed.processArea, 'SMT'),
+                        boardSide: prPick(seed.boardSide, seed.side),
+                        rootCauseStatus: 'N/D',
+                        rootCauseHypothesis: prPick(seed.rootCauseHypothesis, seed.rootCause),
+                        containmentAction: prPick(seed.containmentAction, seed.containment),
+                        correctiveAction: prPick(seed.correctiveAction, seed.corrective),
+                        preventiveAction: prPick(seed.preventiveAction, seed.preventive),
+                        owner: prPick(seed.owner, seed.responsible)
                     };
                 }
-                return groups[signature];
+                return groups[sig];
             }
-            function riAddGroupUnit(groups, seed, qty, bucket){
-                qty = Math.max(0, riNum(qty));
+            function prAdd(groups, seed, qty, bucket, days){
+                qty = Math.max(0, prNum(qty));
                 if (!qty) return;
-                var signature = riSignatureFrom(seed);
-                var g = riEnsureGroup(groups, signature, seed);
+                var g = prEnsure(groups, seed || {});
                 g.total += qty;
                 if (bucket === 'fresh') g.fresh += qty;
                 else {
@@ -29663,33 +29685,38 @@ body:has(#recovery-section) .main-content.expanded{
                     else if (bucket === 'ageOver365') g.ageOver365 += qty;
                     else g.age31_60 += qty;
                 }
-                var wo = riPick(seed.wo, seed.workOrder, seed.WO);
-                if (wo !== 'N/D') g.workOrders[wo] = (g.workOrders[wo] || 0) + qty;
-                var sn = riPick(seed.sn, seed.SN, seed.serial, seed.serialNumber, seed.serial_number);
-                if (sn !== 'N/D') g.serials[sn] = (g.serials[sn] || 0) + qty;
-                var st = riPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area);
-                if (st !== 'N/D') g.stations[st] = (g.stations[st] || 0) + qty;
-                var md = riPick(seed.model, seed.family, seed.sku, seed.SKU);
-                if (md !== 'N/D') g.models[md] = (g.models[md] || 0) + qty;
-                var dt = riPick(seed.eventTime, seed.recordTime, seed.date, seed.time, seed.createdAt);
-                if (dt !== 'N/D') {
-                    g.firstSeen = riFirstDate(g.firstSeen, dt);
-                    g.lastSeen = riLastDate(g.lastSeen, dt);
+                if (days != null && isFinite(days)) {
+                    if (days <= 7) g.last7 += qty;
+                    if (days <= 30) g.last30 += qty;
+                    if (days <= 90) g.last90 += qty;
+                    if (days > 30 && days <= 60) g.previous30 += qty;
                 }
-                g.sourceRows.push(seed);
+                var wo = prPick(seed.wo, seed.workOrder, seed.WO);
+                if (wo !== 'N/D') g.workOrders[wo] = (g.workOrders[wo] || 0) + qty;
+                var sn = prPick(seed.sn, seed.SN, seed.serial, seed.serialNumber, seed.serial_number);
+                if (sn !== 'N/D') g.serials[sn] = (g.serials[sn] || 0) + qty;
+                var st = prPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area);
+                if (st !== 'N/D') g.stations[st] = (g.stations[st] || 0) + qty;
+                var md = prPick(seed.model, seed.family, seed.sku, seed.SKU);
+                if (md !== 'N/D') g.models[md] = (g.models[md] || 0) + qty;
+                var dt = prPick(seed.eventTime, seed.recordTime, seed.date, seed.time, seed.createdAt, seed.lastSeen);
+                if (dt !== 'N/D') {
+                    g.firstSeen = prFirst(g.firstSeen, dt);
+                    g.lastSeen = prLast(g.lastSeen, dt);
+                }
             }
-            function riBuildBonepileMatches(){
+            function prBuildProblems(){
                 var groups = {};
                 var rows = (yieldFlowModel && yieldFlowModel.rows) || [];
                 rows.forEach(function(row){
                     row = row || {};
-                    var days = riAgeDays(row);
-                    var bucket = riBucketFromDays(days);
+                    var days = prAgeDays(row);
+                    var bucket = prBucket(days);
                     if (!bucket) {
-                        var statusText = [row.status,row.currentEvent,row.event,row.result,row.station,row.symptom,row.failureMode].join(' ');
-                        bucket = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(statusText) ? 'fresh' : 'age31_60';
+                        var status = [row.status,row.currentEvent,row.event,row.result,row.station,row.symptom,row.failureMode].join(' ');
+                        bucket = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(status) ? 'fresh' : 'age31_60';
                     }
-                    riAddGroupUnit(groups, {
+                    prAdd(groups, {
                         customer: row.customer || row.Customer || 'Cisco',
                         bu: row.bu || row.buLabel || row.BU,
                         model: row.family || row.model || row.Model || row.sku || row.SKU,
@@ -29704,248 +29731,264 @@ body:has(#recovery-section) .main-content.expanded{
                         boardSide: row.boardSide || row.side,
                         wo: row.wo || row.workOrder || row.WO,
                         sn: row.sn || row.SN || row.serial || row.serialNumber || row.serial_number,
-                        eventTime: row.eventTime || row.recordTime || row.date || row.time || row.createdAt
-                    }, 1, bucket);
+                        eventTime: row.eventTime || row.recordTime || row.date || row.time || row.createdAt,
+                        rootCauseHypothesis: row.rootCauseHypothesis,
+                        containmentAction: row.containmentAction,
+                        correctiveAction: row.correctiveAction,
+                        preventiveAction: row.preventiveAction,
+                        owner: row.owner || row.responsible
+                    }, 1, bucket, days);
                 });
 
                 (serials || []).forEach(function(row){
-                    var days = riAgeDays(row);
-                    var bucket = riBucketFromDays(days);
-                    if (!bucket) bucket = riNum(row.reentry) > 0 ? 'age31_60' : 'fresh';
-                    riAddGroupUnit(groups, row, 1, bucket);
+                    row = row || {};
+                    var days = prAgeDays(row);
+                    var bucket = prBucket(days);
+                    if (!bucket) bucket = prNum(row.reentry) > 0 ? 'age31_60' : 'fresh';
+                    prAdd(groups, row, 1, bucket, days);
                 });
 
-                /* Synthetic station-bucket layer: preserves current lightweight Yield Flow aging logic when raw dated rows are incomplete. */
                 stationRowsScoped.forEach(function(r){
                     var base = {
                         customer: 'Cisco',
                         bu: scopeChips.join(' '),
                         model: scopeModels[0] || '',
-                        failureMode: riMainFailure(),
+                        failureMode: prMainFailure(),
+                        defectType: prMainFailure(),
                         refdes: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
                         component: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
                         station: r.station || 'N/D',
                         process: 'SMT',
                         wo: scopeWos[0] || ''
                     };
-                    riAddGroupUnit(groups, base, bucketStationValue(r,'age0_30'), 'fresh');
-                    riAddGroupUnit(groups, base, bucketStationValue(r,'age31_60'), 'age31_60');
-                    riAddGroupUnit(groups, base, bucketStationValue(r,'age61_90'), 'age61_90');
-                    riAddGroupUnit(groups, base, bucketStationValue(r,'age91_365'), 'age91_365');
-                    riAddGroupUnit(groups, base, bucketStationValue(r,'ageOver365'), 'ageOver365');
+                    prAdd(groups, base, bucketStationValue(r,'age0_30'), 'fresh', 15);
+                    prAdd(groups, base, bucketStationValue(r,'age31_60'), 'age31_60', 45);
+                    prAdd(groups, base, bucketStationValue(r,'age61_90'), 'age61_90', 75);
+                    prAdd(groups, base, bucketStationValue(r,'age91_365'), 'age91_365', 180);
+                    prAdd(groups, base, bucketStationValue(r,'ageOver365'), 'ageOver365', 420);
                 });
 
-                var out = Object.keys(groups).map(function(key){
-                    var g = groups[key];
-                    var oldBonepile = riNum(g.age91_365) + riNum(g.ageOver365);
-                    var longTerm = riNum(g.ageOver365);
-                    var active = riNum(g.aged) > 0 && riNum(g.fresh) > 0;
-                    var severity = 'LOW';
-                    if (oldBonepile > 0 && g.fresh > 0) severity = 'CRITICAL';
-                    else if (g.aged > 0 && g.fresh > 0) severity = 'HIGH';
-                    else if (g.aged > 0 && g.fresh <= 0) severity = 'MEDIUM';
-                    else if (g.fresh > 0 && g.aged <= 0) severity = 'LOW';
-                    var action = severity === 'CRITICAL'
-                        ? 'Stop new input or apply containment gate.'
-                        : severity === 'HIGH'
-                            ? 'Apply containment on fresh input.'
-                            : severity === 'MEDIUM'
-                                ? 'Continue recovery plan.'
-                                : 'Monitor as early signal.';
+                var list = Object.keys(groups).map(function(sig){
+                    var g = groups[sig];
+                    var old91 = prNum(g.age91_365) + prNum(g.ageOver365);
+                    var active = g.fresh > 0 && g.aged > 0;
+                    var contained = g.aged > 0 && g.fresh <= 0;
+                    var watchlist = g.fresh > 0 && g.aged <= 0;
+                    var critical = g.fresh > 0 && old91 > 0;
+                    var status = active ? 'ACTIVE' : (contained ? 'CONTAINED' : (watchlist ? 'WATCHLIST' : 'RECOVERY ONLY'));
+                    var severity = critical ? 'CRITICAL' : (active ? 'HIGH' : (contained ? 'MEDIUM' : 'LOW'));
+                    var trend = 'Stable';
+                    if (g.last30 > g.previous30 * 1.15 && g.last30 > 0) trend = 'Increasing';
+                    else if (g.last30 < g.previous30 * 0.85 && g.previous30 > 0) trend = 'Decreasing';
+                    var rootCauseStatus = g.fresh > 0 ? 'Root Cause Not Contained' : (contained ? (old91 > 0 ? 'Recovery Only' : 'Contained') : 'Under Investigation');
+                    if (active && !prClean(g.containmentAction) && !prClean(g.correctiveAction)) rootCauseStatus = 'Under Investigation';
+                    var priority = critical ? 400000 : active ? 300000 : contained ? 200000 : 100000;
+                    priority += old91 * 120 + g.fresh * 80 + g.aged * 8;
                     return Object.assign({}, g, {
-                        activeRecurrence: active,
+                        old91: old91,
+                        active: active,
+                        contained: contained,
+                        watchlist: watchlist,
+                        critical: critical,
+                        status: status,
                         severity: severity,
-                        oldBonepile: oldBonepile,
-                        longTermBonepile: longTerm,
+                        trend: trend,
+                        trendIcon: trend === 'Increasing' ? '↑' : (trend === 'Decreasing' ? '↓' : '→'),
+                        rootCauseStatus: rootCauseStatus,
+                        topStation: prTop(g.stations),
+                        topModel: prTop(g.models),
                         affectedWorkOrders: Object.keys(g.workOrders).length,
                         affectedSerials: Object.keys(g.serials).length || Math.round(g.total),
-                        topStation: riTop(g.stations),
-                        topModel: riTop(g.models),
-                        firstSeenText: riDateOnly(g.firstSeen),
-                        lastSeenText: riDateOnly(g.lastSeen),
-                        oldestBucketCount: longTerm || g.age91_365 || g.age61_90 || g.age31_60 || 0,
-                        oldestBucketLabel: longTerm ? '>365D' : (g.age91_365 ? '91-365D' : (g.age61_90 ? '61-90D' : (g.age31_60 ? '31-60D' : '0-30D'))),
-                        recommendedAction: action,
-                        warning: 'Active recurrence detected: existing bonepile contains ' + fmt(g.aged) + ' units with ' + g.signature + ', and ' + fmt(g.fresh) + ' fresh units are entering with the same symptom. Recovery alone will not solve the issue. Containment at source is required.'
+                        firstSeenText: prDateText(g.firstSeen),
+                        lastSeenText: prDateText(g.lastSeen),
+                        priorityScore: priority,
+                        recoveryFocus: critical || active ? 'Containment first, then recovery' : (contained ? 'Recovery burn-down' : 'Monitor fresh signal'),
+                        containmentFocus: critical || active ? 'Source station: ' + prTop(g.stations) : 'Monitor',
+                        why: active ? 'Fresh units with the same symptom continue entering the system. Recovery alone will not solve the issue.' : (contained ? 'No recent fresh input detected. The source appears contained; focus on aged WIP recovery.' : 'Fresh signal detected without significant aged history. Validate if the symptom repeats.')
                     });
                 }).filter(function(g){ return g.total > 0; });
 
-                var sevRank = {CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
-                out.sort(function(a,b){
-                    return (sevRank[b.severity]-sevRank[a.severity]) ||
-                        (Number(b.activeRecurrence)-Number(a.activeRecurrence)) ||
-                        (b.total-a.total) ||
-                        String(a.signature).localeCompare(String(b.signature));
+                list.sort(function(a,b){
+                    return b.priorityScore - a.priorityScore || b.total - a.total || String(a.signature).localeCompare(String(b.signature));
                 });
-                return out;
+                return list;
             }
-            function riPlanMarkdown(m){
+            function prHealth(problems){
+                var active = problems.filter(function(p){return p.status === 'ACTIVE';}).length;
+                var critical = problems.filter(function(p){return p.critical;}).length;
+                var watch = problems.filter(function(p){return p.status === 'WATCHLIST';}).length;
+                var score = Math.max(0, Math.round(100 - active * 6 - critical * 14 - watch * 2));
+                var label = score < 55 ? 'Critical' : (score < 80 ? 'Needs Attention' : 'Controlled');
+                return { score: score, label: label };
+            }
+            function prPlan(p){
                 return [
-                    '# Recovery Plan - ' + (m.signature || 'N/D'),
+                    '# Recovery Plan - ' + (p.signature || 'N/D'),
                     '',
                     '## Current Condition',
-                    '- Bonepile units: ' + fmt(m.aged),
-                    '- Fresh input units: ' + fmt(m.fresh),
-                    '- Severity: ' + m.severity,
-                    '- Top station: ' + (m.topStation || 'N/D'),
-                    '- Top model: ' + (m.topModel || 'N/D'),
+                    '- Problem status: ' + p.status,
+                    '- Bonepile units: ' + fmt(p.aged),
+                    '- Fresh input units: ' + fmt(p.fresh),
+                    '- 91D+ units: ' + fmt(p.old91),
+                    '- Severity: ' + p.severity,
+                    '- Top station: ' + (p.topStation || 'N/D'),
+                    '- Top model: ' + (p.topModel || 'N/D'),
+                    '- Trend: ' + p.trendIcon + ' ' + p.trend,
                     '',
-                    '## Risk Interpretation',
-                    m.activeRecurrence ? 'The same symptom exists in historical bonepile and fresh input, indicating active recurrence.' : 'No active aged-to-fresh recurrence is confirmed under the current scope.',
+                    '## Why It Is Still Active',
+                    p.active ? 'The same symptom exists in historical bonepile and fresh input. New units are still being generated with the same failure signature.' : p.why,
                     '',
-                    '## Containment Required',
-                    '- Apply containment gate at source.',
+                    '## Containment Actions',
+                    '- Apply containment gate at the source station.',
                     '- Apply 100% inspection at detection station.',
                     '- Segregate fresh affected units.',
                     '- Stop releasing recovered units until containment is validated.',
+                    '- Review recent process changes linked to the top station.',
                     '',
                     '## Recovery Actions',
-                    '- Prioritize oldest units first.',
+                    '- Prioritize ACTIVE problems with 91D+ units.',
                     '- Separate aged WIP by bucket.',
+                    '- Burn down oldest units first.',
                     '- Assign owner per station.',
-                    '- Track daily burn-down.',
+                    '- Track daily recovery closure.',
                     '- Verify retest results before release.',
                     '',
-                    '## Effectiveness Check',
-                    '- No new fresh input with same symptom for defined period.',
-                    '- Reduction of aged bucket.',
+                    '## Owner Recommendation',
+                    p.topStation !== 'N/D' ? 'Assign station owner for ' + p.topStation + ' and quality owner for recurrence verification.' : 'Assign process owner and quality owner for recurrence verification.',
+                    '',
+                    '## Effectiveness Verification',
+                    '- No new fresh input with the same symptom for the defined monitoring window.',
+                    '- Downward or stable trend over 7D / 30D / 90D.',
+                    '- Reduced aged bucket.',
                     '- No recurrence after recovery.',
+                    '',
+                    '## Expected Exit Criteria',
+                    '- Fresh input = 0 for the monitored period.',
+                    '- Root cause containment validated.',
+                    '- Recovery bucket reduction confirmed.',
+                    '- Recovered units pass retest and disposition checks.',
                     ''
                 ].join('\n');
             }
-            function riDownloadPlan(m){
-                var name = 'Recovery_Plan_' + riSlug(m.signature).slice(0,120) + '.md';
-                recoveryDownloadText(name, riPlanMarkdown(m), 'text/markdown;charset=utf-8;');
+            function prDownloadPlan(p){
+                recoveryDownloadText('Recovery_Plan_' + prSlug(p.signature).slice(0,130) + '.md', prPlan(p), 'text/markdown;charset=utf-8;');
             }
             function metric(label, value, sub, tone, iconKind){
-                return h('article',{className:'ri-bm-metric '+(tone||'')},[
-                    h('i',null,icon(iconKind || 'cube')),
+                return h('article',{className:'pr-metric '+(tone||'')},[
+                    h('i',null,icon(iconKind || 'grid')),
                     h('div',null,[h('span',null,label),h('b',null,value),h('small',null,sub || '')])
                 ]);
             }
-            function severityBadge(sev){ return h('span',{className:'ri-bm-badge '+String(sev||'LOW').toLowerCase()},sev||'LOW'); }
-            function matchCard(m, idx){
-                return h('article',{key:'ri-bm-match-'+idx,className:'ri-bm-match '+String(m.severity).toLowerCase()},[
-                    h('div',{className:'ri-bm-match-head'},[
-                        severityBadge(m.severity),
-                        h('small',null,'Match ID: BM-'+String(idx+1).padStart(3,'0'))
-                    ]),
-                    h('p',{className:'ri-bm-label'},'Symptom'),
-                    h('h3',null,m.signature),
-                    h('div',{className:'ri-bm-grid'},[
-                        h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(m.aged))]),
-                        h('span',null,[h('em',null,'Fresh Input'),h('b',null,fmt(m.fresh))]),
-                        h('span',null,[h('em',null,'Oldest Bucket'),h('b',null,fmt(m.oldestBucketCount)),h('small',null,m.oldestBucketLabel)]),
-                        h('span',null,[h('em',null,'WOs'),h('b',null,fmt(m.affectedWorkOrders))])
+            function statusBadge(status){ return h('span',{className:'pr-status '+String(status||'').toLowerCase().replace(/\s+/g,'-')},status); }
+            function severityBadge(sev){ return h('span',{className:'pr-sev '+String(sev||'LOW').toLowerCase()},sev||'LOW'); }
+            function problemCard(p, idx){
+                return h('article',{className:'pr-problem-card '+String(p.status).toLowerCase()},[
+                    h('div',{className:'pr-card-top'},[severityBadge(p.severity), statusBadge(p.status), h('small',null,'P-'+String(idx+1).padStart(3,'0'))]),
+                    h('h3',null,(idx+1)+'. '+p.signature),
+                    h('div',{className:'pr-card-grid'},[
+                        h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(p.aged))]),
+                        h('span',null,[h('em',null,'Fresh'),h('b',null,fmt(p.fresh))]),
+                        h('span',null,[h('em',null,'91D+'),h('b',null,fmt(p.old91))]),
+                        h('span',null,[h('em',null,'Trend'),h('b',null,p.trendIcon+' '+p.trend)])
                     ]),
                     h('dl',null,[
-                        h('dt',null,'Top Station'),h('dd',null,m.topStation || 'N/D'),
-                        h('dt',null,'Top Model'),h('dd',null,m.topModel || 'N/D'),
-                        h('dt',null,'First Seen'),h('dd',null,m.firstSeenText),
-                        h('dt',null,'Last Seen'),h('dd',null,m.lastSeenText)
+                        h('dt',null,'Top Station'),h('dd',null,p.topStation),
+                        h('dt',null,'Top Model'),h('dd',null,p.topModel),
+                        h('dt',null,'Root Cause'),h('dd',null,p.rootCauseStatus)
                     ]),
-                    h('div',{className:'ri-bm-action'},[
-                        h('p',null,[h('b',null,'Recommended Action: '),m.recommendedAction]),
-                        h('button',{type:'button',onClick:function(){ riDownloadPlan(m); }},'Generate Recovery Plan')
-                    ])
+                    h('p',null,p.why),
+                    h('button',{type:'button',onClick:function(){ prDownloadPlan(p); }},'Generate Recovery Plan')
                 ]);
             }
-            function quickAction(title, body, tone){
-                return h('article',{className:'ri-bm-qaction '+(tone||'')},[h('b',null,title),h('p',null,body)]);
-            }
 
-            var matches = riBuildBonepileMatches();
-            var activeMatches = matches.filter(function(m){ return m.activeRecurrence; });
-            var criticalMatches = matches.filter(function(m){ return m.severity === 'CRITICAL'; });
-            var totalBonepileUnits = matches.reduce(function(s,m){ return s + riNum(m.aged); }, 0);
-            var freshInputUnits = matches.reduce(function(s,m){ return s + riNum(m.fresh); }, 0);
-            var topCards = matches.slice(0,6);
-            var selected = topCards[0] || matches[0] || null;
-            var healthIndex = totalBonepileUnits + freshInputUnits ? Math.max(0, Math.round(100 - (criticalMatches.length*18 + activeMatches.length*9 + Math.min(30,totalBonepileUnits/Math.max(1,total)*30)))) : 100;
-            var trendRows = matches.slice(0,5);
+            var problems = prBuildProblems();
+            var activeProblems = problems.filter(function(p){ return p.status === 'ACTIVE'; });
+            var containedProblems = problems.filter(function(p){ return p.status === 'CONTAINED' || p.status === 'RECOVERY ONLY'; });
+            var watchlist = problems.filter(function(p){ return p.status === 'WATCHLIST'; });
+            var criticalRecurrences = problems.filter(function(p){ return p.critical; });
+            var newThisWeek = problems.filter(function(p){ return p.last7 > 0 && (p.active || p.watchlist); });
+            var top = problems[0] || null;
+            var health = prHealth(problems);
+            var totalBonepile = problems.reduce(function(s,p){ return s + prNum(p.aged); }, 0);
+            var totalFresh = problems.reduce(function(s,p){ return s + prNum(p.fresh); }, 0);
 
-            return h('section',{className:'ri-bm-layout'},[
-                h('div',{className:'ri-bm-hero'},[
+            return h('section',{className:'pr-engine'},[
+                h('div',{className:'pr-hero'},[
                     h('div',null,[
-                        h('div',{className:'smtinel-ri-eyebrow'},'Recovery Intel → Bonepile Match View'),
-                        h('h2',null,'Identificación de Bonepile con Recurrencia Activa por Fresh Input'),
-                        h('p',null,'Motor general para detectar si un mismo síntoma existe en bonepile histórico y sigue entrando como unidad fresca. El foco es contener el origen antes de ejecutar recovery.')
+                        h('div',{className:'smtinel-ri-eyebrow'},'Problem Recurrence Engine'),
+                        h('h2',null,'Recovery Intel → Estado real del problema'),
+                        h('p',null,'Identifica qué problemas siguen vivos, cuáles fueron contenidos y dónde debe actuar la organización para detener la generación de nuevo bonepile.')
                     ]),
-                    h('div',{className:'ri-bm-toolbar'},[
-                        h('button',{type:'button'},'Filters'),
-                        h('button',{type:'button',className:'primary'},'Analyze'),
-                        h('button',{type:'button',onClick:function(){ if(selected) riDownloadPlan(selected); }},'Generate Recovery Plan')
+                    h('button',{type:'button',onClick:function(){ if(top) prDownloadPlan(top); }},'Generate Recovery Plan')
+                ]),
+                h('div',{className:'pr-kpis'},[
+                    metric('Active Problems',fmt(activeProblems.length),'Fresh + aged recurrence','red','warn'),
+                    metric('Contained Problems',fmt(containedProblems.length),'No fresh input','green','shield'),
+                    metric('New Recurrences This Week',fmt(newThisWeek.length),'Last 7 days','blue','clock'),
+                    metric('Critical Recurrences',fmt(criticalRecurrences.length),'Fresh + 91D+','orange','warn'),
+                    metric('Problem Health Index',fmt(health.score) + '/100',health.label,health.score < 55 ? 'red' : (health.score < 80 ? 'orange' : 'green'),'grid')
+                ]),
+                h('div',{className:'pr-top-recurrence'},[
+                    h('span',null,'Top Recurrence'),
+                    h('b',null,top ? top.signature : 'N/D'),
+                    h('em',null,top ? (top.status + ' · ' + fmt(top.aged) + ' bonepile · ' + fmt(top.fresh) + ' fresh') : 'No problem signature detected')
+                ]),
+                h('div',{className:'pr-exec-grid'},[
+                    h('section',{className:'pr-panel pr-meaning'},[
+                        h('h3',null,'What this really means'),
+                        h('p',null,activeProblems.length ? 'Recovery alone will not solve the issue. Fresh units with the same symptom continue entering the system. Containment must stop the source before aged WIP recovery can be effective.' : 'No active aged-to-fresh recurrence is currently confirmed under the selected scope. Focus on recovery burn-down and continue monitoring fresh input.'),
+                        h('div',{className:activeProblems.length ? 'pr-warning' : 'pr-ok'},[
+                            h('b',null,activeProblems.length ? 'CONTAINMENT REQUIRED' : 'RECOVERY CONTROLLED'),
+                            h('small',null,activeProblems.length ? 'Fresh input is still feeding the bonepile.' : 'Fresh input does not currently match aged bonepile signatures.')
+                        ])
+                    ]),
+                    h('section',{className:'pr-panel'},[
+                        h('h3',null,'Top Active Problems'),
+                        h('div',{className:'pr-active-list'},(problems.slice(0,10).map(function(p,i){
+                            return h('div',{key:'active-'+i},[
+                                h('b',null,(i+1)+'. '+p.signature),
+                                h('span',null,'Bonepile: '+fmt(p.aged)),
+                                h('span',null,'Fresh: '+fmt(p.fresh)),
+                                statusBadge(p.status)
+                            ]);
+                        })))
+                    ]),
+                    h('section',{className:'pr-panel'},[
+                        h('h3',null,'Recovery Priority Logic'),
+                        h('ol',{className:'pr-priority'},[
+                            h('li',null,'ACTIVE problems with 91D+ units'),
+                            h('li',null,'ACTIVE problems with highest fresh input'),
+                            h('li',null,'CONTAINED problems with highest historical volume'),
+                            h('li',null,'WATCHLIST emerging problems')
+                        ]),
+                        h('p',{className:'pr-scope'},'Current scope: '+fmt(totalBonepile)+' bonepile units · '+fmt(totalFresh)+' fresh units · '+fmt(problems.length)+' problem signatures')
                     ])
                 ]),
-                h('div',{className:'ri-bm-kpis'},[
-                    metric('Total Bonepile Units',fmt(totalBonepileUnits),'31D+ by symptom','purple','cube'),
-                    metric('Fresh Input Units',fmt(freshInputUnits),'0-30D same signatures','blue','cal'),
-                    metric('Active Recurrence Count',fmt(activeMatches.length),'aged + fresh match','orange','clock'),
-                    metric('Critical Matches',fmt(criticalMatches.length),'91D+ and fresh','red','warn'),
-                    metric('Health Index',fmt(healthIndex) + '/100',healthIndex < 55 ? 'HIGH RISK' : 'CONTROLLED','green','grid')
+                h('section',{className:'pr-problems'},[
+                    h('h3',null,'Top Problem Recurrences'),
+                    h('div',{className:'pr-card-grid'},problems.length ? problems.slice(0,10).map(problemCard) : h('div',{className:'ri-aging-empty'},'No recurrence signatures detected under current scope.'))
                 ]),
-                h('div',{className:'ri-bm-exec-grid'},[
-                    h('section',{className:'ri-bm-panel ri-bm-donut'},[
-                        h('h3',null,'Matches por severidad'),
-                        h('div',{className:'ri-bm-severity-list'},['CRITICAL','HIGH','MEDIUM','LOW'].map(function(sev){
-                            var c = matches.filter(function(m){return m.severity===sev;}).length;
-                            return h('div',{key:sev,className:String(sev).toLowerCase()},[h('span',null,sev),h('b',null,fmt(c)),h('em',null,matches.length ? Math.round(c/matches.length*100)+'%' : '0%')]);
+                h('section',{className:'pr-panel'},[
+                    h('h3',null,'Problem Status Matrix'),
+                    h('div',{className:'pr-table-wrap'},h('table',{className:'pr-table'},[
+                        h('thead',null,h('tr',null,['Severity','Status','Symptom Signature','Bonepile Units','Fresh Units','91D+ Units','Affected WO','Affected Serials','Top Station','Top Model','Trend','Root Cause Status'].map(function(x){return h('th',{key:x},x);}))),
+                        h('tbody',null,problems.slice(0,40).map(function(p,i){
+                            return h('tr',{key:'pr-row-'+i},[
+                                h('td',null,severityBadge(p.severity)),
+                                h('td',null,statusBadge(p.status)),
+                                h('td',null,p.signature),
+                                h('td',null,fmt(p.aged)),
+                                h('td',null,fmt(p.fresh)),
+                                h('td',null,fmt(p.old91)),
+                                h('td',null,fmt(p.affectedWorkOrders)),
+                                h('td',null,fmt(p.affectedSerials)),
+                                h('td',null,p.topStation),
+                                h('td',null,p.topModel),
+                                h('td',null,h('span',{className:'pr-trend '+p.trend.toLowerCase()},p.trendIcon+' '+p.trend)),
+                                h('td',null,p.rootCauseStatus)
+                            ]);
                         }))
-                    ]),
-                    h('section',{className:'ri-bm-panel ri-bm-meaning'},[
-                        h('h3',null,'What this means'),
-                        h('p',null,'Recovery is not enough if fresh input continues. Containment must stop the source before aged WIP recovery can be effective.'),
-                        activeMatches.length ? h('div',{className:'ri-bm-warning'},[
-                            h('b',null,'WARNING: ACTIVE RECURRENCE DETECTED'),
-                            h('p',null,(selected && selected.warning) || 'Active recurrence detected. Recovery alone will not solve the issue. Containment at source is required.')
-                        ]) : h('div',{className:'ri-bm-ok'},[
-                            h('b',null,'No active recurrence under current scope'),
-                            h('p',null,'Continue monitoring fresh input and aging disposition.')
-                        ])
-                    ]),
-                    h('section',{className:'ri-bm-panel'},[
-                        h('h3',null,'Top signatures snapshot'),
-                        h('div',{className:'ri-bm-mini-trend'},trendRows.length ? trendRows.map(function(m,i){
-                            var width = Math.min(100, Math.max(4, (m.total / Math.max(1, matches[0] ? matches[0].total : 1))*100));
-                            return h('div',{key:'mini-'+i},[h('span',null,m.signature),h('b',null,fmt(m.total)),h('i',null,h('em',{style:{width:width+'%'}}))]);
-                        }) : h('p',null,'No symptom signatures available.'))
-                    ])
-                ]),
-                h('section',{className:'ri-bm-top'},[
-                    h('h3',null,'Top Matching Symptoms'),
-                    h('div',{className:'ri-bm-card-grid'},topCards.length ? topCards.map(matchCard) : h('div',{className:'ri-aging-empty'},'No bonepile signatures detected under current scope.'))
-                ]),
-                h('div',{className:'ri-bm-bottom'},[
-                    h('section',{className:'ri-bm-panel'},[
-                        h('h3',null,'Detalle de matches'),
-                        h('table',{className:'ri-bm-table'},[
-                            h('thead',null,h('tr',null,['Severity','Symptom Signature','Bonepile 31D+','Fresh 0-30D','Old 91D+','WOs','Serials','Top Station','Top Model','Status'].map(function(x){return h('th',{key:x},x);}))),
-                            h('tbody',null,(matches.slice(0,12).map(function(m,i){
-                                return h('tr',{key:'row-'+i},[
-                                    h('td',null,severityBadge(m.severity)),
-                                    h('td',null,m.signature),
-                                    h('td',null,fmt(m.aged)),
-                                    h('td',null,fmt(m.fresh)),
-                                    h('td',null,fmt(m.oldBonepile)),
-                                    h('td',null,fmt(m.affectedWorkOrders)),
-                                    h('td',null,fmt(m.affectedSerials)),
-                                    h('td',null,m.topStation),
-                                    h('td',null,m.topModel),
-                                    h('td',null,m.activeRecurrence ? h('span',{className:'ri-bm-status active'},'ACTIVE') : h('span',{className:'ri-bm-status monitor'},'MONITOR'))
-                                ]);
-                            })))
-                        ])
-                    ]),
-                    h('section',{className:'ri-bm-panel'},[
-                        h('h3',null,'Plan de contención recomendado'),
-                        h('div',{className:'ri-bm-actions'},[
-                            quickAction('Stop new input / containment gate', 'Apply when critical matches exist or fresh input repeats with aged WIP.', 'red'),
-                            quickAction('100% inspection at detection station', 'Execute at the station associated with the top matching symptom.', 'orange'),
-                            quickAction('Segregate fresh affected units', 'Separate fresh units from aged WIP to avoid mixing recovery streams.', 'blue'),
-                            quickAction('Oldest bucket recovery priority', 'Prioritize 91-365D and >365D units for burn-down.', 'green'),
-                            quickAction('Verify root cause before release', 'Do not release recovered units until containment effectiveness is validated.', 'purple')
-                        ])
-                    ])
+                    ]))
                 ])
             ]);
         }
@@ -50488,6 +50531,129 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
   #recovery-section .ri-bm-hero{flex-direction:column}
   #recovery-section .ri-bm-kpis,#recovery-section .ri-bm-card-grid{grid-template-columns:1fr}
   #recovery-section .ri-bm-table{font-size:10px}
+}
+</style>
+
+
+<!-- =========================================================
+     SMTinel Recovery Intel - Problem Recurrence Engine
+========================================================= -->
+<style id="smtinel-problem-recurrence-engine-style">
+#recovery-section.ri-visual-map{
+  background:#06111f!important;
+  color:#f7fbff!important;
+  border:1px solid rgba(80,135,190,.20)!important;
+  border-radius:0!important;
+  padding:18px!important;
+}
+#recovery-section .ri-vm-header{
+  background:linear-gradient(180deg,rgba(12,31,55,.98),rgba(7,18,32,.96))!important;
+  color:#f7fbff!important;
+  border:1px solid rgba(80,135,190,.22)!important;
+}
+#recovery-section .ri-vm-header h2,
+#recovery-section .ri-vm-header p{color:#f7fbff!important}
+#recovery-section .ri-vm-shell,
+#recovery-section .ri-aging-match,
+#recovery-section .ri-gm-layout,
+#recovery-section .ri-bm-layout{display:none!important}
+#recovery-section .pr-engine{display:flex;flex-direction:column;gap:14px;width:100%}
+#recovery-section .pr-hero{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:18px;
+  background:linear-gradient(135deg,#071A33 0%,#102A43 58%,#081524 100%);
+  border:1px solid rgba(80,135,190,.26);border-radius:18px;padding:18px 20px;
+  box-shadow:0 18px 44px rgba(0,0,0,.24);position:relative;overflow:hidden
+}
+#recovery-section .pr-hero:before{
+  content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;opacity:.55;pointer-events:none
+}
+#recovery-section .pr-hero>*{position:relative;z-index:1}
+#recovery-section .pr-hero h2{margin:4px 0 4px;color:#fff!important;font-size:27px;line-height:1.08;letter-spacing:-.03em}
+#recovery-section .pr-hero p{margin:0;color:rgba(245,250,255,.78);font-size:13px;max-width:920px;line-height:1.45}
+#recovery-section .pr-hero button{
+  border:1px solid rgba(210,232,255,.24);background:#1f6feb;color:#fff;border-radius:12px;padding:11px 15px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap
+}
+#recovery-section .pr-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+#recovery-section .pr-metric{
+  display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.94));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:14px 16px;box-shadow:0 12px 28px rgba(0,0,0,.18)
+}
+#recovery-section .pr-metric i{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.08)}
+#recovery-section .pr-metric i svg{width:31px;height:31px}
+#recovery-section .pr-metric span{display:block;color:#6ee7b7;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+#recovery-section .pr-metric b{display:block;color:#fff;font-size:28px;line-height:1.05;margin-top:3px}
+#recovery-section .pr-metric small{display:block;color:rgba(245,250,255,.72);font-weight:750;margin-top:4px}
+#recovery-section .pr-metric.red i{background:rgba(196,65,65,.30);color:#ff7b7b}
+#recovery-section .pr-metric.green i{background:rgba(35,160,85,.30);color:#64e89f}
+#recovery-section .pr-metric.blue i{background:rgba(31,111,235,.28);color:#66b3ff}
+#recovery-section .pr-metric.orange i{background:rgba(232,138,26,.28);color:#ffb35c}
+#recovery-section .pr-top-recurrence{
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  background:rgba(8,24,44,.92);border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:13px 16px;color:#d8e8ff
+}
+#recovery-section .pr-top-recurrence span{color:#6ee7b7;font-size:11px;text-transform:uppercase;font-weight:950;letter-spacing:.08em}
+#recovery-section .pr-top-recurrence b{color:#fff;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .pr-top-recurrence em{font-style:normal;color:#9fb7d0;font-size:12px}
+#recovery-section .pr-exec-grid{display:grid;grid-template-columns:1.2fr 1.5fr 1fr;gap:12px}
+#recovery-section .pr-panel{
+  background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.96));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.18);min-width:0
+}
+#recovery-section .pr-panel h3,#recovery-section .pr-problems>h3{margin:0 0 12px;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+#recovery-section .pr-meaning p{margin:0 0 12px;color:rgba(245,250,255,.82);line-height:1.48;font-size:14px}
+#recovery-section .pr-warning,#recovery-section .pr-ok{border-radius:12px;padding:14px;border:1px solid;display:grid;gap:4px}
+#recovery-section .pr-warning{background:rgba(196,65,65,.12);border-color:rgba(240,68,82,.55)}
+#recovery-section .pr-warning b{color:#ff6b76}
+#recovery-section .pr-ok{background:rgba(35,160,85,.12);border-color:rgba(35,160,85,.46)}
+#recovery-section .pr-ok b{color:#64e89f}
+#recovery-section .pr-warning small,#recovery-section .pr-ok small{color:rgba(245,250,255,.76)}
+#recovery-section .pr-active-list{display:grid;gap:8px}
+#recovery-section .pr-active-list div{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.045);color:#d8e8ff;font-size:11px}
+#recovery-section .pr-active-list b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+#recovery-section .pr-priority{margin:0 0 12px;padding-left:20px;color:#d8e8ff;line-height:1.7}
+#recovery-section .pr-scope{margin:0;color:#9fb7d0;font-size:12px}
+#recovery-section .pr-problems{background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.96));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:16px}
+#recovery-section .pr-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#recovery-section .pr-problem-card{border-radius:14px;padding:14px;background:rgba(7,18,32,.62);border:1px solid rgba(120,170,220,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+#recovery-section .pr-problem-card.active{border-color:rgba(240,68,82,.56)}
+#recovery-section .pr-problem-card.contained{border-color:rgba(35,160,85,.48)}
+#recovery-section .pr-problem-card.watchlist{border-color:rgba(31,111,235,.50)}
+#recovery-section .pr-card-top{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:9px}
+#recovery-section .pr-sev,#recovery-section .pr-status{display:inline-flex;align-items:center;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:950;color:#fff;white-space:nowrap}
+#recovery-section .pr-sev.critical{background:#d83b46}
+#recovery-section .pr-sev.high{background:#e8781a}
+#recovery-section .pr-sev.medium{background:#caa211;color:#172033}
+#recovery-section .pr-sev.low{background:#1f6feb}
+#recovery-section .pr-status.active{background:rgba(216,59,70,.28);color:#ff7b7b}
+#recovery-section .pr-status.contained,#recovery-section .pr-status.recovery-only{background:rgba(35,160,85,.24);color:#64e89f}
+#recovery-section .pr-status.watchlist{background:rgba(31,111,235,.22);color:#75b5ff}
+#recovery-section .pr-card-top small{color:#9fb7d0}
+#recovery-section .pr-problem-card h3{margin:0 0 12px;color:#fff;font-size:13px;line-height:1.32;word-break:break-word}
+#recovery-section .pr-card-grid .pr-card-grid{display:grid}
+#recovery-section .pr-problem-card .pr-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:10px}
+#recovery-section .pr-problem-card .pr-card-grid span{background:rgba(255,255,255,.05);border-radius:10px;padding:9px}
+#recovery-section .pr-problem-card .pr-card-grid em{display:block;color:rgba(245,250,255,.60);font-size:10px;font-style:normal}
+#recovery-section .pr-problem-card .pr-card-grid b{display:block;color:#fff;font-size:18px;margin-top:2px}
+#recovery-section .pr-problem-card dl{display:grid;grid-template-columns:92px 1fr;gap:6px;margin:0 0 10px;color:#d7e8ff;font-size:11px}
+#recovery-section .pr-problem-card dt{color:rgba(245,250,255,.58)}
+#recovery-section .pr-problem-card dd{margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .pr-problem-card p{margin:0 0 10px;color:#d7e8ff;font-size:11px;line-height:1.35}
+#recovery-section .pr-problem-card button{border:1px solid rgba(210,232,255,.22);background:#1f6feb;color:#fff;border-radius:9px;padding:8px 10px;font-size:11px;font-weight:900;cursor:pointer}
+#recovery-section .pr-table-wrap{overflow:auto;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+#recovery-section .pr-table{width:100%;border-collapse:collapse;color:#d7e8ff;font-size:11px;min-width:1260px}
+#recovery-section .pr-table th{color:#fff;text-align:left;background:rgba(255,255,255,.05);padding:9px;border-bottom:1px solid rgba(255,255,255,.08)}
+#recovery-section .pr-table td{padding:9px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:middle}
+#recovery-section .pr-table td:nth-child(3){max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .pr-trend.increasing{color:#ff8a2a;font-weight:900}
+#recovery-section .pr-trend.stable{color:#f7c83e;font-weight:900}
+#recovery-section .pr-trend.decreasing{color:#64e89f;font-weight:900}
+@media(max-width:1180px){
+  #recovery-section .pr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #recovery-section .pr-exec-grid{grid-template-columns:1fr}
+  #recovery-section .pr-card-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  #recovery-section .pr-hero{flex-direction:column}
+  #recovery-section .pr-kpis,#recovery-section .pr-card-grid{grid-template-columns:1fr}
+  #recovery-section .pr-top-recurrence{grid-template-columns:1fr}
 }
 </style>
 
