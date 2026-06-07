@@ -29537,6 +29537,15 @@ body:has(#recovery-section) .main-content.expanded{
                 }) : h('div',{className:'ri-aging-empty'},'Sin condiciones activas para comparar en el scope actual. Carga Yield Flow / Cesium o limpia filtros.'))
             ]);
         }
+        function safeBentoRerender(){
+            try{
+                if(typeof requestRender === "function"){ requestRender(); return; }
+                if(typeof renderApp === "function"){ renderApp(); return; }
+                if(typeof render === "function"){ render(); return; }
+                if(typeof window.__SMTINEL_RENDER__ === "function"){ window.__SMTINEL_RENDER__(); return; }
+            }catch(e){}
+            try{ window.dispatchEvent(new Event("resize")); }catch(e){}
+        }
         function renderGMRecoveryTraceabilityLayout(){
             function bentoClean(value){
                 if (value == null || typeof value === 'object') return '';
@@ -29850,7 +29859,7 @@ body:has(#recovery-section) .main-content.expanded{
             function mini(label,value,sub){ return h('span',{className:'bento-mini'},[h('em',null,label),h('b',null,value),sub?h('small',null,sub):null]); }
             function problemCard(p,i,selectedKey){
                 var sel=selectedKey===p.executiveSignature;
-                return h('article',{className:'bento-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;requestRender();}},[
+                return h('article',{className:'bento-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[
                     h('div',{className:'bento-problem-top'},[h('b',null,'#'+(i+1)),badge(p.severity,p.severity.toLowerCase()),badge(p.status,'status')]),
                     h('h4',null,p.shortExecutiveSignature),
                     h('div',{className:'bento-problem-score'},[h('strong',null,p.businessImpactScore),h('span',null,'Business Impact')]),
@@ -29861,7 +29870,7 @@ body:has(#recovery-section) .main-content.expanded{
             function detailDrawer(p,bullets){
                 if(!p) return null;
                 return h('aside',{className:'bento-drawer'},[
-                    h('div',{className:'bento-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';requestRender();}},'×')]),
+                    h('div',{className:'bento-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';safeBentoRerender();}},'×')]),
                     h('h3',null,p.executiveSignature),
                     h('div',{className:'bento-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),
                     h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),
@@ -29875,8 +29884,8 @@ body:has(#recovery-section) .main-content.expanded{
             }
 
             var problems=buildProblems();
-            var selectedKey=window.__SMTINEL_BENTO_SELECTED || (problems[0]&&problems[0].executiveSignature);
-            var selected=problems.filter(function(p){return p.executiveSignature===selectedKey;})[0] || problems[0] || null;
+            var selectedKey=window.__SMTINEL_BENTO_SELECTED || '';
+            var selected=selectedKey ? (problems.filter(function(p){return p.executiveSignature===selectedKey;})[0] || null) : null;
             var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';});
             var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';});
             var contained=problems.filter(function(p){return p.status==='CONTAINED';});
@@ -29897,7 +29906,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h('article',{className:'bento-card action'},[h('span',null,'Recommended Action'),h('div',{className:'bento-action-grid'},[h('div',null,[h('b',null,'STOP NEW INPUT'),h('p',null,largest?'Apply containment at '+largest.primarySource+'.':'No active source.')]),h('div',null,[h('b',null,'RECOVERY'),h('p',null,'Prioritize 91D+ and highest impact backlog.')]),h('div',null,[h('b',null,'VERIFY'),h('p',null,'Validate source containment before release.')])])])
                 ]),
                 h('section',{className:'bento-board'},[h('div',{className:'bento-section-head'},[h('h3',null,'Recovery Priority Board'),h('span',null,'Bento cards ranked by business impact')]),h('div',{className:'bento-board-grid'},problems.length?problems.slice(0,12).map(function(p,i){return problemCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No recovery priorities detected.'))]),
-                detailDrawer(selected,bullets),
+                (selected ? detailDrawer(selected,bullets) : null),
                 h('details',{className:'bento-advanced'},[h('summary',null,'Advanced Analysis'),h('div',{className:'bento-table-wrap'},h('table',{className:'bento-table'},[h('thead',null,h('tr',null,['Rank','Severity','Status','Executive Signature','Business Impact','Fresh Input','Bonepile','Old 91D+','Source','Velocity','Recovery','Recommended Focus'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'bento-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,p.severity),h('td',null,p.status),h('td',null,p.shortExecutiveSignature),h('td',null,p.businessImpactScore),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,p.primarySource),h('td',null,p.velocityIcon+' '+p.velocityStatus),h('td',null,p.recoveryEffectiveness),h('td',null,p.recommendedFocus)]);} ))]))])
             ]);
         }
@@ -50721,6 +50730,28 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
 #recovery-section .bento-table td{padding:10px;color:var(--text-secondary);border-bottom:1px solid rgba(178,196,214,.42)}
 @media(max-width:1100px){#recovery-section .bento-grid{grid-template-columns:1fr}#recovery-section .bento-card.largest,#recovery-section .bento-card.gm{grid-column:auto}#recovery-section .bento-drawer{position:static;width:auto;max-height:none}}
 @media(max-width:760px){#recovery-section.ri-visual-map{padding:10px!important}#recovery-section .bento-hero{flex-direction:column}#recovery-section .bento-largest-grid,#recovery-section .bento-card>div,#recovery-section .bento-problem-grid,#recovery-section .bento-drawer section{grid-template-columns:1fr}}
+</style>
+
+
+<style id="smtinel-bento-safe-selection-fix">
+#recovery-section .bento-drawer{
+  box-shadow:0 28px 80px rgba(16,42,67,.28), inset 0 1px 0 rgba(255,255,255,.90)!important;
+}
+#recovery-section .bento-problem-card{
+  min-height:300px;
+}
+#recovery-section .bento-board{
+  padding-bottom:28px!important;
+}
+@media(max-width:1500px){
+  #recovery-section .bento-drawer{
+    position:static!important;
+    width:auto!important;
+    max-height:none!important;
+    margin-top:0!important;
+    order:4;
+  }
+}
 </style>
 
 </body>
