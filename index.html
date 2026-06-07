@@ -29538,459 +29538,212 @@ body:has(#recovery-section) .main-content.expanded{
             ]);
         }
         function renderGMRecoveryTraceabilityLayout(){
-            function prClean(v){
-                if (v == null) return '';
-                if (typeof v === 'object') return '';
-                v = String(v).replace(/\s+/g,' ').trim();
-                if (!v || /^N\/?D$/i.test(v) || /^ALL$/i.test(v) || /^undefined$/i.test(v) || /^null$/i.test(v) || /^\[object Object\]$/i.test(v)) return '';
-                return v;
+            function cleanSignatureValue(value){
+                if (value == null || typeof value === 'object') return '';
+                var text = String(value).replace(/\s+/g,' ').trim();
+                if (!text) return '';
+                var upper = text.toUpperCase();
+                if (upper === 'N/D' || upper === 'ND' || upper === 'NULL' || upper === 'UNDEFINED' || upper === '[OBJECT OBJECT]' || upper === 'NAN') return '';
+                var noise = ['YIELD_FLOW_FILTERS_ACTIVE','YIELD FLOW FILTERS ACTIVE','COMMAND_CENTER','COMMAND CENTER','BOARD_IMPACT','BOARD IMPACT','RECOVERY INTEL','YIELD FLOW','STORYLINE','RCCA','MORE','EXPORT','DOWNLOAD','START WITH YOUR'];
+                for (var i=0;i<noise.length;i++){ if (upper === noise[i] || upper.indexOf(noise[i] + ' ') === 0) return ''; }
+                text = text.replace(/\b(Command Center|Board Impact|Yield Flow|Recovery Intel|Storyline|RCCA|More)\b/gi,'').replace(/[<>]/g,'').replace(/\s+/g,' ').trim();
+                return text;
             }
-            function prPick(){
-                for (var i=0;i<arguments.length;i++){
-                    var v = prClean(arguments[i]);
-                    if (v) return v;
-                }
-                return 'N/D';
+            function sigToken(value){
+                var text = cleanSignatureValue(value);
+                if (!text) return '';
+                try { text = text.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){}
+                return text.replace(/[^\w\s-]/g,' ').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase();
             }
-            function prNum(v){
-                var n = Number(v || 0);
-                return isFinite(n) ? n : 0;
+            function normalizeFailureMode(value){
+                var t = sigToken(value);
+                return t.replace(/^FAILED_/,'').replace(/_TEST_INFO$/,'');
             }
-            function prSlug(v){
-                v = prClean(v) || 'ND';
-                try { v = v.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){}
-                return v.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase() || 'ND';
+            function firstClean(){
+                for (var i=0;i<arguments.length;i++){ var v = cleanSignatureValue(arguments[i]); if (v) return v; }
+                return '';
             }
-            function prDate(v){
-                v = prClean(v);
-                if (!v) return '';
-                try {
-                    var d = new Date(v);
-                    if (!isNaN(d.getTime())) return d;
-                } catch(_){}
-                return null;
+            function firstToken(){
+                for (var i=0;i<arguments.length;i++){ var v = sigToken(arguments[i]); if (v) return v; }
+                return '';
             }
-            function prDateText(v){
-                var d = prDate(v);
-                if (d) return d.toISOString().slice(0,10);
-                return prClean(v) || 'N/D';
-            }
-            function prAgeDays(row){
+            function num(v){ var n = Number(v || 0); return isFinite(n) ? n : 0; }
+            function addMap(map,key,qty){ key = cleanSignatureValue(key); if(key) map[key] = (map[key] || 0) + Math.max(1,num(qty||1)); }
+            function topKey(map){ var keys = Object.keys(map||{}); if(!keys.length) return 'N/D'; keys.sort(function(a,b){ return num(map[b])-num(map[a]) || String(a).localeCompare(String(b)); }); return keys[0] || 'N/D'; }
+            function shortSignature(s){ s = cleanSignatureValue(s) || 'UNCLASSIFIED_SYMPTOM'; return s.length > 60 ? s.slice(0,57).replace(/\s+\S*$/,'') + '...' : s; }
+            function dateObj(v){ v = cleanSignatureValue(v); if(!v) return null; try{ var d = new Date(v); if(!isNaN(d.getTime())) return d; }catch(_){} return null; }
+            function dateText(v){ var d = dateObj(v); return d ? d.toISOString().slice(0,10) : (cleanSignatureValue(v) || 'N/D'); }
+            function firstDate(a,b){ if(!a) return b||''; if(!b) return a||''; var da=dateObj(a), db=dateObj(b); return da && db && db < da ? b : a; }
+            function lastDate(a,b){ if(!a) return b||''; if(!b) return a||''; var da=dateObj(a), db=dateObj(b); return da && db && db > da ? b : a; }
+            function ageDays(row){
                 row = row || {};
-                if (row.agingDays != null) return prNum(row.agingDays);
-                if (row.ageDays != null) return prNum(row.ageDays);
-                if (row.aging != null) return prNum(row.aging);
-                if (row.agingHours != null) return Math.max(0, prNum(row.agingHours) / 24);
-                var d = prDate(prPick(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.repairTime,row.lastSeen));
-                if (d) return Math.max(0,(Date.now() - d.getTime()) / 864e5);
-                return null;
+                if(row.agingDays != null) return num(row.agingDays);
+                if(row.ageDays != null) return num(row.ageDays);
+                if(row.aging != null) return num(row.aging);
+                if(row.agingHours != null) return Math.max(0,num(row.agingHours)/24);
+                var d = dateObj(firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.repairTime,row.lastSeen));
+                return d ? Math.max(0,(Date.now()-d.getTime())/864e5) : null;
             }
-            function prBucket(days){
-                if (days == null || !isFinite(days)) return '';
-                if (days <= 30) return 'fresh';
-                if (days <= 60) return 'age31_60';
-                if (days <= 90) return 'age61_90';
-                if (days <= 365) return 'age91_365';
+            function bucket(days){
+                if(days == null || !isFinite(days)) return '';
+                if(days <= 30) return 'fresh';
+                if(days <= 60) return 'age31_60';
+                if(days <= 90) return 'age61_90';
+                if(days <= 365) return 'age91_365';
                 return 'ageOver365';
             }
-            function prTop(map){
-                var keys = Object.keys(map || {});
-                if (!keys.length) return 'N/D';
-                keys.sort(function(a,b){ return prNum(map[b])-prNum(map[a]) || String(a).localeCompare(String(b)); });
-                return keys[0] || 'N/D';
+            function normalizeSeed(row){
+                row = row || {};
+                return {
+                    customer:firstClean(row.customer,row.Customer,'Cisco'),
+                    bu:firstClean(row.bu,row.buLabel,row.BU),
+                    model:firstClean(row.family,row.model,row.Model,row.sku,row.SKU),
+                    partNumber:firstClean(row.partNumber,row.pn,row.PN,row.sku,row.SKU),
+                    line:firstClean(row.line,row.Line),
+                    station:firstClean(row.station,row.currentEvent,row.event,row.testArea,row.area,row.Station),
+                    failureMode:firstClean(row.failureMode,row.symptom,row.mode,row.testinfo,row.cesiumArea,row.defectType,row.FailureMode),
+                    defectType:firstClean(row.defectType,row.failureMode,row.symptom,row.mode),
+                    refdes:firstClean(row.refdes,row.RefDes,row.referenceDesignator,row.location,row.ref),
+                    component:firstClean(row.component,row.componentName,row.location,row.refdes,row.RefDes),
+                    errorCode:firstClean(row.errorCode,row.error,row.errorcode,row.err,row.code),
+                    process:firstClean(row.process,row.processArea,'SMT'),
+                    boardSide:firstClean(row.boardSide,row.side),
+                    wo:firstClean(row.wo,row.workOrder,row.WO),
+                    sn:firstClean(row.sn,row.SN,row.serial,row.serialNumber,row.serial_number),
+                    eventTime:firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.lastSeen),
+                    rootCauseHypothesis:firstClean(row.rootCauseHypothesis,row.rootCause),
+                    containmentAction:firstClean(row.containmentAction,row.containment),
+                    correctiveAction:firstClean(row.correctiveAction,row.corrective),
+                    preventiveAction:firstClean(row.preventiveAction,row.preventive),
+                    owner:firstClean(row.owner,row.responsible)
+                };
             }
-            function prFirst(a,b){
-                if (!a) return b || '';
-                if (!b) return a || '';
-                var da = prDate(a), db = prDate(b);
-                if (da && db) return da <= db ? a : b;
-                return a;
+            function buildExecutiveSignature(row){
+                row = normalizeSeed(row);
+                var failure = normalizeFailureMode(row.failureMode || row.defectType);
+                var error = firstToken(row.errorCode);
+                var station = firstToken(row.station);
+                var process = firstToken(row.process);
+                var refdes = firstToken(row.refdes);
+                var component = firstToken(row.component);
+                var core = failure || error || [station,process].filter(Boolean).join('|') || 'UNCLASSIFIED_SYMPTOM';
+                var parts = [core];
+                if(refdes && core.indexOf(refdes) < 0) parts.push(refdes);
+                else if(!refdes && component && core.indexOf(component) < 0) parts.push(component);
+                var sig = parts.join(' | ');
+                if(sig.length > 60) sig = sig.slice(0,60).replace(/\s+\S*$/,'').replace(/\s+\|$/,'').trim();
+                return sig || 'UNCLASSIFIED_SYMPTOM';
             }
-            function prLast(a,b){
-                if (!a) return b || '';
-                if (!b) return a || '';
-                var da = prDate(a), db = prDate(b);
-                if (da && db) return da >= db ? a : b;
-                return a;
+            function buildEngineeringSignature(row){
+                row = normalizeSeed(row);
+                var parts = [row.customer,row.bu,row.model,row.partNumber,row.line,row.station,row.failureMode||row.defectType,row.refdes||row.component,row.errorCode,row.process].map(sigToken).filter(Boolean);
+                var unique = []; parts.forEach(function(p){ if(p && p !== 'ND' && unique.indexOf(p) < 0) unique.push(p); });
+                return unique.length ? unique.join('|') : buildExecutiveSignature(row);
             }
-            function prSignature(obj){
-                obj = obj || {};
-                var parts = [
-                    obj.failureMode || obj.defectType || obj.symptom || obj.mode || obj.testinfo || obj.errorCode,
-                    obj.refdes || obj.referenceDesignator || obj.location || obj.ref || obj.component,
-                    obj.component,
-                    obj.station || obj.currentEvent || obj.event || obj.testArea || obj.area,
-                    obj.errorCode || obj.error || obj.errorcode,
-                    obj.process || obj.processArea,
-                    obj.boardSide || obj.side
-                ].map(prSlug).filter(function(x){ return x && x !== 'ND'; });
-                var compact = [];
-                parts.forEach(function(p){ if (compact.indexOf(p) < 0) compact.push(p); });
-                return compact.length ? compact.join('|') : 'UNCLASSIFIED_SYMPTOM';
-            }
-            function prMainFailure(){
-                var f = topFailures && topFailures[0] ? topFailures[0] : {};
-                return prPick(f.failureMode, f.mode, f.testinfo, f.symptom, f.defectType, 'Unclassified Failure');
-            }
-            function prEnsure(groups, seed){
-                var sig = prSignature(seed);
-                if (!groups[sig]) {
-                    groups[sig] = {
-                        signature: sig,
-                        total: 0,
-                        fresh: 0,
-                        aged: 0,
-                        age31_60: 0,
-                        age61_90: 0,
-                        age91_365: 0,
-                        ageOver365: 0,
-                        last7: 0,
-                        last30: 0,
-                        last90: 0,
-                        previous30: 0,
-                        workOrders: {},
-                        serials: {},
-                        stations: {},
-                        models: {},
-                        firstSeen: '',
-                        lastSeen: '',
-                        failureMode: prPick(seed.failureMode, seed.defectType, seed.symptom, seed.mode, prMainFailure()),
-                        defectType: prPick(seed.defectType, seed.failureMode, seed.symptom, seed.mode, prMainFailure()),
-                        refdes: prPick(seed.refdes, seed.referenceDesignator, seed.location, seed.ref, seed.component),
-                        component: prPick(seed.component, seed.location, seed.refdes, seed.referenceDesignator),
-                        stationSeed: prPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area),
-                        process: prPick(seed.process, seed.processArea, 'SMT'),
-                        boardSide: prPick(seed.boardSide, seed.side),
-                        rootCauseStatus: 'N/D',
-                        rootCauseHypothesis: prPick(seed.rootCauseHypothesis, seed.rootCause),
-                        containmentAction: prPick(seed.containmentAction, seed.containment),
-                        correctiveAction: prPick(seed.correctiveAction, seed.corrective),
-                        preventiveAction: prPick(seed.preventiveAction, seed.preventive),
-                        owner: prPick(seed.owner, seed.responsible)
-                    };
+            function mainFailure(){ var f = topFailures && topFailures[0] ? topFailures[0] : {}; return firstClean(f.failureMode,f.mode,f.testinfo,f.symptom,f.defectType,'Unclassified Failure'); }
+            function ensureProblem(groups, seed){
+                seed = normalizeSeed(seed);
+                var execSig = buildExecutiveSignature(seed);
+                if(!groups[execSig]){
+                    groups[execSig] = {executiveSignature:execSig,shortExecutiveSignature:shortSignature(execSig),engineeringSignatures:{},totalBonepileUnits:0,freshInputUnits:0,agedUnits31Plus:0,oldUnits91Plus:0,longTermUnits365Plus:0,age31_60:0,age61_90:0,last7:0,last30:0,last90:0,previous30:0,affectedWOsMap:{},affectedSerialsMap:{},stations:{},models:{},lines:{},failureModes:{},firstSeen:'',lastSeen:'',samples:[]};
                 }
-                return groups[sig];
+                return groups[execSig];
             }
-            function prAdd(groups, seed, qty, bucket, days){
-                qty = Math.max(0, prNum(qty));
-                if (!qty) return;
-                var g = prEnsure(groups, seed || {});
-                g.total += qty;
-                if (bucket === 'fresh') g.fresh += qty;
+            function addProblem(groups, seed, qty, bkt, days){
+                qty = Math.max(0,num(qty)); if(!qty) return;
+                seed = normalizeSeed(seed);
+                var g = ensureProblem(groups, seed);
+                var eng = buildEngineeringSignature(seed);
+                g.engineeringSignatures[eng] = (g.engineeringSignatures[eng] || 0) + qty;
+                if(bkt === 'fresh') g.freshInputUnits += qty;
                 else {
-                    g.aged += qty;
-                    if (bucket === 'age31_60') g.age31_60 += qty;
-                    else if (bucket === 'age61_90') g.age61_90 += qty;
-                    else if (bucket === 'age91_365') g.age91_365 += qty;
-                    else if (bucket === 'ageOver365') g.ageOver365 += qty;
+                    g.agedUnits31Plus += qty; g.totalBonepileUnits += qty;
+                    if(bkt === 'age31_60') g.age31_60 += qty;
+                    else if(bkt === 'age61_90') g.age61_90 += qty;
+                    else if(bkt === 'age91_365') g.oldUnits91Plus += qty;
+                    else if(bkt === 'ageOver365'){ g.oldUnits91Plus += qty; g.longTermUnits365Plus += qty; }
                     else g.age31_60 += qty;
                 }
-                if (days != null && isFinite(days)) {
-                    if (days <= 7) g.last7 += qty;
-                    if (days <= 30) g.last30 += qty;
-                    if (days <= 90) g.last90 += qty;
-                    if (days > 30 && days <= 60) g.previous30 += qty;
+                if(days != null && isFinite(days)){
+                    if(days <= 7) g.last7 += qty;
+                    if(days <= 30) g.last30 += qty;
+                    if(days <= 90) g.last90 += qty;
+                    if(days > 30 && days <= 60) g.previous30 += qty;
                 }
-                var wo = prPick(seed.wo, seed.workOrder, seed.WO);
-                if (wo !== 'N/D') g.workOrders[wo] = (g.workOrders[wo] || 0) + qty;
-                var sn = prPick(seed.sn, seed.SN, seed.serial, seed.serialNumber, seed.serial_number);
-                if (sn !== 'N/D') g.serials[sn] = (g.serials[sn] || 0) + qty;
-                var st = prPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area);
-                if (st !== 'N/D') g.stations[st] = (g.stations[st] || 0) + qty;
-                var md = prPick(seed.model, seed.family, seed.sku, seed.SKU);
-                if (md !== 'N/D') g.models[md] = (g.models[md] || 0) + qty;
-                var dt = prPick(seed.eventTime, seed.recordTime, seed.date, seed.time, seed.createdAt, seed.lastSeen);
-                if (dt !== 'N/D') {
-                    g.firstSeen = prFirst(g.firstSeen, dt);
-                    g.lastSeen = prLast(g.lastSeen, dt);
-                }
+                addMap(g.affectedWOsMap,seed.wo,qty); addMap(g.affectedSerialsMap,seed.sn,qty); addMap(g.stations,seed.station,qty); addMap(g.models,seed.model,qty); addMap(g.lines,seed.line,qty); addMap(g.failureModes,seed.failureMode||seed.defectType,qty);
+                if(seed.eventTime){ g.firstSeen = firstDate(g.firstSeen,seed.eventTime); g.lastSeen = lastDate(g.lastSeen,seed.eventTime); }
+                if(g.samples.length < 8) g.samples.push(seed);
             }
-            function prBuildProblems(){
+            function classifyTrend(g){ if(g.last30 > g.previous30 * 1.15 && g.last30 > 0) return 'Increasing'; if(g.last30 < g.previous30 * 0.85 && g.previous30 > 0) return 'Decreasing'; return 'Stable'; }
+            function classifyStatus(g){ if(g.freshInputUnits > 0 && g.oldUnits91Plus > 0) return 'CRITICAL_RECURRENCE'; if(g.freshInputUnits > 0 && g.agedUnits31Plus > 0) return 'ACTIVE'; if(g.freshInputUnits === 0 && g.agedUnits31Plus > 0) return 'CONTAINED'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'WATCHLIST'; return 'CLOSED'; }
+            function classifySeverity(g){ if(g.oldUnits91Plus > 0 && g.freshInputUnits > 0) return 'CRITICAL'; if(g.agedUnits31Plus > 0 && g.freshInputUnits > 0) return 'HIGH'; if(g.agedUnits31Plus > 0 && g.freshInputUnits === 0) return 'MEDIUM'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'LOW'; return 'LOW'; }
+            function rootCauseStatus(status){ if(status === 'ACTIVE' || status === 'CRITICAL_RECURRENCE') return 'Root Cause Not Contained'; if(status === 'CONTAINED') return 'Recovery Only'; if(status === 'WATCHLIST') return 'Emerging Signal'; return 'Closed / No Action'; }
+            function recommendedAction(status){ if(status === 'CRITICAL_RECURRENCE') return 'Containment at source + oldest recovery'; if(status === 'ACTIVE') return 'Containment at source + recovery'; if(status === 'CONTAINED') return 'Recovery burn-down'; if(status === 'WATCHLIST') return 'Monitor and validate repeatability'; return 'No action'; }
+            function riskScore(g,status,trend){
+                var freshWeight = Math.min(42, Math.log10(g.freshInputUnits + 1) * 20);
+                var oldWeight = Math.min(24, Math.log10(g.oldUnits91Plus + 1) * 12);
+                var bonepileWeight = Math.min(18, Math.log10(g.agedUnits31Plus + 1) * 8);
+                var trendWeight = trend === 'Increasing' ? 12 : (trend === 'Stable' ? 4 : 0);
+                var criticalityWeight = status === 'CRITICAL_RECURRENCE' ? 22 : (status === 'ACTIVE' ? 12 : (status === 'CONTAINED' ? 2 : 0));
+                if(status === 'WATCHLIST') bonepileWeight = 0;
+                return Math.min(100, Math.round(freshWeight + oldWeight + bonepileWeight + trendWeight + criticalityWeight));
+            }
+            function buildProblems(){
                 var groups = {};
-                var rows = (yieldFlowModel && yieldFlowModel.rows) || [];
-                rows.forEach(function(row){
-                    row = row || {};
-                    var days = prAgeDays(row);
-                    var bucket = prBucket(days);
-                    if (!bucket) {
-                        var status = [row.status,row.currentEvent,row.event,row.result,row.station,row.symptom,row.failureMode].join(' ');
-                        bucket = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(status) ? 'fresh' : 'age31_60';
-                    }
-                    prAdd(groups, {
-                        customer: row.customer || row.Customer || 'Cisco',
-                        bu: row.bu || row.buLabel || row.BU,
-                        model: row.family || row.model || row.Model || row.sku || row.SKU,
-                        sku: row.sku || row.SKU,
-                        failureMode: row.failureMode || row.symptom || row.mode || row.testinfo || row.cesiumArea || row.defectType,
-                        defectType: row.defectType || row.failureMode || row.symptom || row.mode,
-                        refdes: row.refdes || row.RefDes || row.location || row.ref || row.component,
-                        component: row.component || row.location || row.refdes || row.RefDes,
-                        station: row.station || row.currentEvent || row.event || row.testArea || row.area,
-                        errorCode: row.errorCode || row.error || row.errorcode,
-                        process: row.process || row.processArea || 'SMT',
-                        boardSide: row.boardSide || row.side,
-                        wo: row.wo || row.workOrder || row.WO,
-                        sn: row.sn || row.SN || row.serial || row.serialNumber || row.serial_number,
-                        eventTime: row.eventTime || row.recordTime || row.date || row.time || row.createdAt,
-                        rootCauseHypothesis: row.rootCauseHypothesis,
-                        containmentAction: row.containmentAction,
-                        correctiveAction: row.correctiveAction,
-                        preventiveAction: row.preventiveAction,
-                        owner: row.owner || row.responsible
-                    }, 1, bucket, days);
+                ((yieldFlowModel && yieldFlowModel.rows) || []).forEach(function(row){
+                    var seed = normalizeSeed(row);
+                    var days = ageDays(row);
+                    var b = bucket(days);
+                    if(!b){ var st = [row && row.status,row && row.currentEvent,row && row.event,row && row.result,seed.station,seed.failureMode].join(' '); b = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(st) ? 'fresh' : 'age31_60'; }
+                    addProblem(groups,seed,1,b,days);
                 });
-
                 (serials || []).forEach(function(row){
-                    row = row || {};
-                    var days = prAgeDays(row);
-                    var bucket = prBucket(days);
-                    if (!bucket) bucket = prNum(row.reentry) > 0 ? 'age31_60' : 'fresh';
-                    prAdd(groups, row, 1, bucket, days);
+                    var seed = normalizeSeed(row);
+                    var days = ageDays(row);
+                    var b = bucket(days) || (num(row && row.reentry) > 0 ? 'age31_60' : 'fresh');
+                    addProblem(groups,seed,1,b,days);
                 });
-
                 stationRowsScoped.forEach(function(r){
-                    var base = {
-                        customer: 'Cisco',
-                        bu: scopeChips.join(' '),
-                        model: scopeModels[0] || '',
-                        failureMode: prMainFailure(),
-                        defectType: prMainFailure(),
-                        refdes: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
-                        component: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
-                        station: r.station || 'N/D',
-                        process: 'SMT',
-                        wo: scopeWos[0] || ''
-                    };
-                    prAdd(groups, base, bucketStationValue(r,'age0_30'), 'fresh', 15);
-                    prAdd(groups, base, bucketStationValue(r,'age31_60'), 'age31_60', 45);
-                    prAdd(groups, base, bucketStationValue(r,'age61_90'), 'age61_90', 75);
-                    prAdd(groups, base, bucketStationValue(r,'age91_365'), 'age91_365', 180);
-                    prAdd(groups, base, bucketStationValue(r,'ageOver365'), 'ageOver365', 420);
+                    var f = topFailures && topFailures[0] ? topFailures[0] : {};
+                    var seed = normalizeSeed({customer:'Cisco',bu:scopeChips.join(' '),model:scopeModels[0]||'',failureMode:mainFailure(),defectType:mainFailure(),refdes:f.location||f.refdes||f.ref||'',component:f.component||f.location||f.refdes||'',station:r.station||'',process:'SMT',wo:scopeWos[0]||''});
+                    addProblem(groups,seed,bucketStationValue(r,'age0_30'),'fresh',15);
+                    addProblem(groups,seed,bucketStationValue(r,'age31_60'),'age31_60',45);
+                    addProblem(groups,seed,bucketStationValue(r,'age61_90'),'age61_90',75);
+                    addProblem(groups,seed,bucketStationValue(r,'age91_365'),'age91_365',180);
+                    addProblem(groups,seed,bucketStationValue(r,'ageOver365'),'ageOver365',420);
                 });
-
-                var list = Object.keys(groups).map(function(sig){
-                    var g = groups[sig];
-                    var old91 = prNum(g.age91_365) + prNum(g.ageOver365);
-                    var active = g.fresh > 0 && g.aged > 0;
-                    var contained = g.aged > 0 && g.fresh <= 0;
-                    var watchlist = g.fresh > 0 && g.aged <= 0;
-                    var critical = g.fresh > 0 && old91 > 0;
-                    var status = active ? 'ACTIVE' : (contained ? 'CONTAINED' : (watchlist ? 'WATCHLIST' : 'RECOVERY ONLY'));
-                    var severity = critical ? 'CRITICAL' : (active ? 'HIGH' : (contained ? 'MEDIUM' : 'LOW'));
-                    var trend = 'Stable';
-                    if (g.last30 > g.previous30 * 1.15 && g.last30 > 0) trend = 'Increasing';
-                    else if (g.last30 < g.previous30 * 0.85 && g.previous30 > 0) trend = 'Decreasing';
-                    var rootCauseStatus = g.fresh > 0 ? 'Root Cause Not Contained' : (contained ? (old91 > 0 ? 'Recovery Only' : 'Contained') : 'Under Investigation');
-                    if (active && !prClean(g.containmentAction) && !prClean(g.correctiveAction)) rootCauseStatus = 'Under Investigation';
-                    var priority = critical ? 400000 : active ? 300000 : contained ? 200000 : 100000;
-                    priority += old91 * 120 + g.fresh * 80 + g.aged * 8;
-                    return Object.assign({}, g, {
-                        old91: old91,
-                        active: active,
-                        contained: contained,
-                        watchlist: watchlist,
-                        critical: critical,
-                        status: status,
-                        severity: severity,
-                        trend: trend,
-                        trendIcon: trend === 'Increasing' ? '↑' : (trend === 'Decreasing' ? '↓' : '→'),
-                        rootCauseStatus: rootCauseStatus,
-                        topStation: prTop(g.stations),
-                        topModel: prTop(g.models),
-                        affectedWorkOrders: Object.keys(g.workOrders).length,
-                        affectedSerials: Object.keys(g.serials).length || Math.round(g.total),
-                        firstSeenText: prDateText(g.firstSeen),
-                        lastSeenText: prDateText(g.lastSeen),
-                        priorityScore: priority,
-                        recoveryFocus: critical || active ? 'Containment first, then recovery' : (contained ? 'Recovery burn-down' : 'Monitor fresh signal'),
-                        containmentFocus: critical || active ? 'Source station: ' + prTop(g.stations) : 'Monitor',
-                        why: active ? 'Fresh units with the same symptom continue entering the system. Recovery alone will not solve the issue.' : (contained ? 'No recent fresh input detected. The source appears contained; focus on aged WIP recovery.' : 'Fresh signal detected without significant aged history. Validate if the symptom repeats.')
-                    });
-                }).filter(function(g){ return g.total > 0; });
-
-                list.sort(function(a,b){
-                    return b.priorityScore - a.priorityScore || b.total - a.total || String(a.signature).localeCompare(String(b.signature));
-                });
+                var list = Object.keys(groups).map(function(k){
+                    var g = groups[k], status = classifyStatus(g), severity = classifySeverity(g), trend = classifyTrend(g), score = riskScore(g,status,trend);
+                    var trendIcon = trend === 'Increasing' ? '↑' : (trend === 'Decreasing' ? '↓' : '→');
+                    return Object.assign({},g,{engineeringSignaturesList:Object.keys(g.engineeringSignatures).sort(function(a,b){return g.engineeringSignatures[b]-g.engineeringSignatures[a];}),affectedWOs:Object.keys(g.affectedWOsMap).length,affectedSerials:Object.keys(g.affectedSerialsMap).length||Math.round(g.agedUnits31Plus+g.freshInputUnits),topStation:topKey(g.stations),topModel:topKey(g.models),topLine:topKey(g.lines),topFailureMode:topKey(g.failureModes),firstSeenText:dateText(g.firstSeen),lastSeenText:dateText(g.lastSeen),trend7d:g.last7,trend30d:g.last30,trend90d:g.last90,trend:trend,trendIcon:trendIcon,status:status,severity:severity,rootCauseStatus:rootCauseStatus(status),recommendedAction:recommendedAction(status),riskScore:score,contributionBase:g.agedUnits31Plus+g.freshInputUnits});
+                }).filter(function(p){ return p.freshInputUnits > 0 || p.agedUnits31Plus > 0; });
+                list.sort(function(a,b){ return b.riskScore-a.riskScore || b.freshInputUnits-a.freshInputUnits || b.oldUnits91Plus-a.oldUnits91Plus || b.agedUnits31Plus-a.agedUnits31Plus || String(a.executiveSignature).localeCompare(String(b.executiveSignature)); });
                 return list;
             }
-            function prHealth(problems){
-                var active = problems.filter(function(p){return p.status === 'ACTIVE';}).length;
-                var critical = problems.filter(function(p){return p.critical;}).length;
-                var watch = problems.filter(function(p){return p.status === 'WATCHLIST';}).length;
-                var score = Math.max(0, Math.round(100 - active * 6 - critical * 14 - watch * 2));
-                var label = score < 55 ? 'Critical' : (score < 80 ? 'Needs Attention' : 'Controlled');
-                return { score: score, label: label };
-            }
-            function prPlan(p){
-                return [
-                    '# Recovery Plan - ' + (p.signature || 'N/D'),
-                    '',
-                    '## Current Condition',
-                    '- Problem status: ' + p.status,
-                    '- Bonepile units: ' + fmt(p.aged),
-                    '- Fresh input units: ' + fmt(p.fresh),
-                    '- 91D+ units: ' + fmt(p.old91),
-                    '- Severity: ' + p.severity,
-                    '- Top station: ' + (p.topStation || 'N/D'),
-                    '- Top model: ' + (p.topModel || 'N/D'),
-                    '- Trend: ' + p.trendIcon + ' ' + p.trend,
-                    '',
-                    '## Why It Is Still Active',
-                    p.active ? 'The same symptom exists in historical bonepile and fresh input. New units are still being generated with the same failure signature.' : p.why,
-                    '',
-                    '## Containment Actions',
-                    '- Apply containment gate at the source station.',
-                    '- Apply 100% inspection at detection station.',
-                    '- Segregate fresh affected units.',
-                    '- Stop releasing recovered units until containment is validated.',
-                    '- Review recent process changes linked to the top station.',
-                    '',
-                    '## Recovery Actions',
-                    '- Prioritize ACTIVE problems with 91D+ units.',
-                    '- Separate aged WIP by bucket.',
-                    '- Burn down oldest units first.',
-                    '- Assign owner per station.',
-                    '- Track daily recovery closure.',
-                    '- Verify retest results before release.',
-                    '',
-                    '## Owner Recommendation',
-                    p.topStation !== 'N/D' ? 'Assign station owner for ' + p.topStation + ' and quality owner for recurrence verification.' : 'Assign process owner and quality owner for recurrence verification.',
-                    '',
-                    '## Effectiveness Verification',
-                    '- No new fresh input with the same symptom for the defined monitoring window.',
-                    '- Downward or stable trend over 7D / 30D / 90D.',
-                    '- Reduced aged bucket.',
-                    '- No recurrence after recovery.',
-                    '',
-                    '## Expected Exit Criteria',
-                    '- Fresh input = 0 for the monitored period.',
-                    '- Root cause containment validated.',
-                    '- Recovery bucket reduction confirmed.',
-                    '- Recovered units pass retest and disposition checks.',
-                    ''
-                ].join('\n');
-            }
-            function prDownloadPlan(p){
-                recoveryDownloadText('Recovery_Plan_' + prSlug(p.signature).slice(0,130) + '.md', prPlan(p), 'text/markdown;charset=utf-8;');
-            }
-            function metric(label, value, sub, tone, iconKind){
-                return h('article',{className:'pr-metric '+(tone||'')},[
-                    h('i',null,icon(iconKind || 'grid')),
-                    h('div',null,[h('span',null,label),h('b',null,value),h('small',null,sub || '')])
-                ]);
-            }
-            function statusBadge(status){ return h('span',{className:'pr-status '+String(status||'').toLowerCase().replace(/\s+/g,'-')},status); }
-            function severityBadge(sev){ return h('span',{className:'pr-sev '+String(sev||'LOW').toLowerCase()},sev||'LOW'); }
-            function problemCard(p, idx){
-                return h('article',{className:'pr-problem-card '+String(p.status).toLowerCase()},[
-                    h('div',{className:'pr-card-top'},[severityBadge(p.severity), statusBadge(p.status), h('small',null,'P-'+String(idx+1).padStart(3,'0'))]),
-                    h('h3',null,(idx+1)+'. '+p.signature),
-                    h('div',{className:'pr-card-grid'},[
-                        h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(p.aged))]),
-                        h('span',null,[h('em',null,'Fresh'),h('b',null,fmt(p.fresh))]),
-                        h('span',null,[h('em',null,'91D+'),h('b',null,fmt(p.old91))]),
-                        h('span',null,[h('em',null,'Trend'),h('b',null,p.trendIcon+' '+p.trend)])
-                    ]),
-                    h('dl',null,[
-                        h('dt',null,'Top Station'),h('dd',null,p.topStation),
-                        h('dt',null,'Top Model'),h('dd',null,p.topModel),
-                        h('dt',null,'Root Cause'),h('dd',null,p.rootCauseStatus)
-                    ]),
-                    h('p',null,p.why),
-                    h('button',{type:'button',onClick:function(){ prDownloadPlan(p); }},'Generate Recovery Plan')
-                ]);
-            }
+            function healthIndex(problems){ var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length; var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length; var inc=problems.filter(function(p){return p.trend==='Increasing';}).length; var score=Math.max(0,Math.round(100-active*5-critical*12-inc*2)); return {score:score,label:score<55?'Critical':(score<80?'Needs Attention':'Controlled')}; }
+            function generatePlan(p){ return ['# Recovery Plan - '+p.executiveSignature,'','## Current Condition','- Executive Signature: '+p.executiveSignature,'- Status: '+p.status,'- Severity: '+p.severity,'- Risk Score: '+p.riskScore,'- Bonepile Units: '+fmt(p.agedUnits31Plus),'- Fresh Input Units: '+fmt(p.freshInputUnits),'- Old 91D+ Units: '+fmt(p.oldUnits91Plus),'- Top Station: '+p.topStation,'- Top Model: '+p.topModel,'- Trend: '+p.trendIcon+' '+p.trend,'','## Why It Is Still Active',(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE')?'Fresh units with the same symptom are still entering the system while aged bonepile exists. Recovery alone will not solve the problem.':(p.status==='CONTAINED'?'No fresh input is currently detected for this aged symptom. Focus can shift from containment to recovery burn-down.':'Fresh input is present without significant aged bonepile. Monitor closely before it becomes a long-term recovery issue.'),'','## Containment Actions','- Apply containment gate at source.','- Apply 100% inspection at the detection station.','- Segregate fresh affected units.','- Review recent station, recipe, material, fixture and program changes.','- Stop releasing recovered units until containment is validated.','','## Recovery Actions','- Prioritize oldest 91D+ units first.','- Separate aged WIP by bucket.','- Assign station owner and recovery owner.','- Track daily burn-down by executive signature.','- Verify retest results before release.','','## Owner Recommendation',p.topStation!=='N/D'?'Primary owner: station/process owner for '+p.topStation+'. Quality owner validates recurrence closure.':'Primary owner: SMT Process. Quality owner validates recurrence closure.','','## Effectiveness Verification','- No fresh input with same Executive Signature for the defined monitoring period.','- Trend is stable or decreasing over 7D / 30D / 90D.','- 91D+ bucket is reducing.','- No recurrence after recovered units are released.','','## Expected Exit Criteria','- Fresh Input Units = 0.','- Root Cause Status = Contained or Recovery Only.','- Recovery burn-down plan is active and tracked.','- Recovered units pass verification and disposition checks.','','## Engineering Signature Breakdown',(p.engineeringSignaturesList||[]).slice(0,10).map(function(s){return '- '+s;}).join('\n') || '- N/D',''].join('\n'); }
+            function downloadPlan(p){ recoveryDownloadText('Recovery_Plan_'+sigToken(p.executiveSignature).slice(0,120)+'.md',generatePlan(p),'text/markdown;charset=utf-8;'); }
+            function exportRankingTsv(problems){ var headers=['Rank','Executive Signature','Engineering Signature','Status','Severity','Risk Score','Bonepile Units','Fresh Input Units','Old 91D+','Top Station','Top Model','Trend','Root Cause Status','Recommended Action']; var rows=problems.map(function(p,i){return [i+1,p.executiveSignature,(p.engineeringSignaturesList||[''])[0]||'',p.status,p.severity,p.riskScore,p.agedUnits31Plus,p.freshInputUnits,p.oldUnits91Plus,p.topStation,p.topModel,p.trend,p.rootCauseStatus,p.recommendedAction];}); var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n'); recoveryDownloadText('Recovery_Intel_Problem_Ranking.tsv',tsv,'text/tab-separated-values;charset=utf-8;'); }
+            function metric(label,value,sub,tone,iconKind){ return h('article',{className:'prr-metric '+(tone||'')},[h('i',null,icon(iconKind||'grid')),h('div',null,[h('span',null,label),h('b',null,value),h('small',null,sub||'')])]); }
+            function statusBadge(s){ return h('span',{className:'prr-status '+String(s||'').toLowerCase().replace(/_/g,'-')},String(s||'N/D').replace(/_/g,' ')); }
+            function severityBadge(s){ return h('span',{className:'prr-sev '+String(s||'LOW').toLowerCase()},s||'LOW'); }
+            function riskBadge(score){ return h('span',{className:'prr-risk '+(score>=80?'hot':score>=55?'warn':'calm')},'Risk '+score); }
+            function rankCard(p,idx,selectedKey){ var sel=selectedKey===p.executiveSignature; return h('article',{key:'prr-card-'+idx,className:'prr-card '+String(p.status).toLowerCase().replace(/_/g,'-')+(sel?' selected':''),title:(p.engineeringSignaturesList||[])[0]||p.executiveSignature},[h('div',{className:'prr-card-head'},[h('b',{className:'prr-rank'},'#'+(idx+1)),severityBadge(p.severity),statusBadge(p.status),riskBadge(p.riskScore)]),h('h3',null,p.shortExecutiveSignature),h('div',{className:'prr-card-grid'},[h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(p.agedUnits31Plus))]),h('span',null,[h('em',null,'Fresh'),h('b',null,fmt(p.freshInputUnits))]),h('span',null,[h('em',null,'Old 91D+'),h('b',null,fmt(p.oldUnits91Plus))]),h('span',null,[h('em',null,'Trend'),h('b',null,p.trendIcon+' '+p.trend)])]),h('dl',null,[h('dt',null,'Top Station'),h('dd',null,p.topStation),h('dt',null,'Top Model'),h('dd',null,p.topModel),h('dt',null,'Root Cause'),h('dd',null,p.rootCauseStatus)]),h('p',null,p.recommendedAction),h('button',{type:'button',onClick:function(){window.__SMTINEL_PRR_SELECTED=p.executiveSignature;requestRender();}},'View Detail')]); }
+            function detailPanel(p){ if(!p) return h('section',{className:'prr-detail empty'},'Select a recurring problem to view detail.'); var models=Object.keys(p.models||{}).slice(0,8), lines=Object.keys(p.lines||{}).slice(0,8), stations=Object.keys(p.stations||{}).slice(0,8), wos=Object.keys(p.affectedWOsMap||{}).slice(0,12); return h('section',{className:'prr-detail'},[h('div',{className:'prr-detail-head'},[h('div',null,[h('span',null,'Problem Detail'),h('h3',null,p.executiveSignature)]),h('button',{type:'button',onClick:function(){downloadPlan(p);}},'Generate Recovery Plan')]),h('div',{className:'prr-detail-grid'},[h('article',null,[h('b',null,'Engineering Signature Breakdown'),h('ul',null,(p.engineeringSignaturesList||[]).slice(0,8).map(function(s){return h('li',{key:s},s);}))]),h('article',null,[h('b',null,'Affected Models'),h('p',null,models.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Lines'),h('p',null,lines.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Stations'),h('p',null,stations.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected WOs'),h('p',null,wos.join(', ')||'N/D')]),h('article',null,[h('b',null,'Affected Serials'),h('p',null,fmt(p.affectedSerials))])]),h('div',{className:'prr-compare'},[h('span',null,[h('em',null,'Fresh vs Aged'),h('b',null,fmt(p.freshInputUnits)+' / '+fmt(p.agedUnits31Plus))]),h('span',null,[h('em',null,'First Seen'),h('b',null,p.firstSeenText)]),h('span',null,[h('em',null,'Last Seen'),h('b',null,p.lastSeenText)]),h('span',null,[h('em',null,'Trend 7D / 30D / 90D'),h('b',null,fmt(p.trend7d)+' / '+fmt(p.trend30d)+' / '+fmt(p.trend90d))])]),h('div',{className:'prr-rec'},[h('article',null,[h('b',null,'Recommended containment'),h('p',null,(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE')?'Execute containment at source station, apply 100% inspection and segregate fresh affected units.':'Containment monitoring only; no active fresh-to-aged recurrence is confirmed.')]),h('article',null,[h('b',null,'Recommended recovery plan'),h('p',null,p.status==='WATCHLIST'?'Monitor early signal and prevent aging.':'Prioritize 91D+ and highest volume aged units, track burn-down by executive signature.')])])]); }
 
-            var problems = prBuildProblems();
-            var activeProblems = problems.filter(function(p){ return p.status === 'ACTIVE'; });
-            var containedProblems = problems.filter(function(p){ return p.status === 'CONTAINED' || p.status === 'RECOVERY ONLY'; });
-            var watchlist = problems.filter(function(p){ return p.status === 'WATCHLIST'; });
-            var criticalRecurrences = problems.filter(function(p){ return p.critical; });
-            var newThisWeek = problems.filter(function(p){ return p.last7 > 0 && (p.active || p.watchlist); });
-            var top = problems[0] || null;
-            var health = prHealth(problems);
-            var totalBonepile = problems.reduce(function(s,p){ return s + prNum(p.aged); }, 0);
-            var totalFresh = problems.reduce(function(s,p){ return s + prNum(p.fresh); }, 0);
-
-            return h('section',{className:'pr-engine'},[
-                h('div',{className:'pr-hero'},[
-                    h('div',null,[
-                        h('div',{className:'smtinel-ri-eyebrow'},'Problem Recurrence Engine'),
-                        h('h2',null,'Recovery Intel → Estado real del problema'),
-                        h('p',null,'Identifica qué problemas siguen vivos, cuáles fueron contenidos y dónde debe actuar la organización para detener la generación de nuevo bonepile.')
-                    ]),
-                    h('button',{type:'button',onClick:function(){ if(top) prDownloadPlan(top); }},'Generate Recovery Plan')
-                ]),
-                h('div',{className:'pr-kpis'},[
-                    metric('Active Problems',fmt(activeProblems.length),'Fresh + aged recurrence','red','warn'),
-                    metric('Contained Problems',fmt(containedProblems.length),'No fresh input','green','shield'),
-                    metric('New Recurrences This Week',fmt(newThisWeek.length),'Last 7 days','blue','clock'),
-                    metric('Critical Recurrences',fmt(criticalRecurrences.length),'Fresh + 91D+','orange','warn'),
-                    metric('Problem Health Index',fmt(health.score) + '/100',health.label,health.score < 55 ? 'red' : (health.score < 80 ? 'orange' : 'green'),'grid')
-                ]),
-                h('div',{className:'pr-top-recurrence'},[
-                    h('span',null,'Top Recurrence'),
-                    h('b',null,top ? top.signature : 'N/D'),
-                    h('em',null,top ? (top.status + ' · ' + fmt(top.aged) + ' bonepile · ' + fmt(top.fresh) + ' fresh') : 'No problem signature detected')
-                ]),
-                h('div',{className:'pr-exec-grid'},[
-                    h('section',{className:'pr-panel pr-meaning'},[
-                        h('h3',null,'What this really means'),
-                        h('p',null,activeProblems.length ? 'Recovery alone will not solve the issue. Fresh units with the same symptom continue entering the system. Containment must stop the source before aged WIP recovery can be effective.' : 'No active aged-to-fresh recurrence is currently confirmed under the selected scope. Focus on recovery burn-down and continue monitoring fresh input.'),
-                        h('div',{className:activeProblems.length ? 'pr-warning' : 'pr-ok'},[
-                            h('b',null,activeProblems.length ? 'CONTAINMENT REQUIRED' : 'RECOVERY CONTROLLED'),
-                            h('small',null,activeProblems.length ? 'Fresh input is still feeding the bonepile.' : 'Fresh input does not currently match aged bonepile signatures.')
-                        ])
-                    ]),
-                    h('section',{className:'pr-panel'},[
-                        h('h3',null,'Top Active Problems'),
-                        h('div',{className:'pr-active-list'},(problems.slice(0,10).map(function(p,i){
-                            return h('div',{key:'active-'+i},[
-                                h('b',null,(i+1)+'. '+p.signature),
-                                h('span',null,'Bonepile: '+fmt(p.aged)),
-                                h('span',null,'Fresh: '+fmt(p.fresh)),
-                                statusBadge(p.status)
-                            ]);
-                        })))
-                    ]),
-                    h('section',{className:'pr-panel'},[
-                        h('h3',null,'Recovery Priority Logic'),
-                        h('ol',{className:'pr-priority'},[
-                            h('li',null,'ACTIVE problems with 91D+ units'),
-                            h('li',null,'ACTIVE problems with highest fresh input'),
-                            h('li',null,'CONTAINED problems with highest historical volume'),
-                            h('li',null,'WATCHLIST emerging problems')
-                        ]),
-                        h('p',{className:'pr-scope'},'Current scope: '+fmt(totalBonepile)+' bonepile units · '+fmt(totalFresh)+' fresh units · '+fmt(problems.length)+' problem signatures')
-                    ])
-                ]),
-                h('section',{className:'pr-problems'},[
-                    h('h3',null,'Top Problem Recurrences'),
-                    h('div',{className:'pr-card-grid'},problems.length ? problems.slice(0,10).map(problemCard) : h('div',{className:'ri-aging-empty'},'No recurrence signatures detected under current scope.'))
-                ]),
-                h('section',{className:'pr-panel'},[
-                    h('h3',null,'Problem Status Matrix'),
-                    h('div',{className:'pr-table-wrap'},h('table',{className:'pr-table'},[
-                        h('thead',null,h('tr',null,['Severity','Status','Symptom Signature','Bonepile Units','Fresh Units','91D+ Units','Affected WO','Affected Serials','Top Station','Top Model','Trend','Root Cause Status'].map(function(x){return h('th',{key:x},x);}))),
-                        h('tbody',null,problems.slice(0,40).map(function(p,i){
-                            return h('tr',{key:'pr-row-'+i},[
-                                h('td',null,severityBadge(p.severity)),
-                                h('td',null,statusBadge(p.status)),
-                                h('td',null,p.signature),
-                                h('td',null,fmt(p.aged)),
-                                h('td',null,fmt(p.fresh)),
-                                h('td',null,fmt(p.old91)),
-                                h('td',null,fmt(p.affectedWorkOrders)),
-                                h('td',null,fmt(p.affectedSerials)),
-                                h('td',null,p.topStation),
-                                h('td',null,p.topModel),
-                                h('td',null,h('span',{className:'pr-trend '+p.trend.toLowerCase()},p.trendIcon+' '+p.trend)),
-                                h('td',null,p.rootCauseStatus)
-                            ]);
-                        }))
-                    ]))
-                ])
-            ]);
+            var problems=buildProblems();
+            var selectedKey=window.__SMTINEL_PRR_SELECTED || (problems[0]&&problems[0].executiveSignature);
+            var selected=problems.filter(function(p){return p.executiveSignature===selectedKey;})[0] || problems[0] || null;
+            var activeProblems=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';});
+            var criticalProblems=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';});
+            var containedProblems=problems.filter(function(p){return p.status==='CONTAINED';});
+            var freshAtRisk=problems.reduce(function(s,p){return s+((p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'||p.status==='WATCHLIST')?p.freshInputUnits:0);},0);
+            var largestActive=activeProblems.slice().sort(function(a,b){return b.agedUnits31Plus-a.agedUnits31Plus||b.freshInputUnits-a.freshInputUnits;})[0]||null;
+            var totalRiskBase=problems.reduce(function(s,p){return s+p.contributionBase;},0);
+            var largestContribution=largestActive&&totalRiskBase?Math.round(largestActive.contributionBase/totalRiskBase*100):0;
+            var health=healthIndex(problems);
+            var interpretation=activeProblems.length?'Recovery alone will not solve the problem. Fresh units with the same symptom are still entering the system. Containment at source must be executed before recovery can be effective.':(containedProblems.length?'No fresh input detected for aged symptoms. Focus can shift from containment to recovery burn-down.':'Fresh symptoms detected without aged bonepile. Monitor closely before they become long-term recovery issues.');
+            return h('section',{className:'prr-engine'},[h('div',{className:'prr-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Problem Recurrence Ranking Engine'),h('h2',null,'Ranking ejecutivo de problemas vivos'),h('p',null,'Agrupa síntomas por Executive Signature corta, elimina ruido de filtros/UI y prioriza contención y recovery por riesgo operativo.')]),h('div',{className:'prr-toolbar'},[h('button',{type:'button',onClick:function(){exportRankingTsv(problems);}},'Export TSV'),h('button',{type:'button',onClick:function(){if(selected)downloadPlan(selected);},className:'primary'},'Generate Recovery Plan')])]),h('div',{className:'prr-kpis'},[metric('Active Problems',fmt(activeProblems.length),'Fresh + aged recurrence','red','warn'),metric('Critical Recurrences',fmt(criticalProblems.length),'Fresh + 91D+','orange','warn'),metric('Largest Active Problem',largestActive?largestActive.shortExecutiveSignature:'N/D',largestActive?('Bonepile '+fmt(largestActive.agedUnits31Plus)+' · Fresh '+fmt(largestActive.freshInputUnits)+' · '+largestContribution+'%'):'No active recurrence','blue','grid'),metric('Fresh Input at Risk',fmt(freshAtRisk),'fresh units tied to risk','purple','clock'),metric('Contained Problems',fmt(containedProblems.length),'recovery only','green','shield'),metric('Problem Health Index',fmt(health.score)+'/100',health.label,health.score<55?'red':(health.score<80?'orange':'green'),'grid')]),h('section',{className:'prr-meaning'},[h('h3',null,'What this means'),h('p',null,interpretation)]),h('section',{className:'prr-top'},[h('div',{className:'prr-section-head'},[h('h3',null,'Top Recurring Problems'),h('span',null,'Ranked by Risk Score')]),h('div',{className:'prr-card-grid'},problems.length?problems.slice(0,10).map(function(p,i){return rankCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No problem recurrence signatures detected.'))]),detailPanel(selected),h('section',{className:'prr-matrix'},[h('div',{className:'prr-section-head'},[h('h3',null,'Problem Status Matrix'),h('span',null,'Executive signature shown; engineering signature exported and available in detail.')]),h('div',{className:'prr-table-wrap'},h('table',{className:'prr-table'},[h('thead',null,h('tr',null,['Rank','Severity','Status','Executive Signature','Risk Score','Bonepile Units','Fresh Units','91D+ Units','Affected WO','Affected Serials','Top Station','Top Model','Trend','Root Cause Status','Recommended Action'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,50).map(function(p,i){return h('tr',{key:'prr-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,severityBadge(p.severity)),h('td',null,statusBadge(p.status)),h('td',{title:(p.engineeringSignaturesList||[])[0]||p.executiveSignature},p.shortExecutiveSignature),h('td',null,riskBadge(p.riskScore)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,fmt(p.affectedWOs)),h('td',null,fmt(p.affectedSerials)),h('td',null,p.topStation),h('td',null,p.topModel),h('td',null,h('span',{className:'prr-trend '+p.trend.toLowerCase()},p.trendIcon+' '+p.trend)),h('td',null,p.rootCauseStatus),h('td',null,p.recommendedAction)]);} ))]))])]);
         }
 
         function recoveryExportCsvCell(value){
@@ -50655,6 +50408,90 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
   #recovery-section .pr-kpis,#recovery-section .pr-card-grid{grid-template-columns:1fr}
   #recovery-section .pr-top-recurrence{grid-template-columns:1fr}
 }
+</style>
+
+
+<!-- SMTinel Recovery Intel - Problem Recurrence Ranking Engine -->
+<style id="smtinel-problem-recurrence-ranking-engine-style">
+#recovery-section.ri-visual-map{background:#06111f!important;color:#f7fbff!important;border:1px solid rgba(80,135,190,.20)!important;border-radius:0!important;padding:18px!important}
+#recovery-section .ri-vm-header{background:linear-gradient(180deg,rgba(12,31,55,.98),rgba(7,18,32,.96))!important;color:#f7fbff!important;border:1px solid rgba(80,135,190,.22)!important}
+#recovery-section .ri-vm-header h2,#recovery-section .ri-vm-header p{color:#f7fbff!important}
+#recovery-section .ri-vm-shell,#recovery-section .ri-aging-match,#recovery-section .ri-gm-layout,#recovery-section .ri-bm-layout,#recovery-section .pr-engine{display:none!important}
+#recovery-section .prr-engine{display:flex;flex-direction:column;gap:14px;width:100%}
+#recovery-section .prr-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;background:linear-gradient(135deg,#071A33 0%,#102A43 58%,#081524 100%);border:1px solid rgba(80,135,190,.26);border-radius:18px;padding:18px 20px;box-shadow:0 18px 44px rgba(0,0,0,.24);position:relative;overflow:hidden}
+#recovery-section .prr-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;opacity:.55;pointer-events:none}
+#recovery-section .prr-hero>*{position:relative;z-index:1}
+#recovery-section .prr-hero h2{margin:4px 0 4px;color:#fff!important;font-size:28px;line-height:1.08;letter-spacing:-.035em}
+#recovery-section .prr-hero p{margin:0;color:rgba(245,250,255,.78);font-size:13px;max-width:900px;line-height:1.45}
+#recovery-section .prr-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+#recovery-section .prr-toolbar button{border:1px solid rgba(210,232,255,.24);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:11px 15px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap}
+#recovery-section .prr-toolbar button.primary{background:#1f6feb;border-color:#2b7bff}
+#recovery-section .prr-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+#recovery-section .prr-metric{display:grid;grid-template-columns:54px 1fr;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.94));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:14px;box-shadow:0 12px 28px rgba(0,0,0,.18);min-width:0}
+#recovery-section .prr-metric i{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.08)}
+#recovery-section .prr-metric i svg{width:28px;height:28px}
+#recovery-section .prr-metric span{display:block;color:#6ee7b7;font-size:9.5px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+#recovery-section .prr-metric b{display:block;color:#fff;font-size:22px;line-height:1.05;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .prr-metric small{display:block;color:rgba(245,250,255,.72);font-weight:750;margin-top:4px;font-size:10.5px;line-height:1.3}
+#recovery-section .prr-metric.red i{background:rgba(196,65,65,.30);color:#ff7b7b}
+#recovery-section .prr-metric.green i{background:rgba(35,160,85,.30);color:#64e89f}
+#recovery-section .prr-metric.blue i{background:rgba(31,111,235,.28);color:#66b3ff}
+#recovery-section .prr-metric.orange i{background:rgba(232,138,26,.28);color:#ffb35c}
+#recovery-section .prr-metric.purple i{background:rgba(130,80,220,.28);color:#c69cff}
+#recovery-section .prr-meaning,#recovery-section .prr-top,#recovery-section .prr-matrix,#recovery-section .prr-detail{background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.96));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+#recovery-section .prr-meaning h3,#recovery-section .prr-section-head h3{margin:0;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+#recovery-section .prr-meaning p{margin:8px 0 0;color:rgba(245,250,255,.86);font-size:15px;line-height:1.45}
+#recovery-section .prr-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#recovery-section .prr-section-head span{color:#9fb7d0;font-size:11px;font-weight:800}
+#recovery-section .prr-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#recovery-section .prr-card{border-radius:15px;padding:14px;background:rgba(7,18,32,.64);border:1px solid rgba(120,170,220,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:.15s ease}
+#recovery-section .prr-card.selected{outline:2px solid rgba(31,111,235,.70);box-shadow:0 0 0 4px rgba(31,111,235,.14),inset 0 1px 0 rgba(255,255,255,.05)}
+#recovery-section .prr-card.critical-recurrence,#recovery-section .prr-card.active{border-color:rgba(240,68,82,.58)}
+#recovery-section .prr-card.contained{border-color:rgba(35,160,85,.48)}
+#recovery-section .prr-card.watchlist{border-color:rgba(31,111,235,.50)}
+#recovery-section .prr-card-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+#recovery-section .prr-rank{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#102a43;border-radius:9px;padding:4px 8px;font-size:11px}
+#recovery-section .prr-sev,#recovery-section .prr-status,#recovery-section .prr-risk{display:inline-flex;align-items:center;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:950;color:#fff;white-space:nowrap}
+#recovery-section .prr-sev.critical{background:#d83b46}
+#recovery-section .prr-sev.high{background:#e8781a}
+#recovery-section .prr-sev.medium{background:#caa211;color:#172033}
+#recovery-section .prr-sev.low{background:#1f6feb}
+#recovery-section .prr-status.active,#recovery-section .prr-status.critical-recurrence{background:rgba(216,59,70,.28);color:#ff7b7b}
+#recovery-section .prr-status.contained{background:rgba(35,160,85,.24);color:#64e89f}
+#recovery-section .prr-status.watchlist{background:rgba(31,111,235,.22);color:#75b5ff}
+#recovery-section .prr-status.closed{background:rgba(160,170,180,.18);color:#d3dee8}
+#recovery-section .prr-risk.hot{background:#d83b46}
+#recovery-section .prr-risk.warn{background:#e8781a}
+#recovery-section .prr-risk.calm{background:#1f6feb}
+#recovery-section .prr-card h3{margin:0 0 12px;color:#fff;font-size:18px;line-height:1.2;letter-spacing:-.02em;word-break:break-word}
+#recovery-section .prr-card .prr-card-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#recovery-section .prr-card .prr-card-grid span,#recovery-section .prr-detail-grid article,#recovery-section .prr-rec article,#recovery-section .prr-compare span{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px;min-width:0}
+#recovery-section .prr-card .prr-card-grid em,#recovery-section .prr-compare em{display:block;color:rgba(245,250,255,.60);font-size:10px;font-style:normal}
+#recovery-section .prr-card .prr-card-grid b,#recovery-section .prr-compare b{display:block;color:#fff;font-size:16px;margin-top:2px}
+#recovery-section .prr-card dl{display:grid;grid-template-columns:100px 1fr;gap:6px;margin:0 0 10px;color:#d7e8ff;font-size:11px}
+#recovery-section .prr-card dt{color:rgba(245,250,255,.58)}
+#recovery-section .prr-card dd{margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .prr-card p{margin:0 0 10px;color:#d7e8ff;font-size:12px;line-height:1.35}
+#recovery-section .prr-card button,#recovery-section .prr-detail button{border:1px solid rgba(210,232,255,.22);background:#1f6feb;color:#fff;border-radius:9px;padding:8px 10px;font-size:11px;font-weight:900;cursor:pointer}
+#recovery-section .prr-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+#recovery-section .prr-detail-head span{color:#6ee7b7;font-size:11px;text-transform:uppercase;font-weight:950;letter-spacing:.08em}
+#recovery-section .prr-detail-head h3{margin:4px 0 0;color:#fff;font-size:22px;line-height:1.18}
+#recovery-section .prr-detail-grid{display:grid;grid-template-columns:1.2fr repeat(5,1fr);gap:10px;margin-bottom:12px}
+#recovery-section .prr-detail-grid b,#recovery-section .prr-rec b{display:block;color:#fff;font-size:12px;margin-bottom:7px}
+#recovery-section .prr-detail-grid p,#recovery-section .prr-rec p{margin:0;color:#d7e8ff;font-size:12px;line-height:1.38}
+#recovery-section .prr-detail-grid ul{margin:0;padding-left:16px;color:#d7e8ff;font-size:11px;line-height:1.45;max-height:170px;overflow:auto}
+#recovery-section .prr-compare{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+#recovery-section .prr-rec{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#recovery-section .prr-table-wrap{overflow:auto;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+#recovery-section .prr-table{width:100%;border-collapse:collapse;color:#d7e8ff;font-size:11px;min-width:1440px}
+#recovery-section .prr-table th{color:#fff;text-align:left;background:rgba(255,255,255,.05);padding:9px;border-bottom:1px solid rgba(255,255,255,.08)}
+#recovery-section .prr-table td{padding:9px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:middle}
+#recovery-section .prr-table td:nth-child(4){max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .prr-trend.increasing{color:#ff8a2a;font-weight:900}
+#recovery-section .prr-trend.stable{color:#f7c83e;font-weight:900}
+#recovery-section .prr-trend.decreasing{color:#64e89f;font-weight:900}
+@media(max-width:1320px){#recovery-section .prr-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}#recovery-section .prr-card-grid{grid-template-columns:1fr}#recovery-section .prr-detail-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){#recovery-section .prr-hero,.prr-detail-head{flex-direction:column}#recovery-section .prr-kpis,#recovery-section .prr-detail-grid,#recovery-section .prr-compare,#recovery-section .prr-rec{grid-template-columns:1fr}#recovery-section .prr-card .prr-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 </body>
