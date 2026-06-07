@@ -29538,89 +29538,412 @@ body:has(#recovery-section) .main-content.expanded{
             ]);
         }
         function renderGMRecoveryTraceabilityLayout(){
-            function metric(label, value, sub, tone){
-                return h('article',{className:'ri-gm-metric '+(tone||'')},[h('span',null,label),h('b',null,value),h('small',null,sub||'')]);
+            function riClean(v){
+                if (v == null) return '';
+                if (typeof v === 'object') return '';
+                v = String(v).replace(/\s+/g,' ').trim();
+                if (!v || /^N\/?D$/i.test(v) || /^ALL$/i.test(v) || /^undefined$/i.test(v) || /^null$/i.test(v) || /^\[object Object\]$/i.test(v)) return '';
+                return v;
             }
-            function stageCard(bucket, idx){
-                var rows = stationRowsForBucket(bucket.id, 'volume');
-                var main = rows[0] || null;
-                var second = rows[1] || null;
-                var freshTag = bucket.id === 'age0_30' ? 'NEW INFLOW' : (bucket.id === oldestBucket.id ? 'OLDEST WIP' : 'AGING FLOW');
-                var topText = main ? ((main.station || 'N/D') + (second ? ' / ' + (second.station || 'N/D') : '')) : 'No active units';
-                return h('article',{key:'gm-stage-'+bucket.id,className:'ri-gm-stage '+bucket.tone+' '+(bucket.id===oldestBucket.id?'oldest':'')},[
-                    h('div',{className:'ri-gm-stage-head'},[h('span',null,freshTag),h('em',null,bucket.key)]),
-                    h('div',{className:'ri-gm-stage-value'},[h('b',null,fmt(bucket.value)),h('small',null,pct(bucket.value)+'% of bonepile')]),
-                    h('div',{className:'ri-gm-stage-route'},[
-                        h('i',null,String(idx+1).padStart(2,'0')),
-                        h('p',null,topText)
-                    ]),
-                    h('div',{className:'ri-gm-stage-bars'},rows.slice(0,3).map(function(r,i){
-                        var qty = bucketStationValue(r,bucket.id);
-                        return h('div',{key:'gm-stage-bar-'+bucket.id+'-'+i},[h('span',null,r.station || 'N/D'),h('strong',null,fmt(qty)),h('u',null,h('em',{style:{width:Math.min(100,total?(qty/total*100):0)+'%'}}))]);
-                    }))
+            function riSlug(v){
+                v = riClean(v) || 'ND';
+                try { v = v.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_) {}
+                return v.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase() || 'ND';
+            }
+            function riPick(){
+                for (var i=0;i<arguments.length;i++){ var v=riClean(arguments[i]); if(v) return v; }
+                return 'N/D';
+            }
+            function riNum(v){ var n = Number(v || 0); return isFinite(n) ? n : 0; }
+            function riTop(map){
+                var keys = Object.keys(map || {});
+                if (!keys.length) return 'N/D';
+                keys.sort(function(a,b){ return riNum(map[b]) - riNum(map[a]) || String(a).localeCompare(String(b)); });
+                return keys[0] || 'N/D';
+            }
+            function riFirstDate(a,b){
+                if (!a) return b || '';
+                if (!b) return a || '';
+                try { return new Date(a) <= new Date(b) ? a : b; } catch(_) { return a; }
+            }
+            function riLastDate(a,b){
+                if (!a) return b || '';
+                if (!b) return a || '';
+                try { return new Date(a) >= new Date(b) ? a : b; } catch(_) { return a; }
+            }
+            function riDateOnly(v){
+                v = riClean(v);
+                if (!v) return 'N/D';
+                try { var d = new Date(v); if (!isNaN(d.getTime())) return d.toISOString().slice(0,10); } catch(_) {}
+                return v;
+            }
+            function riAgeDays(row){
+                row = row || {};
+                if (row.agingDays != null) return riNum(row.agingDays);
+                if (row.ageDays != null) return riNum(row.ageDays);
+                if (row.agingHours != null) return Math.max(0, riNum(row.agingHours) / 24);
+                var dt = riPick(row.eventTime, row.recordTime, row.date, row.time, row.createdAt);
+                if (dt !== 'N/D') {
+                    try { var d = new Date(dt); if (!isNaN(d.getTime())) return Math.max(0, (Date.now() - d.getTime()) / 864e5); } catch(_) {}
+                }
+                return null;
+            }
+            function riBucketFromDays(days){
+                if (days == null || !isFinite(days)) return '';
+                if (days <= 30) return 'fresh';
+                if (days <= 60) return 'age31_60';
+                if (days <= 90) return 'age61_90';
+                if (days <= 365) return 'age91_365';
+                return 'ageOver365';
+            }
+            function riSignatureFrom(obj){
+                obj = obj || {};
+                var parts = [
+                    obj.customer,
+                    obj.bu,
+                    obj.model || obj.family || obj.sku,
+                    obj.failureMode || obj.defectType || obj.symptom || obj.mode || obj.testinfo,
+                    obj.refdes || obj.location || obj.ref || obj.component,
+                    obj.station || obj.currentEvent || obj.event || obj.testArea || obj.area,
+                    obj.errorCode || obj.error || obj.errorcode,
+                    obj.process || obj.processArea,
+                    obj.boardSide || obj.side
+                ].map(riSlug).filter(function(x){ return x && x !== 'ND'; });
+
+                var compact = [];
+                parts.forEach(function(p){ if (compact.indexOf(p) < 0) compact.push(p); });
+                return compact.length ? compact.join('|') : 'UNCLASSIFIED_SYMPTOM';
+            }
+            function riMainFailure(){
+                var f = topFailures && topFailures[0] ? topFailures[0] : {};
+                return riPick(f.failureMode, f.mode, f.testinfo, f.symptom, 'Unclassified Failure');
+            }
+            function riEnsureGroup(groups, signature, seed){
+                seed = seed || {};
+                if (!groups[signature]) {
+                    groups[signature] = {
+                        signature: signature,
+                        total: 0,
+                        fresh: 0,
+                        aged: 0,
+                        age31_60: 0,
+                        age61_90: 0,
+                        age91_365: 0,
+                        ageOver365: 0,
+                        workOrders: {},
+                        serials: {},
+                        stations: {},
+                        models: {},
+                        firstSeen: '',
+                        lastSeen: '',
+                        failureMode: riPick(seed.failureMode, seed.defectType, seed.symptom, seed.mode, riMainFailure()),
+                        refdes: riPick(seed.refdes, seed.location, seed.ref, seed.component),
+                        component: riPick(seed.component, seed.location, seed.refdes, seed.ref),
+                        process: riPick(seed.process, 'SMT'),
+                        boardSide: riPick(seed.boardSide, seed.side),
+                        customer: riPick(seed.customer, 'Cisco'),
+                        bu: riPick(seed.bu),
+                        sourceRows: []
+                    };
+                }
+                return groups[signature];
+            }
+            function riAddGroupUnit(groups, seed, qty, bucket){
+                qty = Math.max(0, riNum(qty));
+                if (!qty) return;
+                var signature = riSignatureFrom(seed);
+                var g = riEnsureGroup(groups, signature, seed);
+                g.total += qty;
+                if (bucket === 'fresh') g.fresh += qty;
+                else {
+                    g.aged += qty;
+                    if (bucket === 'age31_60') g.age31_60 += qty;
+                    else if (bucket === 'age61_90') g.age61_90 += qty;
+                    else if (bucket === 'age91_365') g.age91_365 += qty;
+                    else if (bucket === 'ageOver365') g.ageOver365 += qty;
+                    else g.age31_60 += qty;
+                }
+                var wo = riPick(seed.wo, seed.workOrder, seed.WO);
+                if (wo !== 'N/D') g.workOrders[wo] = (g.workOrders[wo] || 0) + qty;
+                var sn = riPick(seed.sn, seed.SN, seed.serial, seed.serialNumber, seed.serial_number);
+                if (sn !== 'N/D') g.serials[sn] = (g.serials[sn] || 0) + qty;
+                var st = riPick(seed.station, seed.currentEvent, seed.event, seed.testArea, seed.area);
+                if (st !== 'N/D') g.stations[st] = (g.stations[st] || 0) + qty;
+                var md = riPick(seed.model, seed.family, seed.sku, seed.SKU);
+                if (md !== 'N/D') g.models[md] = (g.models[md] || 0) + qty;
+                var dt = riPick(seed.eventTime, seed.recordTime, seed.date, seed.time, seed.createdAt);
+                if (dt !== 'N/D') {
+                    g.firstSeen = riFirstDate(g.firstSeen, dt);
+                    g.lastSeen = riLastDate(g.lastSeen, dt);
+                }
+                g.sourceRows.push(seed);
+            }
+            function riBuildBonepileMatches(){
+                var groups = {};
+                var rows = (yieldFlowModel && yieldFlowModel.rows) || [];
+                rows.forEach(function(row){
+                    row = row || {};
+                    var days = riAgeDays(row);
+                    var bucket = riBucketFromDays(days);
+                    if (!bucket) {
+                        var statusText = [row.status,row.currentEvent,row.event,row.result,row.station,row.symptom,row.failureMode].join(' ');
+                        bucket = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(statusText) ? 'fresh' : 'age31_60';
+                    }
+                    riAddGroupUnit(groups, {
+                        customer: row.customer || row.Customer || 'Cisco',
+                        bu: row.bu || row.buLabel || row.BU,
+                        model: row.family || row.model || row.Model || row.sku || row.SKU,
+                        sku: row.sku || row.SKU,
+                        failureMode: row.failureMode || row.symptom || row.mode || row.testinfo || row.cesiumArea || row.defectType,
+                        defectType: row.defectType || row.failureMode || row.symptom || row.mode,
+                        refdes: row.refdes || row.RefDes || row.location || row.ref || row.component,
+                        component: row.component || row.location || row.refdes || row.RefDes,
+                        station: row.station || row.currentEvent || row.event || row.testArea || row.area,
+                        errorCode: row.errorCode || row.error || row.errorcode,
+                        process: row.process || row.processArea || 'SMT',
+                        boardSide: row.boardSide || row.side,
+                        wo: row.wo || row.workOrder || row.WO,
+                        sn: row.sn || row.SN || row.serial || row.serialNumber || row.serial_number,
+                        eventTime: row.eventTime || row.recordTime || row.date || row.time || row.createdAt
+                    }, 1, bucket);
+                });
+
+                (serials || []).forEach(function(row){
+                    var days = riAgeDays(row);
+                    var bucket = riBucketFromDays(days);
+                    if (!bucket) bucket = riNum(row.reentry) > 0 ? 'age31_60' : 'fresh';
+                    riAddGroupUnit(groups, row, 1, bucket);
+                });
+
+                /* Synthetic station-bucket layer: preserves current lightweight Yield Flow aging logic when raw dated rows are incomplete. */
+                stationRowsScoped.forEach(function(r){
+                    var base = {
+                        customer: 'Cisco',
+                        bu: scopeChips.join(' '),
+                        model: scopeModels[0] || '',
+                        failureMode: riMainFailure(),
+                        refdes: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
+                        component: (topFailures[0] && (topFailures[0].location || topFailures[0].refdes || topFailures[0].ref)) || '',
+                        station: r.station || 'N/D',
+                        process: 'SMT',
+                        wo: scopeWos[0] || ''
+                    };
+                    riAddGroupUnit(groups, base, bucketStationValue(r,'age0_30'), 'fresh');
+                    riAddGroupUnit(groups, base, bucketStationValue(r,'age31_60'), 'age31_60');
+                    riAddGroupUnit(groups, base, bucketStationValue(r,'age61_90'), 'age61_90');
+                    riAddGroupUnit(groups, base, bucketStationValue(r,'age91_365'), 'age91_365');
+                    riAddGroupUnit(groups, base, bucketStationValue(r,'ageOver365'), 'ageOver365');
+                });
+
+                var out = Object.keys(groups).map(function(key){
+                    var g = groups[key];
+                    var oldBonepile = riNum(g.age91_365) + riNum(g.ageOver365);
+                    var longTerm = riNum(g.ageOver365);
+                    var active = riNum(g.aged) > 0 && riNum(g.fresh) > 0;
+                    var severity = 'LOW';
+                    if (oldBonepile > 0 && g.fresh > 0) severity = 'CRITICAL';
+                    else if (g.aged > 0 && g.fresh > 0) severity = 'HIGH';
+                    else if (g.aged > 0 && g.fresh <= 0) severity = 'MEDIUM';
+                    else if (g.fresh > 0 && g.aged <= 0) severity = 'LOW';
+                    var action = severity === 'CRITICAL'
+                        ? 'Stop new input or apply containment gate.'
+                        : severity === 'HIGH'
+                            ? 'Apply containment on fresh input.'
+                            : severity === 'MEDIUM'
+                                ? 'Continue recovery plan.'
+                                : 'Monitor as early signal.';
+                    return Object.assign({}, g, {
+                        activeRecurrence: active,
+                        severity: severity,
+                        oldBonepile: oldBonepile,
+                        longTermBonepile: longTerm,
+                        affectedWorkOrders: Object.keys(g.workOrders).length,
+                        affectedSerials: Object.keys(g.serials).length || Math.round(g.total),
+                        topStation: riTop(g.stations),
+                        topModel: riTop(g.models),
+                        firstSeenText: riDateOnly(g.firstSeen),
+                        lastSeenText: riDateOnly(g.lastSeen),
+                        oldestBucketCount: longTerm || g.age91_365 || g.age61_90 || g.age31_60 || 0,
+                        oldestBucketLabel: longTerm ? '>365D' : (g.age91_365 ? '91-365D' : (g.age61_90 ? '61-90D' : (g.age31_60 ? '31-60D' : '0-30D'))),
+                        recommendedAction: action,
+                        warning: 'Active recurrence detected: existing bonepile contains ' + fmt(g.aged) + ' units with ' + g.signature + ', and ' + fmt(g.fresh) + ' fresh units are entering with the same symptom. Recovery alone will not solve the issue. Containment at source is required.'
+                    });
+                }).filter(function(g){ return g.total > 0; });
+
+                var sevRank = {CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
+                out.sort(function(a,b){
+                    return (sevRank[b.severity]-sevRank[a.severity]) ||
+                        (Number(b.activeRecurrence)-Number(a.activeRecurrence)) ||
+                        (b.total-a.total) ||
+                        String(a.signature).localeCompare(String(b.signature));
+                });
+                return out;
+            }
+            function riPlanMarkdown(m){
+                return [
+                    '# Recovery Plan - ' + (m.signature || 'N/D'),
+                    '',
+                    '## Current Condition',
+                    '- Bonepile units: ' + fmt(m.aged),
+                    '- Fresh input units: ' + fmt(m.fresh),
+                    '- Severity: ' + m.severity,
+                    '- Top station: ' + (m.topStation || 'N/D'),
+                    '- Top model: ' + (m.topModel || 'N/D'),
+                    '',
+                    '## Risk Interpretation',
+                    m.activeRecurrence ? 'The same symptom exists in historical bonepile and fresh input, indicating active recurrence.' : 'No active aged-to-fresh recurrence is confirmed under the current scope.',
+                    '',
+                    '## Containment Required',
+                    '- Apply containment gate at source.',
+                    '- Apply 100% inspection at detection station.',
+                    '- Segregate fresh affected units.',
+                    '- Stop releasing recovered units until containment is validated.',
+                    '',
+                    '## Recovery Actions',
+                    '- Prioritize oldest units first.',
+                    '- Separate aged WIP by bucket.',
+                    '- Assign owner per station.',
+                    '- Track daily burn-down.',
+                    '- Verify retest results before release.',
+                    '',
+                    '## Effectiveness Check',
+                    '- No new fresh input with same symptom for defined period.',
+                    '- Reduction of aged bucket.',
+                    '- No recurrence after recovery.',
+                    ''
+                ].join('\n');
+            }
+            function riDownloadPlan(m){
+                var name = 'Recovery_Plan_' + riSlug(m.signature).slice(0,120) + '.md';
+                recoveryDownloadText(name, riPlanMarkdown(m), 'text/markdown;charset=utf-8;');
+            }
+            function metric(label, value, sub, tone, iconKind){
+                return h('article',{className:'ri-bm-metric '+(tone||'')},[
+                    h('i',null,icon(iconKind || 'cube')),
+                    h('div',null,[h('span',null,label),h('b',null,value),h('small',null,sub || '')])
                 ]);
             }
-            var matchRows = agingMatchRows();
-            var stillActive = matchRows.filter(function(r){return r.match;});
-            var agedOnly = matchRows.filter(function(r){return !r.match && Number(r.oldQty||0)>0;});
-            var freshOnly = matchRows.filter(function(r){return !r.match && Number(r.oldQty||0)<=0 && Number(r.freshQty||0)>0;});
-            var oldStationText = oldestRows.slice(0,4).map(function(r){return r.station || 'N/D';}).join(' · ') || 'No active old WIP';
-            var freshStationText = freshRows.slice(0,4).map(function(r){return r.station || 'N/D';}).join(' · ') || 'No fresh inflow';
-            var mainFailure = (topFailures[0] && (topFailures[0].failureMode || topFailures[0].mode || topFailures[0].testinfo || topFailures[0].symptom)) || 'Main failure mode pending';
-            function conditionCard(r, idx){
-                var status = r.match ? 'still' : (Number(r.oldQty||0)>0 ? 'contained' : 'fresh');
-                var statusText = r.match ? 'Still active' : (Number(r.oldQty||0)>0 ? 'Aged only' : 'Fresh only');
-                var action = r.match
-                    ? 'Open RCCA / containment check. Same station exists in fresh and old WIP.'
-                    : (Number(r.oldQty||0)>0 ? 'Accelerate disposition. Validate no new inflow before closing.' : 'Monitor fresh issue before it becomes aging.');
-                return h('article',{key:'gm-cond-'+idx,className:'ri-gm-cond '+status},[
-                    h('div',{className:'ri-gm-cond-top'},[h('span',null,String(r.no != null && r.no !== '' ? r.no : '--').padStart(3,'0')),h('b',null,r.station),h('em',null,statusText)]),
-                    h('div',{className:'ri-gm-cond-counts'},[h('span',null,[h('small',null,oldestBucket.key),h('strong',null,fmt(r.oldQty))]),h('span',null,[h('small',null,'0-30D'),h('strong',null,fmt(r.freshQty))])]),
-                    h('p',null,action)
+            function severityBadge(sev){ return h('span',{className:'ri-bm-badge '+String(sev||'LOW').toLowerCase()},sev||'LOW'); }
+            function matchCard(m, idx){
+                return h('article',{key:'ri-bm-match-'+idx,className:'ri-bm-match '+String(m.severity).toLowerCase()},[
+                    h('div',{className:'ri-bm-match-head'},[
+                        severityBadge(m.severity),
+                        h('small',null,'Match ID: BM-'+String(idx+1).padStart(3,'0'))
+                    ]),
+                    h('p',{className:'ri-bm-label'},'Symptom'),
+                    h('h3',null,m.signature),
+                    h('div',{className:'ri-bm-grid'},[
+                        h('span',null,[h('em',null,'Bonepile'),h('b',null,fmt(m.aged))]),
+                        h('span',null,[h('em',null,'Fresh Input'),h('b',null,fmt(m.fresh))]),
+                        h('span',null,[h('em',null,'Oldest Bucket'),h('b',null,fmt(m.oldestBucketCount)),h('small',null,m.oldestBucketLabel)]),
+                        h('span',null,[h('em',null,'WOs'),h('b',null,fmt(m.affectedWorkOrders))])
+                    ]),
+                    h('dl',null,[
+                        h('dt',null,'Top Station'),h('dd',null,m.topStation || 'N/D'),
+                        h('dt',null,'Top Model'),h('dd',null,m.topModel || 'N/D'),
+                        h('dt',null,'First Seen'),h('dd',null,m.firstSeenText),
+                        h('dt',null,'Last Seen'),h('dd',null,m.lastSeenText)
+                    ]),
+                    h('div',{className:'ri-bm-action'},[
+                        h('p',null,[h('b',null,'Recommended Action: '),m.recommendedAction]),
+                        h('button',{type:'button',onClick:function(){ riDownloadPlan(m); }},'Generate Recovery Plan')
+                    ])
                 ]);
             }
-            function actionCard(title, body, tag){
-                return h('article',{className:'ri-gm-action'},[h('span',null,tag),h('b',null,title),h('p',null,body)]);
+            function quickAction(title, body, tone){
+                return h('article',{className:'ri-bm-qaction '+(tone||'')},[h('b',null,title),h('p',null,body)]);
             }
-            return h('section',{className:'ri-gm-layout'},[
-                h('div',{className:'ri-gm-hero'},[
-                    h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'GM View · Recovery Traceability Layout'),h('h2',null,'Bonepile movement, fresh inflow and aging disposition'),h('p',null,'Vista ejecutiva para explicar de donde viene el bonepile, como se esta moviendo por aging, que condiciones nuevas siguen entrando y que patrones viejos requieren aceleracion de retrabajo / disposicion.')]),
-                    h('div',{className:'ri-gm-hero-kpis'},[
-                        metric('Total Bonepile',fmt(total),'active scope',''),
-                        metric('Fresh 0-30D',fmt(freshBucket.value),'new inflow','green'),
-                        metric('Oldest Bucket',fmt(oldestBucket.value),oldestBucket.key,'red'),
-                        metric('Fresh Match',fmt(stillActive.length),'open recurrence signal',stillActive.length?'bad':'ok')
+
+            var matches = riBuildBonepileMatches();
+            var activeMatches = matches.filter(function(m){ return m.activeRecurrence; });
+            var criticalMatches = matches.filter(function(m){ return m.severity === 'CRITICAL'; });
+            var totalBonepileUnits = matches.reduce(function(s,m){ return s + riNum(m.aged); }, 0);
+            var freshInputUnits = matches.reduce(function(s,m){ return s + riNum(m.fresh); }, 0);
+            var topCards = matches.slice(0,6);
+            var selected = topCards[0] || matches[0] || null;
+            var healthIndex = totalBonepileUnits + freshInputUnits ? Math.max(0, Math.round(100 - (criticalMatches.length*18 + activeMatches.length*9 + Math.min(30,totalBonepileUnits/Math.max(1,total)*30)))) : 100;
+            var trendRows = matches.slice(0,5);
+
+            return h('section',{className:'ri-bm-layout'},[
+                h('div',{className:'ri-bm-hero'},[
+                    h('div',null,[
+                        h('div',{className:'smtinel-ri-eyebrow'},'Recovery Intel → Bonepile Match View'),
+                        h('h2',null,'Identificación de Bonepile con Recurrencia Activa por Fresh Input'),
+                        h('p',null,'Motor general para detectar si un mismo síntoma existe en bonepile histórico y sigue entrando como unidad fresca. El foco es contener el origen antes de ejecutar recovery.')
+                    ]),
+                    h('div',{className:'ri-bm-toolbar'},[
+                        h('button',{type:'button'},'Filters'),
+                        h('button',{type:'button',className:'primary'},'Analyze'),
+                        h('button',{type:'button',onClick:function(){ if(selected) riDownloadPlan(selected); }},'Generate Recovery Plan')
                     ])
                 ]),
-                h('div',{className:'ri-gm-map'},[
-                    h('aside',{className:'ri-gm-context'},[
-                        h('h3',null,'Bonepile Source'),
-                        h('div',{className:'ri-gm-source-ring'},[icon('cube'),h('b',null,fmt(total)),h('small',null,'units')]),
-                        h('p',null,'Scope: '+scopeChips.join(' · ')),
-                        h('ul',null,[h('li',null,'Fresh inflow: '+freshStationText),h('li',null,'Oldest active pattern: '+oldStationText),h('li',null,'Main breakdown signal: '+mainFailure)])
+                h('div',{className:'ri-bm-kpis'},[
+                    metric('Total Bonepile Units',fmt(totalBonepileUnits),'31D+ by symptom','purple','cube'),
+                    metric('Fresh Input Units',fmt(freshInputUnits),'0-30D same signatures','blue','cal'),
+                    metric('Active Recurrence Count',fmt(activeMatches.length),'aged + fresh match','orange','clock'),
+                    metric('Critical Matches',fmt(criticalMatches.length),'91D+ and fresh','red','warn'),
+                    metric('Health Index',fmt(healthIndex) + '/100',healthIndex < 55 ? 'HIGH RISK' : 'CONTROLLED','green','grid')
+                ]),
+                h('div',{className:'ri-bm-exec-grid'},[
+                    h('section',{className:'ri-bm-panel ri-bm-donut'},[
+                        h('h3',null,'Matches por severidad'),
+                        h('div',{className:'ri-bm-severity-list'},['CRITICAL','HIGH','MEDIUM','LOW'].map(function(sev){
+                            var c = matches.filter(function(m){return m.severity===sev;}).length;
+                            return h('div',{key:sev,className:String(sev).toLowerCase()},[h('span',null,sev),h('b',null,fmt(c)),h('em',null,matches.length ? Math.round(c/matches.length*100)+'%' : '0%')]);
+                        }))
                     ]),
-                    h('main',{className:'ri-gm-stages'},[
-                        h('div',{className:'ri-gm-flowline'},null),
-                        h('div',{className:'ri-gm-stage-grid'},buckets.map(stageCard))
+                    h('section',{className:'ri-bm-panel ri-bm-meaning'},[
+                        h('h3',null,'What this means'),
+                        h('p',null,'Recovery is not enough if fresh input continues. Containment must stop the source before aged WIP recovery can be effective.'),
+                        activeMatches.length ? h('div',{className:'ri-bm-warning'},[
+                            h('b',null,'WARNING: ACTIVE RECURRENCE DETECTED'),
+                            h('p',null,(selected && selected.warning) || 'Active recurrence detected. Recovery alone will not solve the issue. Containment at source is required.')
+                        ]) : h('div',{className:'ri-bm-ok'},[
+                            h('b',null,'No active recurrence under current scope'),
+                            h('p',null,'Continue monitoring fresh input and aging disposition.')
+                        ])
                     ]),
-                    h('aside',{className:'ri-gm-decision'},[
-                        h('h3',null,'Executive Interpretation'),
-                        h('div',{className:'ri-gm-decision-card '+(stillActive.length?'bad':'ok')},[h('b',null,stillActive.length?'Problems still active':'No oldest-to-fresh match'),h('p',null,stillActive.length?'At least one old condition also appears in fresh. Treat as active recurrence until containment effectiveness is proven.':'Oldest pattern does not appear in fresh under current scope. Candidate for accelerated disposition after validation.')]),
-                        h('div',{className:'ri-gm-decision-card'},[h('b',null,'What to tell GM'),h('p',null,'This is the current bonepile movement: new inflow, aged WIP, active matches, and the recovery actions required to release or disposition units by week.')])
+                    h('section',{className:'ri-bm-panel'},[
+                        h('h3',null,'Top signatures snapshot'),
+                        h('div',{className:'ri-bm-mini-trend'},trendRows.length ? trendRows.map(function(m,i){
+                            var width = Math.min(100, Math.max(4, (m.total / Math.max(1, matches[0] ? matches[0].total : 1))*100));
+                            return h('div',{key:'mini-'+i},[h('span',null,m.signature),h('b',null,fmt(m.total)),h('i',null,h('em',{style:{width:width+'%'}}))]);
+                        }) : h('p',null,'No symptom signatures available.'))
                     ])
                 ]),
-                h('div',{className:'ri-gm-bottom'},[
-                    h('section',{className:'ri-gm-panel'},[
-                        h('h3',null,'Active conditions · oldest vs fresh'),
-                        h('div',{className:'ri-gm-cond-grid'},matchRows.length?matchRows.slice(0,6).map(conditionCard):h('div',{className:'ri-aging-empty'},'No active conditions under current scope.'))
+                h('section',{className:'ri-bm-top'},[
+                    h('h3',null,'Top Matching Symptoms'),
+                    h('div',{className:'ri-bm-card-grid'},topCards.length ? topCards.map(matchCard) : h('div',{className:'ri-aging-empty'},'No bonepile signatures detected under current scope.'))
+                ]),
+                h('div',{className:'ri-bm-bottom'},[
+                    h('section',{className:'ri-bm-panel'},[
+                        h('h3',null,'Detalle de matches'),
+                        h('table',{className:'ri-bm-table'},[
+                            h('thead',null,h('tr',null,['Severity','Symptom Signature','Bonepile 31D+','Fresh 0-30D','Old 91D+','WOs','Serials','Top Station','Top Model','Status'].map(function(x){return h('th',{key:x},x);}))),
+                            h('tbody',null,(matches.slice(0,12).map(function(m,i){
+                                return h('tr',{key:'row-'+i},[
+                                    h('td',null,severityBadge(m.severity)),
+                                    h('td',null,m.signature),
+                                    h('td',null,fmt(m.aged)),
+                                    h('td',null,fmt(m.fresh)),
+                                    h('td',null,fmt(m.oldBonepile)),
+                                    h('td',null,fmt(m.affectedWorkOrders)),
+                                    h('td',null,fmt(m.affectedSerials)),
+                                    h('td',null,m.topStation),
+                                    h('td',null,m.topModel),
+                                    h('td',null,m.activeRecurrence ? h('span',{className:'ri-bm-status active'},'ACTIVE') : h('span',{className:'ri-bm-status monitor'},'MONITOR'))
+                                ]);
+                            })))
+                        ])
                     ]),
-                    h('section',{className:'ri-gm-panel'},[
-                        h('h3',null,'Recovery actions to accelerate rework'),
-                        h('div',{className:'ri-gm-actions'},[
-                            actionCard('Contain fresh inflow', stillActive.length ? 'Prioritize stations with fresh match: '+stillActive.map(function(r){return r.station;}).slice(0,3).join(', ') : 'Maintain monitoring; no fresh match found for oldest pattern.', 'D0-D2'),
-                            actionCard('Burn down aged WIP', agedOnly.length ? 'Disposition aged-only stations: '+agedOnly.map(function(r){return r.station;}).slice(0,3).join(', ') : 'No aged-only concentration detected in visible rows.', 'WIP'),
-                            actionCard('Weekly disposition plan', 'Commit owner, target week, rework capacity and MRB disposition path for '+oldestBucket.key+' units.', 'PLAN'),
-                            actionCard('Effectiveness check', 'Confirm fresh trend remains flat after containment before closing RCCA / 8D.', 'CHECK')
+                    h('section',{className:'ri-bm-panel'},[
+                        h('h3',null,'Plan de contención recomendado'),
+                        h('div',{className:'ri-bm-actions'},[
+                            quickAction('Stop new input / containment gate', 'Apply when critical matches exist or fresh input repeats with aged WIP.', 'red'),
+                            quickAction('100% inspection at detection station', 'Execute at the station associated with the top matching symptom.', 'orange'),
+                            quickAction('Segregate fresh affected units', 'Separate fresh units from aged WIP to avoid mixing recovery streams.', 'blue'),
+                            quickAction('Oldest bucket recovery priority', 'Prioritize 91-365D and >365D units for burn-down.', 'green'),
+                            quickAction('Verify root cause before release', 'Do not release recovered units until containment effectiveness is validated.', 'purple')
                         ])
                     ])
                 ])
@@ -50033,6 +50356,140 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
   window.previewQualityAlertMarkdownFromState = previewQualityAlertMarkdownFromState;
 })();
 </script>
+
+
+<!-- =========================================================
+     SMTinel Recovery Intel - Bonepile Match View
+========================================================= -->
+<style id="smtinel-recovery-bonepile-match-view">
+#recovery-section.ri-visual-map{
+  background:#06111f!important;
+  color:#f7fbff!important;
+  border:1px solid rgba(80,135,190,.20)!important;
+  border-radius:0!important;
+  padding:18px!important;
+}
+#recovery-section .ri-vm-header{
+  background:linear-gradient(180deg,rgba(12,31,55,.98),rgba(7,18,32,.96))!important;
+  color:#f7fbff!important;
+  border:1px solid rgba(80,135,190,.22)!important;
+}
+#recovery-section .ri-vm-header h2,
+#recovery-section .ri-vm-header p{color:#f7fbff!important}
+#recovery-section .ri-vm-shell,
+#recovery-section .ri-aging-match,
+#recovery-section .ri-gm-layout{display:none!important}
+#recovery-section .ri-bm-layout{display:flex;flex-direction:column;gap:14px;width:100%}
+#recovery-section .ri-bm-hero{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:18px;
+  background:linear-gradient(135deg,#071A33 0%,#102A43 58%,#081524 100%);
+  border:1px solid rgba(80,135,190,.26);border-radius:18px;padding:18px 20px;
+  box-shadow:0 18px 44px rgba(0,0,0,.24);position:relative;overflow:hidden
+}
+#recovery-section .ri-bm-hero:before{
+  content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;opacity:.55;pointer-events:none
+}
+#recovery-section .ri-bm-hero>*{position:relative;z-index:1}
+#recovery-section .ri-bm-hero h2{margin:4px 0 4px;color:#fff!important;font-size:26px;line-height:1.1;letter-spacing:-.03em}
+#recovery-section .ri-bm-hero p{margin:0;color:rgba(245,250,255,.78);font-size:13px;max-width:880px;line-height:1.45}
+#recovery-section .ri-bm-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+#recovery-section .ri-bm-toolbar button{
+  border:1px solid rgba(210,232,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:850;cursor:pointer
+}
+#recovery-section .ri-bm-toolbar button.primary{background:#1f6feb;border-color:#2b7bff}
+#recovery-section .ri-bm-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+#recovery-section .ri-bm-metric{
+  display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.94));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:14px 16px;box-shadow:0 12px 28px rgba(0,0,0,.18)
+}
+#recovery-section .ri-bm-metric i{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.08)}
+#recovery-section .ri-bm-metric i svg{width:31px;height:31px}
+#recovery-section .ri-bm-metric span{display:block;color:#6ee7b7;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+#recovery-section .ri-bm-metric b{display:block;color:#fff;font-size:28px;line-height:1.05;margin-top:3px}
+#recovery-section .ri-bm-metric small{display:block;color:rgba(245,250,255,.72);font-weight:750;margin-top:4px}
+#recovery-section .ri-bm-metric.purple i{background:rgba(130,80,220,.30);color:#c69cff}
+#recovery-section .ri-bm-metric.blue i{background:rgba(31,111,235,.28);color:#66b3ff}
+#recovery-section .ri-bm-metric.orange i{background:rgba(232,138,26,.28);color:#ffb35c}
+#recovery-section .ri-bm-metric.red i{background:rgba(196,65,65,.30);color:#ff7b7b}
+#recovery-section .ri-bm-metric.green i{background:rgba(35,160,85,.30);color:#64e89f}
+#recovery-section .ri-bm-exec-grid{display:grid;grid-template-columns:1.05fr 1.35fr 2fr;gap:12px}
+#recovery-section .ri-bm-panel{
+  background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.96));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.18);min-width:0
+}
+#recovery-section .ri-bm-panel h3{margin:0 0 12px;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+#recovery-section .ri-bm-severity-list{display:grid;gap:9px}
+#recovery-section .ri-bm-severity-list div{display:grid;grid-template-columns:1fr 46px 50px;gap:8px;align-items:center;color:#fff;font-size:12px;font-weight:850}
+#recovery-section .ri-bm-severity-list div:before{content:"";width:12px;height:12px;border-radius:999px;display:inline-block;margin-right:8px}
+#recovery-section .ri-bm-severity-list .critical:before{background:#f04452}
+#recovery-section .ri-bm-severity-list .high:before{background:#ff8a2a}
+#recovery-section .ri-bm-severity-list .medium:before{background:#f7c83e}
+#recovery-section .ri-bm-severity-list .low:before{background:#2b7cff}
+#recovery-section .ri-bm-meaning p{margin:0 0 12px;color:rgba(245,250,255,.82);line-height:1.48}
+#recovery-section .ri-bm-warning,#recovery-section .ri-bm-ok{border-radius:12px;padding:14px;border:1px solid}
+#recovery-section .ri-bm-warning{background:rgba(196,65,65,.12);border-color:rgba(240,68,82,.55)}
+#recovery-section .ri-bm-warning b{color:#ff6b76}
+#recovery-section .ri-bm-ok{background:rgba(35,160,85,.12);border-color:rgba(35,160,85,.46)}
+#recovery-section .ri-bm-ok b{color:#64e89f}
+#recovery-section .ri-bm-mini-trend{display:grid;gap:9px}
+#recovery-section .ri-bm-mini-trend div{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:10px;align-items:center;color:#d8e8ff;font-size:11px}
+#recovery-section .ri-bm-mini-trend span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .ri-bm-mini-trend i{grid-column:1/-1;height:5px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden}
+#recovery-section .ri-bm-mini-trend em{display:block;height:100%;background:linear-gradient(90deg,#23a055,#1f6feb);border-radius:999px}
+#recovery-section .ri-bm-top{background:linear-gradient(180deg,rgba(18,39,64,.92),rgba(10,24,42,.96));border:1px solid rgba(120,170,220,.22);border-radius:14px;padding:16px}
+#recovery-section .ri-bm-top>h3{margin:0 0 12px;color:#fff;font-size:13px;text-transform:uppercase}
+#recovery-section .ri-bm-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#recovery-section .ri-bm-match{border-radius:14px;padding:14px;background:rgba(7,18,32,.62);border:1px solid rgba(120,170,220,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+#recovery-section .ri-bm-match.critical{border-color:rgba(240,68,82,.60)}
+#recovery-section .ri-bm-match.high{border-color:rgba(255,138,42,.58)}
+#recovery-section .ri-bm-match.medium{border-color:rgba(247,200,62,.50)}
+#recovery-section .ri-bm-match.low{border-color:rgba(43,124,255,.50)}
+#recovery-section .ri-bm-match-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+#recovery-section .ri-bm-badge{display:inline-flex;align-items:center;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:950;color:#fff}
+#recovery-section .ri-bm-badge.critical{background:#d83b46}
+#recovery-section .ri-bm-badge.high{background:#e8781a}
+#recovery-section .ri-bm-badge.medium{background:#caa211;color:#172033}
+#recovery-section .ri-bm-badge.low{background:#1f6feb}
+#recovery-section .ri-bm-match small{color:rgba(245,250,255,.62)}
+#recovery-section .ri-bm-label{margin:0;color:rgba(245,250,255,.64);font-size:11px}
+#recovery-section .ri-bm-match h3{margin:4px 0 12px;color:#fff;font-size:13px;line-height:1.35;word-break:break-word}
+#recovery-section .ri-bm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:10px}
+#recovery-section .ri-bm-grid span{background:rgba(255,255,255,.05);border-radius:10px;padding:9px}
+#recovery-section .ri-bm-grid em{display:block;color:rgba(245,250,255,.60);font-size:10px;font-style:normal}
+#recovery-section .ri-bm-grid b{display:block;color:#fff;font-size:20px;margin-top:2px}
+#recovery-section .ri-bm-grid small{display:block;color:#9fb7d0;font-size:10px}
+#recovery-section .ri-bm-match dl{display:grid;grid-template-columns:90px 1fr;gap:6px;margin:0 0 10px;color:#d7e8ff;font-size:11px}
+#recovery-section .ri-bm-match dt{color:rgba(245,250,255,.58)}
+#recovery-section .ri-bm-match dd{margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .ri-bm-action{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+#recovery-section .ri-bm-action p{margin:0;color:#d7e8ff;font-size:11px;line-height:1.35}
+#recovery-section .ri-bm-action button{border:1px solid rgba(210,232,255,.22);background:#1f6feb;color:#fff;border-radius:9px;padding:8px 10px;font-size:11px;font-weight:900;cursor:pointer}
+#recovery-section .ri-bm-bottom{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,.75fr);gap:12px}
+#recovery-section .ri-bm-table{width:100%;border-collapse:collapse;color:#d7e8ff;font-size:11px}
+#recovery-section .ri-bm-table th{color:#fff;text-align:left;background:rgba(255,255,255,.05);padding:9px;border-bottom:1px solid rgba(255,255,255,.08)}
+#recovery-section .ri-bm-table td{padding:9px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:middle}
+#recovery-section .ri-bm-table td:nth-child(2){max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .ri-bm-status{display:inline-flex;border-radius:8px;padding:4px 7px;font-size:10px;font-weight:950}
+#recovery-section .ri-bm-status.active{background:rgba(216,59,70,.25);color:#ff7b7b}
+#recovery-section .ri-bm-status.monitor{background:rgba(31,111,235,.22);color:#75b5ff}
+#recovery-section .ri-bm-actions{display:grid;gap:10px}
+#recovery-section .ri-bm-qaction{border-radius:12px;padding:12px;border:1px solid rgba(120,170,220,.20);background:rgba(255,255,255,.05)}
+#recovery-section .ri-bm-qaction b{display:block;color:#fff;margin-bottom:5px}
+#recovery-section .ri-bm-qaction p{margin:0;color:rgba(245,250,255,.72);font-size:12px;line-height:1.38}
+#recovery-section .ri-bm-qaction.red{border-color:rgba(240,68,82,.38)}
+#recovery-section .ri-bm-qaction.orange{border-color:rgba(255,138,42,.38)}
+#recovery-section .ri-bm-qaction.blue{border-color:rgba(31,111,235,.38)}
+#recovery-section .ri-bm-qaction.green{border-color:rgba(35,160,85,.38)}
+#recovery-section .ri-bm-qaction.purple{border-color:rgba(130,80,220,.38)}
+@media(max-width:1180px){
+  #recovery-section .ri-bm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #recovery-section .ri-bm-exec-grid,#recovery-section .ri-bm-bottom{grid-template-columns:1fr}
+  #recovery-section .ri-bm-card-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  #recovery-section .ri-bm-hero{flex-direction:column}
+  #recovery-section .ri-bm-kpis,#recovery-section .ri-bm-card-grid{grid-template-columns:1fr}
+  #recovery-section .ri-bm-table{font-size:10px}
+}
+</style>
 
 </body>
 </html>
