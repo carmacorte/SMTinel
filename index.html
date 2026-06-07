@@ -28964,6 +28964,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Regresar a Yield Flow"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #B7CBEA", background: "#102A43", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
                     h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.buildQualityAlertMarkdownFromState && window.downloadMarkdownFile) { var result = window.buildQualityAlertMarkdownFromState(); window.downloadMarkdownFile(result.filename, result.markdown); } }, style: { border: "1px solid rgba(134,217,255,.42)", background: "linear-gradient(135deg,#1F6FEB,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generar Markdown"),
+                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.downloadObsidianKnowledgePackFromState) { window.downloadObsidianKnowledgePackFromState(); } }, style: { border: "1px solid rgba(242,184,75,.52)", background: "linear-gradient(135deg,#F2B84B,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generar Knowledge Pack"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #F1C04E", background: "linear-gradient(135deg,#FFF7D8,#FFFFFF)", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
                     h("button", { type: "button", onClick: function () { var v = prompt("Buscar RefDes en PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Buscar RefDes"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
@@ -48360,429 +48361,7 @@ html body .traceops-recovery{
 
 
 
-<!-- =========================================================
-     SMTinel Obsidian Markdown Generator - State Only
-     No DOM text scraping for Markdown content
-     GitHub Pages compatible · no external dependencies
-========================================================= -->
-<style id="smtinel-obsidian-md-state-only-style">
-:root{
-  --smt-md-border:rgba(210,232,255,.34);
-  --smt-md-text:#F7FBFF;
-  --smt-md-muted:rgba(226,238,250,.84);
-  --smt-md-gold:#F2B84B;
-}
-.smtinel-md-panel{
-  position:fixed;
-  right:clamp(16px,2.4vw,42px);
-  bottom:clamp(112px,12vh,142px);
-  width:min(760px,calc(100vw - 32px));
-  max-height:min(76vh,760px);
-  z-index:2147483002;
-  display:none;
-  overflow:hidden;
-  border-radius:28px;
-  color:var(--smt-md-text);
-  border:1px solid var(--smt-md-border);
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.045)),
-    radial-gradient(circle at 15% -10%,rgba(185,228,255,.30),transparent 30%),
-    radial-gradient(circle at 50% 116%,rgba(88,170,255,.32),transparent 30%),
-    linear-gradient(180deg,rgba(34,75,124,.76),rgba(7,31,66,.90));
-  box-shadow:0 30px 80px rgba(0,0,0,.34),0 12px 28px rgba(3,14,30,.24),inset 0 1px 0 rgba(255,255,255,.24);
-  backdrop-filter:blur(35px) saturate(1.78) brightness(1.06);
-  -webkit-backdrop-filter:blur(35px) saturate(1.78) brightness(1.06);
-}
-.smtinel-md-panel.is-open{display:flex;flex-direction:column;}
-.smtinel-md-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 18px 12px;border-bottom:1px solid rgba(255,255,255,.12);}
-.smtinel-md-kicker{margin:0 0 4px;color:var(--smt-md-gold);font-size:11px;font-weight:950;letter-spacing:.16em;text-transform:uppercase;}
-.smtinel-md-title{margin:0;color:#fff;font-size:20px;line-height:1.08;font-weight:950;letter-spacing:-.025em;}
-.smtinel-md-sub{margin:6px 0 0;color:var(--smt-md-muted);font-size:12px;line-height:1.35;}
-.smtinel-md-close{width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.16);color:#fff;background:rgba(255,255,255,.07);cursor:pointer;font-size:18px;line-height:1;}
-.smtinel-md-body{padding:14px 18px 18px;display:grid;gap:12px;min-height:0;}
-.smtinel-md-filebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.14);}
-.smtinel-md-filename{color:#fff;font:800 12px/1.25 "Segoe UI",Inter,Arial,sans-serif;word-break:break-all;}
-.smtinel-md-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
-.smtinel-md-action{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:9px 12px;color:#fff;background:rgba(255,255,255,.08);cursor:pointer;font-size:12px;font-weight:900;}
-.smtinel-md-action.primary{background:linear-gradient(135deg,#1F6FEB,#124579);border-color:rgba(134,217,255,.34);}
-.smtinel-md-preview{width:100%;min-height:390px;max-height:52vh;resize:vertical;overflow:auto;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(3,14,30,.54);color:#F7FBFF;padding:14px;font:500 12px/1.52 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
-.smtinel-md-toast{position:fixed;right:clamp(16px,2.4vw,42px);bottom:clamp(88px,10vh,118px);z-index:2147483003;display:none;padding:10px 12px;border-radius:16px;color:#fff;background:rgba(6,24,46,.90);border:1px solid rgba(210,232,255,.26);box-shadow:0 14px 34px rgba(3,14,30,.28);font:800 12px/1.25 "Segoe UI",Inter,Arial,sans-serif;}
-.smtinel-md-toast.show{display:block;}
-@media(max-width:760px){
-  .smtinel-md-panel{left:10px;right:10px;bottom:82px;width:auto;border-radius:24px;max-height:74vh;}
-  .smtinel-md-preview{min-height:300px;max-height:48vh;}
-}
-</style>
 
-<script id="smtinel-obsidian-md-state-only-script">
-(function(){
-  if (window.__SMTINEL_OBSIDIAN_MD_STATE_ONLY__) return;
-  window.__SMTINEL_OBSIDIAN_MD_STATE_ONLY__ = true;
-
-  function cleanMdValue(value) {
-    if (value === undefined || value === null) return "N/D";
-    const text = String(value).trim();
-    if (!text) return "N/D";
-    const cleaned = text
-      .replace(/\s+/g, " ")
-      .replace(/[<>]/g, "")
-      .slice(0, 180)
-      .trim();
-    return cleaned || "N/D";
-  }
-
-  function slugifyMd(value) {
-    return cleanMdValue(value)
-      .replace(/^N\/D$/i, "ND")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_|_$/g, "") || "ND";
-  }
-
-  function validMdValue(value) {
-    const text = cleanMdValue(value);
-    return text === "N/D" ? "" : text;
-  }
-
-  function firstMdValue() {
-    for (let i = 0; i < arguments.length; i++) {
-      const value = validMdValue(arguments[i]);
-      if (value) return value;
-    }
-    return "N/D";
-  }
-
-  function currentDateMd() {
-    const d = new Date();
-    const pad = n => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
-
-  function percentMd(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "N/D";
-    return `${n.toFixed(2)}%`;
-  }
-
-  function countMd(value) {
-    if (Array.isArray(value)) return String(value.length);
-    const n = Number(value);
-    if (Number.isFinite(n)) return String(n);
-    return cleanMdValue(value);
-  }
-
-  function arrayFirstMd(value) {
-    if (!Array.isArray(value) || !value.length) return "N/D";
-    return firstMdValue(value[0]);
-  }
-
-  function getBoardImpactState() {
-    return window.__SMTINEL_BOARD_IMPACT_MD_STATE || {};
-  }
-
-  function buildQualityAlertMarkdownFromState() {
-    const state = getBoardImpactState();
-    const ctx = state.ctx || {};
-    const selectedSeverity = state.selectedSeverity || {};
-    const selectedStat = state.selectedStat || {};
-    const yieldFilters = state.yieldFilters || {};
-    const boardPdfState = state.boardPdfState || {};
-
-    const selectedRef = firstMdValue(
-      state.selectedRef,
-      Array.isArray(state.activeBoardRefFilters) ? state.activeBoardRefFilters[0] : "",
-      arrayFirstMd(state.uniqueRefs)
-    );
-
-    const model = firstMdValue(
-      ctx.model,
-      ctx.family,
-      ctx.sku,
-      ctx.skuno,
-      ctx.moduleno,
-      yieldFilters.model,
-      yieldFilters.productFamily,
-      yieldFilters.sku
-    );
-
-    const partNumber = firstMdValue(
-      ctx.sku,
-      ctx.skuno,
-      ctx.moduleno,
-      yieldFilters.sku,
-      model
-    );
-
-    const defectType = firstMdValue(
-      state.activeMode,
-      ctx.mode,
-      selectedStat.mode,
-      selectedStat.label,
-      selectedStat.failureMode
-    );
-
-    const failureMode = firstMdValue(
-      ctx.mode,
-      state.activeMode,
-      selectedStat.failureMode,
-      defectType
-    );
-
-    const customer = firstMdValue(
-      ctx.customer,
-      yieldFilters.customer,
-      "Cisco"
-    );
-
-    const bu = firstMdValue(
-      ctx.bu,
-      ctx.businessUnit,
-      yieldFilters.businessUnit,
-      yieldFilters.bu
-    );
-
-    const workOrder = firstMdValue(
-      ctx.wo,
-      ctx.workOrder,
-      yieldFilters.workOrder
-    );
-
-    const line = firstMdValue(
-      ctx.line,
-      yieldFilters.line
-    );
-
-    const station = firstMdValue(
-      ctx.station,
-      yieldFilters.station,
-      yieldFilters.sfcStation
-    );
-
-    const serialNumber = firstMdValue(
-      arrayFirstMd(state.snList),
-      Array.isArray(state.activeBoardSnFilters) ? state.activeBoardSnFilters[0] : "",
-      yieldFilters.serialNumber
-    );
-
-    const process = firstMdValue(
-      ctx.process,
-      yieldFilters.process,
-      station !== "N/D" ? `SMT / ${station}` : "SMT"
-    );
-
-    const affectedSerials = countMd(
-      firstMdValue(state.affectedSerials, Array.isArray(state.snList) ? state.snList.length : "")
-    );
-
-    const impactedWos = countMd(
-      firstMdValue(state.affectedWos, workOrder !== "N/D" ? 1 : "")
-    );
-
-    const uniqueRefDes = countMd(
-      firstMdValue(Array.isArray(state.uniqueRefs) ? state.uniqueRefs.length : "", selectedRef !== "N/D" ? 1 : "")
-    );
-
-    const criticality = firstMdValue(
-      selectedSeverity.label,
-      selectedSeverity.key
-    );
-
-    const riskLevel = criticality;
-
-    const frMfg = percentMd(state.boardFailureRateManufactured);
-    const frBuilt = percentMd(state.boardFailureRateBuilt);
-
-    const component = firstMdValue(
-      selectedStat.component,
-      selectedStat.componentName,
-      selectedRef
-    );
-
-    const detectionMethod = firstMdValue(
-      selectedStat.detectionMethod,
-      ctx.detectionMethod,
-      station,
-      "Board Impact / Quality Alert"
-    );
-
-    const boardSide = firstMdValue(
-      state.boardSide,
-      boardPdfState.side
-    );
-
-    const date = currentDateMd();
-
-    const titleModel = model;
-    const titleRef = selectedRef;
-
-    const filename = `QA_${slugifyMd(date)}_${slugifyMd(model)}_${slugifyMd(defectType)}_${slugifyMd(selectedRef)}.md`;
-
-    const serialLines = Array.isArray(state.snList) && state.snList.length
-      ? state.snList.map(sn => `  - ${cleanMdValue(sn)}`).join("\n")
-      : "  - N/D";
-
-    const markdown = [
-      `# Quality Alert - ${cleanMdValue(titleModel)} / ${cleanMdValue(titleRef)}`,
-      "",
-      "## Metadata",
-      `- Date: ${cleanMdValue(date)}`,
-      `- Customer: ${cleanMdValue(customer)}`,
-      `- BU: ${cleanMdValue(bu)}`,
-      `- Model: ${cleanMdValue(model)}`,
-      `- Part Number: ${cleanMdValue(partNumber)}`,
-      `- Serial Number: ${cleanMdValue(serialNumber)}`,
-      `- Work Order: ${cleanMdValue(workOrder)}`,
-      `- Line: ${cleanMdValue(line)}`,
-      `- Station: ${cleanMdValue(station)}`,
-      `- Process: ${cleanMdValue(process)}`,
-      "",
-      "## Board Impact Summary",
-      `- Impacted WOs: ${cleanMdValue(impactedWos)}`,
-      `- Affected Serials: ${cleanMdValue(affectedSerials)}`,
-      `- FR vs MFG: ${cleanMdValue(frMfg)}`,
-      `- FR vs Built: ${cleanMdValue(frBuilt)}`,
-      `- Unique RefDes: ${cleanMdValue(uniqueRefDes)}`,
-      `- Criticality: ${cleanMdValue(criticality)}`,
-      "",
-      "## Defect Summary",
-      `- Defect Type: ${cleanMdValue(defectType)}`,
-      `- Failure Mode: ${cleanMdValue(failureMode)}`,
-      `- Component: ${cleanMdValue(component)}`,
-      `- Reference Designator: ${cleanMdValue(selectedRef)}`,
-      `- Detection Method: ${cleanMdValue(detectionMethod)}`,
-      `- Risk Level: ${cleanMdValue(riskLevel)}`,
-      "",
-      "## Critical Characteristic",
-      `[[CC_${slugifyMd(selectedRef)}_${slugifyMd(defectType)}]]`,
-      "",
-      "## Related Model",
-      `[[Model_${slugifyMd(model)}]]`,
-      "",
-      "## Related Defect",
-      `[[Defect_${slugifyMd(defectType)}_${slugifyMd(selectedRef)}]]`,
-      "",
-      "## Problem Description",
-      `Board Impact detected ${cleanMdValue(failureMode)} on ${cleanMdValue(selectedRef)} for model ${cleanMdValue(model)}. Board side: ${cleanMdValue(boardSide)}.`,
-      "",
-      "## Containment Action",
-      "N/D",
-      "",
-      "## Root Cause",
-      "N/D",
-      "",
-      "## Corrective Action",
-      "N/D",
-      "",
-      "## Preventive Action",
-      "N/D",
-      "",
-      "## Evidence",
-      `- Board side: ${cleanMdValue(boardSide)}`,
-      `- Work Order: ${cleanMdValue(workOrder)}`,
-      `- RefDes: ${cleanMdValue(selectedRef)}`,
-      "- Affected serial numbers:",
-      serialLines,
-      "",
-      "## Lessons Learned",
-      "N/D",
-      "",
-      "## Source",
-      "Generated from SMTinel Board Impact View.",
-      "",
-      "## Tags",
-      "#quality-alert #smt #smtinel #obsidian #board-impact",
-      ""
-    ].join("\n");
-
-    return { filename, markdown };
-  }
-
-  function downloadMarkdownFile(filename, markdown) {
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function escapeHtml(value) {
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function ensureMarkdownPreviewModal() {
-    let panel = document.getElementById("smtinelMdPanel");
-    if (panel) return panel;
-
-    panel = document.createElement("div");
-    panel.id = "smtinelMdPanel";
-    panel.className = "smtinel-md-panel";
-    panel.innerHTML =
-      '<div class="smtinel-md-head">' +
-      '<div><p class="smtinel-md-kicker">Obsidian Markdown</p><h3 class="smtinel-md-title">Quality Alert Note Preview</h3><p class="smtinel-md-sub">Vista previa generada únicamente desde estado estructurado de Board Impact.</p></div>' +
-      '<button type="button" class="smtinel-md-close" aria-label="Cerrar">×</button>' +
-      '</div>' +
-      '<div class="smtinel-md-body">' +
-      '<div class="smtinel-md-filebar"><div class="smtinel-md-filename" id="smtinelMdFileName">QA.md</div><div class="smtinel-md-actions"><button type="button" class="smtinel-md-action" id="smtinelMdCopy">Copiar</button><button type="button" class="smtinel-md-action primary" id="smtinelMdDownload">Descargar .md</button></div></div>' +
-      '<textarea class="smtinel-md-preview" id="smtinelMdPreview" spellcheck="false"></textarea>' +
-      '</div>';
-
-    document.body.appendChild(panel);
-
-    panel.querySelector(".smtinel-md-close").addEventListener("click", function(){
-      panel.classList.remove("is-open");
-    });
-
-    panel.querySelector("#smtinelMdCopy").addEventListener("click", function(){
-      const preview = panel.querySelector("#smtinelMdPreview");
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(preview.value);
-      } else {
-        preview.focus();
-        preview.select();
-        document.execCommand("copy");
-      }
-    });
-
-    panel.querySelector("#smtinelMdDownload").addEventListener("click", function(){
-      const result = buildQualityAlertMarkdownFromState();
-      const preview = panel.querySelector("#smtinelMdPreview");
-      downloadMarkdownFile(result.filename, preview.value || result.markdown);
-    });
-
-    return panel;
-  }
-
-  function previewQualityAlertMarkdownFromState() {
-    const result = buildQualityAlertMarkdownFromState();
-    const panel = ensureMarkdownPreviewModal();
-    const fileNameBox = panel.querySelector("#smtinelMdFileName");
-    const preview = panel.querySelector("#smtinelMdPreview");
-
-    if (fileNameBox) fileNameBox.innerHTML = escapeHtml(result.filename);
-    if (preview) preview.value = result.markdown;
-
-    panel.classList.add("is-open");
-    return result;
-  }
-
-  window.cleanMdValue = cleanMdValue;
-  window.slugifyMd = slugifyMd;
-  window.buildQualityAlertMarkdownFromState = buildQualityAlertMarkdownFromState;
-  window.downloadMarkdownFile = downloadMarkdownFile;
-  window.previewQualityAlertMarkdownFromState = previewQualityAlertMarkdownFromState;
-})();
-</script>
 
 
 
@@ -49333,6 +48912,1127 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-control{
   }
 }
 </style>
+
+
+<!-- SMTinel Phase 4 Premium Loader -->
+<style id="smtinel-phase4-premium-loader">
+html body #smtinelZipWaitScreen{
+  padding:10px 14px max(78px, calc(env(safe-area-inset-bottom, 0px) + 70px)) !important;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(30,128,210,.18), transparent 42%),
+    radial-gradient(circle at 18% 24%, rgba(20,190,110,.10), transparent 28%),
+    radial-gradient(circle at 82% 24%, rgba(38,132,255,.12), transparent 30%),
+    linear-gradient(180deg,#02050A 0%,#010711 100%) !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card{
+  width:calc(100vw - 28px) !important;
+  height:calc(100dvh - max(96px, calc(env(safe-area-inset-bottom, 0px) + 88px))) !important;
+  min-height:610px !important;
+  border-radius:36px !important;
+  border:1.5px solid rgba(245,249,255,.84) !important;
+  box-shadow:
+    0 40px 118px rgba(0,0,0,.58),
+    0 0 0 1px rgba(89,210,255,.25),
+    0 0 86px rgba(18,105,210,.18),
+    inset 0 1px 0 rgba(255,255,255,.48) !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-img{
+  filter:brightness(.82) saturate(1.16) contrast(1.08) !important;
+  transform:scale(1.012) !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card::before{
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.04) 44%,rgba(0,0,0,.30)),
+    radial-gradient(circle at 24% 34%,rgba(0,255,150,.16),transparent 22%),
+    radial-gradient(circle at 78% 34%,rgba(0,128,255,.18),transparent 24%),
+    linear-gradient(90deg,rgba(0,0,0,.18),transparent 10%,transparent 90%,rgba(0,0,0,.18)) !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card::after{
+  content:"" !important;
+  position:absolute !important;
+  z-index:2 !important;
+  top:0 !important;
+  bottom:0 !important;
+  left:-26% !important;
+  width:24% !important;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(0,255,164,.00) 16%,
+      rgba(0,255,164,.18) 44%,
+      rgba(96,190,255,.24) 50%,
+      rgba(0,255,164,.18) 56%,
+      rgba(0,255,164,.00) 84%,
+      transparent 100%) !important;
+  filter:blur(1px) !important;
+  transform:skewX(-8deg) !important;
+  mix-blend-mode:screen !important;
+  animation:smtinelPhase4Scan 3.8s cubic-bezier(.22,.8,.28,1) infinite !important;
+  pointer-events:none !important;
+}
+
+@keyframes smtinelPhase4Scan{
+  0%{left:-28%; opacity:0;}
+  12%{opacity:.85;}
+  70%{opacity:.72;}
+  100%{left:108%; opacity:0;}
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+  left:4% !important;
+  right:4% !important;
+  bottom:clamp(36px,5.8vh,76px) !important;
+  padding:clamp(22px,2.35vw,38px) clamp(28px,3.3vw,56px) clamp(20px,2.15vw,34px) !important;
+  border-radius:clamp(26px,2.1vw,36px) !important;
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.86),rgba(234,242,248,.62) 44%,rgba(255,255,255,.78)),
+    radial-gradient(circle at 10% 0%,rgba(132,215,255,.28),transparent 28%),
+    radial-gradient(circle at 90% 100%,rgba(244,190,124,.22),transparent 28%) !important;
+  border:1.5px solid rgba(255,255,255,.76) !important;
+  box-shadow:
+    0 28px 70px rgba(0,0,0,.34),
+    0 0 0 1px rgba(255,255,255,.24),
+    inset 0 1px 0 rgba(255,255,255,.96),
+    inset 0 -1px 0 rgba(0,0,0,.08) !important;
+  backdrop-filter:blur(32px) saturate(1.80) brightness(1.04) !important;
+  -webkit-backdrop-filter:blur(32px) saturate(1.80) brightness(1.04) !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-title{
+  font-size:clamp(46px,4.8vw,84px) !important;
+  letter-spacing:-.06em !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-pct{
+  font-size:clamp(54px,5.3vw,96px) !important;
+  min-width:clamp(126px,11vw,190px) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-message{
+  font-size:clamp(16px,1.35vw,25px) !important;
+  margin:14px 0 18px !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase{
+  position:relative !important;
+  margin-top:14px !important;
+  padding-top:34px !important;
+  font-size:clamp(10px,.85vw,13px) !important;
+  color:#66717A !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase::before{
+  content:"ZIP IMPORT   ▰▰▰▰▰▰▰▰▰   WO DATASET   ▰▰▰▰▰▰▰   REPAIR DATASET   ▰▰▰▰▰▰   DB MERGE   ▰▰▰▰▰   BOARD IMPACT   ▰▰▰▰" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:0 !important;
+  right:0 !important;
+  color:#243142 !important;
+  opacity:.78 !important;
+  letter-spacing:.16em !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+html body #smtinelZipWaitScreen .smtinel-zip-wait-bar{
+  height:15px !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-fill{
+  position:relative !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-fill::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.40),transparent) !important;
+  animation:smtinelPhase4BarSheen 1.75s ease-in-out infinite !important;
+}
+@keyframes smtinelPhase4BarSheen{
+  0%{transform:translateX(-100%);}
+  100%{transform:translateX(100%);}
+}
+
+@media (max-width:1100px){
+  html body #smtinelZipWaitScreen{
+    padding:8px 10px max(94px, calc(env(safe-area-inset-bottom, 0px) + 84px)) !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-card{
+    width:calc(100vw - 20px) !important;
+    height:calc(100dvh - max(112px, calc(env(safe-area-inset-bottom, 0px) + 104px))) !important;
+    min-height:560px !important;
+    border-radius:30px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+    left:4.5% !important;
+    right:4.5% !important;
+    bottom:22px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-phase::before{
+    content:"ZIP IMPORT  ▰▰▰▰▰   WO  ▰▰▰▰   REPAIR  ▰▰▰   MERGE  ▰▰▰   IMPACT  ▰▰" !important;
+  }
+}
+
+@media (max-width:640px){
+  html body #smtinelZipWaitScreen{
+    padding:6px 6px max(88px, calc(env(safe-area-inset-bottom, 0px) + 78px)) !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-card{
+    width:calc(100vw - 12px) !important;
+    height:calc(100dvh - max(100px, calc(env(safe-area-inset-bottom, 0px) + 92px))) !important;
+    min-height:560px !important;
+    border-radius:26px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+    left:4% !important;
+    right:4% !important;
+    bottom:16px !important;
+    padding:16px 15px 14px !important;
+    border-radius:22px !important;
+  }
+}
+</style>
+
+
+
+<!-- =========================================================
+     SMTinel Phase 5 Immersive Import Engine
+     Fullscreen loader · no card border · neural pipeline · glass cancel · live stage accents
+========================================================= -->
+<style id="smtinel-phase5-immersive-import-engine">
+/* Full OS-style import environment */
+html body #smtinelZipWaitScreen{
+  padding:0 !important;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(0,255,150,.10), transparent 24%),
+    radial-gradient(circle at 78% 28%, rgba(0,128,255,.13), transparent 26%),
+    radial-gradient(circle at 50% 58%, rgba(40,120,210,.16), transparent 42%),
+    linear-gradient(180deg,#010409 0%,#020711 100%) !important;
+}
+
+/* Remove card feeling: make the hero the full screen surface */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card{
+  width:100vw !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:none !important;
+  max-width:none !important;
+  border-radius:0 !important;
+  border:0 !important;
+  box-shadow:none !important;
+  background:#010409 !important;
+}
+
+/* Hero image covers the entire screen */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-img{
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  filter:brightness(.70) saturate(1.20) contrast(1.12) !important;
+  transform:scale(1.018) !important;
+}
+
+/* Immersive vignette + center emphasis */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:1 !important;
+  pointer-events:none !important;
+  background:
+    linear-gradient(180deg,rgba(1,4,9,.12) 0%,rgba(1,4,9,.05) 30%,rgba(1,4,9,.40) 100%),
+    radial-gradient(circle at 50% 37%,rgba(255,255,255,.05),transparent 23%),
+    radial-gradient(circle at 25% 37%,rgba(0,255,150,.18),transparent 25%),
+    radial-gradient(circle at 78% 38%,rgba(0,128,255,.20),transparent 26%),
+    linear-gradient(90deg,rgba(0,0,0,.44),transparent 19%,transparent 81%,rgba(0,0,0,.44)) !important;
+}
+
+/* AOI scan / X-Ray sweep */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-card::after{
+  content:"" !important;
+  position:absolute !important;
+  z-index:2 !important;
+  top:0 !important;
+  bottom:0 !important;
+  left:-28% !important;
+  width:24% !important;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(0,255,164,0) 12%,
+      rgba(0,255,164,.20) 42%,
+      rgba(118,205,255,.32) 50%,
+      rgba(0,255,164,.20) 58%,
+      rgba(0,255,164,0) 88%,
+      transparent 100%) !important;
+  filter:blur(1.2px) !important;
+  transform:skewX(-8deg) !important;
+  mix-blend-mode:screen !important;
+  animation:smtinelPhase5Scan 3.4s cubic-bezier(.22,.8,.28,1) infinite !important;
+  pointer-events:none !important;
+}
+@keyframes smtinelPhase5Scan{
+  0%{left:-30%; opacity:0;}
+  10%{opacity:.92;}
+  72%{opacity:.70;}
+  100%{left:110%; opacity:0;}
+}
+
+/* Floating glass control panel */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+  left:4.2% !important;
+  right:4.2% !important;
+  bottom:max(96px, calc(env(safe-area-inset-bottom, 0px) + 86px)) !important;
+  width:auto !important;
+  max-width:none !important;
+  transform:none !important;
+  padding:clamp(24px,2.4vw,42px) clamp(30px,3.4vw,60px) clamp(22px,2.2vw,36px) !important;
+  border-radius:clamp(28px,2.3vw,40px) !important;
+  z-index:5 !important;
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.88),rgba(232,242,249,.60) 46%,rgba(255,255,255,.78)),
+    radial-gradient(circle at 8% 0%,rgba(132,215,255,.30),transparent 28%),
+    radial-gradient(circle at 92% 100%,rgba(244,190,124,.24),transparent 28%) !important;
+  border:1.5px solid rgba(255,255,255,.78) !important;
+  box-shadow:
+    0 30px 78px rgba(0,0,0,.36),
+    0 0 0 1px rgba(255,255,255,.26),
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(0,0,0,.08) !important;
+  backdrop-filter:blur(34px) saturate(1.86) brightness(1.05) !important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.86) brightness(1.05) !important;
+}
+
+/* Header and typography */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-head{
+  align-items:flex-start !important;
+  gap:clamp(18px,2vw,32px) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-kicker{
+  color:#33414D !important;
+  font-size:clamp(12px,1vw,17px) !important;
+  letter-spacing:.26em !important;
+  font-weight:950 !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-title{
+  color:#010403 !important;
+  font-size:clamp(48px,5.2vw,92px) !important;
+  line-height:.96 !important;
+  letter-spacing:-.065em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.40) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-pct{
+  color:#E9B97E !important;
+  font-size:clamp(58px,5.8vw,106px) !important;
+  min-width:clamp(138px,12vw,214px) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.55),0 0 22px rgba(180,150,100,.22) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-message{
+  color:#050907 !important;
+  font-size:clamp(16px,1.35vw,25px) !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+  margin:14px 0 18px !important;
+}
+
+/* Progress bar with active sheen */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-bar{
+  height:15px !important;
+  background:rgba(255,255,255,.34) !important;
+  border:1px solid rgba(255,255,255,.62) !important;
+  box-shadow:inset 0 1px 6px rgba(0,0,0,.12) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-fill{
+  position:relative !important;
+  background:linear-gradient(90deg,#C9A961,#D4AF8A,#B8956A) !important;
+  box-shadow:0 0 22px rgba(180,150,100,.36) !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-fill::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.44),transparent) !important;
+  animation:smtinelPhase5BarSheen 1.55s ease-in-out infinite !important;
+}
+@keyframes smtinelPhase5BarSheen{
+  0%{transform:translateX(-100%);}
+  100%{transform:translateX(100%);}
+}
+
+/* Dynamic pipeline strip */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:1fr auto !important;
+  gap:12px !important;
+  margin-top:15px !important;
+  padding-top:44px !important;
+  color:#65717D !important;
+  font-size:clamp(11px,.95vw,15px) !important;
+  letter-spacing:.17em !important;
+  font-weight:950 !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase::before{
+  content:"ZIP  >  WO  >  REPAIR  >  COMMON DB  >  YIELD ENGINE  >  BOARD IMPACT  >  RECOVERY INTEL" !important;
+  position:absolute !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  color:#243142 !important;
+  opacity:.86 !important;
+  letter-spacing:.18em !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase::after{
+  content:"" !important;
+  position:absolute !important;
+  top:24px !important;
+  left:0 !important;
+  width:38% !important;
+  height:3px !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#00E59B,#48A6FF,#E9B97E) !important;
+  box-shadow:0 0 14px rgba(72,166,255,.36) !important;
+  animation:smtinelPhase5Pipeline 2.4s ease-in-out infinite alternate !important;
+}
+@keyframes smtinelPhase5Pipeline{
+  0%{width:26%; opacity:.60;}
+  100%{width:82%; opacity:.95;}
+}
+
+/* Replace raw abort button with glass pill */
+html body #smtinelZipWaitScreen button,
+html body #smtinelZipWaitScreen .smtinel-zip-wait-control{
+  appearance:none !important;
+  border:1px solid rgba(12,24,36,.15) !important;
+  border-radius:999px !important;
+  padding:6px 11px !important;
+  color:#152333 !important;
+  background:rgba(255,255,255,.38) !important;
+  font:900 12px/1 "Segoe UI",Inter,Arial,sans-serif !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 8px 18px rgba(0,0,0,.10) !important;
+  backdrop-filter:blur(14px) saturate(1.35) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.35) !important;
+}
+html body #smtinelZipWaitScreen button:hover,
+html body #smtinelZipWaitScreen .smtinel-zip-wait-control:hover{
+  background:rgba(255,255,255,.56) !important;
+}
+
+/* Footer labels */
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase span,
+html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
+  color:#5D6874 !important;
+}
+
+/* Responsive */
+@media (max-width:1100px){
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+    left:4.5% !important;
+    right:4.5% !important;
+    bottom:max(86px, calc(env(safe-area-inset-bottom, 0px) + 76px)) !important;
+    padding:20px 20px 18px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-title{
+    font-size:clamp(38px,6.2vw,62px) !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-pct{
+    font-size:clamp(40px,6.2vw,66px) !important;
+    min-width:90px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-phase::before{
+    content:"ZIP > WO > REPAIR > DB > YIELD > IMPACT > RECOVERY" !important;
+  }
+}
+@media (max-width:640px){
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-panel{
+    left:4% !important;
+    right:4% !important;
+    bottom:max(80px, calc(env(safe-area-inset-bottom, 0px) + 70px)) !important;
+    padding:16px 15px 14px !important;
+    border-radius:22px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-title{
+    font-size:32px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-pct{
+    font-size:36px !important;
+    min-width:74px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-message{
+    font-size:14px !important;
+  }
+  html body #smtinelZipWaitScreen .smtinel-zip-wait-phase{
+    padding-top:34px !important;
+  }
+}
+</style>
+
+
+
+<!-- =========================================================
+     SMTinel Obsidian Knowledge Pack Generator
+     State-only data source · Quality Alert + Model + Defect + CC + RCA
+     Uses JSZip CDN with individual .md fallback
+========================================================= -->
+<style id="smtinel-obsidian-knowledge-pack-style">
+:root{
+  --smt-md-border:rgba(210,232,255,.34);
+  --smt-md-text:#F7FBFF;
+  --smt-md-muted:rgba(226,238,250,.84);
+  --smt-md-gold:#F2B84B;
+}
+.smtinel-md-panel{
+  position:fixed;
+  right:clamp(16px,2.4vw,42px);
+  bottom:clamp(112px,12vh,142px);
+  width:min(760px,calc(100vw - 32px));
+  max-height:min(76vh,760px);
+  z-index:2147483002;
+  display:none;
+  overflow:hidden;
+  border-radius:28px;
+  color:var(--smt-md-text);
+  border:1px solid var(--smt-md-border);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.045)),
+    radial-gradient(circle at 15% -10%,rgba(185,228,255,.30),transparent 30%),
+    radial-gradient(circle at 50% 116%,rgba(88,170,255,.32),transparent 30%),
+    linear-gradient(180deg,rgba(34,75,124,.76),rgba(7,31,66,.90));
+  box-shadow:0 30px 80px rgba(0,0,0,.34),0 12px 28px rgba(3,14,30,.24),inset 0 1px 0 rgba(255,255,255,.24);
+  backdrop-filter:blur(35px) saturate(1.78) brightness(1.06);
+  -webkit-backdrop-filter:blur(35px) saturate(1.78) brightness(1.06);
+}
+.smtinel-md-panel.is-open{display:flex;flex-direction:column;}
+.smtinel-md-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 18px 12px;border-bottom:1px solid rgba(255,255,255,.12);}
+.smtinel-md-kicker{margin:0 0 4px;color:var(--smt-md-gold);font-size:11px;font-weight:950;letter-spacing:.16em;text-transform:uppercase;}
+.smtinel-md-title{margin:0;color:#fff;font-size:20px;line-height:1.08;font-weight:950;letter-spacing:-.025em;}
+.smtinel-md-sub{margin:6px 0 0;color:var(--smt-md-muted);font-size:12px;line-height:1.35;}
+.smtinel-md-close{width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.16);color:#fff;background:rgba(255,255,255,.07);cursor:pointer;font-size:18px;line-height:1;}
+.smtinel-md-body{padding:14px 18px 18px;display:grid;gap:12px;min-height:0;}
+.smtinel-md-filebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.14);}
+.smtinel-md-filename{color:#fff;font:800 12px/1.25 "Segoe UI",Inter,Arial,sans-serif;word-break:break-all;}
+.smtinel-md-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.smtinel-md-action{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:9px 12px;color:#fff;background:rgba(255,255,255,.08);cursor:pointer;font-size:12px;font-weight:900;}
+.smtinel-md-action.primary{background:linear-gradient(135deg,#1F6FEB,#124579);border-color:rgba(134,217,255,.34);}
+.smtinel-md-action.gold{background:linear-gradient(135deg,#F2B84B,#102A43);border-color:rgba(242,184,75,.45);}
+.smtinel-md-preview{width:100%;min-height:390px;max-height:52vh;resize:vertical;overflow:auto;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(3,14,30,.54);color:#F7FBFF;padding:14px;font:500 12px/1.52 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
+.smtinel-md-toast{position:fixed;right:clamp(16px,2.4vw,42px);bottom:clamp(88px,10vh,118px);z-index:2147483003;display:none;padding:10px 12px;border-radius:16px;color:#fff;background:rgba(6,24,46,.90);border:1px solid rgba(210,232,255,.26);box-shadow:0 14px 34px rgba(3,14,30,.28);font:800 12px/1.25 "Segoe UI",Inter,Arial,sans-serif;}
+.smtinel-md-toast.show{display:block;}
+@media(max-width:760px){
+  .smtinel-md-panel{left:10px;right:10px;bottom:82px;width:auto;border-radius:24px;max-height:74vh;}
+  .smtinel-md-preview{min-height:300px;max-height:48vh;}
+}
+</style>
+
+<script id="smtinel-obsidian-knowledge-pack-script">
+(function(){
+  if (window.__SMTINEL_OBSIDIAN_KNOWLEDGE_PACK__) return;
+  window.__SMTINEL_OBSIDIAN_KNOWLEDGE_PACK__ = true;
+
+  function cleanMdValue(value) {
+    if (value === undefined || value === null) return "N/D";
+    if (typeof value === "object") return "N/D";
+    const text = String(value).trim();
+    if (!text) return "N/D";
+    if (["undefined", "null", "[object Object]", "NaN"].includes(text)) return "N/D";
+    const cleaned = text
+      .replace(/\s+/g, " ")
+      .replace(/[<>]/g, "")
+      .slice(0, 220)
+      .trim();
+    return cleaned || "N/D";
+  }
+
+  function isValidValue(value) {
+    const v = cleanMdValue(value);
+    const x = v.toLowerCase();
+    return v !== "N/D" && x !== "nombre_modelo" && x !== "modelo" && x !== "nd";
+  }
+
+  function slugifyMd(value) {
+    const cleaned = cleanMdValue(value);
+    if (!isValidValue(cleaned)) return "ND";
+    return cleaned
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .toUpperCase() || "ND";
+  }
+
+  function obsidianLink(prefix, ...parts) {
+    const validParts = parts.map(cleanMdValue).filter(isValidValue);
+    if (!validParts.length) return "N/D";
+    return `[[${prefix}_${validParts.map(slugifyMd).join("_")}]]`;
+  }
+
+  function firstValid() {
+    for (let i = 0; i < arguments.length; i++) {
+      const v = cleanMdValue(arguments[i]);
+      if (isValidValue(v)) return v;
+    }
+    return "N/D";
+  }
+
+  function currentDateMd() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function dateSlug(value) {
+    return slugifyMd(cleanMdValue(value).replace(/-/g, "_"));
+  }
+
+  function percentMd(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "N/D";
+    return `${n.toFixed(2)}%`;
+  }
+
+  function countMd(value) {
+    if (Array.isArray(value)) return String(value.length);
+    const n = Number(value);
+    if (Number.isFinite(n)) return String(n);
+    return cleanMdValue(value);
+  }
+
+  function getBoardImpactState() {
+    return window.__SMTINEL_BOARD_IMPACT_MD_STATE || {};
+  }
+
+  function collectObsidianKnowledgeState() {
+    const state = getBoardImpactState();
+    const ctx = state.ctx || {};
+    const selectedSeverity = state.selectedSeverity || {};
+    const selectedStat = state.selectedStat || {};
+    const yieldFilters = state.yieldFilters || {};
+    const boardPdfState = state.boardPdfState || {};
+
+    const refdes = firstValid(
+      state.selectedRef,
+      Array.isArray(state.activeBoardRefFilters) ? state.activeBoardRefFilters[0] : "",
+      Array.isArray(state.uniqueRefs) ? state.uniqueRefs[0] : ""
+    );
+
+    const model = firstValid(
+      ctx.model,
+      ctx.family,
+      ctx.sku,
+      ctx.skuno,
+      ctx.moduleno,
+      yieldFilters.model,
+      yieldFilters.productFamily,
+      yieldFilters.sku
+    );
+
+    const partNumber = firstValid(
+      ctx.sku,
+      ctx.skuno,
+      ctx.moduleno,
+      yieldFilters.sku,
+      model
+    );
+
+    const failureMode = firstValid(
+      ctx.mode,
+      state.activeMode,
+      selectedStat.failureMode,
+      selectedStat.mode,
+      selectedStat.label
+    );
+
+    const component = firstValid(
+      selectedStat.component,
+      selectedStat.componentName,
+      refdes
+    );
+
+    const station = firstValid(ctx.station, yieldFilters.station, yieldFilters.sfcStation);
+    const line = firstValid(ctx.line, yieldFilters.line);
+    const workOrder = firstValid(ctx.wo, ctx.workOrder, yieldFilters.workOrder);
+    const process = firstValid(ctx.process, yieldFilters.process, station !== "N/D" ? `SMT / ${station}` : "SMT");
+
+    const snList = Array.isArray(state.snList)
+      ? state.snList.map(cleanMdValue).filter(isValidValue)
+      : [];
+
+    const data = {
+      date: currentDateMd(),
+      customer: firstValid(ctx.customer, yieldFilters.customer, "Cisco"),
+      bu: firstValid(ctx.bu, ctx.businessUnit, yieldFilters.businessUnit, yieldFilters.bu),
+      model,
+      partNumber,
+      workOrder,
+      line,
+      station,
+      process,
+      impactedWos: countMd(firstValid(state.affectedWos, workOrder !== "N/D" ? 1 : "")),
+      affectedSerials: countMd(firstValid(state.affectedSerials, snList.length)),
+      serialNumber: firstValid(snList[0]),
+      serials: snList,
+      frVsMfg: percentMd(state.boardFailureRateManufactured),
+      frVsBuilt: percentMd(state.boardFailureRateBuilt),
+      uniqueRefdes: countMd(firstValid(Array.isArray(state.uniqueRefs) ? state.uniqueRefs.length : "", refdes !== "N/D" ? 1 : "")),
+      boardSide: firstValid(state.boardSide, boardPdfState.side),
+      failureMode,
+      defectType: failureMode,
+      refdes,
+      component,
+      detectionMethod: firstValid(selectedStat.detectionMethod, ctx.detectionMethod, station, "Board Impact / Quality Alert"),
+      riskLevel: firstValid(selectedSeverity.label, selectedSeverity.key),
+      criticalCharacteristic: firstValid(refdes !== "N/D" && failureMode !== "N/D" ? `${refdes} ${failureMode}` : ""),
+      problemDescription: firstValid(
+        selectedStat.problemDescription,
+        ctx.problemDescription,
+        refdes !== "N/D" || failureMode !== "N/D"
+          ? `Board Impact detected ${cleanMdValue(failureMode)} on ${cleanMdValue(refdes)} for model ${cleanMdValue(model)}.`
+          : ""
+      ),
+      rootCauseHypothesis: firstValid(selectedStat.rootCauseHypothesis, ctx.rootCauseHypothesis),
+      containmentAction: firstValid(selectedStat.containmentAction, ctx.containmentAction),
+      correctiveAction: firstValid(selectedStat.correctiveAction, ctx.correctiveAction),
+      preventiveAction: firstValid(selectedStat.preventiveAction, ctx.preventiveAction),
+      evidenceRequired: firstValid(selectedStat.evidenceRequired, ctx.evidenceRequired, "Photographic evidence, inspection result, repair disposition and affected serial trace."),
+      lessonsLearned: firstValid(selectedStat.lessonsLearned, ctx.lessonsLearned)
+    };
+
+    return data;
+  }
+
+  function buildKnowledgeNames(d) {
+    const date = dateSlug(d.date);
+    const model = slugifyMd(d.model);
+    const failure = slugifyMd(d.failureMode);
+    const refdes = slugifyMd(d.refdes);
+
+    return {
+      qaBase: `QA_${date}_${model}_${failure}_${refdes}`,
+      modelBase: `Model_${model}`,
+      defectBase: `Defect_${failure}_${refdes}`,
+      ccBase: `CC_${refdes}_${failure}`,
+      rcaBase: `RCA_${refdes}_${failure}`,
+      zipName: `SMTinel_KnowledgePack_${date}_${model}_${failure}_${refdes}.zip`
+    };
+  }
+
+  function linkTo(base) {
+    return `[[${base}]]`;
+  }
+
+  function buildQualityAlertContent(d, n) {
+    const serialLines = d.serials && d.serials.length ? d.serials.map(sn => `  - ${cleanMdValue(sn)}`).join("\n") : "  - N/D";
+
+    return [
+      `# Quality Alert - ${cleanMdValue(d.model)} / ${cleanMdValue(d.refdes)}`,
+      "",
+      "## Metadata",
+      `- Date: ${cleanMdValue(d.date)}`,
+      `- Customer: ${cleanMdValue(d.customer)}`,
+      `- BU: ${cleanMdValue(d.bu)}`,
+      `- Model: ${cleanMdValue(d.model)}`,
+      `- Part Number: ${cleanMdValue(d.partNumber)}`,
+      `- Serial Number: ${cleanMdValue(d.serialNumber)}`,
+      `- Work Order: ${cleanMdValue(d.workOrder)}`,
+      `- Line: ${cleanMdValue(d.line)}`,
+      `- Station: ${cleanMdValue(d.station)}`,
+      `- Process: ${cleanMdValue(d.process)}`,
+      "",
+      "## Board Impact Summary",
+      `- Impacted WOs: ${cleanMdValue(d.impactedWos)}`,
+      `- Affected Serials: ${cleanMdValue(d.affectedSerials)}`,
+      `- FR vs MFG: ${cleanMdValue(d.frVsMfg)}`,
+      `- FR vs Built: ${cleanMdValue(d.frVsBuilt)}`,
+      `- Unique RefDes: ${cleanMdValue(d.uniqueRefdes)}`,
+      `- Criticality: ${cleanMdValue(d.riskLevel)}`,
+      "",
+      "## Defect Summary",
+      `- Defect Type: ${cleanMdValue(d.defectType)}`,
+      `- Failure Mode: ${cleanMdValue(d.failureMode)}`,
+      `- Component: ${cleanMdValue(d.component)}`,
+      `- Reference Designator: ${cleanMdValue(d.refdes)}`,
+      `- Detection Method: ${cleanMdValue(d.detectionMethod)}`,
+      `- Risk Level: ${cleanMdValue(d.riskLevel)}`,
+      "",
+      "## Knowledge Links",
+      `- Model: ${linkTo(n.modelBase)}`,
+      `- Defect: ${linkTo(n.defectBase)}`,
+      `- Critical Characteristic: ${linkTo(n.ccBase)}`,
+      `- RCA: ${linkTo(n.rcaBase)}`,
+      "",
+      "## Critical Characteristic",
+      linkTo(n.ccBase),
+      "",
+      "## Related Model",
+      linkTo(n.modelBase),
+      "",
+      "## Related Defect",
+      linkTo(n.defectBase),
+      "",
+      "## Problem Description",
+      cleanMdValue(d.problemDescription),
+      "",
+      "## Containment Action",
+      cleanMdValue(d.containmentAction),
+      "",
+      "## Root Cause",
+      cleanMdValue(d.rootCauseHypothesis),
+      "",
+      "## Corrective Action",
+      cleanMdValue(d.correctiveAction),
+      "",
+      "## Preventive Action",
+      cleanMdValue(d.preventiveAction),
+      "",
+      "## Evidence",
+      `- Board Side: ${cleanMdValue(d.boardSide)}`,
+      `- RefDes: ${cleanMdValue(d.refdes)}`,
+      "- Affected Serial Numbers:",
+      serialLines,
+      "",
+      "## Lessons Learned",
+      cleanMdValue(d.lessonsLearned),
+      "",
+      "## Source",
+      "Generated from SMTinel Board Impact View.",
+      "",
+      "## Tags",
+      "#quality-alert #smt #smtinel #obsidian #board-impact",
+      ""
+    ].join("\n");
+  }
+
+  function buildModelContent(d, n) {
+    return [
+      `# ${n.modelBase}`,
+      "",
+      "## Model Summary",
+      `- Customer: ${cleanMdValue(d.customer)}`,
+      `- BU: ${cleanMdValue(d.bu)}`,
+      `- Part Number: ${cleanMdValue(d.partNumber)}`,
+      `- Process: ${cleanMdValue(d.process)}`,
+      "",
+      "## Related Defects",
+      `- ${linkTo(n.defectBase)}`,
+      "",
+      "## Related Critical Characteristics",
+      `- ${linkTo(n.ccBase)}`,
+      "",
+      "## Related Quality Alerts",
+      `- ${linkTo(n.qaBase)}`,
+      "",
+      "## Yield / Board Impact Snapshot",
+      `- Impacted WOs: ${cleanMdValue(d.impactedWos)}`,
+      `- Affected Serials: ${cleanMdValue(d.affectedSerials)}`,
+      `- FR vs MFG: ${cleanMdValue(d.frVsMfg)}`,
+      `- FR vs Built: ${cleanMdValue(d.frVsBuilt)}`,
+      `- Unique RefDes: ${cleanMdValue(d.uniqueRefdes)}`,
+      "",
+      "## Tags",
+      "#model #smt #smtinel",
+      ""
+    ].join("\n");
+  }
+
+  function buildDefectContent(d, n) {
+    return [
+      `# ${n.defectBase}`,
+      "",
+      "## Defect Summary",
+      `- Failure Mode: ${cleanMdValue(d.failureMode)}`,
+      `- RefDes: ${cleanMdValue(d.refdes)}`,
+      `- Component: ${cleanMdValue(d.component)}`,
+      `- Detection Method: ${cleanMdValue(d.detectionMethod)}`,
+      `- Risk Level: ${cleanMdValue(d.riskLevel)}`,
+      `- Board Side: ${cleanMdValue(d.boardSide)}`,
+      "",
+      "## Related Models",
+      `- ${linkTo(n.modelBase)}`,
+      "",
+      "## Related Critical Characteristics",
+      `- ${linkTo(n.ccBase)}`,
+      "",
+      "## Related Quality Alerts",
+      `- ${linkTo(n.qaBase)}`,
+      "",
+      "## Historical Pattern",
+      cleanMdValue(d.rootCauseHypothesis),
+      "",
+      "## Tags",
+      "#defect #smt #smtinel",
+      ""
+    ].join("\n");
+  }
+
+  function buildCcContent(d, n) {
+    return [
+      `# ${n.ccBase}`,
+      "",
+      "## Critical Characteristic Summary",
+      `- RefDes: ${cleanMdValue(d.refdes)}`,
+      `- Failure Mode: ${cleanMdValue(d.failureMode)}`,
+      `- Component: ${cleanMdValue(d.component)}`,
+      `- Risk Level: ${cleanMdValue(d.riskLevel)}`,
+      `- Detection Method: ${cleanMdValue(d.detectionMethod)}`,
+      `- Board Side: ${cleanMdValue(d.boardSide)}`,
+      "",
+      "## Why It Is Critical",
+      cleanMdValue(d.problemDescription),
+      "",
+      "## Related Defects",
+      `- ${linkTo(n.defectBase)}`,
+      "",
+      "## Related Models",
+      `- ${linkTo(n.modelBase)}`,
+      "",
+      "## Related Quality Alerts",
+      `- ${linkTo(n.qaBase)}`,
+      "",
+      "## Control Methods",
+      "- SPI",
+      "- AOI",
+      "- 5DX / X-Ray",
+      "- ICT / Functional Test",
+      "",
+      "## Evidence Required",
+      cleanMdValue(d.evidenceRequired),
+      "",
+      "## Tags",
+      "#critical-characteristic #ctq #smt #smtinel",
+      ""
+    ].join("\n");
+  }
+
+  function buildRcaContent(d, n) {
+    return [
+      `# ${n.rcaBase}`,
+      "",
+      "## RCA Context",
+      `- Model: ${cleanMdValue(d.model)}`,
+      `- RefDes: ${cleanMdValue(d.refdes)}`,
+      `- Failure Mode: ${cleanMdValue(d.failureMode)}`,
+      `- Date: ${cleanMdValue(d.date)}`,
+      "",
+      "## Problem Statement",
+      cleanMdValue(d.problemDescription),
+      "",
+      "## Root Cause Hypothesis",
+      cleanMdValue(d.rootCauseHypothesis),
+      "",
+      "## Point of Change to Verify",
+      "- Reflow profile actual vs setpoint",
+      "- Solder paste lot / viscosity / exposure",
+      "- SPI volume and height",
+      "- Stencil condition / aperture release",
+      "- PCB lot / solder mask / via plugging",
+      "- Ambient temperature / airflow",
+      "",
+      "## Containment",
+      cleanMdValue(d.containmentAction),
+      "",
+      "## Corrective Action",
+      cleanMdValue(d.correctiveAction),
+      "",
+      "## Preventive Action",
+      cleanMdValue(d.preventiveAction),
+      "",
+      "## Related Links",
+      `- ${linkTo(n.modelBase)}`,
+      `- ${linkTo(n.defectBase)}`,
+      `- ${linkTo(n.ccBase)}`,
+      `- ${linkTo(n.qaBase)}`,
+      "",
+      "## Tags",
+      "#rca #8d #smt #smtinel",
+      ""
+    ].join("\n");
+  }
+
+  function buildObsidianKnowledgePackFromState() {
+    const data = collectObsidianKnowledgeState();
+    const names = buildKnowledgeNames(data);
+
+    return {
+      zipName: names.zipName,
+      files: [
+        { path: `03_8D/${names.qaBase}.md`, content: buildQualityAlertContent(data, names) },
+        { path: `01_Models/${names.modelBase}.md`, content: buildModelContent(data, names) },
+        { path: `02_Defects/${names.defectBase}.md`, content: buildDefectContent(data, names) },
+        { path: `11_Critical_Characteristics/${names.ccBase}.md`, content: buildCcContent(data, names) },
+        { path: `03_8D/${names.rcaBase}.md`, content: buildRcaContent(data, names) }
+      ]
+    };
+  }
+
+  function buildQualityAlertMarkdownFromState() {
+    const pack = buildObsidianKnowledgePackFromState();
+    const qa = pack.files.find(f => f.path.indexOf("03_8D/QA_") === 0) || pack.files[0];
+    return { filename: qa.path.split("/").pop(), markdown: qa.content };
+  }
+
+  function downloadMarkdownFile(filename, markdown) {
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadJsZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    if (window.__SMTINEL_JSZIP_PROMISE__) return window.__SMTINEL_JSZIP_PROMISE__;
+
+    window.__SMTINEL_JSZIP_PROMISE__ = new Promise(function(resolve, reject){
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+      script.async = true;
+      script.onload = function(){ window.JSZip ? resolve(window.JSZip) : reject(new Error("JSZip unavailable")); };
+      script.onerror = function(){ reject(new Error("JSZip CDN failed")); };
+      document.head.appendChild(script);
+    });
+
+    return window.__SMTINEL_JSZIP_PROMISE__;
+  }
+
+  function downloadPackAsIndividualFiles(pack) {
+    pack.files.forEach(function(file, index){
+      setTimeout(function(){
+        downloadMarkdownFile(file.path.split("/").pop(), file.content);
+      }, index * 250);
+    });
+  }
+
+  function downloadObsidianKnowledgePackFromState() {
+    const pack = buildObsidianKnowledgePackFromState();
+
+    return loadJsZip()
+      .then(function(JSZip){
+        const zip = new JSZip();
+        pack.files.forEach(function(file){
+          zip.file(file.path, file.content);
+        });
+        return zip.generateAsync({ type: "blob" });
+      })
+      .then(function(blob){
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = pack.zipName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showMdToast("Knowledge Pack ZIP generado");
+      })
+      .catch(function(){
+        downloadPackAsIndividualFiles(pack);
+        showMdToast("JSZip no disponible; descargando notas individuales");
+      });
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function ensureMarkdownPreviewModal() {
+    let panel = document.getElementById("smtinelMdPanel");
+    if (panel) return panel;
+
+    panel = document.createElement("div");
+    panel.id = "smtinelMdPanel";
+    panel.className = "smtinel-md-panel";
+    panel.innerHTML =
+      '<div class="smtinel-md-head">' +
+      '<div><p class="smtinel-md-kicker">Obsidian Knowledge Pack</p><h3 class="smtinel-md-title">Quality Alert Preview</h3><p class="smtinel-md-sub">Preview de la nota principal. El ZIP incluye QA, Model, Defect, Critical Characteristic y RCA.</p></div>' +
+      '<button type="button" class="smtinel-md-close" aria-label="Cerrar">×</button>' +
+      '</div>' +
+      '<div class="smtinel-md-body">' +
+      '<div class="smtinel-md-filebar"><div class="smtinel-md-filename" id="smtinelMdFileName">QA.md</div><div class="smtinel-md-actions"><button type="button" class="smtinel-md-action" id="smtinelMdCopy">Copiar</button><button type="button" class="smtinel-md-action primary" id="smtinelMdDownload">Descargar .md</button><button type="button" class="smtinel-md-action gold" id="smtinelKpDownload">Descargar Pack ZIP</button></div></div>' +
+      '<textarea class="smtinel-md-preview" id="smtinelMdPreview" spellcheck="false"></textarea>' +
+      '</div>';
+
+    document.body.appendChild(panel);
+
+    panel.querySelector(".smtinel-md-close").addEventListener("click", function(){
+      panel.classList.remove("is-open");
+    });
+
+    panel.querySelector("#smtinelMdCopy").addEventListener("click", function(){
+      const preview = panel.querySelector("#smtinelMdPreview");
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(preview.value);
+      else { preview.focus(); preview.select(); document.execCommand("copy"); }
+    });
+
+    panel.querySelector("#smtinelMdDownload").addEventListener("click", function(){
+      const result = buildQualityAlertMarkdownFromState();
+      const preview = panel.querySelector("#smtinelMdPreview");
+      downloadMarkdownFile(result.filename, preview.value || result.markdown);
+    });
+
+    panel.querySelector("#smtinelKpDownload").addEventListener("click", function(){
+      downloadObsidianKnowledgePackFromState();
+    });
+
+    return panel;
+  }
+
+  function previewQualityAlertMarkdownFromState() {
+    const result = buildQualityAlertMarkdownFromState();
+    const panel = ensureMarkdownPreviewModal();
+    const fileNameBox = panel.querySelector("#smtinelMdFileName");
+    const preview = panel.querySelector("#smtinelMdPreview");
+
+    if (fileNameBox) fileNameBox.innerHTML = escapeHtml(result.filename);
+    if (preview) preview.value = result.markdown;
+
+    panel.classList.add("is-open");
+    return result;
+  }
+
+  function showMdToast(message) {
+    let toast = document.getElementById("smtinelMdToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "smtinelMdToast";
+      toast.className = "smtinel-md-toast";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toast.__timer);
+    toast.__timer = setTimeout(function(){ toast.classList.remove("show"); }, 2200);
+  }
+
+  window.cleanMdValue = cleanMdValue;
+  window.isValidValue = isValidValue;
+  window.slugifyMd = slugifyMd;
+  window.obsidianLink = obsidianLink;
+  window.buildObsidianKnowledgePackFromState = buildObsidianKnowledgePackFromState;
+  window.buildQualityAlertMarkdownFromState = buildQualityAlertMarkdownFromState;
+  window.downloadMarkdownFile = downloadMarkdownFile;
+  window.downloadObsidianKnowledgePackFromState = downloadObsidianKnowledgePackFromState;
+  window.previewQualityAlertMarkdownFromState = previewQualityAlertMarkdownFromState;
+})();
+</script>
 
 </body>
 </html>
