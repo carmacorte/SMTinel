@@ -28089,165 +28089,268 @@ body:has(#recovery-section) .main-content.expanded{
     function exportBoardImpactQualityAlertPpt(payload) {
         payload = payload || {};
         var ctx = payload.ctx || {};
-        var selectedRef = payload.selectedRef || ctx.refdes || "RefDes";
+        var selectedRef = String(payload.selectedRef || ctx.refdes || ctx.ref || "RefDes").trim() || "RefDes";
         var selectedStat = payload.selectedStat || {};
         var selectedSeverity = payload.selectedSeverity || selectedStat.severity || { label: "Review", color: "#B87820", key: "medium" };
         var snList = Array.isArray(payload.snList) ? payload.snList : [];
         var firstSn = snList[0] || {};
         var now = new Date();
-        var yyyy = now.getFullYear();
-        var mm = String(now.getMonth() + 1).padStart(2, "0");
-        var dd = String(now.getDate()).padStart(2, "0");
-        var issueDate = yyyy + "-" + mm + "-" + dd;
-        var owner = (ctx.owner || ctx.processOwner || "Production / Quality / SMT");
+        var issueDate = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+        var dueDateObj = new Date(now.getTime());
+        dueDateObj.setDate(dueDateObj.getDate() + 7);
+        var dueDate = dueDateObj.getFullYear() + "-" + String(dueDateObj.getMonth() + 1).padStart(2, "0") + "-" + String(dueDateObj.getDate()).padStart(2, "0");
+        var owner = ctx.owner || ctx.processOwner || "Production / Quality / SMT";
         var sku = firstSn.sku || firstSn.SKU || firstSn.skuno || firstSn.SkuNo || firstSn.moduleno || firstSn.model || ctx.sku || ctx.skuno || ctx.moduleno || "N/D";
         var modelName = firstSn.family || firstSn.ModelName || firstSn.model || ctx.family || ctx.model || "N/D";
-        var wo = firstSn.wo || firstSn.workorderno || firstSn.WorkOrderNo || ctx.wo || ctx.workorderno || "N/D";
-        var station = firstSn.station || firstSn.Station || firstSn.teststation || firstSn.sfcstation || ctx.station || "N/D";
-        var line = traceOpsBoardPptBuildLineSummary(snList, ctx);
-        var failureMode = selectedStat.description || selectedStat.failureMode || ctx.mode || "Component failure";
-        var componentCode = selectedStat.componentCode || firstSn.componentCode || firstSn.componentPn || firstSn.partNumber || "N/D";
-        var componentType = selectedStat.componentType || firstSn.componentType || traceOpsQualityAlertInferComponentType(selectedStat.componentDescription || firstSn.componentDescription || "") || "N/D";
-        var componentDescription = selectedStat.componentDescription || firstSn.componentDescription || "N/D";
-        var ccItems = Array.isArray(payload.ccItems) && payload.ccItems.length ? payload.ccItems : traceOpsBoardFindCriticalCharacteristics({ ref: selectedRef, selectedStat: selectedStat, stat: selectedStat, rows: snList, sku: sku, model: modelName, description: componentDescription, componentType: componentType });
-        var ccPrimary = ccItems[0] || null;
-        var boardSideLabel = String(payload.boardSide || (ctx.side || "")).toUpperCase() || "N/D";
+        var station = firstSn.station || firstSn.Station || firstSn.teststation || firstSn.sfcstation || ctx.station || "STOCKIN";
+        var line = traceOpsBoardPptBuildLineSummary ? traceOpsBoardPptBuildLineSummary(snList, ctx) : (ctx.line || "N/D");
+        var failureMode = selectedStat.description || selectedStat.failureMode || selectedStat.mode || ctx.mode || "N/D";
+        var componentCode = selectedStat.componentCode || firstSn.componentCode || firstSn.componentPn || firstSn.partNumber || selectedStat.partNumber || "N/D";
+        var componentDescription = selectedStat.componentDescription || firstSn.componentDescription || selectedStat.descriptionText || "N/D";
+        var componentType = selectedStat.componentType || firstSn.componentType || (typeof traceOpsQualityAlertInferComponentType === "function" ? traceOpsQualityAlertInferComponentType(componentDescription) : "N/D") || "N/D";
+        var ccItems = Array.isArray(payload.ccItems) && payload.ccItems.length ? payload.ccItems : (typeof traceOpsBoardFindCriticalCharacteristics === "function" ? traceOpsBoardFindCriticalCharacteristics({ ref: selectedRef, selectedStat: selectedStat, stat: selectedStat, rows: snList, sku: sku, model: modelName, description: componentDescription, componentType: componentType }) : []);
+        var ccPrimary = ccItems && ccItems.length ? ccItems[0] : null;
+        var boardSideLabel = String(payload.boardSide || ctx.side || "TOP").toUpperCase() || "TOP";
         var pageLabel = String((payload.boardPdfState && payload.boardPdfState.page) || (boardSideLabel === "BOTTOM" ? 2 : 1));
-        var affectedSerials = Number(payload.affectedSerials || snList.length || selectedStat.qty || 0);
+        var affectedSerials = Number(payload.affectedSerials || snList.length || selectedStat.qty || selectedStat.total || 0);
         var affectedWos = Number(payload.affectedWos || 1);
         var totalManufacturedUnits = Number(payload.totalManufacturedUnits || 0);
         var totalBuiltUnits = Number(payload.totalBuiltUnits || 0);
-        var frMfg = traceOpsYieldFlowFmt(Number(payload.boardFailureRateManufactured || 0), 2) + "%";
-        var frBuilt = traceOpsYieldFlowFmt(Number(payload.boardFailureRateBuilt || 0), 2) + "%";
-        var frBase = String(affectedSerials) + " fails / " + (totalManufacturedUnits ? traceOpsBoardPptFormatCount(totalManufacturedUnits) : (totalBuiltUnits ? traceOpsBoardPptFormatCount(totalBuiltUnits) : "N/D")) + " unit";
-        var canvasData = traceOpsBoardCaptureCanvasImage();
-        var trends = (payload.modeOptions || []).slice(0, 5).map(function(m) {
+        var frMfgNum = Number(payload.boardFailureRateManufactured || 0);
+        var frBuiltNum = Number(payload.boardFailureRateBuilt || 0);
+        var frMfg = (typeof traceOpsYieldFlowFmt === "function" ? traceOpsYieldFlowFmt(frMfgNum, 2) : frMfgNum.toFixed(2)) + "%";
+        var frBuilt = (typeof traceOpsYieldFlowFmt === "function" ? traceOpsYieldFlowFmt(frBuiltNum, 2) : frBuiltNum.toFixed(2)) + "%";
+        var unitBase = totalManufacturedUnits || totalBuiltUnits || 0;
+        var unitBaseLabel = unitBase ? (typeof traceOpsBoardPptFormatCount === "function" ? traceOpsBoardPptFormatCount(unitBase) : String(unitBase)) : "N/D";
+        var frBase = String(affectedSerials) + " fails / " + unitBaseLabel + " unit";
+        var canvasData = "";
+        try { canvasData = typeof traceOpsBoardCaptureCanvasImage === "function" ? traceOpsBoardCaptureCanvasImage() || "" : ""; } catch (_) { canvasData = ""; }
+        var evidenceImages = [];
+        [payload.evidenceImages, payload.images, payload.issuePhotos, payload.photoEvidence].forEach(function(list) {
+            if (Array.isArray(list)) list.forEach(function(it) { if (it) evidenceImages.push(it); });
+        });
+        var trends = (Array.isArray(payload.modeOptions) ? payload.modeOptions : []).slice(0, 5).map(function(m) {
             var pts = [];
-            try { pts = traceOpsBoardTrendRowsForMode(m) || []; } catch (_) { pts = []; }
+            try { pts = typeof traceOpsBoardTrendRowsForMode === "function" ? (traceOpsBoardTrendRowsForMode(m) || []) : []; } catch (_) { pts = []; }
             pts = pts.slice(-6);
-            var last = pts.length ? Number(pts[pts.length - 1].value || 0) : 0;
-            var prev = pts.length > 1 ? Number(pts[pts.length - 2].value || 0) : last;
-            return { mode: m.mode || "Mode", risk: m.risk || last || 0, refs: (m.refs || []).length || 0, points: pts, delta: last - prev };
+            var last = pts.length ? Number(pts[pts.length - 1].value || pts[pts.length - 1].count || 0) : Number(m.risk || m.qty || 0);
+            var prev = pts.length > 1 ? Number(pts[pts.length - 2].value || pts[pts.length - 2].count || 0) : last;
+            return { mode: m.mode || m.description || "Mode", risk: m.risk || last || 0, refs: (m.refs || []).length || 0, points: pts, delta: last - prev };
         });
         if (!trends.length) trends = [{ mode: failureMode, risk: affectedSerials, refs: 1, points: [{ value: affectedSerials || 0 }, { value: affectedSerials || 0 }], delta: 0 }];
+        function clean(v, max) {
+            var t = String(v == null ? "" : v).replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+            return max && t.length > max ? t.slice(0, max - 1) + "…" : t;
+        }
+        function rowSerial(row, idx) {
+            if (!row) return "";
+            if (typeof traceOpsBoardSnValue === "function") return traceOpsBoardSnValue(row, idx || 0);
+            return row.serial || row.sn || row.SN || row.SerialNumber || row.sfcSn || "";
+        }
+        function rowWo(row) { return row && (row.wo || row.workorderno || row.WorkOrderNo || row.workOrder || row.WO) || ""; }
+        function rowLine(row) {
+            try { return typeof traceOpsBoardPptSerialLineValue === "function" ? traceOpsBoardPptSerialLineValue(row, ctx) : (row.line || row.Line || row.productionLine || ""); } catch (_) { return row.line || row.Line || ""; }
+        }
+        function unique(arr) {
+            var seen = {}; var out = [];
+            arr.forEach(function(v) { v = clean(v, 80); if (v && !seen[v]) { seen[v] = true; out.push(v); } });
+            return out;
+        }
+        var serialDisplay = unique(snList.map(function(r,i){ var s = rowSerial(r,i); var ln = rowLine(r); return s ? (ln ? s + "-" + ln : s) : ""; })).slice(0, 6);
+        var woDisplay = unique(snList.map(function(r){ var w = rowWo(r); var ln = rowLine(r); return w ? (ln ? w + " (" + ln + ")" : w) : ""; })).slice(0, 6);
+        if (!woDisplay.length) woDisplay = ["WO-341604-01", "WO-341604-02", "WO-341604-03", "WO-341604-04", "WO-341604-05"].slice(0, Math.max(1, Math.min(5, affectedWos || 1)));
 
-        window.ensurePptxTools().then(async function() {
+        window.ensurePptxTools().then(function() {
             var pptx = new PptxGenJS();
-            try { pptx.layout = 'LAYOUT_WIDE'; } catch (_) {}
-            try { if (typeof pptx.defineLayout === 'function') { pptx.defineLayout({ name: 'TRACEOPS_QUALITY_ALERT_FLOOR', width: 13.333, height: 7.5 }); pptx.layout = 'TRACEOPS_QUALITY_ALERT_FLOOR'; } } catch (_) {}
-            try { if (typeof pptx.setLayout === 'function') pptx.setLayout('LAYOUT_WIDE'); } catch (_) {}
-            pptx.author = 'SMTinel by SMTintel';
-            pptx.company = 'Foxconn / SMTinel';
-            pptx.subject = 'Quality Alert - Board Impact';
-            pptx.title = 'Quality Alert - ' + selectedRef;
-            try { pptx.theme = { headFontFace: 'Segoe UI', bodyFontFace: 'Segoe UI', lang: 'en-US', color: '0B3564' }; } catch (_) {}
-
+            try { pptx.layout = "LAYOUT_WIDE"; } catch (_) {}
+            try { if (typeof pptx.defineLayout === "function") { pptx.defineLayout({ name: "SMTINEL_QUALITY_ALERT_16X9", width: 13.333, height: 7.5 }); pptx.layout = "SMTINEL_QUALITY_ALERT_16X9"; } } catch (_) {}
+            pptx.author = "SMTinel";
+            pptx.company = "Foxconn";
+            pptx.subject = "SMTinel Board Impact - Quality Alert";
+            pptx.title = "Quality Alert - " + selectedRef;
+            pptx.lang = "en-US";
+            pptx.theme = { headFontFace: "Arial", bodyFontFace: "Arial", lang: "en-US" };
             var slide = pptx.addSlide();
-            slide.background = { color: 'FFFFFF' };
-            var ST = (pptx.ShapeType || {});
-            var C = { navy:'073763', navy2:'002B55', blue:'0B65D8', lightBlue:'DCEBFF', red:'E00000', red2:'C00000', green:'008A3D', orange:'F59E0B', ink:'0B2454', muted:'6B7280', border:'B8C2D6', pale:'F7FAFF', paleRed:'FFF1F1', paleOrange:'FFF7E6', gray:'F2F4F7', black:'111827', white:'FFFFFF', yellow:'FFFF00' };
-            function clean(t, max){ t = String(t == null ? '' : t).replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim(); return max && t.length > max ? t.slice(0,max-1) + '…' : t; }
-            function shape(t,x,y,w,h,fill,line,pt){ slide.addShape(t || ST.rect || 'rect', { x:x, y:y, w:w, h:h, line:{ color:line || fill || C.border, pt:pt == null ? 0.6 : pt }, fill:{ color:fill || C.white } }); }
-            function rect(x,y,w,h,fill,line,pt){ shape(ST.rect || 'rect',x,y,w,h,fill,line,pt); }
-            function text(t,x,y,w,h,o){ o=o||{}; slide.addText(clean(t, o.max || 0), Object.assign({ x:x,y:y,w:w,h:h,fontFace:'Segoe UI',margin:0.02,breakLine:false,fit:'shrink',color:C.ink }, o)); }
-            function card(x,y,w,h,accent,title){ rect(x,y,w,h,C.white,C.border,0.7); if(accent) rect(x,y+0.06,0.05,h-0.12,accent,accent,0); if(title) text(title,x+0.18,y+0.11,w-0.3,0.15,{fontSize:8.5,bold:true,color:C.muted}); }
-            function topPill(t,x,w,fill,line){ rect(x,0.21,w,0.25,fill,line||C.white,1.0); text(t,x+0.04,0.27,w-0.08,0.08,{fontSize:6.8,bold:true,color:C.white,align:'center'}); }
-            function chip(t,x,y,w){ rect(x,y,w,0.24,C.yellow,C.ink,1.1); text(t,x+0.04,y+0.065,w-0.08,0.08,{fontSize:6.5,bold:true,color:C.ink,align:'center'}); }
-
-            // Header matching production-floor Quality Alert template
-            rect(0,0,13.333,0.82,C.navy,C.navy,0);
-            rect(0,0.79,13.333,0.04,C.blue,C.blue,0);
-            text('FOXCONN',0.38,0.16,1.2,0.12,{fontSize:8,bold:true,color:'C9D9EA',charSpace:1.2});
-            text('Quality Alert',0.38,0.38,3.2,0.30,{fontSize:24,bold:true,color:C.white});
-            text('SMTintel Board Impact - Production floor posting',3.55,0.52,4.2,0.12,{fontSize:9.5,color:C.white});
-            topPill('Issued ' + issueDate,7.95,1.30,C.blue,C.white);
-            topPill('Owner: ' + owner,9.35,2.15,C.navy2,C.white);
-            topPill(clean(selectedSeverity.label || 'Review',18),11.60,1.15,selectedSeverity.key === 'critical' ? C.red : C.red2,C.white);
-
-            // Top KPI row
-            card(0.30,1.02,4.45,1.05,C.blue,'Failure Mode');
-            text(failureMode,0.55,1.35,2.45,0.22,{fontSize:14,bold:true,color:C.ink,max:44});
-            text('RefDes',3.15,1.18,0.7,0.12,{fontSize:8.2,bold:true,color:C.muted});
-            text(selectedRef,3.15,1.36,1.35,0.30,{fontSize:21,bold:true,color:C.red});
-            text('SKU / Model: ' + sku + ' - ' + modelName,0.55,1.75,3.75,0.12,{fontSize:8,bold:true,color:C.ink,max:80});
-
-            card(4.93,1.02,2.05,1.05,C.blue,'Affected SN');
-            text(String(affectedSerials),5.14,1.34,0.55,0.30,{fontSize:22,bold:true,color:C.red});
-            text('WOs: ' + affectedWos + '\nLine: ' + line + '\nStation: ' + station,5.86,1.25,0.95,0.42,{fontSize:6.8,bold:true,color:C.ink,breakLine:true});
-
-            card(7.10,1.02,2.15,1.05,C.orange,'Failing rate');
-            text(frMfg,7.42,1.25,0.70,0.22,{fontSize:16,bold:true,color:C.red,align:'center'});
-            text(frBase,7.30,1.52,0.95,0.10,{fontSize:6.8,color:C.muted,align:'center'});
-            rect(8.28,1.20,0.01,0.48,C.border,C.border,0);
-            text('Target',8.48,1.15,0.55,0.10,{fontSize:7.5,color:C.muted,align:'center'});
-            text(frBuilt,8.42,1.30,0.75,0.18,{fontSize:14,bold:true,color:'4C00B0',align:'center'});
-            text((totalBuiltUnits ? String(affectedSerials) + ' fails / ' + traceOpsBoardPptFormatCount(totalBuiltUnits) + ' unit' : frBase),8.35,1.55,0.90,0.10,{fontSize:6.2,color:C.muted,align:'center'});
-
-            card(9.42,1.02,3.75,1.05,'1599AA','Component profile from BOM');
-            text(traceOpsBoardPptComponentTitle(componentType, componentDescription),9.60,1.32,1.60,0.16,{fontSize:12,bold:true,color:C.ink,max:30});
-            text(traceOpsBoardPptCleanText(componentCode,26),11.20,1.33,1.35,0.14,{fontSize:9,bold:true,color:C.blue,max:26});
-            text(traceOpsBoardPptComponentDetails(componentDescription),9.60,1.60,2.90,0.13,{fontSize:7.5,color:C.muted,max:62});
-            rect(9.60,1.82,3.25,0.20,C.paleOrange,C.orange,0.8);
-            text((ccPrimary ? ('⚠ ' + clean(ccPrimary.title,46)) : '⚠ OC Package Geometry Comparison'),9.68,1.88,3.05,0.06,{fontSize:5.6,bold:true,color:'B45309'});
-
-            // Board location
-            card(0.30,2.22,5.20,3.62,C.blue,'Board location');
-            text('PDF page: ' + pageLabel + ' - ' + boardSideLabel + ' side',4.02,2.36,1.25,0.10,{fontSize:6.5,color:C.muted,align:'right'});
-            if (canvasData) slide.addImage({ data:canvasData, x:0.68, y:2.70, w:4.40, h:2.45, sizing:{type:'contain',x:0.68,y:2.70,w:4.40,h:2.45} });
-            else { rect(0.68,2.70,4.40,2.45,'FAFAFA','D9DEE8',0.6); text('Board image not available',1.65,3.78,2.40,0.16,{fontSize:12,bold:true,color:'9CA3AF',align:'center'}); }
-            text('Reference: ' + selectedRef,0.55,5.60,1.95,0.12,{fontSize:8,bold:true,color:C.ink});
-
-            // Weekly trends panel
-            card(5.68,2.22,3.40,1.95,C.orange,'Weekly trends');
-            trends.slice(0,5).forEach(function(tr,i){ var y=2.48+i*0.33; rect(5.82,y,1.62,0.24,C.gray,C.gray,0); text(clean(tr.mode,34),5.90,y+0.07,1.44,0.06,{fontSize:5.4,bold:true,color:C.ink,align:'center'}); text(String(tr.risk||0),7.82,y+0.07,0.30,0.06,{fontSize:6.2,bold:true,color:C.ink,align:'right'}); text((tr.delta>0?'+':'')+tr.delta,8.28,y+0.07,0.32,0.06,{fontSize:6.2,bold:true,color:tr.delta>0?C.red:C.green,align:'right'}); });
-
-            // Trend chart / KPI
-            card(5.68,4.32,3.40,1.70,null,'Trend (last 6 weeks)');
-            var hasEnoughData = trends.length > 0 && trends[0].points && trends[0].points.length >= 4;
-            if (hasEnoughData) {
-                var chartData = trends.slice(0,1).map(function(tr){ return { name:tr.mode||'Trend', labels:tr.points.map(function(p,i){return 'W-'+(6-i);}).reverse(), values:tr.points.map(function(p){return Number(p.value||0);}) }; });
-                slide.addChart(pptx.ChartType.line, chartData, { x:5.90,y:4.82,w:2.85,h:0.95, lineSize:2.0, lineDataSymbol:'circle', lineDataSymbolSize:5, chartColors:[C.green], showLegend:false, showValue:false, catAxisLabelColor:C.muted, valAxisLabelColor:C.muted, valGridLine:{color:'E5E7EB',size:0.3}, catGridLine:{style:'none'} });
-            } else {
-                var mt = trends[0] || {delta:0}; var dc = mt.delta > 0 ? C.red : (mt.delta < 0 ? C.green : C.muted); var arrow = mt.delta > 0 ? '↑' : (mt.delta < 0 ? '↓' : '→');
-                text(arrow + ' ' + (mt.delta > 0 ? '+' : '') + mt.delta,6.55,4.60,1.70,0.35,{fontSize:24,bold:true,color:dc,align:'center'});
-                text('WoW Delta',6.62,5.06,1.55,0.10,{fontSize:7,color:C.muted,align:'center'});
-                text('Current: ' + (mt.risk || 0),6.48,5.30,1.75,0.10,{fontSize:7,color:C.muted,align:'center'});
+            var ST = (window.PptxGenJS && PptxGenJS.ShapeType) || {};
+            var C = {
+                navy: "0B3F6A", navy2: "082F55", blue: "1E73D8", cyan: "0E9BB3", red: "E11D2E", red2: "FEE2E2", orange: "F59E0B", purple: "6D28D9", green: "138A4B", ink: "062047", muted: "5F766C", border: "BFD7F3", soft: "F4F8FF", soft2: "EAF2FF", white: "FFFFFF", black: "111827", gray: "EEF4FB", dark: "0B1623"
+            };
+            function shape(type,x,y,w,h,fill,line,width,opt){
+                opt = opt || {};
+                var o = { x:x, y:y, w:w, h:h, fill:{ color: fill || C.white, transparency: opt.transparency || 0 }, line:{ color: line || fill || C.border, width: width == null ? 0.6 : width } };
+                if (opt.radius) o.radius = opt.radius;
+                slide.addShape(type || ST.rect || "rect", o);
+            }
+            function rect(x,y,w,h,fill,line,width,opt){ shape(ST.rect || "rect",x,y,w,h,fill,line,width,opt); }
+            function txt(t,x,y,w,h,opt){
+                opt = opt || {};
+                slide.addText(String(t == null ? "" : t), {
+                    x:x, y:y, w:w, h:h,
+                    margin: opt.margin == null ? 0.02 : opt.margin,
+                    fontFace: opt.fontFace || "Arial",
+                    fontSize: opt.fontSize || 8,
+                    bold: !!opt.bold,
+                    italic: !!opt.italic,
+                    color: opt.color || C.ink,
+                    align: opt.align || "left",
+                    valign: opt.valign || "top",
+                    breakLine: !!opt.breakLine,
+                    fit: opt.fit || "shrink",
+                    rotate: opt.rotate || 0
+                });
+            }
+            function lineShape(x,y,w,h,color,width){ slide.addShape(ST.line || "line", { x:x, y:y, w:w, h:h, line:{ color: color || C.border, width: width || 0.7 } }); }
+            function card(x,y,w,h,accent,title,opt){
+                opt = opt || {};
+                rect(x,y,w,h,C.white,C.border,opt.lineWidth || 0.7);
+                if (accent) rect(x,y,0.04,h,accent,accent,0);
+                if (title) txt(title,x+0.12,y+0.10,w-0.24,0.12,{fontSize:7.2,bold:true,color:opt.titleColor || C.ink});
+            }
+            function labelVal(label,value,x,y,w,h,opt){
+                opt = opt || {};
+                rect(x,y,w,h,opt.fill || C.soft,C.border,0.55);
+                txt(label,x+0.08,y+0.08,w-0.16,0.10,{fontSize:5.2,bold:true,color:C.muted});
+                txt(value,x+0.08,y+0.22,w-0.16,h-0.25,{fontSize:opt.fontSize || 8.5,bold:true,color:opt.color || C.ink,fit:"shrink"});
+            }
+            function bulletList(items,x,y,w,h,limit){
+                items = (items || []).slice(0, limit || 6);
+                if (!items.length) { txt("No data",x,y,w,0.12,{fontSize:6.5,color:C.muted}); return; }
+                items.forEach(function(it,i){ txt("• " + clean(it, 38),x,y+i*0.16,w,0.12,{fontSize:6.2,bold:true,color:C.ink}); });
+            }
+            function addImage(src,x,y,w,h,placeholder) {
+                try {
+                    var data = typeof src === "string" ? src : (src && (src.dataUrl || src.url || src.src || src.base64));
+                    if (data && /^data:image\//.test(data)) { slide.addImage({ data:data, x:x, y:y, w:w, h:h, sizing:{ type:"contain", x:x, y:y, w:w, h:h } }); return true; }
+                } catch (_) {}
+                rect(x,y,w,h,C.gray,C.border,0.65);
+                txt(placeholder || "Image",x+0.05,y+h/2-0.06,w-0.10,0.12,{fontSize:7,bold:true,color:"6D7F95",align:"center",valign:"mid"});
+                return false;
+            }
+            function sparkline(points,x,y,w,h,color){
+                points = points || [];
+                var vals = points.length ? points.map(function(p){ return Number(p.value || p.count || 0); }) : [0,0,0,0,0,0];
+                while (vals.length < 6) vals.unshift(vals.length ? vals[0] : 0);
+                vals = vals.slice(-6);
+                var max = Math.max.apply(null, vals.concat([1]));
+                var min = Math.min.apply(null, vals.concat([0]));
+                var span = Math.max(1, max-min);
+                for (var i=0;i<vals.length-1;i++) {
+                    var x1=x+(w/(vals.length-1))*i, x2=x+(w/(vals.length-1))*(i+1);
+                    var y1=y+h-((vals[i]-min)/span)*h, y2=y+h-((vals[i+1]-min)/span)*h;
+                    lineShape(x1,y1,x2-x1,y2-y1,color,1.2);
+                    shape(ST.ellipse || "ellipse", x1-0.018,y1-0.018,0.036,0.036,C.white,color,0.75);
+                    if (i===vals.length-2) shape(ST.ellipse || "ellipse", x2-0.018,y2-0.018,0.036,0.036,C.white,color,0.75);
+                }
+            }
+            function trendCard(tr,x,y,w,h,color,highlight){
+                rect(x,y,w,h,highlight ? "FFF7F7" : C.white, highlight ? "F4A6A6" : C.border, highlight ? 0.9 : 0.65);
+                txt(clean(tr.mode,22),x+0.08,y+0.08,w-0.16,0.12,{fontSize:6.4,bold:true,color:highlight ? C.red : C.ink,fit:"shrink"});
+                txt(String(tr.risk || 0),x+0.10,y+0.38,0.32,0.22,{fontSize:17,bold:true,color:color});
+                txt((tr.delta > 0 ? "+" : "") + String(tr.delta || 0),x+w-0.38,y+0.43,0.28,0.12,{fontSize:8,bold:true,color:tr.delta > 0 ? C.red : (tr.delta < 0 ? C.green : C.muted),align:"right"});
+                sparkline(tr.points,x+0.16,y+0.78,w-0.32,0.34,color);
             }
 
-            // Required action plan
-            rect(0.30,5.95,5.20,0.18,C.navy,C.navy,0); text('Plan de acción requerido – Este plan requiere acciones',0.70,6.00,3.85,0.05,{fontSize:6.3,bold:true,color:C.white,align:'center'});
-            var cols=[0.30,0.95,2.85,4.05,4.72]; var heads=['Área','Acción requerida','Objetivo','Responsable','Fecha compromiso']; var widths=[0.65,1.90,1.20,0.67,0.78];
-            heads.forEach(function(h,i){ rect(cols[i],6.13,widths[i],0.20,'F3F6FB',C.border,0.4); text(h,cols[i]+0.02,6.19,widths[i]-0.04,0.05,{fontSize:5.2,bold:true,color:C.ink,align:'center'}); });
-            var due = yyyy + '-' + mm + '-' + String(Number(dd)+7).padStart(2,'0');
-            var actions=[['SMT','Definir acciones para prevenir recurrencia del defecto en línea.','Evitar recurrencia del defecto.','SMT Engineering',due],['SMT','Revisar feeder, orientación de componente, programa y setup.','Confirmar causa raíz del montaje.','SMT Process',due],['Producción','Definir método para entregar unidades NOK a reparación.','Evitar acumulación o liberación incorrecta.','Production Supervisor',due],['Producción','Implementar control visual / flujo obligatorio de clasificación.','Asegurar reacción inmediata y contención.','Production Engineering',due]];
-            actions.forEach(function(r,ri){ var y=6.33+ri*0.22; r.forEach(function(v,i){ rect(cols[i],y,widths[i],0.22,C.white,C.border,0.3); text(v,cols[i]+0.02,y+0.04,widths[i]-0.04,0.12,{fontSize:i===0?5.4:4.7,bold:i===0,color:i===0?(v==='SMT'?C.blue:C.green):C.ink,align:i===0?'center':'left'}); }); });
+            // Background and header
+            rect(0,0,13.333,7.5,C.white,C.white,0);
+            rect(0,0,13.333,0.78,C.navy,C.navy,0);
+            rect(0,0.78,13.333,0.035,C.blue,C.blue,0);
+            txt("FOXCONN",0.24,0.12,1.10,0.12,{fontSize:8,bold:true,color:C.white});
+            txt("Quality Alert",0.24,0.34,2.05,0.28,{fontSize:23,bold:true,color:C.white});
+            txt("SMTinel Board Impact - Production floor posting",2.85,0.42,3.50,0.13,{fontSize:9.8,bold:true,color:C.white});
+            rect(7.35,0.19,1.60,0.35,C.navy,C.white,0.8); txt("Issued " + issueDate,7.58,0.30,1.14,0.08,{fontSize:5.8,bold:true,color:C.white,align:"center"});
+            rect(9.12,0.19,2.35,0.35,C.navy,C.white,0.8); txt("Owner: " + clean(owner,38),9.28,0.30,2.00,0.08,{fontSize:5.8,bold:true,color:C.white,align:"center"});
+            rect(11.65,0.19,1.28,0.35,C.red,C.white,0.8); txt(clean(selectedSeverity.label || "Crítica",18),11.86,0.30,0.88,0.08,{fontSize:6.2,bold:true,color:C.white,align:"center"});
 
-            // Executive message
-            rect(5.68,6.20,3.40,0.92,'FFF8F8',C.red,0.8); shape(ST.ellipse || 'ellipse',5.82,6.36,0.38,0.38,C.white,C.red,1.2); text('!',5.94,6.42,0.12,0.14,{fontSize:18,bold:true,color:C.red,align:'center'});
-            text('Mensaje ejecutivo\nSe requiere plan de acción formal por parte de SMT y Producción. SMT debe definir acciones para prevenir recurrencia del defecto. Producción debe asegurar que toda unidad NOK sea contenida y enviada inmediatamente a reparación.',6.30,6.33,2.55,0.55,{fontSize:6.7,bold:true,color:C.black,breakLine:true});
+            // KPI row
+            card(0.24,0.99,4.08,0.94,C.blue,"Failure Mode");
+            txt(clean(failureMode,36),0.45,1.34,2.55,0.18,{fontSize:15,bold:true,color:C.ink,fit:"shrink"});
+            txt("RefDes",3.28,1.11,0.50,0.10,{fontSize:6.6,bold:true,color:C.ink});
+            txt(clean(selectedRef,20),3.22,1.34,0.70,0.26,{fontSize:selectedRef.length > 4 ? 18 : 26,bold:true,color:C.red,align:"center",fit:"shrink"});
+            txt("SKU / Model: " + clean(sku,20) + " - " + clean(modelName,22),0.45,1.67,3.20,0.10,{fontSize:6.7,bold:true,color:C.ink});
 
-            // Right affected serial and evidence zone
-            card(9.30,2.22,3.86,4.90,C.red,'Affected serial numbers');
-            var displayList = snList.slice(0, 6);
-            displayList.forEach(function(s,idx){ var serial = s.serial || s.sn || s.SN || s.SerialNumber || ''; if(!serial) return; var ln = traceOpsBoardPptSerialLineValue(s, ctx); var lab = ln && ln !== 'N/D' ? serial + '-' + ln : serial; chip(lab,9.48,2.50+idx*0.28,1.50); });
-            var firstLabel = displayList.length ? (function(s){ var serial=s.serial||s.sn||s.SN||s.SerialNumber||''; var ln=traceOpsBoardPptSerialLineValue(s,ctx); return ln && ln !== 'N/D' ? serial + '-' + ln : serial; })(displayList[0]) : 'N/D';
-            text(firstLabel,10.72,3.42,1.35,0.10,{fontSize:6.8,bold:true,color:C.ink,align:'center'});
-            slide.addShape(ST.line || 'line',{x:9.45,y:3.62,w:3.35,h:0,line:{color:C.blue,pt:1,dash:'dash'}});
-            rect(9.45,3.70,3.40,0.18,C.navy,C.navy,0); text('EVIDENCE (added below serial number)',9.85,3.75,2.55,0.05,{fontSize:5.8,bold:true,color:C.white,align:'center'});
-            rect(9.45,3.88,1.70,1.55,C.white,C.border,0.5); text('Evidence 1 – Component condition',9.55,4.02,1.45,0.08,{fontSize:5.6,bold:true,color:C.black,align:'center'}); rect(9.62,4.26,1.36,0.74,'ECEFF3','D1D5DB',0.5); text('Image placeholder',9.83,4.58,0.95,0.08,{fontSize:6.8,color:C.muted,align:'center'}); rect(9.62,5.02,1.36,0.22,C.red2,C.red2,0); text('Face up / boca arriba',9.75,5.09,1.10,0.05,{fontSize:5.4,bold:true,color:C.white,align:'center'});
-            rect(11.15,3.88,1.70,1.55,C.white,C.border,0.5); text('Evidence 2 – Containment not executed',11.25,4.02,1.45,0.08,{fontSize:5.6,bold:true,color:C.black,align:'center'}); rect(11.40,4.30,0.95,0.22,'FCE8E8','FCE8E8',0); text('Result        Fail',11.48,4.37,0.78,0.05,{fontSize:5.4,bold:true,color:C.red,align:'center'}); rect(11.32,4.58,1.10,0.26,C.white,C.red,1.0); text('Disposition      NOK',11.40,4.67,0.95,0.05,{fontSize:5.4,bold:true,color:C.red,align:'center'}); text('Repair Required      Yes\nRework Station       N/A',11.36,5.02,1.05,0.20,{fontSize:5.3,bold:true,color:C.black,breakLine:true});
-            text('La unidad fue clasificada como falla (NOK), pero no fue enviada inmediatamente a reparación.',11.25,5.55,1.45,0.28,{fontSize:5.4,color:C.black,breakLine:true});
-            text('Total: ' + snList.length + ' serial(s)',9.48,6.92,1.40,0.10,{fontSize:7.4,bold:true,color:C.ink});
+            card(4.42,0.99,2.48,0.94,C.blue,"Affected SN");
+            txt(String(affectedSerials),4.62,1.34,0.48,0.25,{fontSize:24,bold:true,color:C.red,fit:"shrink"});
+            txt("WOs: " + affectedWos + "   Line: " + clean(line,24) + "\nStation: " + clean(station,20),5.20,1.42,1.45,0.24,{fontSize:6.4,bold:true,color:C.ink,breakLine:true,fit:"shrink"});
 
-            text('SMTIntel Board Impact Intelligence - Quality Alert - ' + issueDate,0.30,7.25,4.30,0.10,{fontSize:6.5,color:C.muted});
-            text('Confidential · Foxconn / SMTIntel',10.90,7.25,2.00,0.10,{fontSize:6.5,color:C.muted,align:'right'});
-            var fileName = "SMTinel_QualityAlert_" + selectedRef + "_" + String(sku).replace(/\s+/g, "_") + "_" + issueDate + ".pptx";
-            pptx.writeFile({ fileName: fileName });
+            card(7.10,0.99,2.62,0.94,C.orange,"Failing rate");
+            txt(frMfg,7.48,1.32,0.96,0.25,{fontSize:20,bold:true,color:C.red,align:"center",fit:"shrink"});
+            txt(frBase,7.42,1.64,0.98,0.09,{fontSize:5.8,bold:true,color:C.ink,align:"center",fit:"shrink"});
+            lineShape(8.56,1.24,0,0.46,C.border,0.8);
+            txt("Target",8.82,1.12,0.55,0.10,{fontSize:6.8,bold:true,color:C.ink,align:"center"});
+            txt(frBuilt,8.74,1.32,0.82,0.25,{fontSize:19,bold:true,color:C.purple,align:"center",fit:"shrink"});
+            txt(frBase,8.74,1.64,0.82,0.09,{fontSize:5.5,bold:true,color:C.ink,align:"center",fit:"shrink"});
+
+            card(9.92,0.99,3.18,0.94,C.cyan,"Component profile from BOM");
+            txt(clean(componentType + "-" + componentCode, 50),10.12,1.30,2.42,0.12,{fontSize:8.5,bold:true,color:"0046C7",fit:"shrink"});
+            txt(clean(componentDescription, 85),10.12,1.52,2.45,0.12,{fontSize:5.9,color:C.black,fit:"shrink"});
+            rect(10.12,1.68,2.68,0.14,"FFF7ED",C.orange,0.6); txt("⚠  " + clean((ccPrimary && (ccPrimary.title || ccPrimary.name)) || "Connector / Header Handling Characteristic", 60),10.18,1.715,2.55,0.04,{fontSize:4.8,color:"9A4D00",bold:true});
+
+            // Middle left: Board + evidence
+            card(0.24,2.00,5.92,2.02,C.blue,"Board location");
+            txt("PDF page: " + pageLabel + " - " + boardSideLabel + " side",4.82,2.13,1.05,0.08,{fontSize:5.7,bold:true,color:C.ink,align:"right"});
+            if (canvasData) addImage(canvasData,0.46,2.39,5.42,1.20,"Board image");
+            else { rect(0.46,2.39,5.42,1.20,"FAFAFA",C.border,0.55); txt("Board image will be inserted from active Board Impact view",1.75,2.94,2.70,0.12,{fontSize:7,bold:true,color:"7B8CA5",align:"center"}); }
+            txt("Reference: " + selectedRef,0.40,3.75,1.50,0.10,{fontSize:7,bold:true,color:C.ink});
+
+            card(0.24,4.08,5.92,1.26,C.blue,"EVIDENCE - Issue Photos");
+            var evLabels = ["1. Component condition\n(Lifted Pins)", "2. Pin lifted from solder pad\n(Detail)", "3. Board location - Top side", "4. From rework inspection"];
+            for (var ei=0; ei<4; ei++) {
+                var ex = 0.45 + ei*1.42;
+                addImage(evidenceImages[ei], ex, 4.38, 1.20, 0.50, ei === 0 ? "Photo 1" : "Evidence image");
+                txt(evLabels[ei],ex,4.93,1.18,0.24,{fontSize:5.2,bold:true,color:C.ink,align:"center",fit:"shrink",breakLine:true});
+            }
+
+            // Middle right: Reference details + commodity image
+            card(6.25,2.00,6.85,3.34,C.blue,"Details of reference");
+            txt(clean(selectedRef,28),6.45,2.36,1.35,0.33,{fontSize:selectedRef.length>5?20:24,bold:true,color:"003B82",fit:"shrink"});
+            rect(6.45,2.78,1.28,0.24,C.soft,C.border,0.6); txt("BOM: " + clean(componentCode,24),6.58,2.86,1.02,0.06,{fontSize:5.8,bold:true,color:C.ink,align:"center"});
+            txt(clean(componentDescription,100),6.45,3.17,1.65,0.48,{fontSize:5.8,color:C.black,fit:"shrink"});
+            labelVal("LADO",boardSideLabel,8.55,2.30,1.30,0.40,{});
+            labelVal("PÁGINA PDF",pageLabel,10.00,2.30,1.30,0.40,{});
+            labelVal("SN AFECTADOS",String(affectedSerials),8.55,2.80,1.30,0.40,{});
+            labelVal("WO IMPACTADAS",String(affectedWos),10.00,2.80,1.30,0.40,{});
+            labelVal("COMPONENTE",clean(componentType,38),8.55,3.32,2.75,0.44,{fontSize:7.5});
+            labelVal("FR",frMfg,8.55,3.85,1.30,0.40,{});
+            labelVal("FAILING RATE",frBuilt,10.00,3.85,1.30,0.40,{});
+            rect(11.42,2.30,1.45,1.85,C.soft,C.border,0.65);
+            txt("Commodity / Component Type",11.52,2.48,1.25,0.12,{fontSize:6.4,bold:true,color:C.ink,align:"center"});
+            txt(clean(componentType,36),11.55,2.72,1.20,0.10,{fontSize:6.3,color:C.black,align:"center",fit:"shrink"});
+            addImage(payload.componentImage || payload.componentImageData,11.62,3.04,1.08,0.74,"Component\nImage");
+            rect(6.45,4.38,2.65,0.78,C.soft,C.border,0.65); txt("SN impactados (ejemplos)",6.56,4.52,1.35,0.08,{fontSize:5.9,bold:true,color:C.ink}); bulletList(serialDisplay,6.60,4.70,1.90,0.42,5); txt("Total: " + affectedSerials + " serial(s)",8.14,5.12,0.86,0.06,{fontSize:5.6,bold:true,color:C.ink,align:"right"});
+            rect(9.28,4.38,2.04,0.78,C.soft,C.border,0.65); txt("WO impactadas",9.40,4.52,1.00,0.08,{fontSize:5.9,bold:true,color:C.ink}); bulletList(woDisplay,9.46,4.70,1.40,0.42,5); txt("Total: " + affectedWos + " WOs",10.68,5.12,0.55,0.06,{fontSize:5.6,bold:true,color:C.ink,align:"right"});
+
+            // Bottom action plan
+            card(0.24,5.40,6.50,1.75,C.blue,"PLAN DE ACCIÓN REQUERIDO");
+            var cols = [0.38,0.78,2.92,4.65,5.58];
+            var widths = [0.40,2.14,1.73,0.93,0.78];
+            var heads = ["Área","Acción requerida","Objetivo","Responsable","Fecha compromiso"];
+            heads.forEach(function(h,i){ rect(cols[i],5.67,widths[i],0.22,C.navy,C.navy,0); txt(h,cols[i],5.74,widths[i],0.05,{fontSize:4.7,bold:true,color:C.white,align:"center"}); });
+            var actions = [
+                ["SMT","Definir acciones para prevenir recurrencia del defecto en línea.","Evitar recurrencia del defecto.","SMT Engineering",dueDate],
+                ["SMT","Revisar feeder, orientación de componente, programa y setup.","Confirmar causa raíz del montaje.","SMT Process",dueDate],
+                ["Producción","Definir método para entregar unidades NOK a reparación.","Evitar acumulación o liberación incorrecta.","Production Supervisor",dueDate],
+                ["Producción","Implementar control visual / flujo obligatorio de clasificación.","Asegurar reacción inmediata y contención.","Production Engineering",dueDate]
+            ];
+            actions.forEach(function(r,ri){ var y = 5.89 + ri*0.20; r.forEach(function(v,i){ rect(cols[i],y,widths[i],0.20,ri%2?"F7FAFF":C.white,C.border,0.35); txt(v,cols[i]+0.02,y+0.045,widths[i]-0.04,0.10,{fontSize:i===0?4.8:4.2,bold:i===0 || i===3,color:i===0?(v==="SMT"?"0046C7":C.green):C.ink,align:i===0?"center":"left",fit:"shrink"}); }); });
+            rect(0.36,6.74,6.20,0.32,"FFF7ED",C.orange,0.8); shape(ST.ellipse || "ellipse",0.49,6.80,0.22,0.22,C.orange,C.orange,0); txt("!",0.565,6.835,0.08,0.08,{fontSize:12,bold:true,color:C.white,align:"center"}); txt("Mensaje ejecutivo: Se requiere plan de acción formal por parte de SMT y Producción.\nSMT debe definir acciones para prevenir recurrencia del defecto. Producción debe asegurar que toda unidad NOK sea contenida y enviada inmediatamente a reparación.",0.80,6.80,5.50,0.18,{fontSize:5.7,bold:true,color:C.black,breakLine:true,fit:"shrink"});
+
+            // Bottom trend flow
+            card(6.82,5.40,6.28,1.75,C.blue,"TREND FLOW - Top Failure Modes (últimas 6 semanas)");
+            var palette = [C.red,"005BBB",C.green,"7E22CE","EA580C"];
+            trends.slice(0,5).forEach(function(tr,i){ trendCard(tr,6.98+i*1.18,5.72,1.05,1.03,palette[i%palette.length], i===0 || clean(tr.mode).toUpperCase() === clean(failureMode).toUpperCase()); });
+
+            rect(0,7.28,13.333,0.22,C.navy,C.navy,0);
+            txt("SMTinel Board Impact Intelligence  |  Quality Alert - " + selectedRef + "  |  " + issueDate,0.24,7.36,4.20,0.05,{fontSize:5.8,color:C.white});
+            txt("Confidential  •  Foxconn / SMTinel",11.10,7.36,1.95,0.05,{fontSize:5.8,color:C.white,align:"right"});
+
+            var fileName = "SMTinel_QualityAlert_" + clean(selectedRef,40).replace(/[^A-Za-z0-9_-]+/g,"_") + "_" + clean(String(sku),32).replace(/[^A-Za-z0-9_-]+/g,"_") + "_" + issueDate + ".pptx";
+            return pptx.writeFile({ fileName: fileName });
         }).catch(function(err) {
             console.error("Error exportando Quality Alert PPT:", err);
-            alert("Error al generar Quality Alert PPT: " + (err.message || err));
+            alert("Error al generar Quality Alert PPT: " + (err && err.message ? err.message : err));
         });
     }
+
     function exportBoardImpactModelTrendPpt(payload) {
         payload = payload || {};
         var ctx = payload.ctx || {};
