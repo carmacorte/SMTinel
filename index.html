@@ -29563,15 +29563,16 @@ body:has(#recovery-section) .main-content.expanded{
                 try { text = text.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){}
                 return text.replace(/[^\w\s-]/g,' ').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase();
             }
+            function executiveName(value){
+                var raw = bentoClean(value) || 'Unclassified Problem';
+                var t = raw.replace(/_/g,' ').replace(/\|/g,' / ').toLowerCase();
+                var map = [[/tftp.*boot|boot.*diag/i,'TFTP Boot Diagnostic'],[/diag.*sanity|sanity.*test/i,'Diagnostic Sanity Test'],[/solder.*bridge/i,'Solder Bridge'],[/ict.*fail|ict.*error/i,'ICT Failure'],[/missing.*component|missing.*part|placement.*missing/i,'Missing Component'],[/type.*c|console/i,'Type C Console Failure'],[/insufficient.*solder/i,'Insufficient Solder'],[/short/i,'Electrical Short'],[/retest/i,'Retest Failure'],[/contamination/i,'Product Contamination']];
+                for(var i=0;i<map.length;i++){ if(map[i][0].test(t)) return map[i][1]; }
+                return raw.split('|')[0].replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}).slice(0,64);
+            }
             function bentoFailure(value){ return bentoToken(value).replace(/^FAILED_/,'').replace(/_TEST_INFO$/,''); }
-            function firstClean(){
-                for (var i=0;i<arguments.length;i++){ var v = bentoClean(arguments[i]); if (v) return v; }
-                return '';
-            }
-            function firstToken(){
-                for (var i=0;i<arguments.length;i++){ var v = bentoToken(arguments[i]); if (v) return v; }
-                return '';
-            }
+            function firstClean(){ for (var i=0;i<arguments.length;i++){ var v = bentoClean(arguments[i]); if (v) return v; } return ''; }
+            function firstToken(){ for (var i=0;i<arguments.length;i++){ var v = bentoToken(arguments[i]); if (v) return v; } return ''; }
             function n(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
             function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
             function pct(v,d){ return d > 0 ? Math.round(v / d * 100) : 0; }
@@ -29585,7 +29586,6 @@ body:has(#recovery-section) .main-content.expanded{
                 return {key:key,value:n(map[key]),pct:pct(n(map[key]),total)};
             }
             function topKey(map){ return topEntry(map).key; }
-            function shortSig(s){ s = bentoClean(s) || 'UNCLASSIFIED_SYMPTOM'; return s.length > 60 ? s.slice(0,57).replace(/\s+\S*$/,'') + '...' : s; }
             function dateObj(v){ v = bentoClean(v); if(!v) return null; try{ var d = new Date(v); if(!isNaN(d.getTime())) return d; }catch(_){} return null; }
             function dateText(v){ var d = dateObj(v); return d ? d.toISOString().slice(0,10) : (bentoClean(v) || 'N/D'); }
             function firstDate(a,b){ if(!a) return b||''; if(!b) return a||''; var da=dateObj(a), db=dateObj(b); return da && db && db < da ? b : a; }
@@ -29609,27 +29609,7 @@ body:has(#recovery-section) .main-content.expanded{
             }
             function normalizeSeed(row){
                 row = row || {};
-                return {
-                    customer:firstClean(row.customer,row.Customer,'Cisco'),
-                    bu:firstClean(row.bu,row.buLabel,row.BU),
-                    model:firstClean(row.family,row.model,row.Model,row.sku,row.SKU),
-                    partNumber:firstClean(row.partNumber,row.pn,row.PN,row.sku,row.SKU),
-                    line:firstClean(row.line,row.Line),
-                    station:firstClean(row.station,row.currentEvent,row.event,row.testArea,row.area,row.Station),
-                    failureMode:firstClean(row.failureMode,row.symptom,row.mode,row.testinfo,row.cesiumArea,row.defectType,row.FailureMode),
-                    defectType:firstClean(row.defectType,row.failureMode,row.symptom,row.mode),
-                    refdes:firstClean(row.refdes,row.RefDes,row.referenceDesignator,row.location,row.ref),
-                    component:firstClean(row.component,row.componentName,row.location,row.refdes,row.RefDes),
-                    errorCode:firstClean(row.errorCode,row.error,row.errorcode,row.err,row.code),
-                    process:firstClean(row.process,row.processArea,'SMT'),
-                    boardSide:firstClean(row.boardSide,row.side),
-                    wo:firstClean(row.wo,row.workOrder,row.WO),
-                    sn:firstClean(row.sn,row.SN,row.serial,row.serialNumber,row.serial_number),
-                    eventTime:firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.lastSeen),
-                    recovered:n(row.recoveredUnits || row.recovered || row.goodQty || row.passQty),
-                    disposed:n(row.disposedUnits || row.disposed || row.scrapQty || row.closedQty),
-                    remaining:n(row.remainingUnits || row.remaining || row.openQty)
-                };
+                return {customer:firstClean(row.customer,row.Customer,'Cisco'),bu:firstClean(row.bu,row.buLabel,row.BU),model:firstClean(row.family,row.model,row.Model,row.sku,row.SKU),partNumber:firstClean(row.partNumber,row.pn,row.PN,row.sku,row.SKU),line:firstClean(row.line,row.Line),station:firstClean(row.station,row.currentEvent,row.event,row.testArea,row.area,row.Station),failureMode:firstClean(row.failureMode,row.symptom,row.mode,row.testinfo,row.cesiumArea,row.defectType,row.FailureMode),defectType:firstClean(row.defectType,row.failureMode,row.symptom,row.mode),refdes:firstClean(row.refdes,row.RefDes,row.referenceDesignator,row.location,row.ref),component:firstClean(row.component,row.componentName,row.location,row.refdes,row.RefDes),errorCode:firstClean(row.errorCode,row.error,row.errorcode,row.err,row.code),process:firstClean(row.process,row.processArea,'SMT'),boardSide:firstClean(row.boardSide,row.side),wo:firstClean(row.wo,row.workOrder,row.WO),sn:firstClean(row.sn,row.SN,row.serial,row.serialNumber,row.serial_number),eventTime:firstClean(row.eventTime,row.recordTime,row.date,row.time,row.createdAt,row.lastSeen),recovered:n(row.recoveredUnits || row.recovered || row.goodQty || row.passQty),disposed:n(row.disposedUnits || row.disposed || row.scrapQty || row.closedQty),remaining:n(row.remainingUnits || row.remaining || row.openQty)};
             }
             function buildExecutiveSignature(row){
                 row = normalizeSeed(row);
@@ -29654,23 +29634,11 @@ body:has(#recovery-section) .main-content.expanded{
                 parts.forEach(function(p){ if (p && p !== 'ND' && unique.indexOf(p) < 0) unique.push(p); });
                 return unique.length ? unique.join('|') : buildExecutiveSignature(row);
             }
-            function mainFailure(){
-                var f = topFailures && topFailures[0] ? topFailures[0] : {};
-                return firstClean(f.failureMode,f.mode,f.testinfo,f.symptom,f.defectType,'Unclassified Failure');
-            }
+            function mainFailure(){ var f = topFailures && topFailures[0] ? topFailures[0] : {}; return firstClean(f.failureMode,f.mode,f.testinfo,f.symptom,f.defectType,'Unclassified Failure'); }
             function ensureProblem(groups, seed){
                 seed = normalizeSeed(seed);
                 var execSig = buildExecutiveSignature(seed);
-                if(!groups[execSig]){
-                    groups[execSig] = {
-                        executiveSignature:execSig, shortExecutiveSignature:shortSig(execSig), engineeringSignatures:{},
-                        totalBonepileUnits:0, freshInputUnits:0, agedUnits31Plus:0, oldUnits91Plus:0, longTermUnits365Plus:0,
-                        age31_60:0, age61_90:0, last7:0, last30:0, last90:0, previous30:0, agedGrowth30d:0,
-                        affectedWOsMap:{}, affectedSerialsMap:{}, stations:{}, lines:{}, wos:{}, models:{}, processes:{}, failureModes:{},
-                        freshStations:{}, freshLines:{}, freshWos:{}, freshModels:{}, freshProcesses:{},
-                        firstSeen:'', lastSeen:'', samples:[], recoveredUnits:0, disposedUnits:0, remainingExplicit:0
-                    };
-                }
+                if(!groups[execSig]) groups[execSig] = {executiveSignature:execSig, problemName:executiveName(execSig), engineeringSignatures:{}, totalBonepileUnits:0, freshInputUnits:0, agedUnits31Plus:0, oldUnits91Plus:0, longTermUnits365Plus:0, age31_60:0, age61_90:0, fresh0_30:0, last7:0, last30:0, last90:0, previous30:0, agedGrowth30d:0, affectedWOsMap:{}, affectedSerialsMap:{}, stations:{}, lines:{}, wos:{}, models:{}, processes:{}, failureModes:{}, freshStations:{}, freshLines:{}, freshWos:{}, freshModels:{}, freshProcesses:{}, firstSeen:'', lastSeen:'', samples:[], recoveredUnits:0, disposedUnits:0, remainingExplicit:0};
                 return groups[execSig];
             }
             function addProblem(groups, seed, qty, bkt, days){
@@ -29679,55 +29647,18 @@ body:has(#recovery-section) .main-content.expanded{
                 var g = ensureProblem(groups, seed);
                 var eng = buildEngineeringSignature(seed);
                 g.engineeringSignatures[eng] = (g.engineeringSignatures[eng] || 0) + qty;
-                if (bkt === 'fresh') {
-                    g.freshInputUnits += qty;
-                    addMap(g.freshStations,seed.station,qty); addMap(g.freshLines,seed.line,qty); addMap(g.freshWos,seed.wo,qty); addMap(g.freshModels,seed.model,qty); addMap(g.freshProcesses,seed.process,qty);
-                } else {
-                    g.agedUnits31Plus += qty; g.totalBonepileUnits += qty;
-                    if (bkt === 'age31_60') g.age31_60 += qty;
-                    else if (bkt === 'age61_90') g.age61_90 += qty;
-                    else if (bkt === 'age91_365') g.oldUnits91Plus += qty;
-                    else if (bkt === 'ageOver365') { g.oldUnits91Plus += qty; g.longTermUnits365Plus += qty; }
-                    else g.age31_60 += qty;
-                }
-                if (days != null && isFinite(days)) {
-                    if (days <= 7) g.last7 += qty;
-                    if (days <= 30) g.last30 += qty;
-                    if (days <= 90) g.last90 += qty;
-                    if (days > 30 && days <= 60) { g.previous30 += qty; g.agedGrowth30d += qty; }
-                }
+                if (bkt === 'fresh') { g.freshInputUnits += qty; g.fresh0_30 += qty; addMap(g.freshStations,seed.station,qty); addMap(g.freshLines,seed.line,qty); addMap(g.freshWos,seed.wo,qty); addMap(g.freshModels,seed.model,qty); addMap(g.freshProcesses,seed.process,qty); }
+                else { g.agedUnits31Plus += qty; g.totalBonepileUnits += qty; if (bkt === 'age31_60') g.age31_60 += qty; else if (bkt === 'age61_90') g.age61_90 += qty; else if (bkt === 'age91_365') g.oldUnits91Plus += qty; else if (bkt === 'ageOver365') { g.oldUnits91Plus += qty; g.longTermUnits365Plus += qty; } else g.age31_60 += qty; }
+                if (days != null && isFinite(days)) { if (days <= 7) g.last7 += qty; if (days <= 30) g.last30 += qty; if (days <= 90) g.last90 += qty; if (days > 30 && days <= 60) { g.previous30 += qty; g.agedGrowth30d += qty; } }
                 addMap(g.affectedWOsMap,seed.wo,qty); addMap(g.affectedSerialsMap,seed.sn,qty); addMap(g.stations,seed.station,qty); addMap(g.lines,seed.line,qty); addMap(g.wos,seed.wo,qty); addMap(g.models,seed.model,qty); addMap(g.processes,seed.process,qty); addMap(g.failureModes,seed.failureMode||seed.defectType,qty);
-                g.recoveredUnits += seed.recovered || 0;
-                g.disposedUnits += seed.disposed || 0;
-                g.remainingExplicit += seed.remaining || 0;
+                g.recoveredUnits += seed.recovered || 0; g.disposedUnits += seed.disposed || 0; g.remainingExplicit += seed.remaining || 0;
                 if(seed.eventTime){ g.firstSeen = firstDate(g.firstSeen,seed.eventTime); g.lastSeen = lastDate(g.lastSeen,seed.eventTime); }
                 if(g.samples.length < 8) g.samples.push(seed);
             }
-            function trend(g){
-                if(g.last30 > g.previous30 * 1.15 && g.last30 > 0) return 'Increasing';
-                if(g.last30 < g.previous30 * 0.85 && g.previous30 > 0) return 'Decreasing';
-                return 'Stable';
-            }
-            function velocity(g,t){
-                if(g.last30 <= 0 && g.last7 <= 0) return 'NO_RECENT_INPUT';
-                if(t === 'Increasing' || (g.last7 > 0 && g.last7 / Math.max(1,g.last30) > 0.35)) return 'ACCELERATING';
-                if(t === 'Decreasing') return 'DECLINING';
-                return 'STABLE';
-            }
-            function status(g){
-                if(g.freshInputUnits > 0 && g.oldUnits91Plus > 0) return 'CRITICAL_RECURRENCE';
-                if(g.freshInputUnits > 0 && g.agedUnits31Plus > 0) return 'ACTIVE';
-                if(g.freshInputUnits === 0 && g.agedUnits31Plus > 0) return 'CONTAINED';
-                if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'WATCHLIST';
-                return 'CLOSED';
-            }
-            function severity(g){
-                if(g.oldUnits91Plus > 0 && g.freshInputUnits > 0) return 'CRITICAL';
-                if(g.agedUnits31Plus > 0 && g.freshInputUnits > 0) return 'HIGH';
-                if(g.agedUnits31Plus > 0 && g.freshInputUnits === 0) return 'MEDIUM';
-                if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'LOW';
-                return 'LOW';
-            }
+            function trend(g){ if(g.last30 > g.previous30 * 1.15 && g.last30 > 0) return 'Increasing'; if(g.last30 < g.previous30 * 0.85 && g.previous30 > 0) return 'Decreasing'; return 'Stable'; }
+            function velocity(g,t){ if(g.last30 <= 0 && g.last7 <= 0) return 'NO_RECENT_INPUT'; if(t === 'Increasing' || (g.last7 > 0 && g.last7 / Math.max(1,g.last30) > 0.35)) return 'ACCELERATING'; if(t === 'Decreasing') return 'DECLINING'; return 'STABLE'; }
+            function status(g){ if(g.freshInputUnits > 0 && g.oldUnits91Plus > 0) return 'CRITICAL_RECURRENCE'; if(g.freshInputUnits > 0 && g.agedUnits31Plus > 0) return 'ACTIVE'; if(g.freshInputUnits === 0 && g.agedUnits31Plus > 0) return 'CONTAINED'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'WATCHLIST'; return 'CLOSED'; }
+            function severity(g){ if(g.oldUnits91Plus > 0 && g.freshInputUnits > 0) return 'CRITICAL'; if(g.agedUnits31Plus > 0 && g.freshInputUnits > 0) return 'HIGH'; if(g.agedUnits31Plus > 0 && g.freshInputUnits === 0) return 'MEDIUM'; if(g.freshInputUnits > 0 && g.agedUnits31Plus === 0) return 'LOW'; return 'LOW'; }
             function rootCauseStatus(s){ if(s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') return 'Root Cause Not Contained'; if(s === 'CONTAINED') return 'Recovery Only'; if(s === 'WATCHLIST') return 'Emerging Signal'; return 'Closed / No Action'; }
             function sourceIntel(g){
                 var station = topEntry(g.freshStations); if(station.key === 'N/D') station = topEntry(g.stations);
@@ -29742,173 +29673,681 @@ body:has(#recovery-section) .main-content.expanded{
             function recoveryEffectiveness(g,s,v){
                 var original = Math.max(g.agedUnits31Plus + g.recoveredUnits + g.disposedUnits, g.agedUnits31Plus);
                 var current = g.agedUnits31Plus;
-                var recovered = g.recoveredUnits;
-                var disposed = g.disposedUnits;
-                var remaining = g.remainingExplicit || current;
-                var burned = Math.max(0, original - current);
-                var burnDownPct = pct(burned, original);
-                var explicit = (recovered + disposed + g.remainingExplicit) > 0;
+                var burnDownPct = pct(Math.max(0, original - current), original);
                 var state = 'UNKNOWN';
                 if(s === 'CONTAINED' && current >= 0) state = 'EFFECTIVE';
-                if((s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') && (burnDownPct > 0 || recovered + disposed > 0)) state = 'PARTIAL';
+                if((s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') && (burnDownPct > 0 || g.recoveredUnits + g.disposedUnits > 0)) state = 'PARTIAL';
                 if((s === 'ACTIVE' || s === 'CRITICAL_RECURRENCE') && v === 'ACCELERATING') state = 'INEFFECTIVE';
-                if(!explicit && current <= 0 && g.freshInputUnits <= 0) state = 'UNKNOWN';
-                return {originalBonepile:original,currentBonepile:current,recoveredUnits:recovered,disposedUnits:disposed,remainingUnits:remaining,burnDownPct:burnDownPct,recoveryEffectiveness:state};
+                return {originalBonepile:original,currentBonepile:current,recoveredUnits:g.recoveredUnits,disposedUnits:g.disposedUnits,remainingUnits:g.remainingExplicit || current,burnDownPct:burnDownPct,recoveryEffectiveness:state};
             }
             function impactScore(p){
-                var freshFactor = clamp(p.freshInputUnits / Math.max(1,p.__maxFresh) * 100,0,100) * 0.30;
-                var oldFactor = clamp(p.oldUnits91Plus / Math.max(1,p.__maxOld) * 100,0,100) * 0.20;
-                var traceFactor = clamp((p.affectedSerials + p.affectedWOs*5) / Math.max(1,p.__maxTrace) * 100,0,100) * 0.15;
-                var velocityFactor = (p.velocityStatus === 'ACCELERATING' ? 100 : p.velocityStatus === 'STABLE' ? 62 : p.velocityStatus === 'DECLINING' ? 28 : 0) * 0.15;
-                var severityFactor = (p.severity === 'CRITICAL' ? 100 : p.severity === 'HIGH' ? 78 : p.severity === 'MEDIUM' ? 42 : 22) * 0.10;
-                var recoveryFactor = (p.recoveryEffectiveness === 'INEFFECTIVE' ? 100 : p.recoveryEffectiveness === 'PARTIAL' ? 68 : p.recoveryEffectiveness === 'UNKNOWN' ? 42 : 10) * 0.10;
-                var score = freshFactor + oldFactor + traceFactor + velocityFactor + severityFactor + recoveryFactor;
-                if(p.status === 'CRITICAL_RECURRENCE') score += 8;
-                if(p.sourceContributionPct > 50) score += 4;
-                if(p.status === 'CONTAINED') score *= 0.72;
-                return clamp(Math.round(score),0,100);
+                var score = clamp(p.freshInputUnits/Math.max(1,p.__maxFresh)*100,0,100)*.30 + clamp(p.oldUnits91Plus/Math.max(1,p.__maxOld)*100,0,100)*.20 + clamp((p.affectedSerials+p.affectedWOs*5)/Math.max(1,p.__maxTrace)*100,0,100)*.15 + (p.velocityStatus==='ACCELERATING'?100:p.velocityStatus==='STABLE'?62:p.velocityStatus==='DECLINING'?28:0)*.15 + (p.severity==='CRITICAL'?100:p.severity==='HIGH'?78:p.severity==='MEDIUM'?42:22)*.10 + (p.recoveryEffectiveness==='INEFFECTIVE'?100:p.recoveryEffectiveness==='PARTIAL'?68:p.recoveryEffectiveness==='UNKNOWN'?42:10)*.10;
+                if(p.status === 'CRITICAL_RECURRENCE') score += 8; if(p.sourceContributionPct > 50) score += 4; if(p.status === 'CONTAINED') score *= .72; return clamp(Math.round(score),0,100);
             }
             function band(score){ return score >= 90 ? 'Critical' : score >= 70 ? 'High' : score >= 40 ? 'Watch' : 'Healthy'; }
-            function focus(p){
-                if(p.recoveryEffectiveness === 'INEFFECTIVE') return 'Escalate recovery execution and verify root cause containment.';
-                if((p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') && p.velocityStatus === 'ACCELERATING') return 'Apply containment at ' + p.primarySource + ' before recovery.';
-                if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return 'Containment at source + recovery burn-down.';
-                if(p.status === 'CONTAINED') return 'Recovery burn-down. Source appears contained.';
-                if(p.status === 'WATCHLIST') return 'Monitor and validate repeatability.';
-                return 'No immediate recovery action.';
-            }
-            function exitCriteria(p){
-                if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return ['No fresh input with same signature.','Source containment verified.','Aged bucket burn-down started.','Retest disposition validated.'];
-                if(p.status === 'CONTAINED') return ['Bonepile below target.','No recurrence after recovery.','Effectiveness confirmed.'];
-                if(p.status === 'WATCHLIST') return ['No repeat within monitoring window.','Escalate if fresh input repeats.'];
-                return ['No fresh input.','No aged WIP.'];
-            }
+            function focus(p){ if(p.recoveryEffectiveness === 'INEFFECTIVE') return 'Escalate recovery execution and verify root cause containment.'; if((p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') && p.velocityStatus === 'ACCELERATING') return 'Contain source before recovery execution.'; if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return 'Containment at source + recovery burn-down.'; if(p.status === 'CONTAINED') return 'Recovery burn-down. Source appears contained.'; if(p.status === 'WATCHLIST') return 'Monitor and validate repeatability.'; return 'No immediate recovery action.'; }
+            function exitCriteria(p){ if(p.status === 'ACTIVE' || p.status === 'CRITICAL_RECURRENCE') return ['No fresh input with same signature.','Source containment verified.','Aged bucket burn-down started.','Retest disposition validated.']; if(p.status === 'CONTAINED') return ['Bonepile below target.','No recurrence after recovery.','Effectiveness confirmed.']; if(p.status === 'WATCHLIST') return ['No repeat within monitoring window.','Escalate if fresh input repeats.']; return ['No fresh input.','No aged WIP.']; }
             function buildProblems(){
                 var groups = {};
-                ((yieldFlowModel && yieldFlowModel.rows) || []).forEach(function(row){
-                    var seed = normalizeSeed(row);
-                    var days = ageDays(row);
-                    var b = bucket(days);
-                    if(!b){ var st = [row && row.status,row && row.currentEvent,row && row.event,row && row.result,seed.station,seed.failureMode].join(' '); b = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(st) ? 'fresh' : 'age31_60'; }
-                    addProblem(groups,seed,1,b,days);
-                });
-                (serials || []).forEach(function(row){
-                    var seed = normalizeSeed(row);
-                    var days = ageDays(row);
-                    var b = bucket(days) || (n(row && row.reentry) > 0 ? 'age31_60' : 'fresh');
-                    addProblem(groups,seed,1,b,days);
-                });
-                stationRowsScoped.forEach(function(r){
-                    var f = topFailures && topFailures[0] ? topFailures[0] : {};
-                    var seed = normalizeSeed({customer:'Cisco',bu:scopeChips.join(' '),model:scopeModels[0]||'',failureMode:mainFailure(),defectType:mainFailure(),refdes:f.location||f.refdes||f.ref||'',component:f.component||f.location||f.refdes||'',station:r.station||'',process:'SMT',wo:scopeWos[0]||''});
-                    addProblem(groups,seed,bucketStationValue(r,'age0_30'),'fresh',15);
-                    addProblem(groups,seed,bucketStationValue(r,'age31_60'),'age31_60',45);
-                    addProblem(groups,seed,bucketStationValue(r,'age61_90'),'age61_90',75);
-                    addProblem(groups,seed,bucketStationValue(r,'age91_365'),'age91_365',180);
-                    addProblem(groups,seed,bucketStationValue(r,'ageOver365'),'ageOver365',420);
-                });
-                var list = Object.keys(groups).map(function(k){
-                    var g = groups[k], tr = trend(g), v = velocity(g,tr), s = status(g), sev = severity(g), src = sourceIntel(g), eff = recoveryEffectiveness(g,s,v);
-                    return Object.assign({},g,src,eff,{
-                        engineeringSignaturesList:Object.keys(g.engineeringSignatures).sort(function(a,b){return g.engineeringSignatures[b]-g.engineeringSignatures[a];}),
-                        affectedWOs:Object.keys(g.affectedWOsMap).length, affectedSerials:Object.keys(g.affectedSerialsMap).length || Math.round(g.agedUnits31Plus+g.freshInputUnits),
-                        topStation:topKey(g.stations),topModel:topKey(g.models),topLine:topKey(g.lines),topFailureMode:topKey(g.failureModes),
-                        firstSeenText:dateText(g.firstSeen),lastSeenText:dateText(g.lastSeen),
-                        velocity7d:g.last7,velocity30d:g.last30,velocity90d:g.last90,trend:tr,trendIcon:tr==='Increasing'?'↑':(tr==='Decreasing'?'↓':'→'),
-                        velocityStatus:v,velocityIcon:v==='ACCELERATING'?'↑':(v==='DECLINING'?'↓':(v==='NO_RECENT_INPUT'?'✓':'→')),
-                        status:s,severity:sev,rootCauseStatus:rootCauseStatus(s)
-                    });
-                }).filter(function(p){ return p.freshInputUnits > 0 || p.agedUnits31Plus > 0; });
-                var maxFresh = Math.max.apply(null,[1].concat(list.map(function(p){return p.freshInputUnits;})));
-                var maxOld = Math.max.apply(null,[1].concat(list.map(function(p){return p.oldUnits91Plus;})));
-                var maxTrace = Math.max.apply(null,[1].concat(list.map(function(p){return p.affectedSerials + p.affectedWOs*5;})));
-                list.forEach(function(p){
-                    p.__maxFresh=maxFresh; p.__maxOld=maxOld; p.__maxTrace=maxTrace;
-                    p.businessImpactScore=impactScore(p); p.businessImpactBand=band(p.businessImpactScore); p.recommendedFocus=focus(p); p.exitCriteria=exitCriteria(p);
-                });
-                list.sort(function(a,b){ return b.businessImpactScore-a.businessImpactScore || b.freshInputUnits-a.freshInputUnits || b.oldUnits91Plus-a.oldUnits91Plus || b.agedUnits31Plus-a.agedUnits31Plus; });
+                ((yieldFlowModel && yieldFlowModel.rows) || []).forEach(function(row){ var seed = normalizeSeed(row); var days = ageDays(row); var b = bucket(days); if(!b){ var st = [row && row.status,row && row.currentEvent,row && row.event,row && row.result,seed.station,seed.failureMode].join(' '); b = /FRESH|OPEN|FAIL|ACTIVE|INPUT/i.test(st) ? 'fresh' : 'age31_60'; } addProblem(groups,seed,1,b,days); });
+                (serials || []).forEach(function(row){ var seed = normalizeSeed(row); var days = ageDays(row); var b = bucket(days) || (n(row && row.reentry) > 0 ? 'age31_60' : 'fresh'); addProblem(groups,seed,1,b,days); });
+                stationRowsScoped.forEach(function(r){ var f = topFailures && topFailures[0] ? topFailures[0] : {}; var seed = normalizeSeed({customer:'Cisco',bu:scopeChips.join(' '),model:scopeModels[0]||'',failureMode:mainFailure(),defectType:mainFailure(),refdes:f.location||f.refdes||f.ref||'',component:f.component||f.location||f.refdes||'',station:r.station||'',process:'SMT',wo:scopeWos[0]||''}); addProblem(groups,seed,bucketStationValue(r,'age0_30'),'fresh',15); addProblem(groups,seed,bucketStationValue(r,'age31_60'),'age31_60',45); addProblem(groups,seed,bucketStationValue(r,'age61_90'),'age61_90',75); addProblem(groups,seed,bucketStationValue(r,'age91_365'),'age91_365',180); addProblem(groups,seed,bucketStationValue(r,'ageOver365'),'ageOver365',420); });
+                var list = Object.keys(groups).map(function(k){ var g = groups[k], tr = trend(g), v = velocity(g,tr), s = status(g), sev = severity(g), src = sourceIntel(g), eff = recoveryEffectiveness(g,s,v); return Object.assign({},g,src,eff,{engineeringSignaturesList:Object.keys(g.engineeringSignatures).sort(function(a,b){return g.engineeringSignatures[b]-g.engineeringSignatures[a];}),affectedWOs:Object.keys(g.affectedWOsMap).length,affectedSerials:Object.keys(g.affectedSerialsMap).length || Math.round(g.agedUnits31Plus+g.freshInputUnits),topStation:topKey(g.stations),topModel:topKey(g.models),topLine:topKey(g.lines),topFailureMode:topKey(g.failureModes),firstSeenText:dateText(g.firstSeen),lastSeenText:dateText(g.lastSeen),velocity7d:g.last7,velocity30d:g.last30,velocity90d:g.last90,trend:tr,trendIcon:tr==='Increasing'?'↑':(tr==='Decreasing'?'↓':'→'),velocityStatus:v,velocityIcon:v==='ACCELERATING'?'↑':(v==='DECLINING'?'↓':(v==='NO_RECENT_INPUT'?'✓':'→')),status:s,severity:sev,rootCauseStatus:rootCauseStatus(s)}); }).filter(function(p){ return p.freshInputUnits > 0 || p.agedUnits31Plus > 0; });
+                var maxFresh = Math.max.apply(null,[1].concat(list.map(function(p){return p.freshInputUnits;}))), maxOld = Math.max.apply(null,[1].concat(list.map(function(p){return p.oldUnits91Plus;}))), maxTrace = Math.max.apply(null,[1].concat(list.map(function(p){return p.affectedSerials + p.affectedWOs*5;})));
+                list.forEach(function(p){ p.__maxFresh=maxFresh; p.__maxOld=maxOld; p.__maxTrace=maxTrace; p.businessImpactScore=impactScore(p); p.businessImpactBand=band(p.businessImpactScore); p.recommendedFocus=focus(p); p.exitCriteria=exitCriteria(p); });
+                list.forEach(function(p){ p.actionScore = actionScoreForProblem(p); });
+                list.sort(function(a,b){ return b.actionScore-a.actionScore || b.businessImpactScore-a.businessImpactScore || b.freshInputUnits-a.freshInputUnits || b.oldUnits91Plus-a.oldUnits91Plus || b.agedUnits31Plus-a.agedUnits31Plus; });
                 return list;
             }
-            function healthIndex(problems){
-                var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length;
-                var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length;
-                var accel=problems.filter(function(p){return p.velocityStatus==='ACCELERATING';}).length;
-                var score=Math.max(0,Math.round(100-active*5-critical*12-accel*3));
-                return {score:score,label:score<55?'Critical':(score<80?'Watch':'Healthy')};
+            function healthIndex(problems){ var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length, critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length, accel=problems.filter(function(p){return p.velocityStatus==='ACCELERATING';}).length; var score=Math.max(0,Math.round(100-active*5-critical*12-accel*3)); return {score:score,label:score<55?'Critical':(score<80?'Watch':'Healthy')}; }
+            function recoveryRisk(p){ if(!p) return {level:'LOW',reason:['No active recovery priority detected.']}; var score=0,reasons=[]; if(p.freshInputUnits>0){score+=25;reasons.push('Fresh input still entering.')} if(p.velocityStatus==='ACCELERATING'){score+=25;reasons.push('Velocity is accelerating.')} if(p.oldUnits91Plus>0){score+=20;reasons.push('Large 91D+ exposure.')} if(p.businessImpactScore>=80){score+=20;reasons.push('High business impact.')} if(p.recoveryEffectiveness==='INEFFECTIVE'){score+=20;reasons.push('Recovery ineffective.')} return {level:score>=80?'CRITICAL':score>=55?'HIGH':score>=30?'MEDIUM':'LOW',reason:reasons.length?reasons:['Risk is controlled under current scope.']}; }
+
+            function impactSimulation(top){
+                top = top || {};
+                var fresh = n(top.freshInputUnits);
+                var bonepile = n(top.agedUnits31Plus);
+                var old91 = n(top.oldUnits91Plus);
+                var activeWos = n(top.affectedWOs);
+                var containmentConfidence = clamp(Math.round(62 + (top.sourceContributionPct || 0) * .28 + (top.velocityStatus === 'ACCELERATING' ? 6 : 0) + (top.status === 'CRITICAL_RECURRENCE' ? 4 : 0)), 55, 96);
+                var actionScore = clamp(Math.round((bonepile * (top.severity === 'CRITICAL' ? 1.15 : top.severity === 'HIGH' ? .95 : .65)) / Math.max(1, bonepile) * 35 + fresh / Math.max(1, fresh + 25) * 35 + old91 / Math.max(1, old91 + 50) * 20 + (top.velocityStatus === 'ACCELERATING' ? 10 : 4)), 0, 100);
+                return {
+                    symptom: top.problemName || executiveName(top.executiveSignature || 'Recovery Opportunity'),
+                    technicalSignature: top.executiveSignature || 'N/D',
+                    bonepile: bonepile,
+                    fresh: fresh,
+                    activeWos: activeWos,
+                    severity: top.severity || 'LOW',
+                    source: top.primarySource || 'N/D',
+                    line: top.primarySourceLine || 'N/D',
+                    wo: top.primarySourceWO || 'N/D',
+                    model: top.primarySourceModel || 'N/D',
+                    noAction30: fresh * 4,
+                    noAction60: fresh * 8,
+                    noAction90: fresh * 12,
+                    potentialRecovery: bonepile,
+                    expectedStabilizationDays: fresh > 0 ? 14 : 7,
+                    unitsProtectedPerWeek: fresh,
+                    confidence: containmentConfidence,
+                    actionScore: actionScore,
+                    expectedImpactStars: actionScore >= 90 ? '★★★★★' : actionScore >= 75 ? '★★★★☆' : actionScore >= 55 ? '★★★☆☆' : '★★☆☆☆',
+                    owner: top.sourceContributionPct > 50 ? 'Manufacturing Engineering' : 'Quality + Production',
+                    escalation: (top.status === 'CRITICAL_RECURRENCE' || actionScore >= 85) ? 'Required' : 'Monitor'
+                };
             }
-            function gmBullets(problems){
-                var top = problems[0] || null;
-                if(!top) return ['No active recovery priority detected.','No concentrated source identified.','Continue monitoring fresh input.'];
-                return [
-                    'Biggest active issue: ' + top.executiveSignature + ' with ' + fmt(top.agedUnits31Plus) + ' aged units and ' + fmt(top.freshInputUnits) + ' fresh units.',
-                    top.sourceContributionPct > 0 ? ('Main source: ' + top.primarySource + ' contributes ' + top.sourceContributionPct + '% of current input.') : 'Main source: distributed across multiple sources.',
-                    (top.status === 'ACTIVE' || top.status === 'CRITICAL_RECURRENCE') ? 'Decision: stop new input before recovery can be effective.' : 'Decision: focus recovery burn-down and monitor recurrence.'
-                ];
+            function executiveStory(top, sim){
+                if(!top || !sim) return 'No active recurrence is detected under the current scope. Continue monitoring fresh input and maintain recovery discipline.';
+                if(top.freshInputUnits > 0 && top.agedUnits31Plus > 0){
+                    return 'Active recurrence detected. The same problem currently exists in aged WIP and continues entering as fresh production. Recovery efforts alone will not eliminate the issue. Source containment at ' + sim.source + ' is recommended before executing burn-down activities. Expected protection: ' + fmt(sim.unitsProtectedPerWeek) + ' units per week. Potential recovery: ' + fmt(sim.potentialRecovery) + ' units.';
+                }
+                if(top.freshInputUnits === 0 && top.agedUnits31Plus > 0){
+                    return 'The source appears contained. No fresh input is currently detected for this symptom. Focus can shift to recovery burn-down of ' + fmt(sim.potentialRecovery) + ' aged units while monitoring recurrence.';
+                }
+                return 'Fresh symptoms are entering without a significant aged backlog. Treat this as an early signal and validate repeatability before it becomes long-term bonepile.';
             }
-            function makePlan(p, bullets){
-                return ['# Recovery Prioritization Plan - '+p.executiveSignature,'','## Executive Summary','- Business Impact Score: '+p.businessImpactScore+' / 100','- Recommended Focus: '+p.recommendedFocus,'- Primary Source: '+p.primarySource+' ('+p.sourceContributionPct+'%)','','## Source Intelligence','- Primary Station: '+p.primarySourceStation,'- Primary Line: '+p.primarySourceLine,'- Primary WO: '+p.primarySourceWO,'- Primary Model: '+p.primarySourceModel,'- Source Type: '+p.sourceBadge,'','## Problem Velocity','- 7D: '+fmt(p.velocity7d),'- 30D: '+fmt(p.velocity30d),'- 90D: '+fmt(p.velocity90d),'- Velocity Status: '+p.velocityIcon+' '+p.velocityStatus,'','## Recovery Effectiveness','- Current Bonepile: '+fmt(p.currentBonepile),'- Burn-down: '+p.burnDownPct+'%','- Effectiveness: '+p.recoveryEffectiveness,'','## Containment Strategy',p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'?'Apply containment at '+p.primarySource+' and verify no fresh input continues.':'Containment monitoring only.','','## Recovery Strategy',p.status==='WATCHLIST'?'Monitor and prevent aging.':'Prioritize 91D+ units and track burn-down by Executive Signature.','','## Exit Criteria',p.exitCriteria.map(function(x){return '- '+x;}).join('\n'),'','## What To Tell GM',bullets.map(function(x){return '- '+x;}).join('\n'),''].join('\n');
+            function actionScoreForProblem(p){
+                var sim = impactSimulation(p);
+                return sim.actionScore;
             }
-            function downloadPlan(p, bullets){ recoveryDownloadText('Recovery_Command_Center_Plan_'+bentoToken(p.executiveSignature).slice(0,120)+'.md',makePlan(p,bullets),'text/markdown;charset=utf-8;'); }
-            function exportBentoTsv(problems){
-                var headers=['Rank','Executive Signature','Business Impact Score','Status','Severity','Fresh Input','Bonepile 31D+','Old 91D+','Primary Source','Primary Source Station','Top WO','Top Line','Source Contribution %','Velocity','Recovery Effectiveness','Recommended Focus'];
-                var rows=problems.map(function(p,i){return [i+1,p.executiveSignature,p.businessImpactScore,p.status,p.severity,p.freshInputUnits,p.agedUnits31Plus,p.oldUnits91Plus,p.primarySource,p.primarySourceStation,p.primarySourceWO,p.primarySourceLine,p.sourceContributionPct,p.velocityStatus,p.recoveryEffectiveness,p.recommendedFocus];});
-                var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n');
-                recoveryDownloadText('Recovery_Command_Center_Bento.tsv',tsv,'text/tab-separated-values;charset=utf-8;');
-            }
-            function badge(text,cls){ return h('span',{className:'bento-badge '+(cls||'')},text); }
-            function mini(label,value,sub){ return h('span',{className:'bento-mini'},[h('em',null,label),h('b',null,value),sub?h('small',null,sub):null]); }
-            function problemCard(p,i,selectedKey){
-                var sel=selectedKey===p.executiveSignature;
-                return h('article',{className:'bento-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[
-                    h('div',{className:'bento-problem-top'},[h('b',null,'#'+(i+1)),badge(p.severity,p.severity.toLowerCase()),badge(p.status,'status')]),
-                    h('h4',null,p.shortExecutiveSignature),
-                    h('div',{className:'bento-problem-score'},[h('strong',null,p.businessImpactScore),h('span',null,'Business Impact')]),
-                    h('div',{className:'bento-problem-grid'},[mini('Bonepile',fmt(p.agedUnits31Plus)),mini('Fresh',fmt(p.freshInputUnits)),mini('Source',p.primarySource),mini('Velocity',p.velocityIcon+' '+p.velocityStatus)]),
-                    h('p',null,p.recommendedFocus)
+            function actionPriority(p, action){ var base=p?p.businessImpactScore:0; if(action==='CONTAIN_SOURCE_FIRST') base+=20; if(action==='IMMEDIATE_CONTAINMENT_REQUIRED') base+=18; if(action==='ESCALATE_RECOVERY_EXECUTION') base+=14; if(action==='TARGET_PRIMARY_SOURCE') base+=10; return clamp(base,0,100); }
+            function buildActions(problems){ var actions=[]; problems.slice(0,10).forEach(function(p){ if(p.freshInputUnits>0&&p.oldUnits91Plus>0) actions.push({type:'CONTAIN_SOURCE_FIRST',title:'CONTAIN '+(p.primarySource||'SOURCE'),problem:p.problemName,reason:fmt(p.freshInputUnits)+' fresh units still entering while '+fmt(p.oldUnits91Plus)+' units are already 91D+.',expected:'Stop growth of aged backlog.',priority:'CRITICAL',owner:'Quality + Production',score:actionPriority(p,'CONTAIN_SOURCE_FIRST'),source:p.primarySource,p:p}); if(p.velocityStatus==='ACCELERATING') actions.push({type:'IMMEDIATE_CONTAINMENT_REQUIRED',title:'IMMEDIATE CONTAINMENT',problem:p.problemName,reason:'Fresh input velocity is accelerating.',expected:'Prevent tomorrow input from becoming recovery exposure.',priority:'CRITICAL',owner:'Production + Process Engineering',score:actionPriority(p,'IMMEDIATE_CONTAINMENT_REQUIRED'),source:p.primarySource,p:p}); if(p.freshInputUnits===0&&p.agedUnits31Plus>20) actions.push({type:'FOCUS_ON_RECOVERY',title:'BURN DOWN AGED WIP',problem:p.problemName,reason:'Source appears contained and backlog remains.',expected:'Reduce recovery exposure.',priority:'HIGH',owner:'Repair Team',score:actionPriority(p,'FOCUS_ON_RECOVERY'),source:p.primarySource,p:p}); if(p.recoveryEffectiveness==='INEFFECTIVE') actions.push({type:'ESCALATE_RECOVERY_EXECUTION',title:'ESCALATE RECOVERY EXECUTION',problem:p.problemName,reason:'Recovery effectiveness is currently ineffective.',expected:'Restore burn-down execution and validate containment.',priority:'HIGH',owner:'Recovery Lead + Quality',score:actionPriority(p,'ESCALATE_RECOVERY_EXECUTION'),source:p.primarySource,p:p}); if(p.sourceContributionPct>50) actions.push({type:'TARGET_PRIMARY_SOURCE',title:'TARGET PRIMARY SOURCE',problem:p.problemName,reason:p.sourceContributionPct+'% of current signal is concentrated at '+p.primarySource+'.',expected:'Focus containment where it has the highest leverage.',priority:p.severity==='CRITICAL'?'CRITICAL':'HIGH',owner:'Quality + Area Owner',score:actionPriority(p,'TARGET_PRIMARY_SOURCE'),source:p.primarySource,p:p}); }); var seen={}; return actions.filter(function(a){var k=a.type+'|'+a.problem+'|'+a.source;if(seen[k])return false;seen[k]=1;return true;}).sort(function(a,b){return b.score-a.score || String(a.title).localeCompare(String(b.title));}).slice(0,8); }
+            function gmBullets(top){ if(!top) return ['No active recovery priority detected.','No concentrated source identified.','Continue monitoring fresh input.']; return ['Biggest active issue: '+top.problemName+' with '+fmt(top.agedUnits31Plus)+' aged units and '+fmt(top.freshInputUnits)+' fresh units.', top.sourceContributionPct>0?'Main source: '+top.primarySource+' contributes '+top.sourceContributionPct+'% of current input.':'Main source: distributed across multiple sources.', (top.status==='ACTIVE'||top.status==='CRITICAL_RECURRENCE')?'Decision: contain source before large-scale recovery.':'Decision: focus recovery burn-down and monitor recurrence.']; }
+            function playbookText(top, actions, risk, bullets){ top=top||{}; return ['# Recovery Playbook - '+(top.problemName||'Recovery Intel'),'','## Executive Summary',bullets.map(function(x){return '- '+x;}).join('\n'),'','## Current Condition','- Primary Issue: '+(top.problemName||'N/D'),'- Fresh Input: '+fmt(top.freshInputUnits||0),'- Bonepile: '+fmt(top.agedUnits31Plus||0),'- Old 91D+: '+fmt(top.oldUnits91Plus||0),'- Business Impact: '+(top.businessImpactScore||0),'','## Impact Simulation','- Units Protected Per Week: '+fmt((impactSimulation(top).unitsProtectedPerWeek)||0),'- Potential Recovery: '+fmt((impactSimulation(top).potentialRecovery)||0),'- 30 Day No-Action Projection: +'+fmt((impactSimulation(top).noAction30)||0),'- Confidence: '+((impactSimulation(top).confidence)||0)+'%','','## Source Intelligence','- Primary Source: '+(top.primarySource||'N/D'),'- Station: '+(top.primarySourceStation||'N/D'),'- Line: '+(top.primarySourceLine||'N/D'),'- WO: '+(top.primarySourceWO||'N/D'),'- Model: '+(top.primarySourceModel||'N/D'),'- Contribution: '+(top.sourceContributionPct||0)+'%','','## Containment Actions',actions.filter(function(a){return /CONTAIN|SOURCE/.test(a.type);}).map(function(a,i){return (i+1)+'. '+a.title+' - '+a.reason;}).join('\n') || 'N/D','','## Recovery Actions',actions.filter(function(a){return /RECOVERY|BURN/.test(a.type);}).map(function(a,i){return (i+1)+'. '+a.title+' - '+a.reason;}).join('\n') || 'N/D','','## Verification Plan','- Verify no fresh input with the same problem signature.','- Confirm containment at source.','- Validate recovered unit retest result before release.','','## Exit Criteria',(top.exitCriteria||[]).map(function(x){return '- '+x;}).join('\n') || '- N/D','','## What To Tell GM',bullets.map(function(x){return '- '+x;}).join('\n')].join('\n'); }
+            function downloadPlaybook(top, actions, risk, bullets, format){ var md=playbookText(top,actions,risk,bullets); if(format==='pdf'){ var html='<!doctype html><html><head><meta charset="utf-8"><title>SMTinel Recovery Playbook</title><style>body{font-family:Segoe UI,Arial,sans-serif;padding:40px;color:#102A43}pre{white-space:pre-wrap;font-family:Segoe UI,Arial,sans-serif;line-height:1.45}</style></head><body><pre>'+md.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];})+'</pre><scr'+'ipt>window.print();</scr'+'ipt></body></html>'; var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob); window.open(url,'_blank'); setTimeout(function(){URL.revokeObjectURL(url)},30000); return;} recoveryDownloadText('SMTinel_Recovery_Playbook_'+bentoToken(top.problemName||'Recovery').slice(0,80)+'.md',md,'text/markdown;charset=utf-8;'); }
+            function exportActionTsv(actions){ var headers=['Rank','Action','Problem','Reason','Expected Impact','Priority','Owner','Source','Score']; var rows=actions.map(function(a,i){return [i+1,a.title,a.problem,a.reason,a.expected,a.priority,a.owner,a.source,a.score];}); var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n'); recoveryDownloadText('Recovery_Action_Engine.tsv',tsv,'text/tab-separated-values;charset=utf-8;'); }
+            function badge(text,cls){ return h('span',{className:'action-badge '+(cls||'')},text); }
+            function mini(label,value,sub){ return h('span',{className:'action-mini'},[h('em',null,label),h('b',null,value),sub?h('small',null,sub):null]); }
+            function actionCard(a,i){ return h('article',{className:'action-card '+String(a.priority).toLowerCase()},[h('div',{className:'action-card-top'},[h('b',null,'ACTION #'+(i+1)),badge(a.priority,String(a.priority).toLowerCase())]),h('h3',null,a.title),h('dl',null,[h('dt',null,'Problem'),h('dd',null,a.problem),h('dt',null,'Reason'),h('dd',null,a.reason),h('dt',null,'Expected Impact'),h('dd',null,a.expected),h('dt',null,'Owner'),h('dd',null,a.owner)])]); }
+            function lifecycleStage(p){ if(!p) return 'Detection'; if(p.status==='WATCHLIST') return 'Detection'; if(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE') return p.sourceContributionPct>50?'Containment':'Detection'; if(p.status==='CONTAINED'&&p.agedUnits31Plus>0) return 'Recovery'; if(p.status==='CONTAINED'&&p.agedUnits31Plus===0) return 'Verification'; return 'Closure'; }
+            function timeline(p){ var stages=['Fresh Input','Detection','Containment','Recovery','Verification','Closure']; var active=lifecycleStage(p); return h('div',{className:'action-timeline'},stages.map(function(s,i){return h('span',{key:s,className:(s===active?'active':'')+(stages.indexOf(active)>i?' done':'')},[h('i',null,i+1),h('b',null,s)]);}));}
+            function problemCard(p,i,selectedKey){ var sel=selectedKey===p.executiveSignature; return h('article',{className:'action-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[h('div',{className:'action-problem-top'},[h('b',null,'#'+(i+1)),badge(p.severity,p.severity.toLowerCase()),badge(p.status,'status')]),h('h4',null,p.problemName),h('p',{className:'action-problem-sig'},p.executiveSignature),h('div',{className:'action-problem-score compact'},[h('strong',null,p.actionScore || p.businessImpactScore),h('span',null,'Action Score')]),h('div',{className:'action-problem-grid'},[mini('Bonepile',fmt(p.agedUnits31Plus)),mini('Fresh',fmt(p.freshInputUnits)),mini('Source',p.primarySource),mini('Velocity',p.velocityIcon+' '+p.velocityStatus)])]); }
+            function detailDrawer(p, actions, bullets, risk){ if(!p) return null; var related=actions.filter(function(a){return a.p===p;}); return h('aside',{className:'action-drawer'},[h('div',{className:'action-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';safeBentoRerender();}},'x')]),h('h3',null,p.problemName),h('p',null,p.executiveSignature),h('div',{className:'action-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),h('section',null,[h('h4',null,'Aging / Velocity'),mini('0-30D',fmt(p.fresh0_30)),mini('31-60D',fmt(p.age31_60)),mini('61-90D',fmt(p.age61_90)),mini('91D+',fmt(p.oldUnits91Plus)),mini('Status',p.velocityIcon+' '+p.velocityStatus)]),h('section',null,[h('h4',null,'Recommended Actions'),related.length?related.slice(0,4).map(function(a){return h('div',{className:'action-drawer-action',key:a.title+a.type},[h('b',null,a.title),h('small',null,a.reason)]);}):h('p',null,p.recommendedFocus)]),h('button',{type:'button',className:'action-primary',onClick:function(){downloadPlaybook(p,actions,risk,bullets,'md');}},'Generate Recovery Playbook')]); }
+
+            function opportunitySection(top){
+                var sim = impactSimulation(top);
+                return h('section',{className:'impact-opportunity'},[
+                    h('article',{className:'impact-card opportunity'},[
+                        h('span',{className:'impact-eyebrow'},'Recovery Opportunity'),
+                        h('h2',null,sim.symptom),
+                        h('details',{className:'technical-signature'},[h('summary',null,'Technical Signature'),h('code',null,sim.technicalSignature)]),
+                        h('div',{className:'impact-metric-grid'},[
+                            mini('Bonepile Units',fmt(sim.bonepile)),
+                            mini('Fresh Input',fmt(sim.fresh)),
+                            mini('Active WOs',fmt(sim.activeWos)),
+                            mini('Severity',sim.severity)
+                        ])
+                    ]),
+                    h('article',{className:'impact-card contained'},[
+                        h('span',{className:'impact-eyebrow'},'If Source Is Contained Today'),
+                        h('h3',null,'Fresh Input: '+fmt(sim.fresh)+' → 0'),
+                        h('div',{className:'impact-sim-grid'},[
+                            mini('Bonepile Growth','Stopped'),
+                            mini('Recovery Window','Open'),
+                            mini('Potential Recovery',fmt(sim.potentialRecovery)+' Units'),
+                            mini('Expected Stabilization',sim.expectedStabilizationDays+' Days'),
+                            mini('Status','Recommended')
+                        ])
+                    ]),
+                    h('article',{className:'impact-card noaction'},[
+                        h('span',{className:'impact-eyebrow'},'If No Action Is Taken'),
+                        h('h3',null,'Fresh Input: '+fmt(sim.fresh)+'/week'),
+                        h('div',{className:'impact-sim-grid'},[
+                            mini('30 Day Projection','+'+fmt(sim.noAction30)+' Units'),
+                            mini('60 Day Projection','+'+fmt(sim.noAction60)+' Units'),
+                            mini('90 Day Projection','+'+fmt(sim.noAction90)+' Units'),
+                            mini('Risk',sim.severity === 'CRITICAL' ? 'Critical' : 'High'),
+                            mini('Status','Escalate Immediately')
+                        ])
+                    ])
                 ]);
             }
-            function detailDrawer(p,bullets){
-                if(!p) return null;
-                return h('aside',{className:'bento-drawer'},[
-                    h('div',{className:'bento-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';safeBentoRerender();}},'×')]),
-                    h('h3',null,p.executiveSignature),
-                    h('div',{className:'bento-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),
-                    h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),
-                    h('section',null,[h('h4',null,'Velocity'),mini('7D',fmt(p.velocity7d)),mini('30D',fmt(p.velocity30d)),mini('90D',fmt(p.velocity90d)),mini('Status',p.velocityIcon+' '+p.velocityStatus)]),
-                    h('section',null,[h('h4',null,'Recovery Effectiveness'),mini('Bonepile',fmt(p.currentBonepile)),mini('Burn-down',p.burnDownPct+'%'),mini('Status',p.recoveryEffectiveness)]),
-                    h('section',null,[h('h4',null,'Affected Scope'),mini('WOs',fmt(p.affectedWOs)),mini('Serials',fmt(p.affectedSerials)),mini('Model',p.topModel),mini('Station',p.topStation)]),
-                    h('section',null,[h('h4',null,'Containment Plan'),h('p',null,p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE'?'Apply containment at '+p.primarySource+'. Segregate fresh input and validate station control.':'Monitor source and prevent recurrence.')]),
-                    h('section',null,[h('h4',null,'Recovery Plan'),h('p',null,p.status==='WATCHLIST'?'Prevent aging by monitoring repeated input.':'Prioritize oldest bucket and track burn-down daily.')]),
-                    h('button',{type:'button',className:'bento-primary',onClick:function(){downloadPlan(p,bullets);}},'Generate Recovery Plan')
+            function topExecutiveAction(top){
+                var sim = impactSimulation(top);
+                return h('article',{className:'top-executive-action'},[
+                    h('div',{className:'impact-eyebrow'},'Top Recommended Action'),
+                    h('div',{className:'top-action-layout'},[
+                        h('div',null,[h('h2',null,'Contain Source: '+sim.source),h('p',null,'Execute containment before recovery burn-down to prevent new aged backlog.')]),
+                        h('div',{className:'top-action-score'},[h('b',null,String(sim.actionScore)),h('span',null,'Action Score')])
+                    ]),
+                    h('div',{className:'top-action-grid'},[
+                        mini('Expected Impact',sim.expectedImpactStars),
+                        mini('Units Protected',fmt(sim.unitsProtectedPerWeek)+'/week'),
+                        mini('Confidence',sim.confidence+'%'),
+                        mini('Priority',sim.severity),
+                        mini('Action Owner',sim.owner),
+                        mini('Escalation',sim.escalation)
+                    ])
+                ]);
+            }
+            function executiveStoryCard(top){
+                var sim = impactSimulation(top);
+                return h('article',{className:'executive-story-card'},[
+                    h('span',{className:'impact-eyebrow'},'Executive Story'),
+                    h('p',null,executiveStory(top,sim))
                 ]);
             }
 
-            var problems=buildProblems();
-            var selectedKey=window.__SMTINEL_BENTO_SELECTED || '';
-            var selected=selectedKey ? (problems.filter(function(p){return p.executiveSignature===selectedKey;})[0] || null) : null;
-            var active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';});
-            var critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';});
-            var contained=problems.filter(function(p){return p.status==='CONTAINED';});
-            var watch=problems.filter(function(p){return p.status==='WATCHLIST';});
-            var accelerating=problems.filter(function(p){return p.velocityStatus==='ACCELERATING';});
-            var health=healthIndex(problems);
-            var largest=active[0] || problems[0] || null;
-            var bullets=gmBullets(problems);
-            return h('section',{className:'bento-recovery'},[
-                h('div',{className:'bento-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'SMTinel Recovery Command Center'),h('h2',null,'Recovery Intel Bento Enterprise'),h('p',null,'Identifica el problema que requiere atención inmediata sin leer tablas.')]),h('div',{className:'bento-actions'},[h('button',{type:'button',onClick:function(){exportBentoTsv(problems);}},'Export TSV'),h('button',{type:'button',onClick:function(){if(selected)downloadPlan(selected,bullets);}},'Generate Recovery Plan')])]),
-                h('div',{className:'bento-grid'},[
-                    h('article',{className:'bento-card health'},[h('span',null,'Recovery Health'),h('b',null,health.score),badge(health.label,health.label.toLowerCase())]),
-                    h('article',{className:'bento-card critical'},[h('span',null,'Critical Matches'),h('b',null,fmt(critical.length)),h('div',null,[mini('Fresh Input',fmt(critical.reduce(function(s,p){return s+p.freshInputUnits;},0))),mini('Old 91D+',fmt(critical.reduce(function(s,p){return s+p.oldUnits91Plus;},0)))])]),
-                    h('article',{className:'bento-card active'},[h('span',null,'Active Recurrence'),h('b',null,fmt(active.length)),h('div',null,[mini('Accelerating',fmt(accelerating.length)),mini('Contained',fmt(contained.length)),mini('Watchlist',fmt(watch.length))])]),
-                    h('article',{className:'bento-card largest'},[h('span',null,'Largest Active Problem'),h('h3',null,largest?largest.shortExecutiveSignature:'N/D'),h('div',{className:'bento-largest-score'},[h('b',null,largest?largest.businessImpactScore:'0'),h('em',null,'Business Impact')]),h('div',{className:'bento-largest-grid'},[mini('Bonepile',largest?fmt(largest.agedUnits31Plus):'0'),mini('Fresh Input',largest?fmt(largest.freshInputUnits):'0'),mini('Oldest Bucket',largest?fmt(largest.oldUnits91Plus):'0'),mini('Velocity',largest?largest.velocityIcon+' '+largest.velocityStatus:'N/D')])]),
-                    h('article',{className:'bento-card source'},[h('span',null,'Source Intelligence'),h('h3',null,largest?largest.primarySource:'N/D'),h('b',null,largest?largest.sourceContributionPct+'%':'0%'),h('div',null,[mini('Top WO',largest?largest.primarySourceWO:'N/D'),mini('Top Line',largest?largest.primarySourceLine:'N/D'),mini('Status',largest?largest.sourceBadge:'N/D')])]),
-                    h('article',{className:'bento-card gm'},[h('span',null,'What To Tell GM'),h('ul',null,bullets.map(function(x){return h('li',{key:x},x);} ))]),
-                    h('article',{className:'bento-card action'},[h('span',null,'Recommended Action'),h('div',{className:'bento-action-grid'},[h('div',null,[h('b',null,'STOP NEW INPUT'),h('p',null,largest?'Apply containment at '+largest.primarySource+'.':'No active source.')]),h('div',null,[h('b',null,'RECOVERY'),h('p',null,'Prioritize 91D+ and highest impact backlog.')]),h('div',null,[h('b',null,'VERIFY'),h('p',null,'Validate source containment before release.')])])])
-                ]),
-                h('section',{className:'bento-board'},[h('div',{className:'bento-section-head'},[h('h3',null,'Recovery Priority Board'),h('span',null,'Bento cards ranked by business impact')]),h('div',{className:'bento-board-grid'},problems.length?problems.slice(0,12).map(function(p,i){return problemCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No recovery priorities detected.'))]),
-                (selected ? detailDrawer(selected,bullets) : null),
-                h('details',{className:'bento-advanced'},[h('summary',null,'Advanced Analysis'),h('div',{className:'bento-table-wrap'},h('table',{className:'bento-table'},[h('thead',null,h('tr',null,['Rank','Severity','Status','Executive Signature','Business Impact','Fresh Input','Bonepile','Old 91D+','Source','Velocity','Recovery','Recommended Focus'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'bento-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,p.severity),h('td',null,p.status),h('td',null,p.shortExecutiveSignature),h('td',null,p.businessImpactScore),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,p.primarySource),h('td',null,p.velocityIcon+' '+p.velocityStatus),h('td',null,p.recoveryEffectiveness),h('td',null,p.recommendedFocus)]);} ))]))])
-            ]);
+            function lifecycleProgress(top){
+                var active = lifecycleStage(top);
+                var progress = {Detection:0,Containment:0,'Burn Down':0,Verification:0,Closure:0};
+                if(!top) return progress;
+                progress.Detection = 100;
+                if(top.status === 'ACTIVE' || top.status === 'CRITICAL_RECURRENCE'){
+                    progress.Containment = top.sourceContributionPct > 50 ? 70 : 40;
+                    progress['Burn Down'] = Math.max(0, Math.min(45, top.burnDownPct || 0));
+                } else if(top.status === 'CONTAINED'){
+                    progress.Containment = 100;
+                    progress['Burn Down'] = Math.max(30, Math.min(90, top.burnDownPct || 30));
+                    progress.Verification = top.agedUnits31Plus <= 0 ? 80 : 20;
+                } else if(top.status === 'WATCHLIST'){
+                    progress.Containment = 25;
+                } else {
+                    progress.Containment = 100;
+                    progress['Burn Down'] = 100;
+                    progress.Verification = 100;
+                    progress.Closure = 100;
+                }
+                return progress;
+            }
+            function compactMetric(label,value){
+                return h('div',{className:'tower-metric'},[h('span',null,label),h('b',null,value)]);
+            }
+            function towerProgress(label,value){
+                return h('div',{className:'tower-progress-row'},[
+                    h('span',null,label),
+                    h('b',null,String(value)+'%'),
+                    h('i',null,h('em',{style:{width:String(Math.max(4,Math.min(100,value)))+'%'}},''))
+                ]);
+            }
+            function executiveControlTower(top,problems,actions,health,risk,bullets){
+                var sim = impactSimulation(top);
+                var activeMatches = (problems||[]).filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length;
+                var criticalMatches = (problems||[]).filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length;
+                var expectedYield = top && top.status === 'CONTAINED' ? 94 : 92;
+                var potentialRecoveryUnits = Math.round(sim.potentialRecovery * expectedYield / 100);
+                var progress = lifecycleProgress(top);
+                return h('section',{className:'exec-control-tower'},[
+                    h('div',{className:'tower-top'},[
+                        h('article',{className:'tower-action'},[
+                            h('span',{className:'tower-eyebrow'},'Executive Recovery Control Tower'),
+                            h('h2',null,'Contain Source: '+sim.source),
+                            h('p',null,'Primary decision for tomorrow. Execute containment before burn-down to protect fresh input and unlock recovery.'),
+                            h('details',{className:'technical-signature tower-tech'},[h('summary',null,'Technical Signature'),h('code',null,sim.technicalSignature)])
+                        ]),
+                        h('article',{className:'tower-score'},[
+                            h('span',null,'Action Score'),
+                            h('b',null,String(sim.actionScore)),
+                            h('em',null,sim.severity)
+                        ])
+                    ]),
+                    h('div',{className:'tower-grid'},[
+                        h('article',{className:'tower-card top-action'},[
+                            h('h3',null,'Top Recommended Action'),
+                            h('div',{className:'tower-metrics'},[
+                                compactMetric('Priority',sim.severity),
+                                compactMetric('Confidence',sim.confidence+'%'),
+                                compactMetric('Units Protected',fmt(sim.unitsProtectedPerWeek)+'/week'),
+                                compactMetric('Recovery Potential',fmt(sim.potentialRecovery)+' Units'),
+                                compactMetric('Expected Closure',sim.expectedStabilizationDays+' Days'),
+                                compactMetric('Action Owner',sim.owner)
+                            ])
+                        ]),
+                        h('article',{className:'tower-card health-card'},[
+                            h('h3',null,'Recovery Health'),
+                            h('div',{className:'tower-health-number'},String(health.score)),
+                            h('div',{className:'tower-metrics two'},[
+                                compactMetric('Recurrence Risk',risk.level),
+                                compactMetric('Active Matches',activeMatches),
+                                compactMetric('Critical Matches',criticalMatches),
+                                compactMetric('Status',health.label)
+                            ])
+                        ]),
+                        h('article',{className:'tower-card simulation-card contained'},[
+                            h('h3',null,'If Source Is Contained Today'),
+                            h('div',{className:'tower-metrics'},[
+                                compactMetric('Fresh Input',fmt(sim.fresh)+' → 0'),
+                                compactMetric('Bonepile Growth','Stopped'),
+                                compactMetric('Recovery Window','Open'),
+                                compactMetric('Potential Recovery',fmt(sim.potentialRecovery)+' Units'),
+                                compactMetric('Stabilization',sim.expectedStabilizationDays+' Days'),
+                                compactMetric('Status','Recommended')
+                            ])
+                        ]),
+                        h('article',{className:'tower-card simulation-card noaction'},[
+                            h('h3',null,'If No Action Is Taken'),
+                            h('div',{className:'tower-metrics'},[
+                                compactMetric('Fresh Input',fmt(sim.fresh)+'/week'),
+                                compactMetric('30-Day Projection','+'+fmt(sim.noAction30)+' Units'),
+                                compactMetric('60-Day Projection','+'+fmt(sim.noAction60)+' Units'),
+                                compactMetric('90-Day Projection','+'+fmt(sim.noAction90)+' Units'),
+                                compactMetric('Risk',risk.level),
+                                compactMetric('Status','Escalate Immediately')
+                            ])
+                        ]),
+                        h('article',{className:'tower-card narrative-card'},[
+                            h('h3',null,'Executive Narrative'),
+                            h('p',null,executiveStory(top,sim))
+                        ]),
+                        h('article',{className:'tower-card value-card'},[
+                            h('h3',null,'Estimated Recovery Value'),
+                            h('div',{className:'tower-metrics'},[
+                                compactMetric('Bonepile Units',fmt(sim.potentialRecovery)),
+                                compactMetric('Expected Yield',expectedYield+'%'),
+                                compactMetric('Potential Recovery Units',fmt(potentialRecoveryUnits)),
+                                compactMetric('Business Impact',top ? top.businessImpactBand : 'N/D'),
+                                compactMetric('Priority',sim.severity)
+                            ])
+                        ])
+                    ]),
+                    h('section',{className:'tower-lifecycle'},[
+                        h('div',{className:'tower-section-title'},[h('h3',null,'Recovery Lifecycle'),h('span',null,'Detection → Containment → Burn Down → Verification → Closure')]),
+                        h('div',{className:'tower-flow'},['Detection','Containment','Burn Down','Verification','Closure'].map(function(stage){return h('div',{className:'tower-stage '+(progress[stage]>=100?'done':progress[stage]>0?'active':'')},[h('b',null,stage),h('span',null,String(progress[stage])+'%'),h('i',null,h('em',{style:{width:String(Math.max(4,progress[stage]))+'%'}},''))]);}))
+                    ])
+                ]);
+            }
+
+            function recoveryScoreLabel(score){
+                score = n(score);
+                if(score >= 90) return 'WORLD CLASS';
+                if(score >= 75) return 'HEALTHY';
+                if(score >= 50) return 'AT RISK';
+                return 'CRITICAL';
+            }
+            function stageDot(stage,label,value,current){
+                var done = value >= 100;
+                var active = current === stage || (!done && value > 0);
+                return h('div',{className:'ecc-stage '+(done?'done ':active?'active ':'pending ')},[
+                    h('span',{className:'ecc-dot'},done?'●':active?'●':'○'),
+                    h('b',null,label),
+                    h('em',null,String(value)+'%')
+                ]);
+            }
+
+            function readinessStatus(score){
+                score = n(score);
+                if(score >= 90) return 'READY';
+                if(score >= 75) return 'PREPARE';
+                if(score >= 50) return 'AT RISK';
+                return 'BLOCKED';
+            }
+            function confidenceLabel(score){
+                score = n(score);
+                if(score >= 90) return 'HIGH CONFIDENCE';
+                if(score >= 70) return 'MEDIUM CONFIDENCE';
+                if(score >= 50) return 'LOW CONFIDENCE';
+                return 'CRITICAL CONFIDENCE';
+            }
+            function etaStatus(days){
+                days = n(days);
+                if(days <= 14) return 'ON TRACK';
+                if(days <= 30) return 'WATCH';
+                return 'AT RISK';
+            }
+            function addDaysIso(days){
+                try{
+                    var d = new Date();
+                    d.setDate(d.getDate() + Math.max(0,Math.round(n(days))));
+                    return d.toISOString().slice(0,10);
+                }catch(_){ return 'N/D'; }
+            }
+            function recoveryExecutionModel(top,risk){
+                var sim = impactSimulation(top);
+                var contained = top && (top.status === 'CONTAINED' || top.status === 'CLOSED' || top.sourceContributionPct > 50);
+                var containment = top ? (top.status === 'CONTAINED' || top.status === 'CLOSED' ? 100 : Math.min(100, Math.max(35, n(top.sourceContributionPct)))) : 0;
+                var documentation = top ? Math.min(100, 80 + (top.affectedWOs > 0 ? 10 : 0) + (top.affectedSerials > 0 ? 10 : 0)) : 0;
+                var rcca = top ? (top.rootCauseStatus === 'Root Cause Not Contained' ? 72 : top.rootCauseStatus === 'Recovery Only' ? 88 : 64) : 0;
+                var verification = top ? (top.recoveryEffectiveness === 'EFFECTIVE' ? 92 : top.recoveryEffectiveness === 'PARTIAL' ? 78 : top.recoveryEffectiveness === 'INEFFECTIVE' ? 55 : 70) : 0;
+                var resources = top ? (sim.potentialRecovery > 0 ? 100 : 60) : 0;
+                var readiness = Math.round((containment*.28)+(documentation*.18)+(rcca*.20)+(verification*.20)+(resources*.14));
+                var blockers = [];
+                if(containment < 90) blockers.push('Containment not fully implemented');
+                if(rcca < 85) blockers.push('RCCA incomplete');
+                if(verification < 75) blockers.push('Verification plan missing');
+                if(resources < 90) blockers.push('Recovery resource capacity not confirmed');
+                if(sim.confidence < 80) blockers.push('Containment confidence below target');
+                var confidence = clamp(Math.round((containment*.25)+(Math.max(0,100-n(top && top.freshInputUnits)/Math.max(1,n(top && top.freshInputUnits)+25)*35))*.15+(rcca*.22)+(verification*.23)+(top && top.recoveryEffectiveness==='EFFECTIVE'?100:top && top.recoveryEffectiveness==='PARTIAL'?78:62)*.15),0,100);
+                var dailyBurn = Math.max(1, Math.round(Math.max(20, sim.potentialRecovery * .076)));
+                var etaDays = Math.ceil(sim.potentialRecovery / dailyBurn);
+                var expectedYield = top && top.status === 'CONTAINED' ? 94 : 92;
+                var potentialRecoverable = Math.round(sim.potentialRecovery * expectedYield / 100);
+                var nonRecoverable = Math.max(0, sim.potentialRecovery - potentialRecoverable);
+                return {
+                    containment: containment,
+                    documentation: documentation,
+                    rcca: rcca,
+                    verification: verification,
+                    resources: resources,
+                    readiness: readiness,
+                    readinessStatus: readinessStatus(readiness),
+                    blockers: blockers,
+                    executionStatus: blockers.length ? 'RECOVERY BLOCKED' : 'READY FOR EXECUTION',
+                    confidence: confidence,
+                    confidenceLabel: confidenceLabel(confidence),
+                    currentBonepile: sim.potentialRecovery,
+                    dailyBurn: dailyBurn,
+                    etaDays: etaDays,
+                    completionDate: addDaysIso(etaDays),
+                    etaStatus: etaStatus(etaDays),
+                    expectedYield: expectedYield,
+                    potentialRecoverable: potentialRecoverable,
+                    nonRecoverable: nonRecoverable,
+                    businessImpact: top ? top.businessImpactBand : 'N/D',
+                    priority: sim.severity,
+                    owner: top && top.status === 'CONTAINED' ? 'Recovery Team' : 'Quality Engineering',
+                    support: 'Manufacturing Engineering',
+                    supplier: 'No',
+                    customer: top && sim.severity === 'CRITICAL' ? 'Review' : 'No',
+                    responseSla: sim.severity === 'CRITICAL' ? '24 Hours' : '48 Hours',
+                    recommendedAction: blockers.length ? 'Close blockers before burn-down execution' : 'Start Burn-Down Execution'
+                };
+            }
+            function readinessCard(exec){
+                return h('article',{className:'rei-card readiness'},[
+                    h('span',{className:'ecc-eyebrow'},'Recovery Readiness'),
+                    h('div',{className:'rei-scoreline'},[h('b',null,String(exec.readiness)+'%'),h('em',{className:exec.readinessStatus.toLowerCase().replace(/\s+/g,'-')},exec.readinessStatus)]),
+                    h('div',{className:'rei-bars'},[
+                        towerProgress('Containment',exec.containment),
+                        towerProgress('Documentation',exec.documentation),
+                        towerProgress('RCCA',exec.rcca),
+                        towerProgress('Verification Plan',exec.verification),
+                        towerProgress('Resource Availability',exec.resources)
+                    ])
+                ]);
+            }
+            function blockersCard(exec){
+                var items = ['Containment not implemented','RCCA incomplete','Verification plan missing','Material unavailable','Test capacity unavailable','Customer approval pending'];
+                var lower = exec.blockers.map(function(x){return x.toLowerCase();});
+                return h('article',{className:'rei-card blockers '+(exec.blockers.length?'blocked':'ready')},[
+                    h('span',{className:'ecc-eyebrow'},'Recovery Blockers'),
+                    h('h3',null,exec.executionStatus),
+                    h('div',{className:'rei-checks'},items.map(function(item){
+                        var active = lower.some(function(x){ return x.indexOf(item.split(' ')[0].toLowerCase()) >= 0 || item.toLowerCase().indexOf(x.split(' ')[0]) >= 0; });
+                        return h('div',{className:'rei-check '+(active?'active':'clear')},[h('span',null,active?'□':'✓'),h('b',null,item)]);
+                    }))
+                ]);
+            }
+            function confidenceEtaValueCards(exec){
+                return h('div',{className:'rei-mini-grid'},[
+                    h('article',{className:'rei-card confidence'},[
+                        h('span',{className:'ecc-eyebrow'},'Recovery Confidence'),
+                        h('b',{className:'rei-big'},String(exec.confidence)+'%'),
+                        h('em',null,exec.confidenceLabel)
+                    ]),
+                    h('article',{className:'rei-card eta'},[
+                        h('span',{className:'ecc-eyebrow'},'Recovery ETA'),
+                        h('div',{className:'rei-eta-grid'},[
+                            compactMetric('Current Bonepile',fmt(exec.currentBonepile)),
+                            compactMetric('Expected Daily Burn',fmt(exec.dailyBurn)),
+                            compactMetric('Estimated Closure',String(exec.etaDays)+' Days'),
+                            compactMetric('Completion Date',exec.completionDate),
+                            compactMetric('Status',exec.etaStatus)
+                        ])
+                    ]),
+                    h('article',{className:'rei-card value'},[
+                        h('span',{className:'ecc-eyebrow'},'Recovery Value Engine'),
+                        h('div',{className:'rei-eta-grid'},[
+                            compactMetric('Potential Recovery',fmt(exec.potentialRecoverable)+' Units'),
+                            compactMetric('Non-Recoverable',fmt(exec.nonRecoverable)+' Units'),
+                            compactMetric('Recovery Yield',String(exec.expectedYield)+'%'),
+                            compactMetric('Business Impact',exec.businessImpact),
+                            compactMetric('Priority',exec.priority)
+                        ])
+                    ]),
+                    h('article',{className:'rei-card escalation'},[
+                        h('span',{className:'ecc-eyebrow'},'Escalation Engine'),
+                        h('h3',null,exec.readinessStatus === 'READY' ? 'Execution Owner' : 'Escalation Required'),
+                        h('div',{className:'rei-eta-grid'},[
+                            compactMetric('Owner',exec.owner),
+                            compactMetric('Support',exec.support),
+                            compactMetric('Supplier',exec.supplier),
+                            compactMetric('Customer',exec.customer),
+                            compactMetric('Priority',exec.priority),
+                            compactMetric('Response SLA',exec.responseSla)
+                        ])
+                    ])
+                ]);
+            }
+            function executionDecisionCard(exec,sim){
+                return h('article',{className:'rei-decision-card'},[
+                    h('span',{className:'ecc-eyebrow'},'Decision Engine'),
+                    h('h3',null,exec.recommendedAction),
+                    h('p',null,'There are '+fmt(exec.currentBonepile)+' units. Potential recovery is '+fmt(exec.potentialRecoverable)+' units with '+exec.confidence+'% confidence. Estimated closure is '+exec.etaDays+' days. Next owner: '+exec.owner+'.')
+                ]);
+            }
+
+            function dueDateText(hours){
+                var h = Math.max(1,n(hours));
+                try{
+                    var d = new Date();
+                    d.setHours(d.getHours()+h);
+                    return d.toISOString().slice(0,10) + ' ' + String(d.getHours()).padStart(2,'0') + ':00';
+                }catch(_){ return String(h)+' Hours'; }
+            }
+            function escalationLevel(hours){
+                hours = n(hours);
+                if(hours <= 24) return {label:'YELLOW', cls:'yellow', owner:'Quality Engineering'};
+                if(hours <= 48) return {label:'ORANGE', cls:'orange', owner:'Manufacturing Engineering'};
+                return {label:'RED', cls:'red', owner:'Operations Manager'};
+            }
+            function executionStage(exec){
+                if(exec.blockers.length) {
+                    if(exec.containment < 90) return 'Containment Required';
+                    if(exec.verification < 75) return 'Verification Required';
+                    return 'Recovery Blocked';
+                }
+                if(exec.readiness >= 90) return 'Burn-Down Ready';
+                return 'Recovery Blocked';
+            }
+            function buildExecutionActions(exec,top){
+                var actions = [];
+                function push(priority, action, owner, due, status, impact, age){
+                    var esc = escalationLevel(due);
+                    actions.push({
+                        priority: priority,
+                        action: action,
+                        owner: owner,
+                        dueHours: due,
+                        dueDate: dueDateText(due),
+                        status: status,
+                        readinessImpact: impact,
+                        age: age || 0,
+                        escalationLevel: esc.label,
+                        escalationClass: esc.cls,
+                        escalationOwner: esc.owner
+                    });
+                }
+                if(exec.containment < 90) push('Critical','Create Containment Plan','Quality Engineering',24,'OPEN',44,3);
+                if(exec.rcca < 85) push('High','RCCA Completion / Approval','Quality Engineering',48,'OPEN',28,2);
+                if(exec.verification < 75) push('High','Verification Strategy Approval','Manufacturing Engineering',48,'OPEN',30,2);
+                if(exec.resources < 90) push('Medium','Confirm Test / Repair Capacity','Production',72,'WAITING',18,1);
+                if(exec.documentation < 95) push('Medium','Complete Recovery Documentation','Quality Engineering',72,'WAITING',14,1);
+                if(!actions.length){
+                    push('Critical','Start Burn-Down Execution',exec.owner,24,'READY',34,3);
+                    push('High','Daily Recovery Tracking','Production',48,'OPEN',16,1);
+                    push('Medium','Effectiveness Verification','Quality Engineering',72,'WAITING',18,1);
+                }
+                var pWeight = {Critical:4,High:3,Medium:2,Low:1};
+                actions.sort(function(a,b){
+                    return (pWeight[b.priority]-pWeight[a.priority]) || (b.readinessImpact-a.readinessImpact) || (b.age-a.age) || (a.dueHours-b.dueHours);
+                });
+                return actions;
+            }
+            function executionPath(exec){
+                var current = executionStage(exec);
+                var steps = ['Recovery Blocked','Containment Required','Verification Required','Burn-Down Ready','Recovery Execution','Closure'];
+                return h('article',{className:'ree-path-card'},[
+                    h('span',{className:'ecc-eyebrow'},'Recovery Execution Path'),
+                    h('div',{className:'ree-path'},steps.map(function(step,i){
+                        var done = steps.indexOf(current) > i;
+                        var active = current === step;
+                        return h('div',{className:'ree-path-step '+(done?'done ':active?'active ':'pending ')},[
+                            h('span',null,done?'●':active?'●':'○'),
+                            h('b',null,step)
+                        ]);
+                    }))
+                ]);
+            }
+            function nextActionsSection(exec,top){
+                var q = buildExecutionActions(exec,top);
+                var projected = Math.min(100, exec.readiness + (q[0] ? q[0].readinessImpact : 0));
+                return h('section',{className:'ree-next-actions'},[
+                    h('div',{className:'ecc-section-title'},[
+                        h('h3',null,'Next Actions'),
+                        h('span',null,'Executable tasks generated from blockers')
+                    ]),
+                    h('div',{className:'ree-action-grid'},q.slice(0,3).map(function(a,i){
+                        return h('article',{className:'ree-action-card '+a.priority.toLowerCase()},[
+                            h('div',{className:'ree-action-top'},[
+                                h('span',null,'Priority: '+a.priority),
+                                h('em',{className:a.escalationClass},a.escalationLevel)
+                            ]),
+                            h('h4',null,a.action),
+                            h('div',{className:'ree-action-meta'},[
+                                compactMetric('Owner',a.owner),
+                                compactMetric('Due',a.dueHours+' Hours'),
+                                compactMetric('Status',a.status),
+                                compactMetric('Readiness Impact','+'+a.readinessImpact+' pts')
+                            ]),
+                            i===0 ? h('p',null,'Recovery readiness will increase from '+exec.readiness+'% to '+projected+'%.') : null
+                        ]);
+                    }))
+                ]);
+            }
+            function executiveActionQueue(exec,top){
+                var q = buildExecutionActions(exec,top);
+                return h('section',{className:'ree-queue'},[
+                    h('div',{className:'ecc-section-title'},[
+                        h('h3',null,'Executive Action Queue'),
+                        h('span',null,'Sorted by criticality, readiness impact and age')
+                    ]),
+                    h('div',{className:'ree-queue-table'},[
+                        h('div',{className:'ree-queue-head'},['Priority','Action','Owner','Due Date','Escalation Level','Status'].map(function(x){return h('b',null,x);})),
+                        q.map(function(a){
+                            return h('div',{className:'ree-queue-row '+a.priority.toLowerCase()},[
+                                h('span',null,a.priority),
+                                h('span',null,a.action),
+                                h('span',null,a.owner),
+                                h('span',null,a.dueDate),
+                                h('span',{className:'ree-escalation '+a.escalationClass},a.escalationLevel+' · '+a.escalationOwner),
+                                h('span',null,a.status)
+                            ]);
+                        })
+                    ])
+                ]);
+            }
+            function execCommandCenter(top,problems,actions,health,risk,bullets){
+                var sim = impactSimulation(top);
+                var activeMatches = (problems||[]).filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}).length;
+                var criticalMatches = (problems||[]).filter(function(p){return p.status==='CRITICAL_RECURRENCE';}).length;
+                var progress = lifecycleProgress(top);
+                var exec = recoveryExecutionModel(top,risk);
+                var expectedYield = top && top.status === 'CONTAINED' ? 94 : 92;
+                var potentialRecoveryUnits = Math.round(sim.potentialRecovery * expectedYield / 100);
+                var recoveryScore = health.score;
+                var label = recoveryScoreLabel(recoveryScore);
+                var currentStage = progress.Closure >= 100 ? 'Closure' : progress.Verification > 0 ? 'Verification' : progress['Burn Down'] > 0 ? 'Burn Down' : progress.Containment > 0 ? 'Containment' : 'Detection';
+                return h('section',{className:'ecc-shell'},[
+                    h('div',{className:'ecc-main'},[
+                        h('article',{className:'ecc-command-card'},[
+                            h('span',{className:'ecc-eyebrow'},'Execute Tomorrow'),
+                            h('h2',null,'Contain '+sim.source),
+                            h('div',{className:'ecc-command-grid'},[
+                                compactMetric('Recommended Action','Contain Source'),
+                                compactMetric('Source Station',sim.source),
+                                compactMetric('Units Protected',fmt(sim.unitsProtectedPerWeek)+'/week'),
+                                compactMetric('Potential Recovery',fmt(sim.potentialRecovery)+' Units'),
+                                compactMetric('Confidence',sim.confidence+'%'),
+                                compactMetric('Risk Level',risk.level),
+                                compactMetric('Expected Closure',sim.expectedStabilizationDays+' Days')
+                            ])
+                        ]),
+                        h('article',{className:'ecc-gm-card'},[
+                            h('span',{className:'ecc-eyebrow'},'GM Summary'),
+                            h('h3',null,sim.symptom),
+                            h('div',{className:'ecc-gm-list'},[
+                                compactMetric('Current Bonepile',fmt(sim.bonepile)),
+                                compactMetric('Fresh Input',fmt(sim.fresh)+'/week'),
+                                compactMetric('If Action Taken','Contained'),
+                                compactMetric('If No Action','+'+fmt(sim.noAction30)+' in 30 Days'),
+                                compactMetric('Recommendation','Contain '+sim.source+' Immediately')
+                            ]),
+                            h('details',{className:'technical-signature ecc-tech'},[h('summary',null,'Technical Signature'),h('code',null,sim.technicalSignature)])
+                        ])
+                    ]),
+                    h('div',{className:'ecc-support'},[
+                        h('article',{className:'ecc-score-card'},[
+                            h('span',{className:'ecc-eyebrow'},'Recovery Score'),
+                            h('b',null,String(recoveryScore)),
+                            h('em',null,label),
+                            h('small',null,'/ 100')
+                        ]),
+                        h('article',{className:'ecc-health-card'},[
+                            h('span',{className:'ecc-eyebrow'},'Recovery Health'),
+                            h('div',{className:'ecc-health-grid'},[
+                                compactMetric('Recovery Health',recoveryScore),
+                                compactMetric('Recurrence Risk',risk.level),
+                                compactMetric('Active Matches',activeMatches),
+                                compactMetric('Critical Matches',criticalMatches)
+                            ])
+                        ]),
+                        h('article',{className:'ecc-value-card'},[
+                            h('span',{className:'ecc-eyebrow'},'Estimated Recovery Value'),
+                            h('div',{className:'ecc-health-grid'},[
+                                compactMetric('Bonepile Units',fmt(sim.potentialRecovery)),
+                                compactMetric('Expected Yield',expectedYield+'%'),
+                                compactMetric('Potential Recovery Units',fmt(potentialRecoveryUnits)),
+                                compactMetric('Business Impact',top ? top.businessImpactBand : 'N/D'),
+                                compactMetric('Priority',sim.severity)
+                            ])
+                        ])
+                    ]),
+                    h('article',{className:'ecc-narrative'},[
+                        h('span',{className:'ecc-eyebrow'},'Executive Narrative'),
+                        h('p',null,executiveStory(top,sim))
+                    ]),
+                    h('article',{className:'ecc-lifecycle rei-lifecycle'},[
+                        h('div',{className:'ecc-section-title'},[h('h3',null,'Recovery Lifecycle'),h('span',null,'Detection → Containment → Burn Down → Verification → Closure')]),
+                        h('div',{className:'ecc-stage-row vertical'},[
+                            stageDot('Detection','Detection',progress.Detection,currentStage),
+                            stageDot('Containment','Containment',progress.Containment,currentStage),
+                            stageDot('Burn Down','Burn Down',progress['Burn Down'],currentStage),
+                            stageDot('Verification','Verification',progress.Verification,currentStage),
+                            stageDot('Closure','Closure',progress.Closure,currentStage)
+                        ])
+                    ]),readinessCard(exec),nextActionsSection(exec,top),executionPath(exec),blockersCard(exec),confidenceEtaValueCards(exec),executionDecisionCard(exec,sim),executiveActionQueue(exec,top)
+                ]);
+            }
+            function kanbanPriorityBoard(problems,selectedKey){
+                var buckets = ['CRITICAL','HIGH','MEDIUM','LOW'];
+                var grouped = {};
+                buckets.forEach(function(b){ grouped[b] = []; });
+                (problems||[]).forEach(function(p){ (grouped[p.severity] || grouped.LOW).push(p); });
+                buckets.forEach(function(b){ grouped[b].sort(function(a,c){ return (c.actionScore||0)-(a.actionScore||0); }); });
+                function card(p,i){
+                    return h('article',{className:'ecc-kanban-card '+p.severity.toLowerCase()+(selectedKey===p.executiveSignature?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[
+                        h('div',{className:'ecc-kanban-top'},[h('b',null,'#'+(i+1)),h('span',null,String(p.actionScore||p.businessImpactScore))]),
+                        h('h4',null,p.problemName),
+                        h('div',{className:'ecc-kanban-metrics'},[
+                            compactMetric('Bonepile',fmt(p.agedUnits31Plus)),
+                            compactMetric('Fresh',fmt(p.freshInputUnits)),
+                            compactMetric('Action',p.recommendedFocus),
+                            compactMetric('Status',p.status)
+                        ])
+                    ]);
+                }
+                return h('section',{className:'ecc-kanban-board'},[
+                    h('div',{className:'ecc-section-title'},[h('h3',null,'Recovery Priority Board'),h('span',null,'Kanban grouped by severity. Sorted by Action Score.')]),
+                    h('div',{className:'ecc-kanban-grid'},buckets.map(function(b){
+                        return h('section',{className:'ecc-kanban-lane '+b.toLowerCase(),key:b},[
+                            h('header',null,[h('b',null,b),h('span',null,String(grouped[b].length))]),
+                            h('div',{className:'ecc-kanban-cards'},grouped[b].slice(0,6).map(card))
+                        ]);
+                    }))
+                ]);
+            }
+            function decisionCard(top){ return h('article',{className:'decision-card'},[h('div',{className:'smtinel-ri-eyebrow'},"Today's Executive Decision"),h('h2',null,top?top.problemName:'No active priority'),h('div',{className:'decision-grid'},[mini('Fresh Input',top?fmt(top.freshInputUnits):'0'),mini('Bonepile',top?fmt(top.agedUnits31Plus):'0'),mini('Primary Source',top?top.primarySource:'N/D'),mini('Business Impact',top?String(top.businessImpactScore):'0')]),h('p',null,top&&(top.status==='ACTIVE'||top.status==='CRITICAL_RECURRENCE')?'Decision: contain source before executing large-scale recovery.':'Decision: focus recovery burn-down and monitoring.')]); }
+            function agingExposure(top){ var max=Math.max(1,top?Math.max(top.fresh0_30,top.age31_60,top.age61_90,top.oldUnits91Plus,top.longTermUnits365Plus):1); function bar(label,val){return h('div',{className:'aging-row'},[h('span',null,label),h('b',null,fmt(val)),h('i',null,h('em',{style:{width:Math.max(4,Math.round(val/max*100))+'%'}},''))]);} return h('article',{className:'action-bento-card aging'},[h('span',null,'Aging Exposure'),bar('0-30D',top?top.fresh0_30:0),bar('31-60D',top?top.age31_60:0),bar('61-90D',top?top.age61_90:0),bar('91-365D',top?Math.max(0,(top.oldUnits91Plus||0)-(top.longTermUnits365Plus||0)):0),bar('>365D',top?top.longTermUnits365Plus:0)]); }
+            var problems=buildProblems(), selectedKey=window.__SMTINEL_BENTO_SELECTED||'', selected=selectedKey?(problems.filter(function(p){return p.executiveSignature===selectedKey;})[0]||null):null, top=selected||problems[0]||null, health=healthIndex(problems), risk=recoveryRisk(top), actions=buildActions(problems), bullets=gmBullets(top), active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}), critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}), contained=problems.filter(function(p){return p.status==='CONTAINED';});
+            return h('section',{className:'action-engine'},[h('div',{className:'action-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Action Engine'),h('h2',null,'What do we do tomorrow?'),h('p',null,'SMTinel convierte recurrencia, fuente, aging y efectividad en dirección operativa priorizada.')]),h('div',{className:'action-hero-buttons'},[h('button',{type:'button',onClick:function(){exportActionTsv(actions);}},'Export Actions'),h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'md');}},'Generate Recovery Playbook'),h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'pdf');}},'PDF')])]),execCommandCenter(top,problems,actions,health,risk,bullets),h('section',{className:'action-board compact-actions'},[h('div',{className:'action-section-head'},[h('h3',null,"Today's Recovery Priorities"),h('span',null,'Actions first. Data second.')]),h('div',{className:'action-card-grid'},actions.length?actions.slice(0,6).map(actionCard):h('div',{className:'ri-aging-empty'},'No actions generated under current scope.'))]),h('div',{className:'action-bento-grid'},[h('article',{className:'action-bento-card health'},[h('span',null,'Recovery Health'),h('b',null,health.score),badge(health.label,health.label.toLowerCase())]),h('article',{className:'action-bento-card risk '+risk.level.toLowerCase()},[h('span',null,'Recovery Risk'),h('b',null,risk.level),h('ul',null,risk.reason.map(function(x){return h('li',{key:x},x);} ))]),agingExposure(top),h('article',{className:'action-bento-card gm'},[h('span',null,'What To Tell GM'),h('ul',null,bullets.map(function(x){return h('li',{key:x},x);} ))]),h('article',{className:'action-bento-card lifecycle'},[h('span',null,'Problem Lifecycle'),timeline(top)])]),kanbanPriorityBoard(problems,selectedKey),h('section',{className:'action-problem-board legacy-priority-board'},[h('div',{className:'action-section-head'},[h('h3',null,'Legacy Priority Board'),h('span',null,'Problem cards ranked by impact')]),h('div',{className:'action-problem-grid'},problems.length?problems.slice(0,12).map(function(p,i){return problemCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No recovery priorities detected.'))]),detailDrawer(selected,actions,bullets,risk),h('details',{className:'action-advanced'},[h('summary',null,'Advanced Analysis'),h('div',{className:'action-table-wrap'},h('table',{className:'action-table'},[h('thead',null,h('tr',null,['Rank','Problem','Executive Signature','Action Score','Impact','Status','Severity','Fresh','Bonepile','91D+','Source','Velocity','Recovery','Focus'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'action-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,p.problemName),h('td',null,p.executiveSignature),h('td',null,p.actionScore || p.businessImpactScore),h('td',null,p.businessImpactScore),h('td',null,p.status),h('td',null,p.severity),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,p.primarySource),h('td',null,p.velocityIcon+' '+p.velocityStatus),h('td',null,p.recoveryEffectiveness),h('td',null,p.recommendedFocus)]);} ))]))])]);
         }
 
         function recoveryExportCsvCell(value){
@@ -50751,6 +51190,697 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
     margin-top:0!important;
     order:4;
   }
+}
+</style>
+
+
+<style id="smtinel-recovery-action-engine-style">
+#recovery-section .bento-recovery{display:none!important}
+#recovery-section .action-engine{display:flex;flex-direction:column;gap:16px;color:#102A43}
+#recovery-section .action-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;background:linear-gradient(135deg,#071A33,#102A43 58%,#081524);color:#fff;border-radius:28px;padding:24px;box-shadow:0 22px 60px rgba(16,42,67,.22);position:relative;overflow:hidden}
+#recovery-section .action-hero h2{margin:4px 0;color:#fff!important;font-size:36px;letter-spacing:-.045em}
+#recovery-section .action-hero p{margin:0;color:rgba(255,255,255,.82);font-size:14px}
+#recovery-section .action-hero-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+#recovery-section .action-hero button,#recovery-section .action-primary{border:1px solid rgba(210,232,255,.24);background:#1f6feb;color:#fff;border-radius:999px;padding:11px 16px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 10px 22px rgba(31,111,235,.18)}
+#recovery-section .decision-card,#recovery-section .action-board,#recovery-section .action-bento-card,#recovery-section .action-problem-board,#recovery-section .action-advanced,#recovery-section .action-drawer{background:rgba(255,255,255,.90);border:1px solid rgba(178,196,214,.62);border-radius:28px;padding:20px;box-shadow:0 18px 44px rgba(16,42,67,.10),inset 0 1px 0 rgba(255,255,255,.90);backdrop-filter:blur(18px) saturate(1.2);color:#102A43}
+#recovery-section .decision-card{background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(235,245,255,.92));border-left:6px solid #1f6feb}
+#recovery-section .decision-card h2{margin:8px 0;color:#102A43;font-size:34px;letter-spacing:-.04em}
+#recovery-section .decision-card p{margin:12px 0 0;color:#334E68;font-size:18px;font-weight:900}
+#recovery-section .decision-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#recovery-section .action-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+#recovery-section .action-section-head h3{margin:0;color:#102A43;font-size:19px;letter-spacing:-.02em}
+#recovery-section .action-section-head span,#recovery-section .action-bento-card>span{display:block;color:#627D98;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+#recovery-section .action-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+#recovery-section .action-card{background:#fff;border:1px solid rgba(178,196,214,.66);border-left:6px solid #4d96ff;border-radius:24px;padding:18px;box-shadow:0 14px 34px rgba(16,42,67,.08)}
+#recovery-section .action-card.critical{border-left-color:#ff6b6b}.action-card.high{border-left-color:#ffb84d}.action-card.medium{border-left-color:#ffd93d}.action-card.low{border-left-color:#4d96ff}
+#recovery-section .action-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#recovery-section .action-card-top>b{background:#102A43;color:#fff;border-radius:12px;padding:6px 9px;font-size:12px}
+#recovery-section .action-card h3{margin:14px 0;color:#102A43;font-size:24px;letter-spacing:-.03em}
+#recovery-section .action-card dl{display:grid;grid-template-columns:120px 1fr;gap:8px;margin:0}
+#recovery-section .action-card dt{color:#627D98;font-size:11px;font-weight:950;text-transform:uppercase}
+#recovery-section .action-card dd{margin:0;color:#102A43;font-weight:850}
+#recovery-section .action-bento-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#recovery-section .action-bento-card.health b{display:block;font-size:68px;line-height:.95;margin:12px 0;color:#102A43}
+#recovery-section .action-bento-card.risk b{display:block;font-size:38px;margin:12px 0;color:#102A43}
+#recovery-section .action-bento-card.risk.critical{border-color:rgba(255,107,107,.75);border-left:6px solid #ff6b6b}
+#recovery-section .action-bento-card.risk.high{border-left:6px solid #ffb84d}
+#recovery-section .action-bento-card.risk.medium{border-left:6px solid #ffd93d}
+#recovery-section .action-bento-card ul{margin:12px 0 0;padding-left:20px;color:#334E68;line-height:1.55}
+#recovery-section .action-bento-card.lifecycle{grid-column:span 3}
+#recovery-section .action-mini{display:block;background:#f4f8fc;border:1px solid rgba(178,196,214,.56);border-radius:18px;padding:12px;min-width:0}
+#recovery-section .action-mini em{display:block;color:#627D98;font-size:10px;font-style:normal;font-weight:950;text-transform:uppercase}
+#recovery-section .action-mini b{display:block;color:#102A43;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recovery-section .action-mini small{display:block;color:#334E68;font-size:10px;margin-top:2px}
+#recovery-section .action-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:950;color:#fff;background:#1f6feb}
+#recovery-section .action-badge.healthy{background:#22c55e}.action-badge.watch{background:#f59e0b}.action-badge.critical{background:#ef4444}.action-badge.high{background:#ffb84d;color:#102A43}.action-badge.medium{background:#ffd93d;color:#102A43}.action-badge.low{background:#4d96ff}.action-badge.status{background:#334E68}
+#recovery-section .aging-row{display:grid;grid-template-columns:80px 70px 1fr;gap:10px;align-items:center;margin-top:12px}
+#recovery-section .aging-row span{color:#627D98;font-size:11px;font-weight:950}
+#recovery-section .aging-row b{color:#102A43}
+#recovery-section .aging-row i{height:10px;background:#e5edf5;border-radius:999px;overflow:hidden}
+#recovery-section .aging-row em{display:block;height:100%;background:linear-gradient(90deg,#1f6feb,#22c55e);border-radius:999px}
+#recovery-section .action-timeline{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:18px}
+#recovery-section .action-timeline span{position:relative;background:#f4f8fc;border:1px solid rgba(178,196,214,.56);border-radius:18px;padding:14px;text-align:center}
+#recovery-section .action-timeline span.active{outline:2px solid #1f6feb;background:#eaf4ff}
+#recovery-section .action-timeline span.done{background:#ecfdf3}
+#recovery-section .action-timeline i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:#102A43;color:#fff;font-style:normal;font-weight:900;margin-bottom:6px}
+#recovery-section .action-timeline b{display:block;color:#102A43;font-size:12px}
+#recovery-section .action-problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+#recovery-section .action-problem-card{background:#fff;border:1px solid rgba(178,196,214,.64);border-left:5px solid #4d96ff;border-radius:24px;padding:16px;box-shadow:0 12px 30px rgba(16,42,67,.08);cursor:pointer;color:#102A43;min-height:270px}
+#recovery-section .action-problem-card.critical{border-left-color:#ff6b6b}.action-problem-card.high{border-left-color:#ffb84d}.action-problem-card.medium{border-left-color:#ffd93d}.action-problem-card.low{border-left-color:#4d96ff}
+#recovery-section .action-problem-card.selected{outline:2px solid #1f6feb;box-shadow:0 0 0 5px rgba(31,111,235,.14)}
+#recovery-section .action-problem-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#recovery-section .action-problem-top>b{background:#102A43;color:#fff;border-radius:10px;padding:5px 8px}
+#recovery-section .action-problem-card h4{margin:12px 0 2px;color:#102A43;font-size:22px;line-height:1.12}
+#recovery-section .action-problem-sig{margin:0 0 10px;color:#627D98;font-size:11px}
+#recovery-section .action-problem-score{display:flex;align-items:end;gap:8px;margin-bottom:10px}
+#recovery-section .action-problem-score strong{font-size:46px;color:#102A43;line-height:.9}
+#recovery-section .action-problem-score span{color:#627D98;font-size:11px;font-weight:950;text-transform:uppercase}
+#recovery-section .action-drawer{position:fixed;right:24px;top:90px;bottom:96px;width:min(480px,calc(100vw - 32px));z-index:50;overflow:auto}
+#recovery-section .action-drawer-head{display:flex;justify-content:space-between;align-items:center;color:#627D98;font-size:11px;font-weight:950;text-transform:uppercase}
+#recovery-section .action-drawer-head button{border:0;background:#102A43;color:#fff;border-radius:999px;width:32px;height:32px;cursor:pointer}
+#recovery-section .action-drawer h3{color:#102A43;font-size:26px;margin:10px 0 2px}
+#recovery-section .action-drawer>p{color:#627D98;margin:0}
+#recovery-section .action-drawer-score b{font-size:64px;color:#102A43}
+#recovery-section .action-drawer-score span{color:#334E68;font-weight:900}
+#recovery-section .action-drawer section{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#recovery-section .action-drawer h4{grid-column:1/-1;margin:0;color:#102A43}
+#recovery-section .action-drawer-action{grid-column:1/-1;background:#f4f8fc;border:1px solid rgba(178,196,214,.56);border-radius:16px;padding:12px}
+#recovery-section .action-drawer-action b{display:block;color:#102A43}
+#recovery-section .action-drawer-action small{display:block;color:#334E68;margin-top:3px}
+#recovery-section .action-advanced summary{cursor:pointer;color:#102A43;font-weight:950;font-size:16px}
+#recovery-section .action-table-wrap{overflow:auto;margin-top:12px;border-radius:18px;border:1px solid rgba(178,196,214,.62)}
+#recovery-section .action-table{width:100%;border-collapse:collapse;color:#102A43;font-size:12px;min-width:1240px;background:#fff}
+#recovery-section .action-table th{background:#eef4fb;color:#102A43;text-align:left;padding:10px;border-bottom:1px solid rgba(178,196,214,.62)}
+#recovery-section .action-table td{padding:10px;color:#334E68;border-bottom:1px solid rgba(178,196,214,.42)}
+@media(max-width:1500px){#recovery-section .action-drawer{position:static!important;width:auto!important;max-height:none!important}}
+@media(max-width:1100px){#recovery-section .action-bento-grid{grid-template-columns:1fr}#recovery-section .action-bento-card.lifecycle{grid-column:auto}#recovery-section .decision-grid{grid-template-columns:1fr 1fr}#recovery-section .action-timeline{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:760px){#recovery-section.ri-visual-map{padding:10px!important}#recovery-section .action-hero{flex-direction:column}#recovery-section .decision-grid,#recovery-section .action-card dl,#recovery-section .action-drawer section{grid-template-columns:1fr}#recovery-section .action-timeline{grid-template-columns:1fr}}
+</style>
+
+
+<style id="smtinel-impact-simulation-engine-style">
+#recovery-section .impact-opportunity{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px}
+#recovery-section .impact-card,#recovery-section .top-executive-action,#recovery-section .executive-story-card{background:rgba(255,255,255,.92);border:1px solid rgba(178,196,214,.62);border-radius:28px;padding:20px;box-shadow:0 18px 44px rgba(16,42,67,.10),inset 0 1px 0 rgba(255,255,255,.90);backdrop-filter:blur(18px) saturate(1.2);color:#102A43}
+#recovery-section .impact-card.contained{background:linear-gradient(135deg,rgba(236,253,243,.96),rgba(255,255,255,.92));border-left:6px solid #22c55e}
+#recovery-section .impact-card.noaction{background:linear-gradient(135deg,rgba(255,241,242,.96),rgba(255,255,255,.92));border-left:6px solid #ff6b6b}
+#recovery-section .impact-eyebrow{display:block;color:#627D98;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.09em}
+#recovery-section .impact-card h2{margin:10px 0 8px;color:#102A43;font-size:30px;letter-spacing:-.04em}
+#recovery-section .impact-card h3{margin:12px 0;color:#102A43;font-size:24px;letter-spacing:-.03em}
+#recovery-section .impact-metric-grid,#recovery-section .impact-sim-grid,#recovery-section .top-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+#recovery-section .technical-signature{margin:8px 0 12px}
+#recovery-section .technical-signature summary{cursor:pointer;color:#334E68;font-size:12px;font-weight:900}
+#recovery-section .technical-signature code{display:block;margin-top:8px;background:#eef4fb;border:1px solid rgba(178,196,214,.62);border-radius:12px;padding:10px;color:#102A43;white-space:normal;word-break:break-word}
+#recovery-section .top-executive-action{border:1px solid rgba(31,111,235,.34);border-left:8px solid #1f6feb;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(232,244,255,.95));box-shadow:0 26px 70px rgba(31,111,235,.18)}
+#recovery-section .top-action-layout{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+#recovery-section .top-action-layout h2{margin:8px 0;color:#102A43;font-size:38px;letter-spacing:-.045em}
+#recovery-section .top-action-layout p{margin:0;color:#334E68;font-weight:850;font-size:16px}
+#recovery-section .top-action-score{display:grid;place-items:center;min-width:150px;min-height:130px;border-radius:28px;background:#102A43;color:white;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 18px 44px rgba(16,42,67,.25)}
+#recovery-section .top-action-score b{font-size:58px;line-height:.9;color:#fff}
+#recovery-section .top-action-score span{font-size:11px;font-weight:950;text-transform:uppercase;color:rgba(255,255,255,.78)}
+#recovery-section .executive-story-card{border-left:6px solid #22c55e}
+#recovery-section .executive-story-card p{margin:12px 0 0;color:#102A43;font-size:20px;line-height:1.45;font-weight:800}
+@media(max-width:1200px){#recovery-section .impact-opportunity{grid-template-columns:1fr}#recovery-section .top-action-layout{grid-template-columns:1fr}#recovery-section .top-action-score{width:160px}}
+@media(max-width:760px){#recovery-section .impact-metric-grid,#recovery-section .impact-sim-grid,#recovery-section .top-action-grid{grid-template-columns:1fr}#recovery-section .top-action-layout h2{font-size:28px}}
+</style>
+
+
+<style id="smtinel-executive-control-tower-optimization">
+#recovery-section .decision-card,
+#recovery-section .impact-opportunity,
+#recovery-section .top-executive-action,
+#recovery-section .executive-story-card,
+#recovery-section .action-bento-grid{display:none!important}
+
+#recovery-section .exec-control-tower{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  color:#102A43;
+}
+#recovery-section .tower-top{
+  display:grid;
+  grid-template-columns:1fr 140px;
+  gap:12px;
+  align-items:stretch;
+}
+#recovery-section .tower-action,
+#recovery-section .tower-score,
+#recovery-section .tower-card,
+#recovery-section .tower-lifecycle{
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(178,196,214,.62);
+  border-radius:24px;
+  box-shadow:0 16px 38px rgba(16,42,67,.09),inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter:blur(18px) saturate(1.15);
+  color:#102A43;
+}
+#recovery-section .tower-action{
+  padding:18px 20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(232,244,255,.94));
+  border-left:7px solid #1f6feb;
+}
+#recovery-section .tower-eyebrow{
+  display:block;
+  color:#627D98;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+#recovery-section .tower-action h2{
+  margin:6px 0 5px;
+  color:#102A43;
+  font-size:31px;
+  line-height:1;
+  letter-spacing:-.045em;
+}
+#recovery-section .tower-action p{
+  margin:0;
+  color:#334E68;
+  font-size:14px;
+  font-weight:850;
+}
+#recovery-section .tower-tech{
+  margin-top:8px!important;
+}
+#recovery-section .tower-score{
+  display:grid;
+  place-items:center;
+  padding:14px;
+  background:#102A43;
+  color:#fff;
+}
+#recovery-section .tower-score span,
+#recovery-section .tower-score em{
+  color:rgba(255,255,255,.78);
+  font-size:10px;
+  font-weight:950;
+  text-transform:uppercase;
+  font-style:normal;
+}
+#recovery-section .tower-score b{
+  color:#fff;
+  font-size:52px;
+  line-height:.9;
+}
+#recovery-section .tower-grid{
+  display:grid;
+  grid-template-columns:1.15fr .72fr 1fr 1fr;
+  gap:12px;
+  align-items:stretch;
+}
+#recovery-section .tower-card{
+  padding:15px;
+}
+#recovery-section .tower-card h3{
+  margin:0 0 10px;
+  color:#102A43;
+  font-size:15px;
+  letter-spacing:-.02em;
+}
+#recovery-section .tower-card.top-action{
+  grid-row:span 2;
+  border-left:6px solid #1f6feb;
+}
+#recovery-section .tower-card.narrative-card{
+  grid-column:span 2;
+  border-left:6px solid #22c55e;
+}
+#recovery-section .tower-card.value-card{
+  border-left:6px solid #ffb84d;
+}
+#recovery-section .tower-card.contained{
+  background:linear-gradient(135deg,rgba(236,253,243,.96),rgba(255,255,255,.94));
+  border-left:6px solid #22c55e;
+}
+#recovery-section .tower-card.noaction{
+  background:linear-gradient(135deg,rgba(255,241,242,.96),rgba(255,255,255,.94));
+  border-left:6px solid #ff6b6b;
+}
+#recovery-section .tower-metrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+#recovery-section .tower-metrics.two{
+  grid-template-columns:1fr 1fr;
+}
+#recovery-section .tower-metric{
+  background:#f4f8fc;
+  border:1px solid rgba(178,196,214,.54);
+  border-radius:15px;
+  padding:8px 10px;
+  min-width:0;
+}
+#recovery-section .tower-metric span{
+  display:block;
+  color:#627D98;
+  font-size:9px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+#recovery-section .tower-metric b{
+  display:block;
+  color:#102A43;
+  font-size:15px;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#recovery-section .tower-health-number{
+  color:#102A43;
+  font-size:58px;
+  font-weight:950;
+  line-height:.9;
+  letter-spacing:-.05em;
+  margin-bottom:8px;
+}
+#recovery-section .tower-card.narrative-card p{
+  margin:0;
+  color:#102A43;
+  font-size:15px;
+  line-height:1.36;
+  font-weight:800;
+}
+#recovery-section .tower-lifecycle{
+  padding:14px;
+}
+#recovery-section .tower-section-title{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:end;
+  margin-bottom:10px;
+}
+#recovery-section .tower-section-title h3{
+  margin:0;
+  color:#102A43;
+  font-size:16px;
+}
+#recovery-section .tower-section-title span{
+  color:#627D98;
+  font-size:11px;
+  font-weight:850;
+}
+#recovery-section .tower-flow{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+#recovery-section .tower-stage{
+  background:#f4f8fc;
+  border:1px solid rgba(178,196,214,.58);
+  border-radius:16px;
+  padding:10px;
+}
+#recovery-section .tower-stage.done{
+  background:#ecfdf3;
+}
+#recovery-section .tower-stage.active{
+  background:#eaf4ff;
+  outline:1px solid rgba(31,111,235,.45);
+}
+#recovery-section .tower-stage b{
+  display:block;
+  color:#102A43;
+  font-size:12px;
+}
+#recovery-section .tower-stage span{
+  color:#334E68;
+  font-size:11px;
+  font-weight:950;
+}
+#recovery-section .tower-stage i{
+  display:block;
+  height:7px;
+  background:#d9e6f2;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:7px;
+}
+#recovery-section .tower-stage em{
+  display:block;
+  height:100%;
+  background:linear-gradient(90deg,#1f6feb,#22c55e);
+  border-radius:999px;
+}
+
+/* Reduce vertical height 40 percent in action area */
+#recovery-section .action-board.compact-actions{
+  padding:14px!important;
+}
+#recovery-section .compact-actions .action-card-grid{
+  grid-template-columns:repeat(auto-fit,minmax(290px,1fr))!important;
+  gap:10px!important;
+}
+#recovery-section .compact-actions .action-card{
+  padding:13px!important;
+  border-radius:19px!important;
+}
+#recovery-section .compact-actions .action-card h3{
+  font-size:18px!important;
+  margin:8px 0!important;
+}
+#recovery-section .compact-actions .action-card dl{
+  grid-template-columns:88px 1fr!important;
+  gap:4px 8px!important;
+}
+#recovery-section .compact-actions .action-card dt{
+  font-size:9px!important;
+}
+#recovery-section .compact-actions .action-card dd{
+  font-size:12px!important;
+}
+
+#recovery-section .action-problem-board{
+  padding:14px!important;
+}
+#recovery-section .action-problem-grid{
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr))!important;
+  gap:10px!important;
+}
+#recovery-section .action-problem-card{
+  min-height:0!important;
+  padding:12px!important;
+  border-radius:19px!important;
+}
+#recovery-section .action-problem-card h4{
+  font-size:17px!important;
+  margin:8px 0 2px!important;
+}
+#recovery-section .action-problem-sig{
+  display:none!important;
+}
+#recovery-section .action-problem-score{
+  margin:6px 0!important;
+}
+#recovery-section .action-problem-score strong{
+  font-size:32px!important;
+}
+#recovery-section .action-problem-grid .action-mini{
+  padding:8px!important;
+  border-radius:13px!important;
+}
+#recovery-section .action-problem-grid .action-mini em{
+  font-size:8px!important;
+}
+#recovery-section .action-problem-grid .action-mini b{
+  font-size:13px!important;
+}
+
+@media(max-width:1280px){
+  #recovery-section .tower-grid{grid-template-columns:1fr 1fr}
+  #recovery-section .tower-card.top-action{grid-row:auto}
+  #recovery-section .tower-card.narrative-card{grid-column:span 2}
+}
+@media(max-width:820px){
+  #recovery-section .tower-top,
+  #recovery-section .tower-grid,
+  #recovery-section .tower-flow{grid-template-columns:1fr}
+  #recovery-section .tower-card.narrative-card{grid-column:auto}
+  #recovery-section .tower-metrics{grid-template-columns:1fr}
+  #recovery-section .tower-action h2{font-size:25px}
+}
+</style>
+
+
+<style id="smtinel-executive-command-center-optimization">
+#recovery-section .exec-control-tower,
+#recovery-section .tower-lifecycle,
+#recovery-section .legacy-priority-board{display:none!important}
+#recovery-section .ecc-shell{display:flex;flex-direction:column;gap:12px;color:#102A43}
+#recovery-section .ecc-main{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);gap:12px}
+#recovery-section .ecc-command-card,#recovery-section .ecc-gm-card,#recovery-section .ecc-score-card,#recovery-section .ecc-health-card,#recovery-section .ecc-value-card,#recovery-section .ecc-narrative,#recovery-section .ecc-lifecycle,#recovery-section .ecc-kanban-board{background:rgba(255,255,255,.93);border:1px solid rgba(178,196,214,.62);border-radius:26px;box-shadow:0 16px 38px rgba(16,42,67,.09),inset 0 1px 0 rgba(255,255,255,.92);backdrop-filter:blur(18px) saturate(1.15);color:#102A43}
+#recovery-section .ecc-command-card{min-height:270px;padding:24px;background:linear-gradient(135deg,#071A33 0%,#12385f 58%,#0b1c31 100%);color:#fff;position:relative;overflow:hidden}
+#recovery-section .ecc-command-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 75% 20%,rgba(75,150,255,.28),transparent 30%),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:auto,34px 34px,34px 34px}
+#recovery-section .ecc-command-card>*{position:relative;z-index:1}
+#recovery-section .ecc-eyebrow{display:block;color:#627D98;font-size:10px;font-weight:950;letter-spacing:.12em;text-transform:uppercase}
+#recovery-section .ecc-command-card .ecc-eyebrow{color:rgba(255,255,255,.72)}
+#recovery-section .ecc-command-card h2{margin:10px 0 18px;color:#fff;font-size:48px;line-height:.96;letter-spacing:-.055em}
+#recovery-section .ecc-command-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#recovery-section .ecc-command-card .tower-metric{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
+#recovery-section .ecc-command-card .tower-metric span{color:rgba(255,255,255,.66)}
+#recovery-section .ecc-command-card .tower-metric b{color:#fff;font-size:17px}
+#recovery-section .ecc-gm-card{padding:22px;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(236,246,255,.94));border-left:6px solid #1f6feb}
+#recovery-section .ecc-gm-card h3{margin:8px 0 12px;color:#102A43;font-size:30px;line-height:1;letter-spacing:-.04em}
+#recovery-section .ecc-gm-list{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#recovery-section .ecc-gm-list .tower-metric:last-child{grid-column:1/-1}
+#recovery-section .ecc-tech{margin-top:10px!important}
+#recovery-section .ecc-support{display:grid;grid-template-columns:220px 1fr 1.1fr;gap:12px}
+#recovery-section .ecc-score-card{display:grid;place-items:center;padding:16px;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(237,255,246,.94));border-left:6px solid #22c55e;text-align:center}
+#recovery-section .ecc-score-card b{color:#102A43;font-size:72px;line-height:.86;letter-spacing:-.06em}
+#recovery-section .ecc-score-card em{display:block;color:#0f7a43;font-style:normal;font-size:13px;font-weight:950;text-transform:uppercase;margin-top:6px}
+#recovery-section .ecc-score-card small{color:#627D98;font-size:11px;font-weight:900}
+#recovery-section .ecc-health-card,#recovery-section .ecc-value-card{padding:16px}
+#recovery-section .ecc-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+#recovery-section .ecc-narrative{padding:18px 20px;border-left:6px solid #ffb84d}
+#recovery-section .ecc-narrative p{margin:8px 0 0;color:#102A43;font-size:18px;line-height:1.38;font-weight:850}
+#recovery-section .ecc-lifecycle{padding:16px}
+#recovery-section .ecc-section-title{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:12px}
+#recovery-section .ecc-section-title h3{margin:0;color:#102A43;font-size:18px;letter-spacing:-.02em}
+#recovery-section .ecc-section-title span{color:#627D98;font-size:11px;font-weight:850}
+#recovery-section .ecc-stage-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#recovery-section .ecc-stage{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;background:#f4f8fc;border:1px solid rgba(178,196,214,.58);border-radius:16px;padding:11px}
+#recovery-section .ecc-stage .ecc-dot{font-size:20px;line-height:1}
+#recovery-section .ecc-stage.done .ecc-dot{color:#22c55e}
+#recovery-section .ecc-stage.active .ecc-dot{color:#1f6feb}
+#recovery-section .ecc-stage.pending .ecc-dot{color:#9fb3c8}
+#recovery-section .ecc-stage b{color:#102A43;font-size:12px}
+#recovery-section .ecc-stage em{color:#334E68;font-size:11px;font-style:normal;font-weight:950}
+#recovery-section .ecc-kanban-board{padding:16px}
+#recovery-section .ecc-kanban-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#recovery-section .ecc-kanban-lane{background:rgba(244,248,252,.72);border:1px solid rgba(178,196,214,.54);border-radius:18px;padding:10px;min-width:0}
+#recovery-section .ecc-kanban-lane header{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+#recovery-section .ecc-kanban-lane header b{color:#102A43;font-size:12px;font-weight:950}
+#recovery-section .ecc-kanban-lane header span{background:#fff;border:1px solid rgba(178,196,214,.58);color:#334E68;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:950}
+#recovery-section .ecc-kanban-lane.critical{border-top:4px solid #ff6b6b}
+#recovery-section .ecc-kanban-lane.high{border-top:4px solid #ffb84d}
+#recovery-section .ecc-kanban-lane.medium{border-top:4px solid #ffd93d}
+#recovery-section .ecc-kanban-lane.low{border-top:4px solid #4d96ff}
+#recovery-section .ecc-kanban-cards{display:flex;flex-direction:column;gap:8px}
+#recovery-section .ecc-kanban-card{background:#fff;border:1px solid rgba(178,196,214,.62);border-radius:15px;padding:10px;cursor:pointer;box-shadow:0 8px 20px rgba(16,42,67,.06)}
+#recovery-section .ecc-kanban-card.selected{outline:2px solid #1f6feb}
+#recovery-section .ecc-kanban-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#recovery-section .ecc-kanban-top b{color:#102A43;font-size:11px}
+#recovery-section .ecc-kanban-top span{background:#102A43;color:#fff;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:950}
+#recovery-section .ecc-kanban-card h4{margin:0 0 8px;color:#102A43;font-size:15px;line-height:1.14}
+#recovery-section .ecc-kanban-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#recovery-section .ecc-kanban-metrics .tower-metric{padding:6px 7px;border-radius:10px}
+#recovery-section .ecc-kanban-metrics .tower-metric span{font-size:8px}
+#recovery-section .ecc-kanban-metrics .tower-metric b{font-size:11px}
+#recovery-section .compact-actions{padding:12px!important}
+#recovery-section .compact-actions .action-section-head h3:before{content:"Secondary "}
+#recovery-section .compact-actions .action-card-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important}
+#recovery-section .compact-actions .action-card{min-height:0!important;padding:11px!important}
+#recovery-section .compact-actions .action-card:nth-child(n+5){display:none!important}
+@media(max-width:1300px){#recovery-section .ecc-main{grid-template-columns:1fr}#recovery-section .ecc-support{grid-template-columns:1fr 1fr}#recovery-section .ecc-kanban-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:850px){#recovery-section .ecc-command-grid,#recovery-section .ecc-gm-list,#recovery-section .ecc-health-grid,#recovery-section .ecc-support,#recovery-section .ecc-stage-row,#recovery-section .ecc-kanban-grid{grid-template-columns:1fr}#recovery-section .ecc-command-card h2{font-size:34px}}
+</style>
+
+
+<style id="smtinel-recovery-execution-intelligence">
+#recovery-section .ecc-shell{gap:10px!important}
+#recovery-section .ecc-main{grid-template-columns:1fr 1fr!important;gap:10px!important}
+#recovery-section .ecc-command-card{min-height:185px!important;padding:18px!important}
+#recovery-section .ecc-command-card h2{font-size:35px!important;margin:7px 0 12px!important}
+#recovery-section .ecc-command-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+#recovery-section .ecc-command-grid .tower-metric{padding:7px 8px!important}
+#recovery-section .ecc-command-grid .tower-metric b{font-size:13px!important}
+#recovery-section .ecc-gm-card{padding:18px!important}
+#recovery-section .ecc-gm-card h3{font-size:24px!important;margin:6px 0 9px!important}
+#recovery-section .ecc-support{grid-template-columns:170px 1fr 1fr!important;gap:10px!important}
+#recovery-section .ecc-score-card b{font-size:56px!important}
+#recovery-section .ecc-health-card,#recovery-section .ecc-value-card{padding:13px!important}
+#recovery-section .ecc-narrative{padding:14px 16px!important}
+#recovery-section .ecc-narrative p{font-size:15px!important}
+#recovery-section .ecc-lifecycle{padding:14px!important}
+#recovery-section .ecc-stage-row.vertical{grid-template-columns:1fr!important;gap:8px!important}
+#recovery-section .ecc-stage-row.vertical .ecc-stage{grid-template-columns:auto 1fr auto!important}
+#recovery-section .ecc-stage.active{border-color:rgba(31,111,235,.7);background:#eaf4ff}
+#recovery-section .ecc-stage.done{border-color:rgba(34,197,94,.55);background:#ecfdf3}
+#recovery-section .ecc-stage.pending{background:#f4f8fc}
+#recovery-section .rei-card,
+#recovery-section .rei-decision-card{background:rgba(255,255,255,.93);border:1px solid rgba(178,196,214,.62);border-radius:24px;box-shadow:0 16px 38px rgba(16,42,67,.09),inset 0 1px 0 rgba(255,255,255,.92);backdrop-filter:blur(18px) saturate(1.15);color:#102A43;padding:15px}
+#recovery-section .rei-card.readiness{border-left:6px solid #1f6feb}
+#recovery-section .rei-scoreline{display:flex;align-items:end;gap:12px;margin:8px 0 10px}
+#recovery-section .rei-scoreline b{font-size:48px;line-height:.88;color:#102A43;letter-spacing:-.05em}
+#recovery-section .rei-scoreline em{font-style:normal;border-radius:999px;padding:7px 10px;background:#102A43;color:#fff;font-size:11px;font-weight:950}
+#recovery-section .rei-scoreline em.ready{background:#16a34a}
+#recovery-section .rei-scoreline em.prepare{background:#f59e0b;color:#102A43}
+#recovery-section .rei-scoreline em.at-risk{background:#ffb84d;color:#102A43}
+#recovery-section .rei-scoreline em.blocked{background:#ef4444}
+#recovery-section .rei-bars{display:grid;grid-template-columns:1fr;gap:7px}
+#recovery-section .tower-progress-row{display:grid;grid-template-columns:130px 44px 1fr;gap:8px;align-items:center}
+#recovery-section .tower-progress-row span{color:#627D98;font-size:10px;font-weight:950;text-transform:uppercase}
+#recovery-section .tower-progress-row b{color:#102A43;font-size:11px}
+#recovery-section .tower-progress-row i{height:7px;background:#d9e6f2;border-radius:999px;overflow:hidden}
+#recovery-section .tower-progress-row em{display:block;height:100%;background:linear-gradient(90deg,#1f6feb,#22c55e);border-radius:999px}
+#recovery-section .rei-card.blockers{border-left:6px solid #22c55e}
+#recovery-section .rei-card.blockers.blocked{border-left-color:#ef4444}
+#recovery-section .rei-card.blockers h3{margin:8px 0 10px;color:#102A43;font-size:20px}
+#recovery-section .rei-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#recovery-section .rei-check{display:flex;gap:7px;align-items:center;background:#f4f8fc;border:1px solid rgba(178,196,214,.58);border-radius:12px;padding:8px}
+#recovery-section .rei-check span{font-weight:950;color:#22c55e}
+#recovery-section .rei-check.active span{color:#ef4444}
+#recovery-section .rei-check b{font-size:11px;color:#102A43}
+#recovery-section .rei-mini-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#recovery-section .rei-big{display:block;color:#102A43;font-size:46px;line-height:.9;letter-spacing:-.05em;margin:10px 0 5px}
+#recovery-section .rei-card.confidence{border-left:6px solid #22c55e}
+#recovery-section .rei-card.confidence em{display:block;color:#0f7a43;font-style:normal;font-size:12px;font-weight:950;text-transform:uppercase}
+#recovery-section .rei-card.eta{border-left:6px solid #1f6feb}
+#recovery-section .rei-card.value{border-left:6px solid #ffb84d}
+#recovery-section .rei-card.escalation{border-left:6px solid #ef4444}
+#recovery-section .rei-card.escalation h3{margin:8px 0 10px;color:#102A43;font-size:18px}
+#recovery-section .rei-eta-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+#recovery-section .rei-decision-card{border-left:7px solid #102A43;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(237,255,246,.92))}
+#recovery-section .rei-decision-card h3{margin:7px 0;color:#102A43;font-size:24px;letter-spacing:-.03em}
+#recovery-section .rei-decision-card p{margin:0;color:#334E68;font-size:16px;line-height:1.35;font-weight:850}
+@media(max-width:1300px){#recovery-section .ecc-support,#recovery-section .rei-mini-grid{grid-template-columns:1fr 1fr!important}#recovery-section .ecc-main{grid-template-columns:1fr!important}}
+@media(max-width:850px){#recovery-section .ecc-command-grid,#recovery-section .ecc-gm-list,#recovery-section .ecc-health-grid,#recovery-section .ecc-support,#recovery-section .rei-mini-grid,#recovery-section .rei-checks,#recovery-section .rei-eta-grid{grid-template-columns:1fr!important}}
+</style>
+
+
+<style id="smtinel-recovery-execution-engine">
+#recovery-section .ree-next-actions,
+#recovery-section .ree-path-card,
+#recovery-section .ree-queue{
+  background:rgba(255,255,255,.93);
+  border:1px solid rgba(178,196,214,.62);
+  border-radius:24px;
+  box-shadow:0 16px 38px rgba(16,42,67,.09),inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter:blur(18px) saturate(1.15);
+  color:#102A43;
+  padding:15px;
+}
+#recovery-section .ree-next-actions{border-left:7px solid #1f6feb}
+#recovery-section .ree-action-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+#recovery-section .ree-action-card{
+  background:#fff;
+  border:1px solid rgba(178,196,214,.62);
+  border-left:5px solid #4d96ff;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 8px 22px rgba(16,42,67,.07);
+}
+#recovery-section .ree-action-card.critical{border-left-color:#ff6b6b}
+#recovery-section .ree-action-card.high{border-left-color:#ffb84d}
+#recovery-section .ree-action-card.medium{border-left-color:#ffd93d}
+#recovery-section .ree-action-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+#recovery-section .ree-action-top span{
+  color:#627D98;
+  font-size:10px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+#recovery-section .ree-action-top em,
+#recovery-section .ree-escalation{
+  border-radius:999px;
+  padding:5px 8px;
+  font-size:10px;
+  font-style:normal;
+  font-weight:950;
+  color:#102A43;
+  background:#ffd93d;
+}
+#recovery-section .ree-action-top em.orange,
+#recovery-section .ree-escalation.orange{background:#ffb84d}
+#recovery-section .ree-action-top em.red,
+#recovery-section .ree-escalation.red{background:#ff6b6b;color:#fff}
+#recovery-section .ree-action-card h4{
+  margin:8px 0 10px;
+  color:#102A43;
+  font-size:18px;
+  letter-spacing:-.02em;
+}
+#recovery-section .ree-action-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+#recovery-section .ree-action-card p{
+  margin:9px 0 0;
+  color:#334E68;
+  font-size:12px;
+  font-weight:850;
+}
+#recovery-section .ree-path-card{border-left:7px solid #102A43}
+#recovery-section .ree-path{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+#recovery-section .ree-path-step{
+  background:#f4f8fc;
+  border:1px solid rgba(178,196,214,.58);
+  border-radius:15px;
+  padding:10px;
+  min-height:62px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+}
+#recovery-section .ree-path-step span{font-size:18px;line-height:1;color:#9fb3c8}
+#recovery-section .ree-path-step.done{background:#ecfdf3}
+#recovery-section .ree-path-step.done span{color:#22c55e}
+#recovery-section .ree-path-step.active{background:#eaf4ff;outline:2px solid rgba(31,111,235,.42)}
+#recovery-section .ree-path-step.active span{color:#1f6feb}
+#recovery-section .ree-path-step b{
+  color:#102A43;
+  font-size:11px;
+  line-height:1.15;
+}
+#recovery-section .ree-queue{border-left:7px solid #22c55e}
+#recovery-section .ree-queue-table{
+  display:grid;
+  gap:0;
+  overflow:auto;
+  border:1px solid rgba(178,196,214,.54);
+  border-radius:16px;
+}
+#recovery-section .ree-queue-head,
+#recovery-section .ree-queue-row{
+  display:grid;
+  grid-template-columns:105px minmax(210px,1.4fr) minmax(160px,1fr) 150px minmax(210px,1fr) 100px;
+  gap:0;
+  min-width:980px;
+}
+#recovery-section .ree-queue-head b{
+  background:#eef4fb;
+  color:#102A43;
+  padding:10px;
+  font-size:11px;
+  text-transform:uppercase;
+}
+#recovery-section .ree-queue-row span{
+  padding:10px;
+  color:#334E68;
+  border-top:1px solid rgba(178,196,214,.42);
+  font-size:12px;
+  font-weight:800;
+}
+#recovery-section .ree-queue-row.critical span:first-child{color:#b42318}
+#recovery-section .ree-queue-row.high span:first-child{color:#b45309}
+#recovery-section .ree-queue-row.medium span:first-child{color:#854d0e}
+@media(max-width:1200px){
+  #recovery-section .ree-action-grid{grid-template-columns:1fr}
+  #recovery-section .ree-path{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:760px){
+  #recovery-section .ree-path{grid-template-columns:1fr}
+  #recovery-section .ree-action-meta{grid-template-columns:1fr}
 }
 </style>
 
