@@ -28158,7 +28158,56 @@ body:has(#recovery-section) .main-content.expanded{
         }
         var serialDisplay = unique(snList.map(function(r,i){ var s = rowSerial(r,i); var ln = rowLine(r); return s ? (ln ? s + "-" + ln : s) : ""; })).slice(0, 6);
         var woDisplay = unique(snList.map(function(r){ var w = rowWo(r); var ln = rowLine(r); return w ? (ln ? w + " (" + ln + ")" : w) : ""; })).slice(0, 6);
-        if (!woDisplay.length) woDisplay = ["WO-341604-01", "WO-341604-02", "WO-341604-03", "WO-341604-04", "WO-341604-05"].slice(0, Math.max(1, Math.min(5, affectedWos || 1)));
+        if (!woDisplay.length) woDisplay = ["Sin WO disponible en el dataset cargado"];
+
+        function traceOpsQaNormalizeActionPlan(list) {
+            var src = Array.isArray(list) ? list : [];
+            return src.map(function(a) {
+                if (Array.isArray(a)) return a;
+                a = a || {};
+                return [
+                    a.area || a.Area || a.ownerArea || a.department || "",
+                    a.action || a.requiredAction || a.Action || a.description || "",
+                    a.objective || a.Objective || a.goal || "",
+                    a.responsible || a.owner || a.Owner || "",
+                    a.dueDate || a.commitDate || a.date || ""
+                ];
+            }).filter(function(r) { return r.some(function(v) { return clean(v, 200); }); }).slice(0, 4);
+        }
+
+        function traceOpsQaGenericEvidenceLabel(idx) {
+            var base = [
+                "1. Evidencia fotográfica\n(issue real)",
+                "2. Vista de detalle\n(issue real)",
+                "3. Ubicación en tarjeta\n(issue real)",
+                "4. Inspección / reparación\n(issue real)"
+            ];
+            return base[idx] || (String(idx + 1) + ". Evidencia");
+        }
+
+        function traceOpsQaEvidenceCaption(item, idx) {
+            if (item && typeof item === "object") {
+                return clean(item.caption || item.label || item.title || item.name || "", 70) || traceOpsQaGenericEvidenceLabel(idx);
+            }
+            return traceOpsQaGenericEvidenceLabel(idx);
+        }
+
+        function traceOpsQaBuildExecutiveMessage() {
+            var mode = clean(failureMode, 42) || "issue";
+            var ref = clean(selectedRef, 32) || "RefDes";
+            var comp = clean(componentType, 32) || "component";
+            return "Mensaje ejecutivo: Quality Alert generado para " + mode + " en " + ref + ".\nValidar contención, evidencia fotográfica, causa raíz y acción correctiva antes de liberar unidades NOK. Componente/commodity: " + comp + ".";
+        }
+
+        function traceOpsQaCcTitle() {
+            var raw = clean(ccPrimary && (ccPrimary.title || ccPrimary.name), 70);
+            var type = clean(componentType, 40);
+            var isConnectorDefault = /connector\s*\/\s*header handling characteristic/i.test(raw || "");
+            var isConnectorType = /connector|header|jack|terminal|socket/i.test(type || "");
+            if (raw && (!isConnectorDefault || isConnectorType)) return raw;
+            if (type && type !== "N/D") return type + " Handling Characteristic";
+            return "Component Handling Characteristic";
+        }
 
         window.ensurePptxTools().then(function() {
             var pptx = new PptxGenJS();
@@ -28226,28 +28275,71 @@ body:has(#recovery-section) .main-content.expanded{
                 txt(placeholder || "Image",x+0.05,y+h/2-0.06,w-0.10,0.12,{fontSize:7,bold:true,color:"6D7F95",align:"center",valign:"mid"});
                 return false;
             }
+            function traceOpsQaSvgDataUri(svg) {
+                try {
+                    if (typeof window !== "undefined" && window.btoa) {
+                        return "data:image/svg+xml;base64," + window.btoa(unescape(encodeURIComponent(svg)));
+                    }
+                } catch (_) {}
+                try {
+                    return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+                } catch (_) {
+                    return "";
+                }
+            }
             function sparkline(points,x,y,w,h,color){
                 points = points || [];
                 var vals = points.length ? points.map(function(p){ return Number(p.value || p.count || 0); }) : [0,0,0,0,0,0];
+                vals = vals.filter(function(v){ return Number.isFinite(v); });
                 while (vals.length < 6) vals.unshift(vals.length ? vals[0] : 0);
                 vals = vals.slice(-6);
                 var max = Math.max.apply(null, vals.concat([1]));
                 var min = Math.min.apply(null, vals.concat([0]));
                 var span = Math.max(1, max-min);
-                for (var i=0;i<vals.length-1;i++) {
-                    var x1=x+(w/(vals.length-1))*i, x2=x+(w/(vals.length-1))*(i+1);
+                var sw = 320, sh = 86, pad = 13;
+                var innerW = sw - pad * 2;
+                var innerH = sh - pad * 2;
+                var pts = vals.map(function(v,i){
+                    var px = pad + (innerW / Math.max(1, vals.length - 1)) * i;
+                    var py = pad + innerH - ((v - min) / span) * innerH;
+                    return { x:px, y:py, v:v };
+                });
+                var poly = pts.map(function(p){ return p.x.toFixed(1) + "," + p.y.toFixed(1); }).join(" ");
+                var c = String(color || C.blue).replace(/^#/, "");
+                var svg = '' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="' + sw + '" height="' + sh + '" viewBox="0 0 ' + sw + ' ' + sh + '">' +
+                    '<rect width="100%" height="100%" fill="none"/>' +
+                    '<path d="M' + pad + ' ' + (sh-pad) + ' H' + (sw-pad) + '" stroke="#D9E6F7" stroke-width="2" stroke-linecap="round" opacity="0.85"/>' +
+                    '<polyline points="' + poly + '" fill="none" stroke="#' + c + '" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    pts.map(function(p){ return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="5.2" fill="#FFFFFF" stroke="#' + c + '" stroke-width="3"/>'; }).join('') +
+                    '</svg>';
+                var data = traceOpsQaSvgDataUri(svg);
+                if (data) {
+                    try { slide.addImage({ data:data, x:x, y:y, w:w, h:h }); return; } catch (_) {}
+                }
+                // Fallback: draw continuous-looking segments and endpoints using native shapes.
+                for (var i=0;i<pts.length-1;i++) {
+                    var x1=x+(w/(pts.length-1))*i, x2=x+(w/(pts.length-1))*(i+1);
                     var y1=y+h-((vals[i]-min)/span)*h, y2=y+h-((vals[i+1]-min)/span)*h;
-                    lineShape(x1,y1,x2-x1,y2-y1,color,1.2);
-                    shape(ST.ellipse || "ellipse", x1-0.018,y1-0.018,0.036,0.036,C.white,color,0.75);
-                    if (i===vals.length-2) shape(ST.ellipse || "ellipse", x2-0.018,y2-0.018,0.036,0.036,C.white,color,0.75);
+                    lineShape(x1,y1,x2-x1,y2-y1,color,1.35);
+                }
+                for (var j=0;j<pts.length;j++) {
+                    var dx=x+(w/(pts.length-1))*j;
+                    var dy=y+h-((vals[j]-min)/span)*h;
+                    shape(ST.ellipse || "ellipse", dx-0.018,dy-0.018,0.036,0.036,C.white,color,0.85);
                 }
             }
             function trendCard(tr,x,y,w,h,color,highlight){
                 rect(x,y,w,h,highlight ? "FFF7F7" : C.white, highlight ? "F4A6A6" : C.border, highlight ? 0.9 : 0.65);
-                txt(clean(tr.mode,22),x+0.08,y+0.08,w-0.16,0.12,{fontSize:6.4,bold:true,color:highlight ? C.red : C.ink,fit:"shrink"});
-                txt(String(tr.risk || 0),x+0.10,y+0.38,0.32,0.22,{fontSize:17,bold:true,color:color});
-                txt((tr.delta > 0 ? "+" : "") + String(tr.delta || 0),x+w-0.38,y+0.43,0.28,0.12,{fontSize:8,bold:true,color:tr.delta > 0 ? C.red : (tr.delta < 0 ? C.green : C.muted),align:"right"});
-                sparkline(tr.points,x+0.16,y+0.78,w-0.32,0.34,color);
+                var modeLabel = clean(tr.mode, 22);
+                var riskText = clean(String(tr.risk == null ? 0 : tr.risk), 8).replace(/\s+/g, "");
+                var riskFont = riskText.length >= 4 ? 10.8 : (riskText.length >= 3 ? 12.6 : 16.2);
+                var deltaText = (tr.delta > 0 ? "+" : "") + String(tr.delta || 0);
+                txt(modeLabel,x+0.08,y+0.08,w-0.16,0.20,{fontSize:5.9,bold:true,color:highlight ? C.red : C.ink,fit:"shrink",breakLine:true});
+                // Wide value box prevents PowerPoint from wrapping values like 160 into "16" + "0".
+                txt(riskText,x+0.09,y+0.39,0.56,0.20,{fontSize:riskFont,bold:true,color:color,fit:"shrink",breakLine:false});
+                txt(deltaText,x+w-0.44,y+0.44,0.34,0.12,{fontSize:7.2,bold:true,color:tr.delta > 0 ? C.red : (tr.delta < 0 ? C.green : C.muted),align:"right",fit:"shrink"});
+                sparkline(tr.points,x+0.14,y+0.76,w-0.28,0.35,color);
             }
 
             // Background and header
@@ -28263,10 +28355,14 @@ body:has(#recovery-section) .main-content.expanded{
 
             // KPI row
             card(0.24,0.99,4.08,0.94,C.blue,"Failure Mode");
-            txt(clean(failureMode,36),0.45,1.34,2.55,0.18,{fontSize:15,bold:true,color:C.ink,fit:"shrink"});
-            txt("RefDes",3.28,1.11,0.50,0.10,{fontSize:6.6,bold:true,color:C.ink});
-            txt(clean(selectedRef,20),3.22,1.34,0.70,0.26,{fontSize:selectedRef.length > 4 ? 18 : 26,bold:true,color:C.red,align:"center",fit:"shrink"});
-            txt("SKU / Model: " + clean(sku,20) + " - " + clean(modelName,22),0.45,1.67,3.20,0.10,{fontSize:6.7,bold:true,color:C.ink});
+            var qaFailureText = clean(failureMode, 44);
+            var qaFailureFont = qaFailureText.length > 24 ? 10.2 : (qaFailureText.length > 18 ? 11.4 : (qaFailureText.length > 13 ? 12.8 : 15));
+            var qaRefText = clean(selectedRef, 18);
+            var qaRefFont = qaRefText.length > 5 ? 13.5 : (qaRefText.length > 4 ? 16 : 25);
+            txt(qaFailureText,0.45,1.27,2.50,0.34,{fontSize:qaFailureFont,bold:true,color:C.ink,fit:"shrink",breakLine:true});
+            txt("RefDes",3.17,1.11,0.72,0.10,{fontSize:6.4,bold:true,color:C.ink,align:"center"});
+            txt(qaRefText,3.06,1.31,1.00,0.30,{fontSize:qaRefFont,bold:true,color:C.red,align:"center",fit:"shrink"});
+            txt("SKU / Model: " + clean(sku,20) + " - " + clean(modelName,22),0.45,1.72,3.20,0.10,{fontSize:6.2,bold:true,color:C.ink,fit:"shrink"});
 
             card(4.42,0.99,2.48,0.94,C.blue,"Affected SN");
             txt(String(affectedSerials),4.62,1.34,0.48,0.25,{fontSize:24,bold:true,color:C.red,fit:"shrink"});
@@ -28283,7 +28379,7 @@ body:has(#recovery-section) .main-content.expanded{
             card(9.92,0.99,3.18,0.94,C.cyan,"Component profile from BOM");
             txt(clean(componentType + "-" + componentCode, 50),10.12,1.30,2.42,0.12,{fontSize:8.5,bold:true,color:"0046C7",fit:"shrink"});
             txt(clean(componentDescription, 85),10.12,1.52,2.45,0.12,{fontSize:5.9,color:C.black,fit:"shrink"});
-            rect(10.12,1.68,2.68,0.14,"FFF7ED",C.orange,0.6); txt("⚠  " + clean((ccPrimary && (ccPrimary.title || ccPrimary.name)) || "Connector / Header Handling Characteristic", 60),10.18,1.715,2.55,0.04,{fontSize:4.8,color:"9A4D00",bold:true});
+            rect(10.12,1.68,2.68,0.14,"FFF7ED",C.orange,0.6); txt("⚠  " + clean(traceOpsQaCcTitle(), 60),10.18,1.715,2.55,0.04,{fontSize:4.8,color:"9A4D00",bold:true});
 
             // Middle left: Board + evidence
             card(0.24,2.00,5.92,2.02,C.blue,"Board location");
@@ -28293,16 +28389,16 @@ body:has(#recovery-section) .main-content.expanded{
             txt("Reference: " + selectedRef,0.40,3.75,1.50,0.10,{fontSize:7,bold:true,color:C.ink});
 
             card(0.24,4.08,5.92,1.26,C.blue,"EVIDENCE - Issue Photos");
-            var evLabels = ["1. Component condition\n(Lifted Pins)", "2. Pin lifted from solder pad\n(Detail)", "3. Board location - Top side", "4. From rework inspection"];
             for (var ei=0; ei<4; ei++) {
                 var ex = 0.45 + ei*1.42;
-                addImage(evidenceImages[ei], ex, 4.38, 1.20, 0.50, ei === 0 ? "Photo 1" : "Evidence image");
-                txt(evLabels[ei],ex,4.93,1.18,0.24,{fontSize:5.2,bold:true,color:C.ink,align:"center",fit:"shrink",breakLine:true});
+                var evItem = evidenceImages[ei];
+                addImage(evItem && typeof evItem === "object" ? (evItem.data || evItem.url || evItem.src || evItem.image || evItem.base64) : evItem, ex, 4.38, 1.20, 0.50, evItem ? "Evidence image" : "Sin evidencia");
+                txt(traceOpsQaEvidenceCaption(evItem, ei),ex,4.93,1.18,0.24,{fontSize:5.2,bold:true,color:C.ink,align:"center",fit:"shrink",breakLine:true});
             }
 
             // Middle right: Reference details + commodity image
             card(6.25,2.00,6.85,3.34,C.blue,"Details of reference");
-            txt(clean(selectedRef,28),6.45,2.36,1.35,0.33,{fontSize:selectedRef.length>5?20:24,bold:true,color:"003B82",fit:"shrink"});
+            txt(clean(selectedRef,28),6.45,2.36,1.55,0.33,{fontSize:selectedRef.length>6?18:(selectedRef.length>5?20:24),bold:true,color:"003B82",fit:"shrink"});
             rect(6.45,2.78,1.28,0.24,C.soft,C.border,0.6); txt("BOM: " + clean(componentCode,24),6.58,2.86,1.02,0.06,{fontSize:5.8,bold:true,color:C.ink,align:"center"});
             txt(clean(componentDescription,100),6.45,3.17,1.65,0.48,{fontSize:5.8,color:C.black,fit:"shrink"});
             labelVal("LADO",boardSideLabel,8.55,2.30,1.30,0.40,{});
@@ -28325,14 +28421,17 @@ body:has(#recovery-section) .main-content.expanded{
             var widths = [0.40,2.14,1.73,0.93,0.78];
             var heads = ["Área","Acción requerida","Objetivo","Responsable","Fecha compromiso"];
             heads.forEach(function(h,i){ rect(cols[i],5.67,widths[i],0.22,C.navy,C.navy,0); txt(h,cols[i],5.74,widths[i],0.05,{fontSize:4.7,bold:true,color:C.white,align:"center"}); });
-            var actions = [
-                ["SMT","Definir acciones para prevenir recurrencia del defecto en línea.","Evitar recurrencia del defecto.","SMT Engineering",dueDate],
-                ["SMT","Revisar feeder, orientación de componente, programa y setup.","Confirmar causa raíz del montaje.","SMT Process",dueDate],
-                ["Producción","Definir método para entregar unidades NOK a reparación.","Evitar acumulación o liberación incorrecta.","Production Supervisor",dueDate],
-                ["Producción","Implementar control visual / flujo obligatorio de clasificación.","Asegurar reacción inmediata y contención.","Production Engineering",dueDate]
-            ];
-            actions.forEach(function(r,ri){ var y = 5.89 + ri*0.20; r.forEach(function(v,i){ rect(cols[i],y,widths[i],0.20,ri%2?"F7FAFF":C.white,C.border,0.35); txt(v,cols[i]+0.02,y+0.045,widths[i]-0.04,0.10,{fontSize:i===0?4.8:4.2,bold:i===0 || i===3,color:i===0?(v==="SMT"?"0046C7":C.green):C.ink,align:i===0?"center":"left",fit:"shrink"}); }); });
-            rect(0.36,6.74,6.20,0.32,"FFF7ED",C.orange,0.8); shape(ST.ellipse || "ellipse",0.49,6.80,0.22,0.22,C.orange,C.orange,0); txt("!",0.565,6.835,0.08,0.08,{fontSize:12,bold:true,color:C.white,align:"center"}); txt("Mensaje ejecutivo: Se requiere plan de acción formal por parte de SMT y Producción.\nSMT debe definir acciones para prevenir recurrencia del defecto. Producción debe asegurar que toda unidad NOK sea contenida y enviada inmediatamente a reparación.",0.80,6.80,5.50,0.18,{fontSize:5.7,bold:true,color:C.black,breakLine:true,fit:"shrink"});
+            var actions = traceOpsQaNormalizeActionPlan(payload.actionPlan || payload.actions || payload.correctiveActions || payload.rccaActions);
+            if (!actions.length) {
+                actions = [
+                    ["Pendiente","Definir acción específica para el issue seleccionado.","Confirmar contención y salida controlada.","Por definir",dueDate],
+                    ["Pendiente","Documentar causa raíz con evidencia real.","Evitar recurrencia del defecto.","Por definir",dueDate],
+                    ["Pendiente","Validar criterio de liberación de unidades NOK.","Prevenir liberación incorrecta.","Por definir",dueDate],
+                    ["Pendiente","Actualizar seguimiento RCCA / cierre.","Confirmar efectividad.","Por definir",dueDate]
+                ];
+            }
+            actions.forEach(function(r,ri){ var y = 5.89 + ri*0.20; r.forEach(function(v,i){ rect(cols[i],y,widths[i],0.20,ri%2?"F7FAFF":C.white,C.border,0.35); txt(v,cols[i]+0.02,y+0.045,widths[i]-0.04,0.10,{fontSize:i===0?4.8:4.2,bold:i===0 || i===3,color:i===0?(String(v).toUpperCase()==="SMT"?"0046C7":C.green):C.ink,align:i===0?"center":"left",fit:"shrink"}); }); });
+            rect(0.36,6.74,6.20,0.32,"FFF7ED",C.orange,0.8); shape(ST.ellipse || "ellipse",0.49,6.80,0.22,0.22,C.orange,C.orange,0); txt("!",0.565,6.835,0.08,0.08,{fontSize:12,bold:true,color:C.white,align:"center"}); txt(clean(payload.executiveMessage || traceOpsQaBuildExecutiveMessage(), 260),0.80,6.80,5.50,0.18,{fontSize:5.7,bold:true,color:C.black,breakLine:true,fit:"shrink"});
 
             // Bottom trend flow
             card(6.82,5.40,6.28,1.75,C.blue,"TREND FLOW - Top Failure Modes (últimas 6 semanas)");
@@ -41363,7 +41462,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -41500,7 +41599,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -43008,8 +43107,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -43029,7 +43128,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -43334,8 +43433,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   }
 
   function updateBadge(){
@@ -43481,7 +43580,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -43654,7 +43753,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -43919,7 +44018,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -43945,7 +44044,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -43969,7 +44068,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -44143,7 +44242,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -44166,7 +44265,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -44185,7 +44284,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04";
+  var versionText = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -44289,7 +44388,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var label = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -44307,7 +44406,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var VERSION_LABEL = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -44557,7 +44656,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -44936,7 +45035,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -45021,7 +45120,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -46503,7 +46602,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.10.2 - Recovery Intelligence Premium Light - 2026-06-04';
+  var label='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -51986,6 +52085,80 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
   #recovery-section .ree-action-meta{grid-template-columns:1fr}
 }
 </style>
+
+
+<script id="smtinel-v13-10-2-loader-ready-hotfix">
+(function(){
+  function ready(fn){
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
+    else fn();
+  }
+  ready(function(){
+    var readySince = 0;
+    function isVisible(el){
+      if(!el) return false;
+      var st = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
+      return st && st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
+    }
+    function hideLoader(){
+      try {
+        if(typeof window.smtinelZipWaitHide === 'function') {
+          window.smtinelZipWaitHide(180);
+          return;
+        }
+      } catch(_) {}
+      try {
+        var s = document.getElementById('smtinelZipWaitScreen');
+        if(s){
+          s.classList.remove('is-active');
+          s.style.display = 'none';
+          s.style.opacity = '0';
+          s.style.pointerEvents = 'none';
+        }
+      } catch(_) {}
+    }
+    var installTries = 0;
+    var installTimer = setInterval(function(){
+      installTries++;
+      try {
+        if(typeof window.smtinelZipWaitShow === 'function' && !window.smtinelZipWaitShow.__qaReadyHotfix){
+          var originalShow = window.smtinelZipWaitShow;
+          window.smtinelZipWaitShow = function(progress, phase, message){
+            var ret = originalShow.apply(this, arguments);
+            try {
+              var pct = Number(progress || 0);
+              var txt = (String(phase || '') + ' ' + String(message || '')).toUpperCase();
+              if(pct >= 100 || /READY|CACHE_HIT|COMPLETADO|DASHBOARD LISTO/.test(txt)) {
+                setTimeout(hideLoader, 900);
+              }
+            } catch(_) {}
+            return ret;
+          };
+          window.smtinelZipWaitShow.__qaReadyHotfix = true;
+          clearInterval(installTimer);
+        }
+      } catch(_) {}
+      if(installTries > 60) clearInterval(installTimer);
+    }, 250);
+    setInterval(function(){
+      try {
+        var screen = document.getElementById('smtinelZipWaitScreen');
+        if(!isVisible(screen)) { readySince = 0; return; }
+        var pctEl = document.getElementById('smtinelZipWaitPct');
+        var phaseEl = document.getElementById('smtinelZipWaitPhase');
+        var msgEl = document.getElementById('smtinelZipWaitMessage');
+        var txt = ((pctEl && pctEl.textContent) || '') + ' ' + ((phaseEl && phaseEl.textContent) || '') + ' ' + ((msgEl && msgEl.textContent) || '');
+        if(/100%/.test(txt) && /READY|COMPLETADO|DASHBOARD|IMPORT LOCAL/.test(txt.toUpperCase())){
+          if(!readySince) readySince = Date.now();
+          if(Date.now() - readySince > 1500) hideLoader();
+        } else {
+          readySince = 0;
+        }
+      } catch(_) {}
+    }, 650);
+  });
+})();
+</script>
 
 </body>
 </html>
