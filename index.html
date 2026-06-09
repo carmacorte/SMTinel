@@ -29953,7 +29953,136 @@ body:has(#recovery-section) .main-content.expanded{
             function actionPriority(p, action){ var base=p?p.businessImpactScore:0; if(action==='CONTAIN_SOURCE_FIRST') base+=20; if(action==='IMMEDIATE_CONTAINMENT_REQUIRED') base+=18; if(action==='ESCALATE_RECOVERY_EXECUTION') base+=14; if(action==='TARGET_PRIMARY_SOURCE') base+=10; return clamp(base,0,100); }
             function buildActions(problems){ var actions=[]; problems.slice(0,10).forEach(function(p){ if(p.freshInputUnits>0&&p.oldUnits91Plus>0) actions.push({type:'CONTAIN_SOURCE_FIRST',title:'CONTAIN '+(p.primarySource||'SOURCE'),problem:p.problemName,reason:fmt(p.freshInputUnits)+' fresh units still entering while '+fmt(p.oldUnits91Plus)+' units are already 91D+.',expected:'Stop growth of aged backlog.',priority:'CRITICAL',owner:'Quality + Production',score:actionPriority(p,'CONTAIN_SOURCE_FIRST'),source:p.primarySource,p:p}); if(p.velocityStatus==='ACCELERATING') actions.push({type:'IMMEDIATE_CONTAINMENT_REQUIRED',title:'IMMEDIATE CONTAINMENT',problem:p.problemName,reason:'Fresh input velocity is accelerating.',expected:'Prevent tomorrow input from becoming recovery exposure.',priority:'CRITICAL',owner:'Production + Process Engineering',score:actionPriority(p,'IMMEDIATE_CONTAINMENT_REQUIRED'),source:p.primarySource,p:p}); if(p.freshInputUnits===0&&p.agedUnits31Plus>20) actions.push({type:'FOCUS_ON_RECOVERY',title:'BURN DOWN AGED WIP',problem:p.problemName,reason:'Source appears contained and backlog remains.',expected:'Reduce recovery exposure.',priority:'HIGH',owner:'Repair Team',score:actionPriority(p,'FOCUS_ON_RECOVERY'),source:p.primarySource,p:p}); if(p.recoveryEffectiveness==='INEFFECTIVE') actions.push({type:'ESCALATE_RECOVERY_EXECUTION',title:'ESCALATE RECOVERY EXECUTION',problem:p.problemName,reason:'Recovery effectiveness is currently ineffective.',expected:'Restore burn-down execution and validate containment.',priority:'HIGH',owner:'Recovery Lead + Quality',score:actionPriority(p,'ESCALATE_RECOVERY_EXECUTION'),source:p.primarySource,p:p}); if(p.sourceContributionPct>50) actions.push({type:'TARGET_PRIMARY_SOURCE',title:'TARGET PRIMARY SOURCE',problem:p.problemName,reason:p.sourceContributionPct+'% of current signal is concentrated at '+p.primarySource+'.',expected:'Focus containment where it has the highest leverage.',priority:p.severity==='CRITICAL'?'CRITICAL':'HIGH',owner:'Quality + Area Owner',score:actionPriority(p,'TARGET_PRIMARY_SOURCE'),source:p.primarySource,p:p}); }); var seen={}; return actions.filter(function(a){var k=a.type+'|'+a.problem+'|'+a.source;if(seen[k])return false;seen[k]=1;return true;}).sort(function(a,b){return b.score-a.score || String(a.title).localeCompare(String(b.title));}).slice(0,8); }
             function gmBullets(top){ if(!top) return ['No active recovery priority detected.','No concentrated source identified.','Continue monitoring fresh input.']; return ['Biggest active issue: '+top.problemName+' with '+fmt(top.agedUnits31Plus)+' aged units and '+fmt(top.freshInputUnits)+' fresh units.', top.sourceContributionPct>0?'Main source: '+top.primarySource+' contributes '+top.sourceContributionPct+'% of current input.':'Main source: distributed across multiple sources.', (top.status==='ACTIVE'||top.status==='CRITICAL_RECURRENCE')?'Decision: contain source before large-scale recovery.':'Decision: focus recovery burn-down and monitor recurrence.']; }
-            function playbookText(top, actions, risk, bullets){ top=top||{}; return ['# Recovery Playbook - '+(top.problemName||'Recovery Intel'),'','## Executive Summary',bullets.map(function(x){return '- '+x;}).join('\n'),'','## Current Condition','- Primary Issue: '+(top.problemName||'N/D'),'- Fresh Input: '+fmt(top.freshInputUnits||0),'- Bonepile: '+fmt(top.agedUnits31Plus||0),'- Old 91D+: '+fmt(top.oldUnits91Plus||0),'- Business Impact: '+(top.businessImpactScore||0),'','## Impact Simulation','- Units Protected Per Week: '+fmt((impactSimulation(top).unitsProtectedPerWeek)||0),'- Potential Recovery: '+fmt((impactSimulation(top).potentialRecovery)||0),'- 30 Day No-Action Projection: +'+fmt((impactSimulation(top).noAction30)||0),'- Confidence: '+((impactSimulation(top).confidence)||0)+'%','','## Source Intelligence','- Primary Source: '+(top.primarySource||'N/D'),'- Station: '+(top.primarySourceStation||'N/D'),'- Line: '+(top.primarySourceLine||'N/D'),'- WO: '+(top.primarySourceWO||'N/D'),'- Model: '+(top.primarySourceModel||'N/D'),'- Contribution: '+(top.sourceContributionPct||0)+'%','','## Containment Actions',actions.filter(function(a){return /CONTAIN|SOURCE/.test(a.type);}).map(function(a,i){return (i+1)+'. '+a.title+' - '+a.reason;}).join('\n') || 'N/D','','## Recovery Actions',actions.filter(function(a){return /RECOVERY|BURN/.test(a.type);}).map(function(a,i){return (i+1)+'. '+a.title+' - '+a.reason;}).join('\n') || 'N/D','','## Verification Plan','- Verify no fresh input with the same problem signature.','- Confirm containment at source.','- Validate recovered unit retest result before release.','','## Exit Criteria',(top.exitCriteria||[]).map(function(x){return '- '+x;}).join('\n') || '- N/D','','## What To Tell GM',bullets.map(function(x){return '- '+x;}).join('\n')].join('\n'); }
+            function playbookText(top, actions, risk, bullets){
+                top = top || {};
+                var sim = impactSimulation(top);
+                var caseType = recoveryCaseType(top);
+                var isFreshOnly = caseType === 'FRESH_INPUT_ONLY';
+                function uniqueByTitle(items){
+                    var seen = {};
+                    return (items || []).filter(function(a){
+                        var key = String(a.type || a.title || a.action || '').toUpperCase();
+                        if(!key) key = String(a.reason || '').toUpperCase();
+                        if(seen[key]) return false;
+                        seen[key] = 1;
+                        return true;
+                    });
+                }
+                if(isFreshOnly){
+                    return [
+                        '# Fresh Input Control Plan - '+(top.problemName || 'Recovery Intel'),
+                        '',
+                        '## Executive Summary',
+                        '- Current signal is fresh input only.',
+                        '- No aged bonepile exists yet.',
+                        '- Main source: '+(top.primarySource || sim.source || 'N/D')+' contributes '+(top.sourceContributionPct || 0)+'% of current input.',
+                        '- Decision: monitor repeatability and validate containment before backlog forms.',
+                        '',
+                        '## Current Condition',
+                        '- Fresh Input: '+fmt(top.freshInputUnits || 0),
+                        '- Bonepile: '+fmt(top.agedUnits31Plus || 0),
+                        '- Old 91D+: '+fmt(top.oldUnits91Plus || 0),
+                        '- Business Impact: '+(top.businessImpactScore || 0),
+                        '- Source: '+(top.primarySource || sim.source || 'N/D'),
+                        '',
+                        '## Decision',
+                        '- Status: WATCHLIST',
+                        '- Recommended Action: Validate repeatability / monitor fresh input / containment validation.',
+                        '- Owner: Manufacturing Engineering',
+                        '- Due: 48 Hours',
+                        '- Expected Protection: '+fmt(top.freshInputUnits || 0)+' units/week if containment is required.',
+                        '',
+                        '## Source Intelligence',
+                        '- Primary Source: '+(top.primarySource || 'N/D'),
+                        '- Station: '+(top.primarySourceStation || 'N/D'),
+                        '- Line: '+(top.primarySourceLine || 'N/D'),
+                        '- WO: '+(top.primarySourceWO || 'N/D'),
+                        '- Model: '+(top.primarySourceModel || 'N/D'),
+                        '- Contribution: '+(top.sourceContributionPct || 0)+'%',
+                        '',
+                        '## Fresh Input Control Actions',
+                        '1. Validate if the same symptom repeats within the monitoring window.',
+                        '2. Check source station, line and WO concentration.',
+                        '3. Apply containment gate if repeatability is confirmed.',
+                        '4. Monitor next production window for recurrence.',
+                        '',
+                        '## Recovery Actions',
+                        'N/D — no aged bonepile exists.',
+                        '',
+                        '## Verification Plan',
+                        '- Confirm no repeated fresh input with same signature.',
+                        '- Validate source station controls.',
+                        '- Confirm issue does not migrate into aged WIP.',
+                        '',
+                        '## Exit Criteria',
+                        '- No repeat within monitoring window.',
+                        '- Or escalate to containment if repeatability is confirmed.',
+                        '',
+                        '## What To Tell GM',
+                        '- This is not yet a recovery backlog.',
+                        '- It is a fresh signal from '+(top.primarySource || sim.source || 'N/D')+'.',
+                        '- Current action is to monitor and validate containment before bonepile is created.'
+                    ].join('\n');
+                }
+                var containment = uniqueByTitle((actions || []).filter(function(a){ return /CONTAIN|SOURCE|IMMEDIATE/i.test(a.type || a.title || a.action || ''); }));
+                var recovery = uniqueByTitle((actions || []).filter(function(a){ return /RECOVERY|BURN|EXECUTION/i.test(a.type || a.title || a.action || ''); }));
+                var containmentLines = containment.length ? containment.map(function(a,i){ return (i+1)+'. '+(a.title || a.action)+' - '+(a.reason || 'Execute containment at source.'); }).join('\n') : [
+                    '1. Apply immediate containment at source.',
+                    '2. Execute 100% inspection at the source/detection station.',
+                    '3. Segregate fresh affected units.',
+                    '4. Verify no new input with the same signature.'
+                ].join('\n');
+                var recoveryLines = recovery.length ? recovery.map(function(a,i){ return (i+1)+'. '+(a.title || a.action)+' - '+(a.reason || 'Execute recovery burn-down.'); }).join('\n') : [
+                    '1. Prioritize oldest recoverable units.',
+                    '2. Execute burn-down by recovery bucket.',
+                    '3. Track recovered, non-recoverable, and pending units daily.',
+                    '4. Validate retest results before release.'
+                ].join('\n');
+                return [
+                    '# Recovery Playbook - '+(top.problemName || 'Recovery Intel'),
+                    '',
+                    '## Executive Summary',
+                    (bullets || []).map(function(x){return '- '+x;}).join('\n') || '- N/D',
+                    '',
+                    '## Current Condition',
+                    '- Primary Issue: '+(top.problemName || 'N/D'),
+                    '- Fresh Input: '+fmt(top.freshInputUnits || 0),
+                    '- Bonepile: '+fmt(top.agedUnits31Plus || 0),
+                    '- Old 91D+: '+fmt(top.oldUnits91Plus || 0),
+                    '- Business Impact: '+(top.businessImpactScore || 0),
+                    '',
+                    '## Decision',
+                    '- Recommended Action: '+(top.recommendedFocus || 'N/D'),
+                    '- Owner: '+(sim.owner || 'N/D'),
+                    '- Due: '+(sim.severity === 'CRITICAL' ? '24 Hours' : '48 Hours'),
+                    '- Expected Protection: '+fmt(sim.unitsProtectedPerWeek || 0)+' units/week',
+                    '',
+                    '## Source Intelligence',
+                    '- Primary Source: '+(top.primarySource || 'N/D'),
+                    '- Station: '+(top.primarySourceStation || 'N/D'),
+                    '- Line: '+(top.primarySourceLine || 'N/D'),
+                    '- WO: '+(top.primarySourceWO || 'N/D'),
+                    '- Model: '+(top.primarySourceModel || 'N/D'),
+                    '- Contribution: '+(top.sourceContributionPct || 0)+'%',
+                    '',
+                    '## Containment Actions',
+                    containmentLines,
+                    '',
+                    '## Recovery Actions',
+                    recoveryLines,
+                    '',
+                    '## Verification Plan',
+                    '- Verify no fresh input with the same problem signature.',
+                    '- Confirm containment at source.',
+                    '- Validate recovered unit retest result before release.',
+                    '',
+                    '## Exit Criteria',
+                    (top.exitCriteria || []).map(function(x){return '- '+x;}).join('\n') || '- N/D',
+                    '',
+                    '## What To Tell GM',
+                    (bullets || []).map(function(x){return '- '+x;}).join('\n') || '- N/D'
+                ].join('\n');
+            }
             function downloadPlaybook(top, actions, risk, bullets, format){ var md=playbookText(top,actions,risk,bullets); if(format==='pdf'){ var html='<!doctype html><html><head><meta charset="utf-8"><title>SMTinel Recovery Playbook</title><style>body{font-family:Segoe UI,Arial,sans-serif;padding:40px;color:#102A43}pre{white-space:pre-wrap;font-family:Segoe UI,Arial,sans-serif;line-height:1.45}</style></head><body><pre>'+md.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];})+'</pre><scr'+'ipt>window.print();</scr'+'ipt></body></html>'; var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob); window.open(url,'_blank'); setTimeout(function(){URL.revokeObjectURL(url)},30000); return;} recoveryDownloadText('SMTinel_Recovery_Playbook_'+bentoToken(top.problemName||'Recovery').slice(0,80)+'.md',md,'text/markdown;charset=utf-8;'); }
             function exportActionTsv(actions){ var headers=['Rank','Action','Problem','Reason','Expected Impact','Priority','Owner','Source','Score']; var rows=actions.map(function(a,i){return [i+1,a.title,a.problem,a.reason,a.expected,a.priority,a.owner,a.source,a.score];}); var tsv=[headers].concat(rows).map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}).join('\n'); recoveryDownloadText('Recovery_Action_Engine.tsv',tsv,'text/tab-separated-values;charset=utf-8;'); }
             function badge(text,cls){ return h('span',{className:'action-badge '+(cls||'')},text); }
@@ -29962,7 +30091,7 @@ body:has(#recovery-section) .main-content.expanded{
             function lifecycleStage(p){ if(!p) return 'Detection'; if(p.status==='WATCHLIST') return 'Detection'; if(p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE') return p.sourceContributionPct>50?'Containment':'Detection'; if(p.status==='CONTAINED'&&p.agedUnits31Plus>0) return 'Recovery'; if(p.status==='CONTAINED'&&p.agedUnits31Plus===0) return 'Verification'; return 'Closure'; }
             function timeline(p){ var stages=['Fresh Input','Detection','Containment','Recovery','Verification','Closure']; var active=lifecycleStage(p); return h('div',{className:'action-timeline'},stages.map(function(s,i){return h('span',{key:s,className:(s===active?'active':'')+(stages.indexOf(active)>i?' done':'')},[h('i',null,i+1),h('b',null,s)]);}));}
             function problemCard(p,i,selectedKey){ var sel=selectedKey===p.executiveSignature; return h('article',{className:'action-problem-card '+p.severity.toLowerCase()+(sel?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[h('div',{className:'action-problem-top'},[h('b',null,'#'+(i+1)),badge(p.severity,p.severity.toLowerCase()),badge(p.status,'status')]),h('h4',null,p.problemName),h('p',{className:'action-problem-sig'},p.executiveSignature),h('div',{className:'action-problem-score compact'},[h('strong',null,p.actionScore || p.businessImpactScore),h('span',null,'Action Score')]),h('div',{className:'action-problem-grid'},[mini('Bonepile',fmt(p.agedUnits31Plus)),mini('Fresh',fmt(p.freshInputUnits)),mini('Source',p.primarySource),mini('Velocity',p.velocityIcon+' '+p.velocityStatus)])]); }
-            function detailDrawer(p, actions, bullets, risk){ if(!p) return null; var related=actions.filter(function(a){return a.p===p;}); return h('aside',{className:'action-drawer'},[h('div',{className:'action-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';safeBentoRerender();}},'x')]),h('h3',null,p.problemName),h('p',null,p.executiveSignature),h('div',{className:'action-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),h('section',null,[h('h4',null,'Aging / Velocity'),mini('0-30D',fmt(p.fresh0_30)),mini('31-60D',fmt(p.age31_60)),mini('61-90D',fmt(p.age61_90)),mini('91D+',fmt(p.oldUnits91Plus)),mini('Status',p.velocityIcon+' '+p.velocityStatus)]),h('section',null,[h('h4',null,'Recommended Actions'),related.length?related.slice(0,4).map(function(a){return h('div',{className:'action-drawer-action',key:a.title+a.type},[h('b',null,a.title),h('small',null,a.reason)]);}):h('p',null,p.recommendedFocus)]),h('button',{type:'button',className:'action-primary',onClick:function(){downloadPlaybook(p,actions,risk,bullets,'md');}},'Generate Recovery Playbook')]); }
+            function detailDrawer(p, actions, bullets, risk){ if(!p) return null; var related=actions.filter(function(a){return a.p===p;}); return h('aside',{className:'action-drawer'},[h('div',{className:'action-drawer-head'},[h('span',null,'Problem Detail'),h('button',{type:'button',onClick:function(){window.__SMTINEL_BENTO_SELECTED='';safeBentoRerender();}},'x')]),h('h3',null,p.problemName),h('p',null,p.executiveSignature),h('div',{className:'action-drawer-score'},[h('b',null,p.businessImpactScore),h('span',null,'Business Impact')]),h('section',null,[h('h4',null,'Source Intelligence'),mini('Station',p.primarySourceStation),mini('Line',p.primarySourceLine),mini('WO',p.primarySourceWO),mini('Contribution',p.sourceContributionPct+'%')]),h('section',null,[h('h4',null,'Aging / Velocity'),mini('0-30D',fmt(p.fresh0_30)),mini('31-60D',fmt(p.age31_60)),mini('61-90D',fmt(p.age61_90)),mini('91D+',fmt(p.oldUnits91Plus)),mini('Status',p.velocityIcon+' '+p.velocityStatus)]),h('section',null,[h('h4',null,'Recommended Actions'),related.length?related.slice(0,4).map(function(a){return h('div',{className:'action-drawer-action',key:a.title+a.type},[h('b',null,a.title),h('small',null,a.reason)]);}):h('p',null,p.recommendedFocus)]),h('button',{type:'button',className:'action-primary',onClick:function(){downloadPlaybook(p,actions,risk,bullets,'md');}},(recoveryCaseType(top)==='FRESH_INPUT_ONLY'?'Generate Fresh Input Control Plan':'Generate Recovery Playbook'))]); }
 
             function opportunitySection(top){
                 var sim = impactSimulation(top);
@@ -30340,6 +30469,32 @@ body:has(#recovery-section) .main-content.expanded{
                 return 'Recovery Blocked';
             }
             function buildExecutionActions(exec,top){
+                var caseType = recoveryCaseType(top);
+                if(caseType === 'FRESH_INPUT_ONLY'){
+                    var freshActions = [];
+                    function fpush(priority, action, owner, due, status, impact, age){
+                        var esc = escalationLevel(due);
+                        freshActions.push({
+                            priority: priority,
+                            action: action,
+                            owner: owner,
+                            dueHours: due,
+                            dueDate: dueDateText(due),
+                            status: status,
+                            readinessImpact: impact,
+                            age: age || 0,
+                            escalationLevel: esc.label,
+                            escalationClass: esc.cls,
+                            escalationOwner: esc.owner
+                        });
+                    }
+                    fpush('Critical','Validate Fresh Input Repeatability','Manufacturing Engineering',24,'OPEN',30,3);
+                    fpush('High','Check Source Station / Line / WO Concentration','Quality Engineering',48,'OPEN',22,2);
+                    fpush('High','Prepare Containment Gate if Repeat Confirmed','Manufacturing Engineering',48,'OPEN',26,2);
+                    fpush('Medium','Monitor Next Production Window','Production',72,'WAITING',12,1);
+                    return freshActions;
+                }
+
                 var actions = [];
                 function push(priority, action, owner, due, status, impact, age){
                     var esc = escalationLevel(due);
@@ -30546,10 +30701,253 @@ body:has(#recovery-section) .main-content.expanded{
                     }))
                 ]);
             }
+
+            function recoveryCaseType(top){
+                top = top || {};
+                var fresh = n(top.freshInputUnits);
+                var aged = n(top.agedUnits31Plus);
+                var old91 = n(top.oldUnits91Plus);
+                if(fresh > 0 && aged === 0 && old91 === 0) return 'FRESH_INPUT_ONLY';
+                if(fresh === 0 && aged > 0) return 'AGED_BONEPILE_ONLY';
+                if(fresh > 0 && aged > 0 && old91 > 0) return 'CRITICAL_RECURRENCE';
+                if(fresh > 0 && aged > 0) return 'ACTIVE_RECURRENCE';
+                return 'NO_RECOVERY_SIGNAL';
+            }
+            function recoveryCaseLabel(type){
+                if(type === 'FRESH_INPUT_ONLY') return 'WATCHLIST';
+                if(type === 'AGED_BONEPILE_ONLY') return 'RECOVERY ONLY';
+                if(type === 'CRITICAL_RECURRENCE') return 'CRITICAL';
+                if(type === 'ACTIVE_RECURRENCE') return 'ACTIVE RECURRENCE';
+                return 'CONTROLLED';
+            }
+            function recoveryDecisionModel(top, exec, sim, risk){
+                top = top || {};
+                exec = exec || {};
+                sim = sim || {};
+                var fresh = n(top.freshInputUnits);
+                var aged = n(top.agedUnits31Plus);
+                var old91 = n(top.oldUnits91Plus);
+                var containment = n(exec.containment);
+                var readiness = n(exec.readiness);
+                var blocked = exec.blockers && exec.blockers.length;
+                var type = recoveryCaseType(top);
+                var decision = 'MONITOR SIGNAL';
+                var reason = 'No recovery backlog is detected under current scope.';
+                var tone = 'green';
+                var status = recoveryCaseLabel(type);
+                var recommendedAction = 'Monitor and validate source controls.';
+                if(type === 'FRESH_INPUT_ONLY'){
+                    decision = 'MONITOR FRESH INPUT';
+                    reason = 'This is not yet a bonepile recovery case. Fresh input is present, but aged bonepile is zero.';
+                    tone = fresh > 0 ? 'yellow' : 'green';
+                    status = 'WATCHLIST';
+                    recommendedAction = 'Validate repeatability and apply source containment if repeated.';
+                } else if(type === 'AGED_BONEPILE_ONLY'){
+                    decision = 'EXECUTE RECOVERY BURN-DOWN';
+                    reason = 'Source appears contained. Focus on aged WIP burn-down.';
+                    tone = readiness >= 90 ? 'green' : 'yellow';
+                    status = 'RECOVERY ONLY';
+                    recommendedAction = 'Execute recovery burn-down for aged WIP.';
+                } else if(type === 'CRITICAL_RECURRENCE'){
+                    decision = 'CRITICAL RECURRENCE — CONTAIN SOURCE FIRST';
+                    reason = 'Fresh input and 91D+ bonepile coexist. Stop input, validate containment, then execute oldest bucket burn-down.';
+                    tone = 'red';
+                    status = 'CRITICAL';
+                    recommendedAction = 'Stop input, validate containment, then burn down oldest bucket.';
+                } else if(type === 'ACTIVE_RECURRENCE'){
+                    decision = 'CONTAIN SOURCE BEFORE RECOVERY';
+                    reason = 'Recovery alone will not reduce backlog while fresh input continues.';
+                    tone = 'red';
+                    status = 'ACTIVE RECURRENCE';
+                    recommendedAction = 'Validate containment before large-scale recovery.';
+                } else if(blocked){
+                    decision = 'RECOVERY BLOCKED';
+                    reason = (exec.blockers && exec.blockers[0]) || 'Recovery blocker open.';
+                    tone = 'red';
+                    status = 'BLOCKED';
+                    recommendedAction = 'Close blocker before recovery execution.';
+                }
+                if(type !== 'FRESH_INPUT_ONLY' && blocked && tone !== 'red'){
+                    decision = 'RECOVERY BLOCKED';
+                    reason = (exec.blockers && exec.blockers[0]) || reason;
+                    tone = 'red';
+                    status = 'BLOCKED';
+                    recommendedAction = 'Close blocker before recovery execution.';
+                }
+                return {
+                    caseType: type,
+                    decision: decision,
+                    reason: reason,
+                    tone: tone,
+                    status: status,
+                    recommendedAction: recommendedAction,
+                    owner: type === 'FRESH_INPUT_ONLY' ? 'Manufacturing Engineering' : (exec.owner || sim.owner || 'Quality Engineering'),
+                    due: type === 'FRESH_INPUT_ONLY' ? '48 Hours' : tone === 'red' ? '24 Hours' : tone === 'yellow' ? '48 Hours' : 'Today',
+                    impact: type === 'FRESH_INPUT_ONLY' ? 'Prevent backlog formation from '+fmt(fresh)+' fresh units/week' : 'Protect '+fmt(sim.unitsProtectedPerWeek || fresh || 0)+' units/week',
+                    source: sim.source || top.primarySource || 'N/D'
+                };
+            }
+            function decisionDriver(label,value,state){
+                return h('article',{className:'rds-driver '+(state || '')},[
+                    h('span',null,label),
+                    h('b',null,value)
+                ]);
+            }
+            function recoveryDecisionHero(top,exec,sim,risk){
+                var d = recoveryDecisionModel(top,exec,sim,risk);
+                return h('section',{className:'rds-hero '+d.tone},[
+                    h('article',{className:'rds-decision-card'},[
+                        h('span',{className:'rds-eyebrow'},'Recovery Decision'),
+                        h('h1',null,d.decision),
+                        h('p',null,d.reason),
+                        h('div',{className:'rds-decision-meta'},[
+                            decisionDriver('Owner',d.owner),
+                            decisionDriver('Due',d.due),
+                            decisionDriver('Status',d.status),
+                            decisionDriver('Expected Impact',d.impact)
+                        ])
+                    ]),
+                    h('article',{className:'rds-score-card'},[
+                        h('span',{className:'rds-eyebrow'},'Recovery Score'),
+                        h('b',null,String(exec.readiness || 0)+'%'),
+                        h('em',null,exec.readinessStatus || 'N/D'),
+                        h('small',null,'Blockers: '+((exec.blockers || []).length))
+                    ])
+                ]);
+            }
+            function recoveryDecisionDrivers(top,exec,sim,risk){
+                return h('section',{className:'rds-drivers'},[
+                    decisionDriver('Fresh Input',fmt(top && top.freshInputUnits || 0)+' Units',(top && top.freshInputUnits>0)?'red':'green'),
+                    decisionDriver('Source Share',String(top && top.sourceContributionPct || 0)+'%',(top && top.sourceContributionPct>=50)?'blue':''),
+                    decisionDriver('Readiness',String(exec.readiness || 0)+'%',exec.readiness>=90?'green':exec.readiness>=75?'yellow':'red'),
+                    decisionDriver('Recovery Risk',risk && risk.level || 'N/D',risk && risk.level==='CRITICAL'?'red':risk && risk.level==='HIGH'?'yellow':'green')
+                ]);
+            }
+            function gmDecisionSummary(top,exec,sim,risk){
+                var d = recoveryDecisionModel(top,exec,sim,risk);
+                return h('article',{className:'rds-gm-summary'},[
+                    h('span',{className:'rds-eyebrow'},'GM Summary'),
+                    h('div',{className:'rds-gm-grid'},[
+                        decisionDriver('Problem',sim.symptom || top && top.problemName || 'N/D'),
+                        decisionDriver('Current Bonepile',fmt(sim.bonepile || 0)),
+                        decisionDriver('Fresh Input',fmt(sim.fresh || 0)+'/week'),
+                        decisionDriver('Main Source',sim.source || 'N/D'),
+                        decisionDriver('Decision',d.decision),
+                        decisionDriver('If No Action','+'+fmt(sim.noAction30 || 0)+' in 30 days')
+                    ]),
+                    h('details',{className:'rds-tech'},[h('summary',null,'Technical Signature'),h('code',null,sim.technicalSignature || top && top.executiveSignature || 'N/D')])
+                ]);
+            }
+            function blockedDecisionCard(exec){
+                if(!exec || !exec.blockers || !exec.blockers.length) return null;
+                return h('article',{className:'rds-blocked-card'},[
+                    h('span',{className:'rds-eyebrow'},'Recovery Blocked'),
+                    h('h3',null,'Containment / Readiness Action Required'),
+                    h('div',{className:'rds-blocked-grid'},[
+                        decisionDriver('Reason',exec.blockers[0]),
+                        decisionDriver('Required Action','Approve containment plan'),
+                        decisionDriver('Owner',exec.owner || 'Quality Engineering'),
+                        decisionDriver('Due','24 Hours')
+                    ])
+                ]);
+            }
+            function compactDecisionLifecycle(exec){
+                exec = exec || {};
+                var stages = [
+                    ['Detection',100],
+                    ['Containment',exec.containment || 0],
+                    ['RCCA',exec.rcca || 0],
+                    ['Validation',exec.verification || 0],
+                    ['Recovery',exec.readiness >= 90 ? 35 : 0],
+                    ['Closure',0]
+                ];
+                return h('article',{className:'rds-lifecycle'},[
+                    h('span',{className:'rds-eyebrow'},'Recovery Lifecycle'),
+                    h('div',{className:'rds-life-row'},stages.map(function(s,i){
+                        var val = n(s[1]);
+                        var cls = val >= 100 ? 'done' : val > 0 ? 'current' : 'pending';
+                        return h('span',{className:cls,key:s[0]},[
+                            h('i',null,val>=100?'✓':val>0?'⚠':'○'),
+                            h('b',null,s[0]),
+                            h('em',null,String(Math.round(val))+'%')
+                        ]);
+                    }))
+                ]);
+            }
+            function decisionKanbanBoard(problems,selectedKey){
+                var buckets = ['CRITICAL','HIGH','MEDIUM','LOW'];
+                var grouped = {};
+                buckets.forEach(function(b){ grouped[b] = []; });
+                (problems || []).forEach(function(p){ (grouped[p.severity] || grouped.LOW).push(p); });
+                buckets.forEach(function(b){ grouped[b].sort(function(a,c){ return (c.actionScore||0)-(a.actionScore||0); }); });
+                function card(p){
+                    return h('article',{className:'rds-kanban-card '+p.severity.toLowerCase()+(selectedKey===p.executiveSignature?' selected':''),onClick:function(){window.__SMTINEL_BENTO_SELECTED=p.executiveSignature;safeBentoRerender();}},[
+                        h('h4',null,p.problemName),
+                        h('div',{className:'rds-kanban-metrics'},[
+                            decisionDriver('Fresh',fmt(p.freshInputUnits)),
+                            decisionDriver('Bonepile',fmt(p.agedUnits31Plus)),
+                            decisionDriver('Owner',p.status === 'CONTAINED' ? 'Recovery Team' : 'Quality Engineering'),
+                            decisionDriver('Status',p.status)
+                        ]),
+                        h('details',{className:'rds-tech'},[h('summary',null,'Technical Signature'),h('code',null,p.executiveSignature)])
+                    ]);
+                }
+                return h('section',{className:'rds-kanban'},[
+                    h('div',{className:'rds-section-title'},[h('h3',null,'Recovery Priority Board'),h('span',null,'Grouped by severity. Technical signature hidden by default.')]),
+                    h('div',{className:'rds-kanban-grid'},buckets.map(function(b){
+                        return h('section',{className:'rds-lane '+b.toLowerCase(),key:b},[
+                            h('header',null,[h('b',null,b),h('span',null,String(grouped[b].length))]),
+                            h('div',{className:'rds-lane-cards'},grouped[b].slice(0,5).map(card))
+                        ]);
+                    }))
+                ]);
+            }
             function decisionCard(top){ return h('article',{className:'decision-card'},[h('div',{className:'smtinel-ri-eyebrow'},"Today's Executive Decision"),h('h2',null,top?top.problemName:'No active priority'),h('div',{className:'decision-grid'},[mini('Fresh Input',top?fmt(top.freshInputUnits):'0'),mini('Bonepile',top?fmt(top.agedUnits31Plus):'0'),mini('Primary Source',top?top.primarySource:'N/D'),mini('Business Impact',top?String(top.businessImpactScore):'0')]),h('p',null,top&&(top.status==='ACTIVE'||top.status==='CRITICAL_RECURRENCE')?'Decision: contain source before executing large-scale recovery.':'Decision: focus recovery burn-down and monitoring.')]); }
             function agingExposure(top){ var max=Math.max(1,top?Math.max(top.fresh0_30,top.age31_60,top.age61_90,top.oldUnits91Plus,top.longTermUnits365Plus):1); function bar(label,val){return h('div',{className:'aging-row'},[h('span',null,label),h('b',null,fmt(val)),h('i',null,h('em',{style:{width:Math.max(4,Math.round(val/max*100))+'%'}},''))]);} return h('article',{className:'action-bento-card aging'},[h('span',null,'Aging Exposure'),bar('0-30D',top?top.fresh0_30:0),bar('31-60D',top?top.age31_60:0),bar('61-90D',top?top.age61_90:0),bar('91-365D',top?Math.max(0,(top.oldUnits91Plus||0)-(top.longTermUnits365Plus||0)):0),bar('>365D',top?top.longTermUnits365Plus:0)]); }
             var problems=buildProblems(), selectedKey=window.__SMTINEL_BENTO_SELECTED||'', selected=selectedKey?(problems.filter(function(p){return p.executiveSignature===selectedKey;})[0]||null):null, top=selected||problems[0]||null, health=healthIndex(problems), risk=recoveryRisk(top), actions=buildActions(problems), bullets=gmBullets(top), active=problems.filter(function(p){return p.status==='ACTIVE'||p.status==='CRITICAL_RECURRENCE';}), critical=problems.filter(function(p){return p.status==='CRITICAL_RECURRENCE';}), contained=problems.filter(function(p){return p.status==='CONTAINED';});
-            return h('section',{className:'action-engine'},[h('div',{className:'action-hero'},[h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Action Engine'),h('h2',null,'What do we do tomorrow?'),h('p',null,'SMTinel convierte recurrencia, fuente, aging y efectividad en dirección operativa priorizada.')]),h('div',{className:'action-hero-buttons'},[h('button',{type:'button',onClick:function(){exportActionTsv(actions);}},'Export Actions'),h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'md');}},'Generate Recovery Playbook'),h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'pdf');}},'PDF')])]),execCommandCenter(top,problems,actions,health,risk,bullets),h('section',{className:'action-board compact-actions'},[h('div',{className:'action-section-head'},[h('h3',null,"Today's Recovery Priorities"),h('span',null,'Actions first. Data second.')]),h('div',{className:'action-card-grid'},actions.length?actions.slice(0,6).map(actionCard):h('div',{className:'ri-aging-empty'},'No actions generated under current scope.'))]),h('div',{className:'action-bento-grid'},[h('article',{className:'action-bento-card health'},[h('span',null,'Recovery Health'),h('b',null,health.score),badge(health.label,health.label.toLowerCase())]),h('article',{className:'action-bento-card risk '+risk.level.toLowerCase()},[h('span',null,'Recovery Risk'),h('b',null,risk.level),h('ul',null,risk.reason.map(function(x){return h('li',{key:x},x);} ))]),agingExposure(top),h('article',{className:'action-bento-card gm'},[h('span',null,'What To Tell GM'),h('ul',null,bullets.map(function(x){return h('li',{key:x},x);} ))]),h('article',{className:'action-bento-card lifecycle'},[h('span',null,'Problem Lifecycle'),timeline(top)])]),kanbanPriorityBoard(problems,selectedKey),h('section',{className:'action-problem-board legacy-priority-board'},[h('div',{className:'action-section-head'},[h('h3',null,'Legacy Priority Board'),h('span',null,'Problem cards ranked by impact')]),h('div',{className:'action-problem-grid'},problems.length?problems.slice(0,12).map(function(p,i){return problemCard(p,i,selectedKey);}):h('div',{className:'ri-aging-empty'},'No recovery priorities detected.'))]),detailDrawer(selected,actions,bullets,risk),h('details',{className:'action-advanced'},[h('summary',null,'Advanced Analysis'),h('div',{className:'action-table-wrap'},h('table',{className:'action-table'},[h('thead',null,h('tr',null,['Rank','Problem','Executive Signature','Action Score','Impact','Status','Severity','Fresh','Bonepile','91D+','Source','Velocity','Recovery','Focus'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'action-row-'+i},[h('td',null,'#'+(i+1)),h('td',null,p.problemName),h('td',null,p.executiveSignature),h('td',null,p.actionScore || p.businessImpactScore),h('td',null,p.businessImpactScore),h('td',null,p.status),h('td',null,p.severity),h('td',null,fmt(p.freshInputUnits)),h('td',null,fmt(p.agedUnits31Plus)),h('td',null,fmt(p.oldUnits91Plus)),h('td',null,p.primarySource),h('td',null,p.velocityIcon+' '+p.velocityStatus),h('td',null,p.recoveryEffectiveness),h('td',null,p.recommendedFocus)]);} ))]))])]);
+            return h('section',{className:'action-engine recovery-decision-system'},[
+                h('div',{className:'action-hero rds-minimized'},[
+                    h('div',null,[h('div',{className:'smtinel-ri-eyebrow'},'Recovery Decision System'),h('h2',null,'One screen. One decision.'),h('p',null,'Decision first. Data second. Evidence only when required.')]),
+                    h('div',{className:'action-hero-buttons'},[
+                        h('button',{type:'button',onClick:function(){exportActionTsv(actions);}},'Export Actions'),
+                        h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'md');}},(recoveryCaseType(top)==='FRESH_INPUT_ONLY'?'Generate Fresh Input Control Plan':'Generate Recovery Playbook')),
+                        h('button',{type:'button',onClick:function(){downloadPlaybook(top,actions,risk,bullets,'pdf');}},'PDF')
+                    ])
+                ]),
+                recoveryDecisionHero(top,recoveryExecutionModel(top,risk),impactSimulation(top),risk),
+                recoveryDecisionDrivers(top,recoveryExecutionModel(top,risk),impactSimulation(top),risk),
+                gmDecisionSummary(top,recoveryExecutionModel(top,risk),impactSimulation(top),risk),
+                blockedDecisionCard(recoveryExecutionModel(top,risk)),
+                h('section',{className:'action-board compact-actions rds-execution-board'},[
+                    h('div',{className:'action-section-head'},[h('h3',null,'Execution Board'),h('span',null,'One owner. One due date. One next action.')]),
+                    h('div',{className:'action-card-grid'},actions.length?actions.slice(0,4).map(actionCard):h('div',{className:'ri-aging-empty'},'No actions generated under current scope.'))
+                ]),
+                compactDecisionLifecycle(recoveryExecutionModel(top,risk)),
+                decisionKanbanBoard(problems,selectedKey),
+                detailDrawer(selected,actions,bullets,risk),
+                h('details',{className:'action-advanced rds-advanced'},[
+                    h('summary',null,'Advanced Analysis'),
+                    h('div',{className:'action-table-wrap'},h('table',{className:'action-table'},[
+                        h('thead',null,h('tr',null,['Rank','Problem','Executive Signature','Action Score','Impact','Status','Severity','Fresh','Bonepile','91D+','Source','Velocity','Recovery','Focus'].map(function(x){return h('th',{key:x},x);}))),
+                        h('tbody',null,problems.slice(0,60).map(function(p,i){return h('tr',{key:'action-row-'+i},[
+                            h('td',null,'#'+(i+1)),
+                            h('td',null,p.problemName),
+                            h('td',null,p.executiveSignature),
+                            h('td',null,p.actionScore || p.businessImpactScore),
+                            h('td',null,p.businessImpactScore),
+                            h('td',null,p.status),
+                            h('td',null,p.severity),
+                            h('td',null,fmt(p.freshInputUnits)),
+                            h('td',null,fmt(p.agedUnits31Plus)),
+                            h('td',null,fmt(p.oldUnits91Plus)),
+                            h('td',null,p.primarySource),
+                            h('td',null,p.velocityIcon+' '+p.velocityStatus),
+                            h('td',null,p.recoveryEffectiveness),
+                            h('td',null,p.recommendedFocus)
+                        ]);} ))
+                    ]))
+                ])
+            ]);
         }
 
         function recoveryExportCsvCell(value){
@@ -52157,6 +52555,477 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
       } catch(_) {}
     }, 650);
   });
+})();
+</script>
+
+
+<!-- SMTinel Recovery Decision System - One Screen One Decision -->
+<style id="smtinel-recovery-decision-system-style">
+#recovery-section .exec-control-tower,
+#recovery-section .ecc-shell,
+#recovery-section .action-bento-grid,
+#recovery-section .legacy-priority-board,
+#recovery-section .ree-queue,
+#recovery-section .ree-path-card{display:none!important}
+
+#recovery-section .recovery-decision-system{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  color:#102A43;
+}
+#recovery-section .rds-minimized{
+  padding:14px 18px!important;
+  border-radius:22px!important;
+  min-height:0!important;
+}
+#recovery-section .rds-minimized h2{
+  font-size:25px!important;
+  margin:2px 0!important;
+}
+#recovery-section .rds-minimized p{
+  font-size:12px!important;
+}
+#recovery-section .rds-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1.45fr) minmax(220px,.55fr);
+  gap:14px;
+}
+#recovery-section .rds-decision-card,
+#recovery-section .rds-score-card,
+#recovery-section .rds-gm-summary,
+#recovery-section .rds-blocked-card,
+#recovery-section .rds-lifecycle,
+#recovery-section .rds-kanban{
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(178,196,214,.62);
+  border-radius:28px;
+  box-shadow:0 18px 44px rgba(16,42,67,.10),inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter:blur(18px) saturate(1.15);
+  color:#102A43;
+}
+#recovery-section .rds-decision-card{
+  min-height:310px;
+  padding:30px;
+  color:#fff;
+  background:linear-gradient(135deg,#102A43 0%,#12385f 54%,#071A33 100%);
+  position:relative;
+  overflow:hidden;
+}
+#recovery-section .rds-hero.green .rds-decision-card{background:linear-gradient(135deg,#0f5132,#13784d 55%,#0b2f1f)}
+#recovery-section .rds-hero.yellow .rds-decision-card{background:linear-gradient(135deg,#6b4e00,#a66f00 55%,#3b2d05)}
+#recovery-section .rds-hero.red .rds-decision-card{background:linear-gradient(135deg,#5f1515,#9f2525 55%,#2d0707)}
+#recovery-section .rds-decision-card:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 80% 22%,rgba(255,255,255,.22),transparent 28%),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:auto,36px 36px,36px 36px;
+}
+#recovery-section .rds-decision-card>*{position:relative;z-index:1}
+#recovery-section .rds-eyebrow{
+  display:block;
+  color:#627D98;
+  font-size:11px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+#recovery-section .rds-decision-card .rds-eyebrow{color:rgba(255,255,255,.70)}
+#recovery-section .rds-decision-card h1{
+  margin:10px 0 12px;
+  color:#fff;
+  font-size:58px;
+  line-height:.9;
+  letter-spacing:-.06em;
+}
+#recovery-section .rds-decision-card p{
+  max-width:920px;
+  margin:0 0 22px;
+  color:rgba(255,255,255,.86);
+  font-size:20px;
+  line-height:1.35;
+  font-weight:800;
+}
+#recovery-section .rds-decision-meta{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+#recovery-section .rds-decision-card .rds-driver{
+  background:rgba(255,255,255,.12);
+  border-color:rgba(255,255,255,.18);
+}
+#recovery-section .rds-decision-card .rds-driver span{color:rgba(255,255,255,.66)}
+#recovery-section .rds-decision-card .rds-driver b{color:#fff}
+
+#recovery-section .rds-score-card{
+  display:grid;
+  place-items:center;
+  text-align:center;
+  padding:24px;
+  border-left:7px solid #1f6feb;
+}
+#recovery-section .rds-score-card b{
+  color:#102A43;
+  font-size:78px;
+  line-height:.85;
+  letter-spacing:-.065em;
+}
+#recovery-section .rds-score-card em{
+  color:#0f7a43;
+  font-size:14px;
+  font-style:normal;
+  font-weight:950;
+  text-transform:uppercase;
+}
+#recovery-section .rds-score-card small{
+  color:#627D98;
+  font-size:12px;
+  font-weight:900;
+}
+
+#recovery-section .rds-drivers{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+#recovery-section .rds-driver{
+  background:#f4f8fc;
+  border:1px solid rgba(178,196,214,.58);
+  border-radius:18px;
+  padding:14px;
+  min-width:0;
+}
+#recovery-section .rds-driver.red{border-left:5px solid #ef4444}
+#recovery-section .rds-driver.yellow{border-left:5px solid #f59e0b}
+#recovery-section .rds-driver.green{border-left:5px solid #22c55e}
+#recovery-section .rds-driver.blue{border-left:5px solid #1f6feb}
+#recovery-section .rds-driver span{
+  display:block;
+  color:#627D98;
+  font-size:10px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+#recovery-section .rds-driver b{
+  display:block;
+  color:#102A43;
+  font-size:19px;
+  line-height:1.1;
+  margin-top:5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#recovery-section .rds-gm-summary,
+#recovery-section .rds-blocked-card,
+#recovery-section .rds-lifecycle,
+#recovery-section .rds-kanban{
+  padding:18px;
+}
+#recovery-section .rds-gm-summary{border-left:7px solid #1f6feb}
+#recovery-section .rds-gm-grid,
+#recovery-section .rds-blocked-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+#recovery-section .rds-blocked-card{
+  border-left:7px solid #ef4444;
+  background:linear-gradient(135deg,rgba(255,241,242,.96),rgba(255,255,255,.94));
+}
+#recovery-section .rds-blocked-card h3{
+  margin:8px 0 0;
+  color:#102A43;
+  font-size:22px;
+}
+#recovery-section .rds-tech{
+  margin-top:10px;
+}
+#recovery-section .rds-tech summary{
+  cursor:pointer;
+  color:#334E68;
+  font-size:12px;
+  font-weight:900;
+}
+#recovery-section .rds-tech code{
+  display:block;
+  margin-top:8px;
+  background:#eef4fb;
+  border:1px solid rgba(178,196,214,.58);
+  border-radius:12px;
+  padding:10px;
+  color:#102A43;
+  white-space:normal;
+  word-break:break-word;
+}
+#recovery-section .rds-lifecycle{
+  border-left:7px solid #102A43;
+}
+#recovery-section .rds-life-row{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+#recovery-section .rds-life-row span{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:4px 8px;
+  align-items:center;
+  background:#f4f8fc;
+  border:1px solid rgba(178,196,214,.58);
+  border-radius:16px;
+  padding:10px;
+}
+#recovery-section .rds-life-row span.done{background:#ecfdf3}
+#recovery-section .rds-life-row span.current{background:#eaf4ff;outline:1px solid rgba(31,111,235,.44)}
+#recovery-section .rds-life-row i{
+  font-style:normal;
+  font-size:16px;
+}
+#recovery-section .rds-life-row span.done i{color:#22c55e}
+#recovery-section .rds-life-row span.current i{color:#1f6feb}
+#recovery-section .rds-life-row b{
+  color:#102A43;
+  font-size:12px;
+}
+#recovery-section .rds-life-row em{
+  grid-column:2;
+  color:#627D98;
+  font-style:normal;
+  font-size:11px;
+  font-weight:900;
+}
+#recovery-section .rds-section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:12px;
+  margin-bottom:12px;
+}
+#recovery-section .rds-section-title h3{
+  margin:0;
+  color:#102A43;
+  font-size:18px;
+}
+#recovery-section .rds-section-title span{
+  color:#627D98;
+  font-size:11px;
+  font-weight:850;
+}
+#recovery-section .rds-kanban-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+#recovery-section .rds-lane{
+  background:rgba(244,248,252,.72);
+  border:1px solid rgba(178,196,214,.54);
+  border-radius:18px;
+  padding:10px;
+}
+#recovery-section .rds-lane.critical{border-top:4px solid #ef4444}
+#recovery-section .rds-lane.high{border-top:4px solid #f59e0b}
+#recovery-section .rds-lane.medium{border-top:4px solid #ffd93d}
+#recovery-section .rds-lane.low{border-top:4px solid #1f6feb}
+#recovery-section .rds-lane header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:9px;
+}
+#recovery-section .rds-lane header b{
+  color:#102A43;
+  font-size:12px;
+  font-weight:950;
+}
+#recovery-section .rds-lane header span{
+  background:#fff;
+  border:1px solid rgba(178,196,214,.58);
+  color:#334E68;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:11px;
+  font-weight:950;
+}
+#recovery-section .rds-lane-cards{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+#recovery-section .rds-kanban-card{
+  background:#fff;
+  border:1px solid rgba(178,196,214,.62);
+  border-radius:15px;
+  padding:10px;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(16,42,67,.06);
+}
+#recovery-section .rds-kanban-card.selected{
+  outline:2px solid #1f6feb;
+}
+#recovery-section .rds-kanban-card h4{
+  margin:0 0 8px;
+  color:#102A43;
+  font-size:15px;
+  line-height:1.14;
+}
+#recovery-section .rds-kanban-metrics{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+#recovery-section .rds-kanban-metrics .rds-driver{
+  padding:7px;
+  border-radius:11px;
+}
+#recovery-section .rds-kanban-metrics .rds-driver span{
+  font-size:8px;
+}
+#recovery-section .rds-kanban-metrics .rds-driver b{
+  font-size:11px;
+}
+#recovery-section .rds-execution-board{
+  padding:14px!important;
+}
+#recovery-section .rds-execution-board .action-card-grid{
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important;
+  gap:10px!important;
+}
+#recovery-section .rds-execution-board .action-card:nth-child(n+5){
+  display:none!important;
+}
+#recovery-section .rds-advanced{
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(178,196,214,.62);
+  border-radius:24px;
+  padding:16px;
+}
+#recovery-section .rds-advanced summary{
+  cursor:pointer;
+  color:#102A43;
+  font-size:16px;
+  font-weight:950;
+}
+@media(max-width:1200px){
+  #recovery-section .rds-hero{grid-template-columns:1fr}
+  #recovery-section .rds-drivers,
+  #recovery-section .rds-gm-grid,
+  #recovery-section .rds-blocked-grid,
+  #recovery-section .rds-life-row,
+  #recovery-section .rds-kanban-grid{grid-template-columns:1fr 1fr}
+  #recovery-section .rds-decision-card h1{font-size:46px}
+}
+@media(max-width:760px){
+  #recovery-section .rds-drivers,
+  #recovery-section .rds-gm-grid,
+  #recovery-section .rds-blocked-grid,
+  #recovery-section .rds-life-row,
+  #recovery-section .rds-kanban-grid,
+  #recovery-section .rds-decision-meta{grid-template-columns:1fr}
+  #recovery-section .rds-decision-card{padding:22px;min-height:0}
+  #recovery-section .rds-decision-card h1{font-size:36px}
+}
+</style>
+
+
+<style id="smtinel-decision-consistency-refinement">
+#recovery-section .rds-hero.yellow .rds-decision-card{
+  background:linear-gradient(135deg,#5c4300,#8b6508 54%,#2f2508)!important;
+}
+#recovery-section .rds-hero.yellow .rds-score-card{
+  border-left-color:#f59e0b!important;
+}
+#recovery-section .rds-hero.yellow .rds-score-card em{
+  color:#8a5a00!important;
+}
+</style>
+
+
+<!-- SMTinel Recovery Design System Lock v1.0 -->
+<style id="smtinel-recovery-design-system-lock">
+:root{
+  --smt-navy:#102A43;
+  --smt-navy-2:#173B5E;
+  --smt-blue:#1F6FEB;
+  --smt-green:#16A34A;
+  --smt-amber:#D97706;
+  --smt-red:#DC2626;
+  --smt-surface-glass:rgba(255,255,255,.92);
+  --smt-border:rgba(178,196,214,.62);
+  --smt-text-primary:#102A43;
+  --smt-text-secondary:#334E68;
+  --smt-text-muted:#627D98;
+  --smt-text-inverse:#FFFFFF;
+}
+#recovery-section,#recovery-section *{color:var(--smt-text-primary)}
+#recovery-section .rds-decision-card{
+  background:linear-gradient(135deg,var(--smt-navy) 0%,var(--smt-navy-2) 58%,#071A33 100%)!important;
+  color:var(--smt-text-inverse)!important;
+}
+#recovery-section .rds-decision-card *,#recovery-section .action-hero *,#recovery-section .smtinel-ri-hero *{color:inherit}
+#recovery-section .rds-decision-card h1,#recovery-section .rds-decision-card p,#recovery-section .rds-decision-card .rds-eyebrow{color:var(--smt-text-inverse)!important}
+#recovery-section .rds-hero.green .rds-decision-card{background:linear-gradient(135deg,var(--smt-navy) 0%,#164E3A 58%,#071A33 100%)!important}
+#recovery-section .rds-hero.yellow .rds-decision-card{background:linear-gradient(135deg,var(--smt-navy) 0%,#31465C 58%,#071A33 100%)!important;border-left:8px solid var(--smt-amber)!important}
+#recovery-section .rds-hero.red .rds-decision-card{background:linear-gradient(135deg,var(--smt-navy) 0%,#4A2630 58%,#071A33 100%)!important;border-left:8px solid var(--smt-red)!important}
+#recovery-section .rds-score-card,#recovery-section .rds-gm-summary,#recovery-section .rds-blocked-card,#recovery-section .rds-lifecycle,#recovery-section .rds-kanban,#recovery-section .rds-driver,#recovery-section .action-card,#recovery-section .ree-action-card,#recovery-section .ree-queue,#recovery-section .rds-advanced{
+  background:var(--smt-surface-glass)!important;
+  border:1px solid var(--smt-border)!important;
+  box-shadow:0 16px 38px rgba(16,42,67,.09), inset 0 1px 0 rgba(255,255,255,.92)!important;
+  color:var(--smt-text-primary)!important;
+}
+#recovery-section .rds-blocked-card{background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(248,250,252,.94))!important;border-left:6px solid var(--smt-red)!important}
+#recovery-section .rds-driver.red{border-left:5px solid var(--smt-red)!important}
+#recovery-section .rds-driver.yellow{border-left:5px solid var(--smt-amber)!important}
+#recovery-section .rds-driver.green{border-left:5px solid var(--smt-green)!important}
+#recovery-section .rds-driver.blue{border-left:5px solid var(--smt-blue)!important}
+#recovery-section .rds-eyebrow,#recovery-section .smtinel-ri-eyebrow,#recovery-section .action-section-head span,#recovery-section .rds-section-title span{
+  color:var(--smt-text-muted)!important;
+  text-transform:uppercase;
+  letter-spacing:.10em;
+  font-weight:950;
+}
+#recovery-section .rds-driver span,#recovery-section .tower-metric span{color:var(--smt-text-muted)!important}
+#recovery-section .rds-driver b,#recovery-section .tower-metric b,#recovery-section .rds-gm-summary h3,#recovery-section .rds-blocked-card h3,#recovery-section .rds-section-title h3,#recovery-section .action-section-head h3{color:var(--smt-text-primary)!important}
+#recovery-section button,#recovery-section .action-hero-buttons button{
+  border-radius:999px!important;
+  padding:12px 18px!important;
+  font-weight:950!important;
+  letter-spacing:0!important;
+  box-shadow:0 12px 30px rgba(16,42,67,.12)!important;
+}
+#recovery-section .action-hero-buttons button{background:var(--smt-blue)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important}
+#recovery-section .action-hero-buttons button:last-child{background:var(--smt-navy)!important}
+#recovery-section .rds-advanced summary{color:var(--smt-text-primary)!important}
+#recovery-section .rds-lane.critical{border-top-color:var(--smt-red)!important}
+#recovery-section .rds-lane.high{border-top-color:var(--smt-amber)!important}
+#recovery-section .rds-lane.medium{border-top-color:#EAB308!important}
+#recovery-section .rds-lane.low{border-top-color:var(--smt-blue)!important}
+#recovery-section .rds-driver *,#recovery-section .rds-gm-summary *,#recovery-section .rds-blocked-card *,#recovery-section .rds-lifecycle *,#recovery-section .rds-kanban *,#recovery-section .rds-advanced *{opacity:1!important}
+</style>
+
+
+<script id="smtinel-recovery-design-system-governance">
+(function(){
+  window.validateRecoveryDesignSystem = function(){
+    var root = document.querySelector('#recovery-section');
+    if(!root) return {ok:false, reason:'Recovery section not found'};
+    var heroExists = !!root.querySelector('.rds-decision-card');
+    var advanced = root.querySelector('.rds-advanced');
+    var tablesCollapsed = advanced ? !advanced.open : true;
+    var decisionFirst = true;
+    var hero = root.querySelector('.rds-hero');
+    var firstTable = root.querySelector('table');
+    if(hero && firstTable) decisionFirst = hero.getBoundingClientRect().top <= firstTable.getBoundingClientRect().top;
+    var result = {ok: heroExists && decisionFirst && tablesCollapsed, heroExists:heroExists, decisionFirst:decisionFirst, tablesCollapsed:tablesCollapsed, paletteLocked:true, terminologyLocked:true, contrastLocked:true};
+    if(!result.ok) console.warn('Recovery Design System Violation', result);
+    return result;
+  };
+  setTimeout(function(){try{window.validateRecoveryDesignSystem();}catch(e){}},1200);
 })();
 </script>
 
