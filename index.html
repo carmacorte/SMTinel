@@ -53029,6 +53029,152 @@ html body #smtinelZipWaitScreen .smtinel-zip-wait-phase strong{
 })();
 </script>
 
+
+<!-- SMTinel Yield Flow Calculation Consistency Patch v1.0 -->
+<script id="smtinel-yield-flow-clean-yield-fix">
+(function(){
+  "use strict";
+
+  function smtNum(value){
+    if(value === undefined || value === null) return 0;
+    if(typeof value === "number" && isFinite(value)) return value;
+    var text = String(value).replace(/,/g,"").replace(/%/g,"").trim();
+    var n = Number(text);
+    return isFinite(n) ? n : 0;
+  }
+
+  function smtPct(num, den){
+    num = smtNum(num);
+    den = smtNum(den);
+    if(den <= 0) return 0;
+    return (num / den) * 100;
+  }
+
+  function calculateCleanYieldFromRiskSummary(summary){
+    summary = summary || {};
+    var clean = smtNum(summary.cleanUnits ?? summary.clean_units ?? summary.clean ?? summary.okUnits ?? summary.passUnits);
+    var risk = smtNum(summary.riskUnits ?? summary.risk_units ?? summary.risk ?? summary.failUnits);
+    var total = smtNum(summary.totalUnits ?? summary.total_units ?? summary.total ?? summary.totalBuilt ?? summary.builtUnits);
+    if(total <= 0 && (clean > 0 || risk > 0)) total = clean + risk;
+    return {
+      cleanUnits: clean,
+      riskUnits: risk,
+      totalUnits: total,
+      cleanYield: smtPct(clean, total),
+      formula: "cleanUnits / totalUnits",
+      valid: total > 0
+    };
+  }
+
+  function patchSummaryObject(obj){
+    if(!obj || typeof obj !== "object") return obj;
+    var calc = calculateCleanYieldFromRiskSummary(obj);
+    if(!calc.valid) return obj;
+    obj.cleanUnits = calc.cleanUnits;
+    obj.riskUnits = calc.riskUnits;
+    obj.totalUnits = calc.totalUnits;
+    obj.cleanYield = calc.cleanYield;
+    obj.cleanYieldPct = calc.cleanYield;
+    obj.yieldPct = calc.cleanYield;
+    obj.cleanYieldFormula = calc.formula;
+    return obj;
+  }
+
+  window.SMTinelYieldFix = {
+    calculateCleanYieldFromRiskSummary: calculateCleanYieldFromRiskSummary,
+    patchSummaryObject: patchSummaryObject
+  };
+
+  ["buildYieldFlowKpis","calculateYieldFlowKpis","buildYieldSummary","calculateYieldSummary","computeYieldFlowSummary","getYieldFlowSummary"].forEach(function(name){
+    var original = window[name];
+    if(typeof original !== "function" || original.__smtinelCleanYieldPatched) return;
+    var wrapped = function(){
+      var result = original.apply(this, arguments);
+      if(result && typeof result === "object"){
+        if(Array.isArray(result)) return result.map(patchSummaryObject);
+        return patchSummaryObject(result);
+      }
+      return result;
+    };
+    wrapped.__smtinelCleanYieldPatched = true;
+    window[name] = wrapped;
+  });
+
+  function patchKnownContainers(){
+    ["TRACEOPS_RISK_SUMMARY_ROWS","TRACEOPS_YIELD_FLOW_TRACKER","TRACEOPS_YIELD_BY_WO_ROWS"].forEach(function(name){
+      var value = window[name];
+      if(Array.isArray(value)) value.forEach(function(row){ patchSummaryObject(row); });
+      else if(value && typeof value === "object") patchSummaryObject(value);
+    });
+  }
+
+  function patchRenderedCleanYield(){
+    var root = document.querySelector("#yield-flow-section") || document.body;
+    if(!root) return;
+
+    var pageText = root.innerText || "";
+    var cleanMatch = pageText.match(/CLEAN\s+UNITS\s+([0-9,]+)/i);
+    var totalMatch = pageText.match(/([0-9,]+)\s*[·\/]\s*([0-9,]+)\s*TOT/i);
+    if(!cleanMatch || !totalMatch) return;
+
+    var clean = smtNum(cleanMatch[1]);
+    var total = smtNum(totalMatch[2]);
+    var calcPct = smtPct(clean, total);
+    if(!total || !isFinite(calcPct)) return;
+
+    var labels = Array.from(root.querySelectorAll("*")).filter(function(el){
+      return (el.textContent || "").trim().toUpperCase() === "CLEAN YIELD";
+    });
+
+    labels.forEach(function(label){
+      var container = label.closest("div,section,article") || label.parentElement;
+      if(!container) return;
+      var percentNode = Array.from(container.querySelectorAll("*")).find(function(el){
+        var t = (el.textContent || "").trim();
+        return /^[0-9]+(?:\.[0-9]+)?%$/.test(t);
+      });
+      if(!percentNode) return;
+      var displayed = smtNum(percentNode.textContent);
+      if(Math.abs(displayed - calcPct) >= 0.5){
+        percentNode.textContent = calcPct.toFixed(1) + "%";
+        percentNode.setAttribute("title","Clean Yield recalculated as Clean Units / Total Units");
+        container.setAttribute("data-clean-yield-formula","cleanUnits/totalUnits");
+      }
+    });
+  }
+
+  function runPatch(){
+    try{ patchKnownContainers(); }catch(e){}
+    try{ patchRenderedCleanYield(); }catch(e){}
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", runPatch);
+  else runPatch();
+
+  setTimeout(runPatch, 500);
+  setTimeout(runPatch, 1500);
+  setTimeout(runPatch, 3000);
+
+  try{
+    var observer = new MutationObserver(function(){
+      clearTimeout(observer.__smtinelTimer);
+      observer.__smtinelTimer = setTimeout(runPatch, 120);
+    });
+    observer.observe(document.documentElement, {childList:true, subtree:true, characterData:true});
+  }catch(e){}
+})();
+</script>
+<style id="smtinel-yield-flow-clean-yield-fix-style">
+[data-clean-yield-formula="cleanUnits/totalUnits"]::after{
+  content:"Clean Yield = Clean Units / Total Units";
+  display:block;
+  margin-top:4px;
+  color:#627D98;
+  font-size:10px;
+  font-weight:800;
+}
+</style>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
