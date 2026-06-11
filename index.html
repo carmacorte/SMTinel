@@ -13219,19 +13219,31 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         (topRiskSku || []).reduce(function (a, b) { return a + Number(b.risk || 0); }, 0),
         (failurePatterns || []).reduce(function (a, b) { return a + Number(b.units || 0); }, 0)
     );
+
+    // V13.2.47 Yield consistency fix:
+    // The dashboard was mixing two different risk bases:
+    // - Clean/Risk/FR used traceOpsCorrectedRiskUnits.
+    // - Clean Yield/OJT Touch still used weightedYield/weightedTouch from the original WO rows.
+    // That produced impossible views such as 206 risk units / 392 total with ~90% yield.
+    // Use one denominator and one risk source for the executive KPI block.
+    var traceOpsExecutiveRiskUnits = totalUnits ? Math.min(Math.max(0, traceOpsCorrectedRiskUnits), totalUnits) : Math.max(0, traceOpsCorrectedRiskUnits);
+    var traceOpsExecutiveCleanUnits = totalUnits ? Math.max(0, totalUnits - traceOpsExecutiveRiskUnits) : 0;
+    var traceOpsExecutiveYieldPct = totalUnits ? (traceOpsExecutiveCleanUnits / totalUnits * 100) : 0;
+    var traceOpsExecutiveTouchPct = totalUnits ? (traceOpsExecutiveRiskUnits / totalUnits * 100) : 0;
+
     return {
         filters: filters,
         options: options,
         kpi: {
             orders: rows.length,
             units: totalUnits,
-            clean: Math.max(0, totalUnits - traceOpsCorrectedRiskUnits),
-            risk: traceOpsCorrectedRiskUnits,
+            clean: traceOpsExecutiveCleanUnits,
+            risk: traceOpsExecutiveRiskUnits,
             builtUnits: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0),
-            failureRateManufactured: totalUnits ? (traceOpsCorrectedRiskUnits / totalUnits * 100) : 0,
-            failureRateBuilt: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0) ? (traceOpsCorrectedRiskUnits / Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 1) * 100) : 0,
-            yield: weightedYield,
-            touch: weightedTouch,
+            failureRateManufactured: totalUnits ? (traceOpsExecutiveRiskUnits / totalUnits * 100) : 0,
+            failureRateBuilt: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0) ? (traceOpsExecutiveRiskUnits / Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 1) * 100) : 0,
+            yield: traceOpsExecutiveYieldPct,
+            touch: traceOpsExecutiveTouchPct,
             avgLeadHours: flowHours.length ? (flowHours.reduce(function (a, b) { return a + b; }, 0) / flowHours.length) : 0,
             avgFtHours: ftHours.length ? (ftHours.reduce(function (a, b) { return a + b; }, 0) / ftHours.length) : null,
             avgStockinHours: stockinHours.length ? (stockinHours.reduce(function (a, b) { return a + b; }, 0) / stockinHours.length) : null,
