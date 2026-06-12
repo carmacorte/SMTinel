@@ -11376,12 +11376,21 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
         if (days <= 365) return 'age91_365';
         return 'ageOver365';
     }
+    function traceOpsYieldStationFromSfcForBreakdown(r) {
+        r = r || {};
+        var rawStatus = String(r.status || r.sfcStatus || r.boxstatus || r.Status || "").trim().toUpperCase();
+        var testStation = traceOpsYieldNormalizeSequenceStation(r.testStation || r.teststation || r.testst || "");
+        var currentEvent = traceOpsYieldNormalizeSequenceStation(r.event || r.currentEvent || r.station || "");
+        var genericCurrent = /^(ASSY|QI|QI2|STOCKIN|PACK|OBA)$/i.test(currentEvent || "");
+        if (testStation && (rawStatus === "F" || rawStatus === "FAIL" || rawStatus === "FAILED" || genericCurrent)) return testStation;
+        return currentEvent || testStation || "UNMAPPED";
+    }
     var snCurrent = {};
     Object.keys(snToSfc || {}).forEach(function (k) {
         var r = snToSfc[k] || {};
         var sn = traceOpsYieldCleanSn(r.sn || r.sfcSn || k || "");
         if (!sn || snCurrent[sn]) return;
-        var st = traceOpsYieldNormalizeSequenceStation(r.event || r.currentEvent || r.station || "");
+        var st = traceOpsYieldStationFromSfcForBreakdown(r);
         snCurrent[sn] = { station: st || "UNMAPPED", bucket: ageBucketForSfc(r), sfc: r };
     });
     var latestFtBySn = {};
@@ -11401,8 +11410,13 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
             var currentStation = traceOpsYieldNormalizeSequenceStation(snCurrent[sn].station || '');
             // Cesium test area is a downstream location only after the unit is already at STOCKIN.
             // Do not let Cesium/FT overwrite active pre-STOCKIN SFC stations.
-            if (currentStation === 'STOCKIN') {
-                snCurrent[sn].station = latestFtBySn[sn].station;
+            var sfcRow = (snCurrent[sn] && snCurrent[sn].sfc) || {};
+            var sfcStatus = String(sfcRow.status || sfcRow.sfcStatus || sfcRow.boxstatus || '').trim().toUpperCase();
+            var sfcTestStation = traceOpsYieldNormalizeSequenceStation(sfcRow.testStation || sfcRow.teststation || sfcRow.testst || '');
+            var cesiumStation = latestFtBySn[sn].station;
+            var cesiumFail = traceOpsYieldCesiumRowLooksFail(latestFtBySn[sn].row || {});
+            if (currentStation === 'STOCKIN' || (cesiumFail && sfcTestStation && cesiumStation === sfcTestStation) || (cesiumFail && /^(ASSY|QI|QI2)$/i.test(currentStation || ''))) {
+                snCurrent[sn].station = cesiumStation;
                 snCurrent[sn].latestCesium = latestFtBySn[sn].row || null;
             }
         }
@@ -11439,8 +11453,9 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
                 line: sfc.line || ft.line || '',
                 station: seqMap[st].station,
                 currentEvent: sfc.event || sfc.currentEvent || sfc.station || '',
+                testStation: sfc.testStation || sfc.teststation || '',
                 testArea: ft.testArea || ft.station || '',
-                status: ft.status || '',
+                status: ft.status || sfc.status || '',
                 failingTestName: traceOpsYieldCleanFailureSignal([ft.failingTestName, ft.testInfo]),
                 buildStartDate: sfc.buildStartDate || ft.buildStartDate || '',
                 ageBucket: bucket,
