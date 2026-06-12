@@ -11344,6 +11344,23 @@ function traceOpsYieldNormalizeSequenceStation(value) {
     return raw;
 }
 
+
+/* SMTinel hotfix: Cesium fail/pass helpers must be available before station breakdown runs. */
+function traceOpsYieldCesiumRowLooksFail(row) {
+    row = row || {};
+    var status = String(row.status || row.Status || row.result || row.Result || row.resultado || row.Resultado || row.teststatus || row.testStatus || row.test_result || row.testResult || '').trim().toUpperCase();
+    var testInfo = String(row.testinfo || row.testInfo || row.TESTINFO || row.failingTestName || row.testfailed || row.testFailed || row.failtest || row.failTest || row.failure || row.failureMode || '').trim().toUpperCase();
+    if (status === 'F' || status === 'FAIL' || status === 'FAILED' || status === 'NG' || status === 'NOK' || status === 'ERROR' || status === 'REJECT' || status === 'ABORT') return true;
+    if (/\b(FAIL|FAILED|NG|NOK|ERROR|REJECT|ABORT)\b/.test(status)) return true;
+    if (testInfo && testInfo !== '-' && testInfo !== 'NA' && testInfo !== 'N/A' && !/^(PASS|PASSED|OK)$/.test(testInfo)) return true;
+    return false;
+}
+function traceOpsYieldCesiumRowLooksPass(row) {
+    row = row || {};
+    var status = String(row.status || row.Status || row.result || row.Result || row.resultado || row.Resultado || row.teststatus || row.testStatus || row.test_result || row.testResult || '').trim().toUpperCase();
+    return status === 'S' || status === 'P' || status === 'PASS' || status === 'PASSED' || status === 'OK';
+}
+
 function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
     options = options || {};
     var sequence = TRACEOPS_YIELD_STATION_SEQUENCE || [];
@@ -26468,12 +26485,8 @@ body:has(#recovery-section) .main-content.expanded{
         return "N/D";
     }
 
-    function traceOpsYieldCesiumRowLooksFail(row) {
-        row = row || {};
-        var status = String(row.status || row.teststatus || row.TestStatus || row.result || row.Result || "").toLowerCase();
-        var sig = traceOpsYieldPickCesiumTestSignature(row);
-        if (sig && sig !== "N/D" && !/pass|passed|ok/.test(sig.toLowerCase())) return true;
-        return /fail|failed|ng|error|reject|abort|false/.test(status);
+    function traceOpsYieldCesiumRowLooksFailLegacy(row) {
+        return traceOpsYieldCesiumRowLooksFail(row);
     }
 
     function traceOpsYieldBuildCesiumTestSignaturePareto(rows, maxItems) {
