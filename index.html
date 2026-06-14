@@ -32800,7 +32800,9 @@ body:has(#recovery-section) .main-content.expanded{
             var self = this;
             var sf = traceOpsIssueImpactUpper(stationFilter || 'ALL');
             (rows || []).forEach(function(r){
-                if (sf && sf !== 'ALL' && traceOpsIssueImpactUpper(r.station || 'UNMAPPED') !== sf) return;
+                var rowStation = traceOpsIssueImpactUpper(r.station || 'UNMAPPED') || 'UNMAPPED';
+                if (sf && sf !== 'ALL' && rowStation !== sf) return;
+                var stationLabel = (sf === 'ALL') ? rowStation : sf;
                 var day = 'Unknown';
                 var hourKey = 'Unknown';
                 var hourLabel = 'Unknown';
@@ -32813,20 +32815,27 @@ body:has(#recovery-section) .main-content.expanded{
                         hourLabel = hh + ':00 - ' + hh + ':59';
                     } catch(_) {}
                 }
-                var key = day + '|' + hourKey;
-                if (!map[key]) map[key] = { day:day, hourKey:hourKey, hourLabel:hourLabel, runs:0, sn:{}, station:{}, pass:0, fail:0, failRows:[] };
+                var key = day + '|' + hourKey + '|' + stationLabel;
+                if (!map[key]) map[key] = { day:day, hourKey:hourKey, hourLabel:hourLabel, station:stationLabel, runs:0, sn:{}, stationMap:{}, pass:0, fail:0, failRows:[] };
                 var m = map[key];
                 m.runs += 1;
                 if (r.sn) m.sn[r.sn] = true;
-                if (r.station) m.station[r.station] = true;
+                if (rowStation) m.stationMap[rowStation] = true;
                 if (r.impact === 'Passed') m.pass += 1;
                 if (r.impact === 'Critical' || r.impact === 'Recovered') { m.fail += 1; m.failRows.push(r); }
             });
             return Object.keys(map).map(function(k){
                 var m = map[k];
                 var denom = m.pass + m.fail;
-                return { day:m.day, hourKey:m.hourKey, hourLabel:m.hourLabel, runs:m.runs, snCount:Object.keys(m.sn).length, stationCount:Object.keys(m.station).length, pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix) };
-            }).sort(function(a,b){ return String(a.hourKey).localeCompare(String(b.hourKey)); });
+                return { day:m.day, hourKey:m.hourKey, hourLabel:m.hourLabel, station:m.station || 'UNMAPPED', runs:m.runs, snCount:Object.keys(m.sn).length, stationCount:Object.keys(m.stationMap || {}).length, pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix) };
+            }).sort(function(a,b){
+                var c = String(a.hourKey).localeCompare(String(b.hourKey));
+                if (c) return c;
+                var ra = IssueImpactCesiumTynePanel.prototype.stationFlowRank(a.station || '');
+                var rb = IssueImpactCesiumTynePanel.prototype.stationFlowRank(b.station || '');
+                if (ra !== rb) return ra - rb;
+                return String(a.station || '').localeCompare(String(b.station || ''));
+            });
         };
 
         IssueImpactCesiumTynePanel.prototype.aoiSideForRow = function(row){
@@ -32964,7 +32973,30 @@ body:has(#recovery-section) .main-content.expanded{
             var selectedModel = this.state.modelFilter || 'Unmapped model';
             var stationRows = this.buildStationBreakdown(rows);
             var flowRows = this.buildSerialFlowProgress(rows);
-            var currentRows = this.buildCurrentProcessStatus(rows);
+            var currentRowsBase = this.buildCurrentProcessStatus(rows);
+            var smtCurrentRows = this.buildSmtCurrentProcessRows(rows);
+            var currentRows = smtCurrentRows.concat(currentRowsBase.filter(function(r){ return traceOpsIssueImpactUpper(r.station || '') !== 'AOI'; }));
+            function findCurrentRow(label){
+                var key = traceOpsIssueImpactUpper(label || '');
+                for (var i=0;i<currentRows.length;i++){ if (traceOpsIssueImpactUpper(currentRows[i].station || '') === key) return currentRows[i]; }
+                return null;
+            }
+            function numCurrent(label){ var r = findCurrentRow(label); var v = r ? parseInt(r.current,10) : 0; return isNaN(v) ? 0 : v; }
+            function numFlow(label){ var key = traceOpsIssueImpactUpper(label || ''); for (var i=0;i<flowRows.length;i++){ if (traceOpsIssueImpactUpper(flowRows[i].station || '') === key) return flowRows[i].reached || 0; } return 0; }
+            var cesiumWipRow = {
+                model: selectedModel || 'Unmapped model',
+                total: Object.keys(snMap).length,
+                open: currentRows.reduce(function(sum,r){ var v=parseInt(r.current,10); return sum + (isNaN(v)?0:v); },0),
+                paste: numFlow('PASTE'),
+                aoi2: numCurrent('AOI2 procesadas'),
+                pendAoi4: numCurrent('Pendientes AOI4'),
+                aoi4: numCurrent('AOI4 procesadas'),
+                xray: numCurrent('XRAY') || numFlow('XRAY'),
+                ict: numCurrent('ICT') || numFlow('ICT'),
+                pcbdg: numCurrent('PCBDG') || numFlow('PCBDG'),
+                pcbpm: numCurrent('PCBPM') || numFlow('PCBPM'),
+                stockin: numCurrent('STOCKIN') || numFlow('STOCKIN')
+            };
             var dayStationOptions = Object.keys(stationMap).sort(function(a,b){
                 var ra = IssueImpactCesiumTynePanel.prototype.stationFlowRank(a);
                 var rb = IssueImpactCesiumTynePanel.prototype.stationFlowRank(b);
@@ -32992,7 +33024,7 @@ body:has(#recovery-section) .main-content.expanded{
             }
             function sectionTitle(title, note){ return h('div',{className:'traceops-material-head',style:{padding:'16px 0 8px',borderBottom:'0'}},[h('div',null,[h('h3',{style:{margin:0,fontSize:16}},title),note?h('div',{className:'traceops-material-note'},note):null])]); }
             return h('div',{id:'issueimpact-section', className:'traceops-material-panel'},[
-                h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Cesium TXT RAW only: status de unidades por proceso, flujo acumulado por estacion, AOI2/AOI4 integrado al estado actual, yield diario y hora por hora usando moduleno. No depende de SFC ni de WO.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
+                h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Cesium TXT RAW only: matriz tipo WIP por proceso, estado actual, AOI2/AOI4, flujo acumulado, yield diario y hora por hora usando moduleno. No depende de SFC ni de WO.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
                 h('div',{className:'traceops-material-body',key:'body'},[
                     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 260px 240px',gap:12},key:'filters'},[
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Inicio',h('input',{type:'datetime-local',value:this.state.startText,onChange:this.setStart,className:'api-input',style:{width:'100%',marginTop:6}})]),
@@ -33006,7 +33038,18 @@ body:has(#recovery-section) .main-content.expanded{
                     sectionTitle('Serial prefix / Fresh vs Bonepile','Agrupa seriales por prefijo tipo FJZ3024. El prefijo numericamente mas reciente del filtro se marca como Corrida actual; prefijos anteriores se marcan como Unidades de otra semana.'),
                     h('div',{className:'traceops-material-tablewrap',key:'prefixSummary'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Serial prefix','Unique SN','Stations','Pass','Fail','Nota'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, prefixRows.length? prefixRows.map(function(r){ return h('tr',{key:'pref-'+r.prefix},[h('td',null,r.prefix),h('td',null,r.snCount),h('td',null,r.stations),h('td',null,r.pass),h('td',null,r.fail),h('td',null,r.note)]); }) : h('tr',null,h('td',{colSpan:6},'Sin prefijos detectados para el filtro actual.')))])),
                     sectionTitle('AOI2 / AOI4 split','AOI se divide por lado/proceso: antes del inicio TOP = AOI2; desde el inicio TOP = AOI4. Las unidades con AOI2 sin AOI4 quedan como pendientes de AOI4.'),
-                    h('div',{className:'traceops-material-tablewrap',key:'aoiSplit'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Proceso AOI','Criterio','Runs','Unique SN','Serial prefix note','Pass','Fail','Yield','Primer registro','Ultimo registro','Top fail'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, aoiSplitRows.length ? aoiSplitRows.map(function(r){ var sideLabel = (r.side === 'AOI BOTTOM' ? 'AOI2' : (r.side === 'AOI TOP' ? 'AOI4' : r.side)); return h('tr',{key:'aoi-'+r.side},[h('td',null,sideLabel),h('td',null,r.criteria),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'AOI2/AOI4 - '+sideLabel)),h('td',null,r.yieldText),h('td',null,r.firstSeen),h('td',null,r.lastSeen),h('td',null,r.topFail)]); }) : [h('tr',null,h('td',{colSpan:11},'Sin registros AOI para el filtro actual.'))])])),
+                    h('div',{className:'traceops-material-tablewrap',key:'aoiSplit'},h('table',{className:'traceops-material-table'},[
+                        h('thead',null,h('tr',null,['Proceso AOI','Criterio','Runs','Unique SN','Serial prefix note','Pass','Fail','Yield','Primer registro','Ultimo registro','Top fail'].map(function(x){return h('th',{key:x},x);}))),
+                        h('tbody',null, aoiSplitRows.length ? aoiSplitRows.map(function(r){
+                            var sideLabel = r.side === 'AOI BOTTOM' ? 'AOI2' : (r.side === 'AOI TOP' ? 'AOI4' : r.side);
+                            return h('tr',{key:'aoi-'+r.side},[h('td',null,sideLabel),h('td',null,r.criteria),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'AOI2/AOI4 - '+sideLabel)),h('td',null,r.yieldText),h('td',null,r.firstSeen),h('td',null,r.lastSeen),h('td',null,r.topFail)]);
+                        }) : [h('tr',{key:'empty-aoi'},h('td',{colSpan:11},'Sin registros AOI para el filtro actual.'))])
+                    ])),
+                    sectionTitle('Resumen tipo WIP desde Cesium','Vista horizontal estilo SFC WIP Search, pero calculada con registros Cesium TXT. AOI2/AOI4 son milestones por hora de record; las demas columnas usan la ultima estacion alcanzada o el flujo acumulado cuando aplica.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'cesiumWipMatrix'},h('table',{className:'traceops-material-table'},[
+                        h('thead',null,h('tr',null,['Modelo','Total SN','Open actual','PASTE alcanzado','AOI2 Bottom','Pend. AOI4','AOI4 Top','XRAY/5DX','ICT','PCBDG','PCBPM','STOCKIN'].map(function(x){return h('th',{key:x},x);}))),
+                        h('tbody',null,h('tr',null,[h('td',null,cesiumWipRow.model),h('td',null,cesiumWipRow.total),h('td',null,cesiumWipRow.open),h('td',null,cesiumWipRow.paste),h('td',null,cesiumWipRow.aoi2),h('td',null,cesiumWipRow.pendAoi4),h('td',null,cesiumWipRow.aoi4),h('td',null,cesiumWipRow.xray),h('td',null,cesiumWipRow.ict),h('td',null,cesiumWipRow.pcbdg),h('td',null,cesiumWipRow.pcbpm),h('td',null,cesiumWipRow.stockin)]))
+                    ])),
                     sectionTitle('Estado actual por proceso','Vista consolidada: integra AOI2, AOI4 y pendientes de AOI4 junto con la ultima estacion alcanzada por serial. Asi se responde cuantas unidades llevamos y en que proceso estan ahora.'),
                     h('div',{className:'traceops-material-tablewrap',key:'currentStatus'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Estacion actual','SN actuales','Serial prefix note','% del total','Pass','Fail','Observed','Ultimo registro','Top fail'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, currentRows.length? currentRows.map(function(r){ return h('tr',{key:'cur-'+r.station},[h('td',null,r.station),h('td',null,r.current),h('td',null,r.prefixNote),h('td',null,r.pctText),h('td',null,r.pass),h('td',null,failCell(r,'Estado actual - '+r.station)),h('td',null,r.observed),h('td',null,r.lastSeen),h('td',null,r.topFail)]); }) : h('tr',null,h('td',{colSpan:9},'Sin estado actual por proceso para el filtro actual.')))])),
                     sectionTitle('Flujo acumulado por estación','Avance acumulado: cuantos seriales ya alcanzaron cada estacion dentro de la ventana. Ejemplo: PASTE 220, AOI 220, ICT 20.'),
@@ -33019,12 +33062,12 @@ body:has(#recovery-section) .main-content.expanded{
                         h('div',{className:'traceops-material-note'}, selectedDayStation==='ALL' ? 'Mostrando yield diario consolidado de todas las estaciones.' : ('Mostrando yield diario solo para la estacion '+selectedDayStation+'.'))
                     ]),
                     h('div',{className:'traceops-material-tablewrap',key:'yieldByDay'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, dayRows.length? dayRows.map(function(r){ return h('tr',{key:r.day+'-'+selectedDayStation},[h('td',null,r.day),h('td',null,selectedDayStation==='ALL'?'ALL':selectedDayStation),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Day - '+r.day+' - '+(selectedDayStation==='ALL'?'ALL':selectedDayStation))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:9},'Sin yield diario para la estacion seleccionada.')))])),
-                    sectionTitle('Yield hour by hour','Desglose hora por hora dentro de la ventana seleccionada. Usa el mismo Cesium TXT crudo y permite filtrar por estacion individual para ver ritmo de avance, pass/fail y fallas por hora.'),
+                    sectionTitle('Yield hour by hour','Desglose hora por hora dentro de la ventana seleccionada. En All stations muestra una fila por estacion y por hora; tambien puedes filtrar una estacion individual.'),
                     h('div',{key:'yieldHourFilters',style:{display:'grid',gridTemplateColumns:'260px 1fr',gap:12,alignItems:'end',margin:'0 0 10px'}},[
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Estacion para hora por hora',h('select',{value:selectedHourStation,onChange:this.setHourStationFilter,className:'api-input',style:{width:'100%',marginTop:6}},[h('option',{key:'ALLH',value:'ALL'},'All stations')].concat(dayStationOptions.map(function(st){ return h('option',{key:'H-'+st,value:st},st); })))]),
-                        h('div',{className:'traceops-material-note'}, selectedHourStation==='ALL' ? 'Mostrando ritmo hora por hora consolidado de todas las estaciones.' : ('Mostrando ritmo hora por hora solo para la estacion '+selectedHourStation+'.'))
+                        h('div',{className:'traceops-material-note'}, selectedHourStation==='ALL' ? 'Mostrando hora por hora separado por estacion para todas las estaciones.' : ('Mostrando ritmo hora por hora solo para la estacion '+selectedHourStation+'.'))
                     ]),
-                    h('div',{className:'traceops-material-tablewrap',key:'yieldByHour'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Hora','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, hourRows.length? hourRows.map(function(r){ return h('tr',{key:r.hourKey+'-'+selectedHourStation},[h('td',null,r.day),h('td',null,r.hourLabel),h('td',null,selectedHourStation==='ALL'?'ALL':selectedHourStation),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Hour - '+r.day+' '+r.hourLabel+' - '+(selectedHourStation==='ALL'?'ALL':selectedHourStation))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:10},'Sin datos hora por hora para la estacion seleccionada.')))])),
+                    h('div',{className:'traceops-material-tablewrap',key:'yieldByHour'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Hora','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, hourRows.length? hourRows.map(function(r){ return h('tr',{key:r.hourKey+'-'+(r.station||selectedHourStation)},[h('td',null,r.day),h('td',null,r.hourLabel),h('td',null,r.station || (selectedHourStation==='ALL'?'ALL':selectedHourStation)),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Hour - '+r.day+' '+r.hourLabel+' - '+(r.station || (selectedHourStation==='ALL'?'ALL':selectedHourStation)))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:10},'Sin datos hora por hora para la estacion seleccionada.')))])),
                     h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: estado actual y flujo acumulado desde Cesium TXT crudo. El modelo sale solo de moduleno. En la ventana seleccionada detecto '+rows.length+' corridas para '+(this.state.modelFilter||'Unmapped model')+', con '+Object.keys(snMap).length+' seriales unicos. Estado actual: '+(currentRows.length?currentRows.map(function(r){return r.station+': '+r.current;}).slice(0,6).join(', '):'sin procesos')+'. Flujo acumulado: '+(flowRows.length?flowRows.map(function(r){return r.station+': '+r.reached;}).slice(0,6).join(', '):'sin estaciones')+'. Prefijos: '+(prefixRows.length?prefixRows.slice(0,4).map(function(r){return r.prefix+': '+r.snCount+' '+r.note;}).join(', '):'sin prefijos')+'. AOI split: '+(aoiSplitRows.length?aoiSplitRows.map(function(r){return r.side+': '+r.snCount+' SN';}).join(', '):'sin AOI')+'.'),
                     this.state.failDetail ? h('div',{key:'failModal',style:{position:'fixed',zIndex:99999,left:0,top:0,right:0,bottom:0,background:'rgba(5,20,35,0.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
                         h('div',{className:'traceops-material-panel',style:{width:'min(1120px,96vw)',maxHeight:'86vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,0.35)'}},[
@@ -43005,7 +43048,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -43142,7 +43185,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -44650,8 +44693,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -44671,7 +44714,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -44976,8 +45019,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   }
 
   function updateBadge(){
@@ -45123,7 +45166,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45296,7 +45339,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45561,7 +45604,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -45587,7 +45630,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -45611,7 +45654,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45785,7 +45828,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -45808,7 +45851,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -45827,7 +45870,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  var versionText = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45931,7 +45974,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var label = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -45949,7 +45992,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var VERSION_LABEL = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -46199,7 +46242,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -46578,7 +46621,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -46663,7 +46706,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -48145,7 +48188,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+  var label='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -54350,7 +54393,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -54906,6 +54949,6 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
 }
 </style>
 
-<!-- SMTinel V13.12.9 AOI2 AOI4 Stable V29 -->
+<!-- SMTinel V13.12.9 AOI2 AOI4 Fix V29 -->
 
-<!-- SMTinel V13.12.9 AOI2 AOI4 Stable V29 -->
+<!-- SMTinel V13.12.9 AOI2 AOI4 Fix V29 -->
