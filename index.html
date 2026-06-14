@@ -32466,9 +32466,32 @@ body:has(#recovery-section) .main-content.expanded{
         var h = React.createElement;
         var modelRef = yieldFlowModel;
         var defaults = traceOpsIssueImpactDefaultRange(modelRef);
+        function traceOpsIssueImpactLoadFilterV33(){
+            try {
+                var raw = window.localStorage ? window.localStorage.getItem('SMTinelIssueImpactFiltersV33') : '';
+                return raw ? (JSON.parse(raw) || {}) : {};
+            } catch(_) { return {}; }
+        }
+        function traceOpsIssueImpactSaveFilterV33(next){
+            try {
+                if (!window.localStorage) return;
+                var current = traceOpsIssueImpactLoadFilterV33();
+                Object.keys(next || {}).forEach(function(k){ current[k] = next[k]; });
+                window.localStorage.setItem('SMTinelIssueImpactFiltersV33', JSON.stringify(current));
+            } catch(_) {}
+        }
         function IssueImpactCesiumTynePanel(props){
             React.Component.call(this, props);
-            this.state = { startText: defaults.start, endText: defaults.end, modelFilter: traceOpsIssueImpactDefaultModel(modelRef), dayStationFilter: 'ALL', hourStationFilter: 'ALL', aoiTopStartText: '2026-06-12T13:00', failDetail: null };
+            var savedFilters = traceOpsIssueImpactLoadFilterV33();
+            this.state = {
+                startText: savedFilters.startText || defaults.start,
+                endText: savedFilters.endText || defaults.end,
+                modelFilter: savedFilters.modelFilter || traceOpsIssueImpactDefaultModel(modelRef),
+                dayStationFilter: savedFilters.dayStationFilter || 'ALL',
+                hourStationFilter: savedFilters.hourStationFilter || 'ALL',
+                aoiTopStartText: savedFilters.aoiTopStartText || '2026-06-12T13:00',
+                failDetail: null
+            };
             this.setStart = this.setStart.bind(this);
             this.setEnd = this.setEnd.bind(this);
             this.setModelFilter = this.setModelFilter.bind(this);
@@ -32489,12 +32512,12 @@ body:has(#recovery-section) .main-content.expanded{
             try { return traceOpsBuildIssueImpactRows(this.props.model || {}, startMs, endMs, this.state.modelFilter || 'Unmapped model') || []; }
             catch(e) { console.warn('[SMTinel] Issue Impact Cesium compute failed', e); return []; }
         };
-        IssueImpactCesiumTynePanel.prototype.setStart = function(e){ this.setState({ startText: e && e.target ? e.target.value : '' }); };
-        IssueImpactCesiumTynePanel.prototype.setEnd = function(e){ this.setState({ endText: e && e.target ? e.target.value : '' }); };
-        IssueImpactCesiumTynePanel.prototype.setModelFilter = function(e){ this.setState({ modelFilter: e && e.target ? e.target.value : '', dayStationFilter: 'ALL', hourStationFilter: 'ALL' }); };
-        IssueImpactCesiumTynePanel.prototype.setDayStationFilter = function(e){ this.setState({ dayStationFilter: e && e.target ? e.target.value : 'ALL' }); };
-        IssueImpactCesiumTynePanel.prototype.setHourStationFilter = function(e){ this.setState({ hourStationFilter: e && e.target ? e.target.value : 'ALL' }); };
-        IssueImpactCesiumTynePanel.prototype.setAoiTopStart = function(e){ this.setState({ aoiTopStartText: e && e.target ? e.target.value : '' }); };
+        IssueImpactCesiumTynePanel.prototype.setStart = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ startText:v }); this.setState({ startText:v }); };
+        IssueImpactCesiumTynePanel.prototype.setEnd = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ endText:v }); this.setState({ endText:v }); };
+        IssueImpactCesiumTynePanel.prototype.setModelFilter = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ modelFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); this.setState({ modelFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setDayStationFilter = function(e){ var v = e && e.target ? e.target.value : 'ALL'; traceOpsIssueImpactSaveFilterV33({ dayStationFilter:v }); this.setState({ dayStationFilter:v }); };
+        IssueImpactCesiumTynePanel.prototype.setHourStationFilter = function(e){ var v = e && e.target ? e.target.value : 'ALL'; traceOpsIssueImpactSaveFilterV33({ hourStationFilter:v }); this.setState({ hourStationFilter:v }); };
+        IssueImpactCesiumTynePanel.prototype.setAoiTopStart = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ aoiTopStartText:v }); this.setState({ aoiTopStartText:v }); };
         IssueImpactCesiumTynePanel.prototype.openFailDetail = function(title, rows){
             rows = (rows || []).filter(function(r){ return r && (r.impact === 'Critical' || r.impact === 'Recovered' || r.impact === 'Failed'); });
             var seen = {};
@@ -33062,7 +33085,7 @@ body:has(#recovery-section) .main-content.expanded{
                         h('div',{className:'traceops-material-note'}, selectedDayStation==='ALL' ? 'Mostrando yield diario consolidado de todas las estaciones.' : ('Mostrando yield diario solo para la estacion '+selectedDayStation+'.'))
                     ]),
                     h('div',{className:'traceops-material-tablewrap',key:'yieldByDay'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, dayRows.length? dayRows.map(function(r){ return h('tr',{key:r.day+'-'+selectedDayStation},[h('td',null,r.day),h('td',null,selectedDayStation==='ALL'?'ALL':selectedDayStation),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Day - '+r.day+' - '+(selectedDayStation==='ALL'?'ALL':selectedDayStation))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:9},'Sin yield diario para la estacion seleccionada.')))])),
-                    sectionTitle('Yield hour by hour','Desglose hora por hora dentro de la ventana seleccionada. En All stations muestra una fila por estacion y por hora; tambien puedes filtrar una estacion individual.'),
+                    sectionTitle('Yield hour by hour','Desglose hora por hora dentro de la ventana seleccionada. Usa el mismo filtro de Inicio/Fin/Modelo y se conserva al navegar; en All stations muestra una fila por estacion y por hora.'),
                     h('div',{key:'yieldHourFilters',style:{display:'grid',gridTemplateColumns:'260px 1fr',gap:12,alignItems:'end',margin:'0 0 10px'}},[
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Estacion para hora por hora',h('select',{value:selectedHourStation,onChange:this.setHourStationFilter,className:'api-input',style:{width:'100%',marginTop:6}},[h('option',{key:'ALLH',value:'ALL'},'All stations')].concat(dayStationOptions.map(function(st){ return h('option',{key:'H-'+st,value:st},st); })))]),
                         h('div',{className:'traceops-material-note'}, selectedHourStation==='ALL' ? 'Mostrando hora por hora separado por estacion para todas las estaciones.' : ('Mostrando ritmo hora por hora solo para la estacion '+selectedHourStation+'.'))
@@ -43048,7 +43071,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -43185,7 +43208,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -44693,8 +44716,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -44714,7 +44737,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -45019,8 +45042,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   }
 
   function updateBadge(){
@@ -45166,7 +45189,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45339,7 +45362,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45604,7 +45627,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -45630,7 +45653,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -45654,7 +45677,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45828,7 +45851,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -45851,7 +45874,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -45870,7 +45893,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  var versionText = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45974,7 +45997,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var label = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -45992,7 +46015,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var VERSION_LABEL = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -46242,7 +46265,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var badge = 'SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -46621,7 +46644,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var VERSION='SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -46706,7 +46729,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var VERSION='SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -48188,7 +48211,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13';
+  var label='SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -54393,7 +54416,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.1 - AOI2 AOI4 Fix V29 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.6 - Filter Sync V33 - 2026-06-13";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
