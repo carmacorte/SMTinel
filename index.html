@@ -6507,7 +6507,7 @@ function cleanEmailTextLocal(text, options) {
     if (/^(image\d+\.gif|notes\.bmp|memo\.htm)$/i.test(line)) return false;
     return true;
   });
-  s = lines.join('\n').trim();
+  s = lines.join('\\n').trim();
   if (!preserveBreaks) s = s.replace(/\n/g, ' ');
   s = s.replace(/\s{2,}/g, ' ').trim();
   return s;
@@ -18280,7 +18280,6 @@ body:has(#recovery-section) .main-content.expanded{
   #recovery-section .ri-aging-match-kpis{justify-content:flex-start!important;}
 }
 </style>
-
 </body>
 </html>`;
     }
@@ -30997,7 +30996,7 @@ body:has(#recovery-section) .main-content.expanded{
             (topFailures || []).forEach(function(f, idx){
                 lines.push(['Top Failure',idx+1,Number(f.count || f.qty || f.units || 0),f.failureMode || f.mode || f.testinfo || f.symptom || 'N/D'].map(recoveryExportCsvCell).join(','));
             });
-            recoveryDownloadText('smtinel_recovery_intelligence_export_' + now.slice(0,10) + '.csv', lines.join('\n'), 'text/csv;charset=utf-8;');
+            recoveryDownloadText('smtinel_recovery_intelligence_export_' + now.slice(0,10) + '.csv', lines.join('\\n'), 'text/csv;charset=utf-8;');
         }
         return h('div',{id:'recovery-section' ,className:'smtinel-ri ri-visual-map',style:{display:'flex',flexDirection:'column',gap:14,marginBottom:14}},[
             h('section',{className:'ri-vm-header'},[
@@ -32193,32 +32192,34 @@ body:has(#recovery-section) .main-content.expanded{
     var criticalModelGroupCount = criticalModelResultForNav && criticalModelResultForNav.groups ? criticalModelResultForNav.groups.length : 0;
 
 
-    /* SMTinel Issue Time Impact Analyzer - merged on current index */
+
+    /* SMTinel Issue Impact Analyzer V11 - RAW Cesium TXT only / moduleno filter */
     function traceOpsIssueImpactNorm(v) {
         return String(v == null ? "" : v).trim();
     }
     function traceOpsIssueImpactUpper(v) {
         return traceOpsIssueImpactNorm(v).toUpperCase();
     }
-    function traceOpsIssueImpactSn(row) {
-        row = row || {};
-        return traceOpsIssueImpactUpper(row.sn || row.SN || row.boxsn || row.boxsn2 || row.sysserialno || row.sysSerialNo || row.sys_serial_no || row.serial || row.Serial || row.serialNumber || row.serial_number);
+    function traceOpsIssueImpactCompact(v) {
+        return traceOpsIssueImpactUpper(v).replace(/[^A-Z0-9]+/g, "");
     }
     function traceOpsIssueImpactPick(row, keys) {
         row = row || {};
         for (var i = 0; i < keys.length; i++) {
             var k = keys[i];
-            if (row[k] != null && String(row[k]).trim() !== "") return row[k];
+            if (Object.prototype.hasOwnProperty.call(row, k) && row[k] != null && String(row[k]).trim() !== "") return row[k];
         }
-        var own = Object.keys(row);
-        for (var j = 0; j < own.length; j++) {
-            var nk = String(own[j]).toLowerCase().replace(/[^a-z0-9]/g, '');
-            for (i = 0; i < keys.length; i++) {
-                var kk = String(keys[i]).toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (nk === kk && row[own[j]] != null && String(row[own[j]]).trim() !== "") return row[own[j]];
-            }
+        var map = {};
+        Object.keys(row).forEach(function(k){ map[String(k).toLowerCase().replace(/[^a-z0-9]+/g, "")] = k; });
+        for (var j = 0; j < keys.length; j++) {
+            var nk = String(keys[j]).toLowerCase().replace(/[^a-z0-9]+/g, "");
+            var real = map[nk];
+            if (real && row[real] != null && String(row[real]).trim() !== "") return row[real];
         }
         return "";
+    }
+    function traceOpsIssueImpactSn(row) {
+        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ["sysserialno","sysSerialNo","Sys Serial No","SN","sn","serial","Serial","serialNumber","boxsn","Parent Serial No"]));
     }
     function traceOpsIssueImpactDateMs(v) {
         if (v == null || v === "") return null;
@@ -32235,7 +32236,7 @@ body:has(#recovery-section) .main-content.expanded{
         if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +(m[6]||0)).getTime();
         m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
         if (m) {
-            var hh = +m[4]; var ap = String(m[7] || '').toUpperCase();
+            var hh = +m[4], ap = String(m[7] || '').toUpperCase();
             if (ap === 'PM' && hh < 12) hh += 12;
             if (ap === 'AM' && hh === 12) hh = 0;
             return new Date(+m[3], +m[1]-1, +m[2], hh, +m[5], +(m[6]||0)).getTime();
@@ -32246,195 +32247,803 @@ body:has(#recovery-section) .main-content.expanded{
         if (!ms) return "";
         try { return new Date(ms).toLocaleString(); } catch(_) { return String(ms); }
     }
-    function traceOpsIssueImpactStatus(row) {
+    function traceOpsIssueImpactLocalInput(ms) {
+        try { var d = new Date(ms); var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0,16); } catch(_) { return ""; }
+    }
+    function traceOpsIssueImpactAttributes(row) {
         row = row || {};
-        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['status','Status','result','Result','resultado','Resultado','teststatus','testStatus','test_result','testResult','state']));
+        var raw = traceOpsIssueImpactPick(row, ["Attributes","attributes","ATTRIBUTES","attr","json"]);
+        if (!raw) return {};
+        if (typeof raw === 'object') return raw;
+        try { return JSON.parse(String(raw)); } catch(_) { return {}; }
+    }
+    function traceOpsIssueImpactAttr(row, keys) {
+        var a = traceOpsIssueImpactAttributes(row);
+        return traceOpsIssueImpactPick(a, keys || []);
+    }
+    function traceOpsIssueImpactRowText(row) {
+        row = row || {};
+        var parts = [];
+        Object.keys(row).slice(0, 80).forEach(function(k){
+            var v = row[k];
+            if (v == null) return;
+            if (typeof v === 'object') return;
+            parts.push(k + ':' + String(v));
+        });
+        return parts.join(' | ');
+    }
+    function traceOpsIssueImpactRawModelValue(row) {
+        row = row || {};
+        // V11: para Cesium el modelo sale SOLO del campo raw Cesium moduleno/ModuleNo.
+        // No usar sku, family, PN, uutType transformado, attributes, PROJECT, CELL ni texto libre.
+        // Si el raw TXT no trae moduleno, cae a Unmapped model.
+        return traceOpsIssueImpactPick(row, ['moduleno','moduleNo','ModuleNo','MODULE_NO','Module No','module no']) || '';
+    }
+    function traceOpsIssueImpactIsTyne(row) {
+        // Compatibilidad: Tyne ya no se infiere por PN/attributes. Solo aplica si moduleno dice Tyne literalmente.
+        return traceOpsIssueImpactCompact(traceOpsIssueImpactRawModelValue(row)) === 'TYNE';
+    }
+    function traceOpsIssueImpactModelLabel(row) {
+        var raw = traceOpsIssueImpactNorm(traceOpsIssueImpactRawModelValue(row));
+        return raw || 'Unmapped model';
+    }
+    function traceOpsIssueImpactModelMatches(row, filterText) {
+        var f0 = traceOpsIssueImpactNorm(filterText || '');
+        var f = traceOpsIssueImpactCompact(f0);
+        if (!f || f === 'ALL' || f === 'ALLMODELS' || f === 'TODOS') return true;
+        var label = traceOpsIssueImpactCompact(traceOpsIssueImpactModelLabel(row));
+        var raw = traceOpsIssueImpactCompact(traceOpsIssueImpactRawModelValue(row));
+        // V10: filtrado estricto por moduleno. Si no trae moduleno, cae en Unmapped model.
+        if (f === 'UNMAPPED' || f === 'UNMAPPEDMODEL' || f === 'SINMODELO') return !raw || label === 'UNMAPPEDMODEL';
+        return label === f || raw === f;
+    }
+    function traceOpsIssueImpactStatus(row) {
+        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ['status','Status','result','Result','resultado','Resultado','teststatus','testStatus','test_result','testResult','Test Result']));
     }
     function traceOpsIssueImpactLooksFail(row) {
         var st = traceOpsIssueImpactStatus(row);
-        var failInfo = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['testinfo','testInfo','testfailed','testFailed','failtest','failTest','failure','failureMode','symptom']));
-        if (/^(F|FAIL|FAILED|NG|NOK)$/.test(st)) return true;
+        var failInfo = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ['TESTINFO','testinfo','testInfo','Test Info','testfailed','testFailed','failtest','failTest','failure','failureMode','symptom']));
+        if (/^(F|FAIL|FAILED|NG|NOK|ERROR)$/.test(st)) return true;
         if (/\b(FAIL|FAILED|ERROR|NG|NOK)\b/.test(st)) return true;
-        if (failInfo && failInfo !== '-' && failInfo !== 'NA' && failInfo !== 'N/A' && failInfo !== 'PASS' && failInfo !== 'PASSED') return true;
+        if (failInfo && failInfo !== '-' && failInfo !== 'NA' && failInfo !== 'N/A' && failInfo !== 'PASS' && failInfo !== 'PASSED') {
+            if (!/^(PASSED|PASS)$/i.test(failInfo)) return true;
+        }
         return false;
     }
     function traceOpsIssueImpactLooksPass(row) {
         var st = traceOpsIssueImpactStatus(row);
         return /^(S|P|PASS|PASSED|OK)$/.test(st);
     }
-    function traceOpsIssueImpactStationFromSfc(row) {
-        row = row || {};
-        var status = traceOpsIssueImpactStatus(row);
-        var testStation = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['testStation','teststation','testst','testsStation','TestStation']));
-        var current = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['boxcurrentevent','boxCurrentEvent','currentEvent','event','station','Station']));
-        var next = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['boxnextevent','boxNextEvent','nextEvent']));
-        var generic = /^(ASSY|QI|QI2|STOCKIN|PACK|OBA|ASSY7)$/.test(current || '');
-        if (testStation && (/^(F|FAIL|FAILED|NG|NOK)$/.test(status) || generic)) return testStation;
-        return current || testStation || next || 'UNMAPPED';
+    function traceOpsIssueImpactTimeValue(row) {
+        return traceOpsIssueImpactPick(row || {}, ['testdate','testDate','Test Date','TESTDATE','recordTime','eventTime','fecha','fecha_registro','regdate','createdate','eventdate','updatedate','lastupdate','time','timestamp','date','datetime','DateTime','Rec Time','Record Time','RECTIME','SQLTIMESTAMP','CPPTIMEID']);
     }
     function traceOpsIssueImpactStationFromCesium(row) {
-        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ['station','Station','teststation','testStation','área de test','Área de Test','area','area_de_test','test_area','stationname']));
+        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ['station','Station','STATION','teststation','testStation','Test Station','area','Area','Location','Machine','stationname']));
     }
-    function traceOpsIssueImpactRowsFromModel(model) {
+    function traceOpsIssueImpactProcessFromCesium(row) {
+        var attrCell = traceOpsIssueImpactAttr(row, ['CELL','CONTAINER','PROJECT','TESTR1NAME','WORKER_NAME']);
+        return traceOpsIssueImpactPick(row || {}, ['TESTINFO','testinfo','testInfo','Test Step','Measures','Run Time','Machine']) || attrCell || '';
+    }
+    function traceOpsIssueImpactModelFromCesium(row) {
+        // V10: mostrar exactamente el modelo funcional de Cesium basado en moduleno.
+        return traceOpsIssueImpactModelLabel(row);
+    }
+    function traceOpsIssueImpactModelOptions(model) {
+        var counts = {};
+        traceOpsIssueImpactCesiumPools(model || {}).forEach(function(pool){
+            (pool.rows || []).forEach(function(r){
+                if (!r || typeof r !== 'object') return;
+                var label = traceOpsIssueImpactModelLabel(r);
+                if (!label) label = traceOpsIssueImpactNorm(traceOpsIssueImpactRawModelValue(r)) || 'Unmapped model';
+                counts[label] = (counts[label] || 0) + 1;
+            });
+        });
+        var opts = Object.keys(counts).map(function(k){ return { label:k, value:k, count:counts[k] }; });
+        opts.sort(function(a,b){
+            if (a.label === 'Unmapped model') return -1;
+            if (b.label === 'Unmapped model') return 1;
+            return (b.count - a.count) || String(a.label).localeCompare(String(b.label));
+        });
+        return [{ label:'All models', value:'ALL', count:opts.reduce(function(sum,x){ return sum + (x.count || 0); }, 0) }].concat(opts);
+    }
+    function traceOpsIssueImpactCesiumPools(model) {
         model = model || {};
-        var pools = [];
-        var seen = [];
-        function addPool(source, rows, name) {
+        var pools = [], seen = [];
+        function addPool(rows, name, rawPriority) {
             if (!Array.isArray(rows) || !rows.length) return;
             if (seen.indexOf(rows) >= 0) return;
             seen.push(rows);
-            pools.push({ source: source || name || 'Raw', name: name || source || 'Raw', rows: rows });
+            pools.push({ source: 'Cesium', name: name || 'Cesium', rows: rows, rawPriority: !!rawPriority });
         }
-        function addObjectValues(source, obj, name) {
-            if (!obj || typeof obj !== 'object') return;
-            var arr = [];
-            Object.keys(obj).forEach(function(k) {
-                var v = obj[k];
-                if (Array.isArray(v)) addPool(source, v, (name || source || 'object') + '.' + k);
-                else if (v && typeof v === 'object') arr.push(v);
+        // V11: primero usar el Cesium TXT crudo, capturado en importación. Esto NO depende de SFC.
+        try { addPool(window.TRACEOPS_YIELD_RAW_CESIUM_ROWS, 'TRACEOPS_YIELD_RAW_CESIUM_ROWS', true); } catch(_) {}
+        try { addPool(window.TRACEOPS_YIELD_CESIUM_RAW_ROWS, 'TRACEOPS_YIELD_CESIUM_RAW_ROWS', true); } catch(_) {}
+        try { addPool(window.TRACEOPS_ISSUE_IMPACT_RAW_CESIUM_ROWS, 'TRACEOPS_ISSUE_IMPACT_RAW_CESIUM_ROWS', true); } catch(_) {}
+        if (!pools.length) {
+            // Fallback solamente si el raw Cesium no está expuesto. Puede depender del bridge SFC.
+            ['cesiumRows','cesium','cesiumRaw'].forEach(function(k){ addPool(model[k], 'yieldFlowModel.' + k, true); });
+            if (model.raw && typeof model.raw === 'object') {
+                Object.keys(model.raw).forEach(function(k){ if (/cesium/i.test(k)) addPool(model.raw[k], 'yieldFlowModel.raw.' + k, true); });
+            }
+            ['ftRows','ictRows','ftAreaRows'].forEach(function(k){ addPool(model[k], 'yieldFlowModel.' + k, false); });
+            try { addPool(window.TRACEOPS_YIELD_FT_ROWS, 'TRACEOPS_YIELD_FT_ROWS', false); } catch(_) {}
+            try { addPool(window.TRACEOPS_YIELD_FT_AREA_ROWS, 'TRACEOPS_YIELD_FT_AREA_ROWS', false); } catch(_) {}
+            try {
+                var snap = window.traceOpsYieldCacheSnapshot && window.traceOpsYieldCacheSnapshot();
+                if (snap && typeof snap === 'object') Object.keys(snap).forEach(function(k){ if (/cesium|ict|ft/i.test(k)) addPool(snap[k], 'traceOpsYieldCacheSnapshot.' + k, false); });
+            } catch(_) {}
+            try {
+                if (window.TRACEOPS_YIELD_FLOW_RAW && typeof window.TRACEOPS_YIELD_FLOW_RAW === 'object') {
+                    Object.keys(window.TRACEOPS_YIELD_FLOW_RAW).forEach(function(k){ if (/cesium|ict|ft/i.test(k)) addPool(window.TRACEOPS_YIELD_FLOW_RAW[k], 'TRACEOPS_YIELD_FLOW_RAW.' + k, false); });
+                }
+            } catch(_) {}
+        }
+        try {
+            window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG = pools.map(function(p){
+                var sample = (p.rows || [])[0] || {};
+                return { name: p.name, source: p.source, rows: (p.rows || []).length, rawPriority: !!p.rawPriority, keys: Object.keys(sample).slice(0, 32).join(', ') };
             });
-            if (arr.length) addPool(source, arr, name || source || 'objectValues');
-        }
-
-        ['sfcRows','sfc','sfcRaw','sfcRecords','sfcEvents'].forEach(function(k){ addPool('SFC', model[k], 'yieldFlowModel.' + k); });
-        ['cesiumRows','cesium','cesiumRaw','ftRows','ictRows','ftAreaRows'].forEach(function(k){ addPool('Cesium', model[k], 'yieldFlowModel.' + k); });
-        ['stationSequence','failurePatterns','causeSummary','serialRows','rows','flowRows','repairRows'].forEach(function(k){ addPool(k, model[k], 'yieldFlowModel.' + k); });
-        if (model.raw && typeof model.raw === 'object') {
-            Object.keys(model.raw).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), model.raw[k], 'yieldFlowModel.raw.' + k); });
-        }
-
-        try { addPool('Cesium', window.TRACEOPS_YIELD_FT_ROWS, 'TRACEOPS_YIELD_FT_ROWS'); } catch(_) {}
-        try { addPool('Cesium', window.TRACEOPS_YIELD_FT_AREA_ROWS, 'TRACEOPS_YIELD_FT_AREA_ROWS'); } catch(_) {}
-        try { addPool('SFC', window.TRACEOPS_YIELD_SFC_EVENTS, 'TRACEOPS_YIELD_SFC_EVENTS'); } catch(_) {}
-        try { addObjectValues('SFC', window.TRACEOPS_YIELD_SN_TO_SFC, 'TRACEOPS_YIELD_SN_TO_SFC'); } catch(_) {}
-        try { addObjectValues('Repair', window.TRACEOPS_YIELD_REPAIRS_BY_SN, 'TRACEOPS_YIELD_REPAIRS_BY_SN'); } catch(_) {}
-        try { addPool('YieldFlow', window.TRACEOPS_YIELD_BY_WO_ROWS, 'TRACEOPS_YIELD_BY_WO_ROWS'); } catch(_) {}
-        try { addPool('YieldFlow', window.TRACEOPS_YIELD_FLOW_TRACKER, 'TRACEOPS_YIELD_FLOW_TRACKER'); } catch(_) {}
-        try { addPool('Risk', window.TRACEOPS_RISK_SUMMARY_ROWS, 'TRACEOPS_RISK_SUMMARY_ROWS'); } catch(_) {}
-        try {
-            var snap = window.traceOpsYieldCacheSnapshot && window.traceOpsYieldCacheSnapshot();
-            if (snap && typeof snap === 'object') {
-                Object.keys(snap).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), snap[k], 'traceOpsYieldCacheSnapshot.' + k); });
-            }
-        } catch(_) {}
-        try {
-            if (window.TRACEOPS_YIELD_FLOW_RAW && typeof window.TRACEOPS_YIELD_FLOW_RAW === 'object') {
-                Object.keys(window.TRACEOPS_YIELD_FLOW_RAW).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), window.TRACEOPS_YIELD_FLOW_RAW[k], 'TRACEOPS_YIELD_FLOW_RAW.' + k); });
-            }
-        } catch(_) {}
-        try {
-            window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG = pools.map(function(p){ return { name: p.name || p.source, source: p.source, rows: (p.rows || []).length }; });
         } catch(_) {}
         return pools;
     }
     function traceOpsIssueImpactPoolDebug(model) {
-        try {
-            traceOpsIssueImpactRowsFromModel(model || {});
-            return window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG || [];
-        } catch(_) { return []; }
+        try { traceOpsIssueImpactCesiumPools(model || {}); return window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG || []; } catch(_) { return []; }
     }
-    function traceOpsBuildIssueImpactRows(model, startMs, endMs) {
-        var bySn = {};
-        traceOpsIssueImpactRowsFromModel(model).forEach(function(pool){
-            (pool.rows || []).forEach(function(r){
-                if (!r || typeof r !== 'object') return;
-                var sn = traceOpsIssueImpactSn(r);
-                if (!sn) return;
-                var t = traceOpsIssueImpactDateMs(traceOpsIssueImpactPick(r, ['recordTime','eventTime','repairTime','testdate','testDate','fecha','fecha_registro','regdate','createdate','eventdate','updatedate','lastupdate','time','timestamp','date','datetime','DateTime','Rec Time','Record Time','RECTIME','SQLTIMESTAMP','lasteditdt','Last Edit DT']));
-                if (!t) return;
-                var isCesium = /cesium|ict|ft/i.test(pool.source || '') || traceOpsIssueImpactStationFromCesium(r);
-                var station = isCesium ? traceOpsIssueImpactStationFromCesium(r) : traceOpsIssueImpactStationFromSfc(r);
-                if (!station) station = traceOpsIssueImpactStationFromSfc(r);
-                var ev = {
-                    source: pool.source || '', sn: sn, timeMs: t, timeText: traceOpsIssueImpactFmt(t),
-                    model: traceOpsIssueImpactPick(r, ['sku','skuno','model','modelno','uuttype','moduleNo','moduleno']) || '',
-                    wo: traceOpsIssueImpactPick(r, ['workorderno','workorder','wo','WO']) || '',
-                    station: station || 'UNMAPPED',
-                    process: [traceOpsIssueImpactPick(r, ['boxcurrentevent','currentEvent','event']), traceOpsIssueImpactPick(r, ['boxnextevent','nextEvent'])].filter(Boolean).join(' → ') || traceOpsIssueImpactPick(r, ['process','testinfo','testInfo']) || '',
-                    result: traceOpsIssueImpactPick(r, ['status','result','resultado','Status','Result']) || '',
-                    failTest: traceOpsIssueImpactPick(r, ['failingTestName','failName','testName','testinfo','testInfo','testfailed','testFailed','failureMode','symptom','rootCause','rootcause','Root Cause','FailSymptom']) || '',
-                    raw: r
-                };
-                if (!bySn[sn]) bySn[sn] = [];
-                bySn[sn].push(ev);
+    function traceOpsIssueImpactDefaultRange(model) {
+        var maxMs = 0;
+        traceOpsIssueImpactCesiumPools(model || {}).forEach(function(pool){
+            (pool.rows || []).slice(0, 75000).forEach(function(r){
+                var t = traceOpsIssueImpactDateMs(traceOpsIssueImpactTimeValue(r));
+                if (t && t > maxMs) maxMs = t;
             });
         });
-        var out = [];
-        Object.keys(bySn).forEach(function(sn){
-            var events = bySn[sn].sort(function(a,b){ return a.timeMs-b.timeMs; });
-            var before = null, after = null, during = [];
-            events.forEach(function(ev){ if (ev.timeMs < startMs) before = ev; else if (ev.timeMs <= endMs) during.push(ev); else if (!after) after = ev; });
-            if (!during.length) return;
-            var failDuring = during.some(traceOpsIssueImpactLooksFail);
-            var passAfter = after && traceOpsIssueImpactLooksPass(after);
-            var impact = failDuring && !passAfter ? 'Critical' : (failDuring && passAfter ? 'Recovered' : (!after ? 'Hold Risk' : 'Observed'));
-            var main = during.find(traceOpsIssueImpactLooksFail) || during[0];
-            out.push({ sn: sn, model: main.model || (before && before.model) || (after && after.model) || '', wo: main.wo || (before && before.wo) || (after && after.wo) || '', station: main.station || '', process: main.process || '', result: main.result || '', failTest: main.failTest || '', issueTime: main.timeText || '', impact: impact, before: before, after: after, during: during });
+        var base = maxMs ? new Date(maxMs) : new Date();
+        var start = new Date(base.getFullYear(), base.getMonth(), base.getDate() - 1, 0, 0, 0).getTime();
+        var end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59).getTime();
+        return { start: traceOpsIssueImpactLocalInput(start), end: traceOpsIssueImpactLocalInput(end) };
+    }
+    function traceOpsIssueImpactDefaultModel(model) {
+        var opts = traceOpsIssueImpactModelOptions(model || {}).filter(function(o){ return o && o.value && o.value !== 'ALL'; });
+        var preferred = ['73-103698-06','68-104853-01','TYNE'];
+        for (var p = 0; p < preferred.length; p++) {
+            var target = traceOpsIssueImpactCompact(preferred[p]);
+            for (var i = 0; i < opts.length; i++) {
+                if (traceOpsIssueImpactCompact(opts[i].value) === target || traceOpsIssueImpactCompact(opts[i].label) === target) return opts[i].value;
+            }
+        }
+        for (var j = 0; j < opts.length; j++) {
+            if (opts[j].value !== 'Unmapped model') return opts[j].value;
+        }
+        return opts.length ? opts[0].value : 'Unmapped model';
+    }
+    function traceOpsBuildIssueImpactRows(model, startMs, endMs, modelFilter) {
+        var all = [];
+        var seenKey = {};
+        traceOpsIssueImpactCesiumPools(model).forEach(function(pool){
+            (pool.rows || []).forEach(function(r, idx){
+                if (!r || typeof r !== 'object') return;
+                if (!traceOpsIssueImpactModelMatches(r, modelFilter || 'Unmapped model')) return;
+                var sn = traceOpsIssueImpactSn(r);
+                if (!sn) return;
+                var t = traceOpsIssueImpactDateMs(traceOpsIssueImpactTimeValue(r));
+                if (!t || t < startMs || t > endMs) return;
+                var key = sn + '|' + t + '|' + traceOpsIssueImpactStationFromCesium(r) + '|' + traceOpsIssueImpactStatus(r);
+                if (seenKey[key]) return;
+                seenKey[key] = true;
+                var fail = traceOpsIssueImpactLooksFail(r);
+                var pass = traceOpsIssueImpactLooksPass(r);
+                var impact = fail ? 'Failed' : (pass ? 'Passed' : 'Observed');
+                all.push({
+                    source: pool.name || 'Cesium',
+                    sn: sn,
+                    timeMs: t,
+                    timeText: traceOpsIssueImpactFmt(t),
+                    model: traceOpsIssueImpactModelFromCesium(r),
+                    wo: traceOpsIssueImpactPick(r, ['workorderno','workorder','WO','wo','Work Order']) || '',
+                    station: traceOpsIssueImpactStationFromCesium(r) || 'UNMAPPED',
+                    process: traceOpsIssueImpactProcessFromCesium(r),
+                    result: traceOpsIssueImpactPick(r, ['status','Status','result','Result']) || '',
+                    failTest: traceOpsIssueImpactPick(r, ['TESTINFO','testinfo','testInfo','Test Step','Measures','failureMode','symptom']) || '',
+                    impact: impact,
+                    raw: r
+                });
+            });
         });
-        return out.sort(function(a,b){ return String(a.impact).localeCompare(String(b.impact)) || String(a.station).localeCompare(String(b.station)) || String(a.sn).localeCompare(String(b.sn)); });
+        var bySn = {};
+        all.forEach(function(ev){ if (!bySn[ev.sn]) bySn[ev.sn] = []; bySn[ev.sn].push(ev); });
+        Object.keys(bySn).forEach(function(sn){
+            bySn[sn].sort(function(a,b){ return a.timeMs - b.timeMs; });
+            for (var i = 0; i < bySn[sn].length; i++) {
+                var ev = bySn[sn][i];
+                if (ev.impact !== 'Failed') continue;
+                var laterPass = bySn[sn].slice(i + 1).some(function(x){ return x.impact === 'Passed'; });
+                ev.impact = laterPass ? 'Recovered' : 'Critical';
+            }
+        });
+        return all.sort(function(a,b){ return a.timeMs - b.timeMs || String(a.sn).localeCompare(String(b.sn)); });
     }
     function renderIssueTimeImpactAnalyzerSection() {
         var h = React.createElement;
         var modelRef = yieldFlowModel;
-        function localInput(d){ try { var z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); } catch(_) { return ''; } }
-        var now = new Date();
-        var defaultEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0, 0);
-        var defaultStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0, 0);
-        function IssueImpactStablePanel(props){
+        var defaults = traceOpsIssueImpactDefaultRange(modelRef);
+        function IssueImpactCesiumTynePanel(props){
             React.Component.call(this, props);
-            this.state = { startText: localInput(defaultStart), endText: localInput(defaultEnd) };
+            this.state = { startText: defaults.start, endText: defaults.end, modelFilter: traceOpsIssueImpactDefaultModel(modelRef), dayStationFilter: 'ALL', hourStationFilter: 'ALL', aoiTopStartText: '2026-06-12T13:00', failDetail: null };
             this.setStart = this.setStart.bind(this);
             this.setEnd = this.setEnd.bind(this);
+            this.setModelFilter = this.setModelFilter.bind(this);
+            this.setDayStationFilter = this.setDayStationFilter.bind(this);
+            this.setHourStationFilter = this.setHourStationFilter.bind(this);
+            this.setAoiTopStart = this.setAoiTopStart.bind(this);
+            this.openFailDetail = this.openFailDetail.bind(this);
+            this.closeFailDetail = this.closeFailDetail.bind(this);
+            this.exportAffectedTsv = this.exportAffectedTsv.bind(this);
             this.exportTsv = this.exportTsv.bind(this);
         }
-        IssueImpactStablePanel.prototype = Object.create(React.Component.prototype);
-        IssueImpactStablePanel.prototype.constructor = IssueImpactStablePanel;
-        IssueImpactStablePanel.prototype.getRows = function(){
+        IssueImpactCesiumTynePanel.prototype = Object.create(React.Component.prototype);
+        IssueImpactCesiumTynePanel.prototype.constructor = IssueImpactCesiumTynePanel;
+        IssueImpactCesiumTynePanel.prototype.getRows = function(){
             var startMs = traceOpsIssueImpactDateMs(this.state.startText);
             var endMs = traceOpsIssueImpactDateMs(this.state.endText);
             if (!startMs || !endMs || endMs < startMs) return [];
-            try { return traceOpsBuildIssueImpactRows(this.props.model || {}, startMs, endMs) || []; }
-            catch(e) { console.warn('[SMTinel] Issue Impact compute failed', e); return []; }
+            try { return traceOpsBuildIssueImpactRows(this.props.model || {}, startMs, endMs, this.state.modelFilter || 'Unmapped model') || []; }
+            catch(e) { console.warn('[SMTinel] Issue Impact Cesium compute failed', e); return []; }
         };
-        IssueImpactStablePanel.prototype.setStart = function(e){ this.setState({ startText: e && e.target ? e.target.value : '' }); };
-        IssueImpactStablePanel.prototype.setEnd = function(e){ this.setState({ endText: e && e.target ? e.target.value : '' }); };
-        IssueImpactStablePanel.prototype.exportTsv = function(){
-            var rows = this.getRows();
-            var headers = ['SN','MODELO','WO','ESTACION','PROCESO','RESULTADO','TEST FALLIDO','HORA','IMPACTO'];
-            var lines = [headers.join('\t')].concat(rows.map(function(r){ return [r.sn,r.model,r.wo,r.station,r.process,r.result,r.failTest,r.issueTime,r.impact].map(function(v){ return String(v||'').replace(/[\t\r\n]+/g,' '); }).join('\t'); }));
-            var blob = new Blob([lines.join('\n')], {type:'text/tab-separated-values;charset=utf-8'});
+        IssueImpactCesiumTynePanel.prototype.setStart = function(e){ this.setState({ startText: e && e.target ? e.target.value : '' }); };
+        IssueImpactCesiumTynePanel.prototype.setEnd = function(e){ this.setState({ endText: e && e.target ? e.target.value : '' }); };
+        IssueImpactCesiumTynePanel.prototype.setModelFilter = function(e){ this.setState({ modelFilter: e && e.target ? e.target.value : '', dayStationFilter: 'ALL', hourStationFilter: 'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setDayStationFilter = function(e){ this.setState({ dayStationFilter: e && e.target ? e.target.value : 'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setHourStationFilter = function(e){ this.setState({ hourStationFilter: e && e.target ? e.target.value : 'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setAoiTopStart = function(e){ this.setState({ aoiTopStartText: e && e.target ? e.target.value : '' }); };
+        IssueImpactCesiumTynePanel.prototype.openFailDetail = function(title, rows){
+            rows = (rows || []).filter(function(r){ return r && (r.impact === 'Critical' || r.impact === 'Recovered' || r.impact === 'Failed'); });
+            var seen = {};
+            rows = rows.filter(function(r){
+                var key = [r.sn || '', r.station || '', r.timeMs || '', r.failTest || r.result || ''].join('|');
+                if (seen[key]) return false;
+                seen[key] = true;
+                return true;
+            }).sort(function(a,b){ return (b.timeMs || 0) - (a.timeMs || 0) || String(a.sn || '').localeCompare(String(b.sn || '')); });
+            this.setState({ failDetail: { title: title || 'Seriales afectados', rows: rows } });
+        };
+        IssueImpactCesiumTynePanel.prototype.closeFailDetail = function(){ this.setState({ failDetail: null }); };
+        IssueImpactCesiumTynePanel.prototype.exportAffectedTsv = function(detail){
+            detail = detail || this.state.failDetail || { rows: [] };
+            var lines = [];
+            lines.push(['SN','SERIAL PREFIX','MODELO','WO','ESTACION','RESULTADO','TEST INFO','HORA','IMPACTO'].join('	'));
+            (detail.rows || []).forEach(function(r){
+                lines.push([r.sn || '', IssueImpactCesiumTynePanel.prototype.serialPrefix(r.sn || ''), r.model || '', r.wo || '', r.station || '', r.result || '', r.failTest || '', r.timeText || traceOpsIssueImpactFmt(r.timeMs), r.impact || ''].join('	'));
+            });
+            var blob = new Blob([lines.join('\\n')], {type:'text/tab-separated-values;charset=utf-8'});
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'SMTinel_Issue_Time_Impact.tsv';
+            a.download = 'SMTinel_Affected_Serials.tsv';
             document.body.appendChild(a);
             a.click();
             setTimeout(function(){ try { URL.revokeObjectURL(a.href); a.remove(); } catch(_) {} }, 250);
         };
-        IssueImpactStablePanel.prototype.render = function(){
+        IssueImpactCesiumTynePanel.prototype.exportTsv = function(){
             var rows = this.getRows();
+            var stationRows = this.buildStationBreakdown(rows);
+            var flowRows = this.buildSerialFlowProgress(rows);
+            var currentRowsBase = this.buildCurrentProcessStatus(rows);
+            var smtCurrentRows = this.buildSmtCurrentProcessRows(rows);
+            var currentRows = smtCurrentRows.concat(currentRowsBase.filter(function(r){ return traceOpsIssueImpactUpper(r.station || '') !== 'AOI'; }));
+            var dayRows = this.buildYieldByDay(rows, this.state.dayStationFilter || 'ALL');
+            var hourRows = this.buildYieldByHour(rows, this.state.hourStationFilter || 'ALL');
+            var lines = [];
+            lines.push(['SERIAL FLOW BY STATION'].join('\t'));
+            lines.push(['SEQ','ESTACION','SERIALS REACHED','SERIAL PREFIX NOTE','PREV STATION','PREV REACHED','DROP FROM PREV','FLOW %','PASS','FAIL','YIELD'].join('\t'));
+            flowRows.forEach(function(r){ lines.push([r.seq,r.station,r.reached,r.prefixNote,r.prevStation,r.prevReached,r.drop,r.flowText,r.pass,r.fail,r.yieldText].join('\t')); });
+            lines.push('');
+            lines.push(['CURRENT PROCESS STATUS'].join('\t'));
+            lines.push(['ESTACION','CURRENT SN','SERIAL PREFIX NOTE','% OF TOTAL','PASS','FAIL','OBSERVED','LAST SEEN','TOP FAIL'].join('\t'));
+            currentRows.forEach(function(r){ lines.push([r.station,r.current,r.prefixNote,r.pctText,r.pass,r.fail,r.observed,r.lastSeen,r.topFail].join('\t')); });
+            lines.push('');
+            lines.push(['STATION PROGRESS'].join('\t'));
+            lines.push(['ESTACION','RUNS','UNIQUE SN','SERIAL PREFIX NOTE','PASS','FAIL','YIELD','TOP FAIL'].join('\t'));
+            stationRows.forEach(function(r){ lines.push([r.station,r.runs,r.snCount,r.prefixNote,r.pass,r.fail,r.yieldText,r.topFail].join('\t')); });
+            lines.push('');
+            lines.push(['YIELD BY DAY'].join('\t'));
+            lines.push(['DIA','STATION FILTER','RUNS','UNIQUE SN','SERIAL PREFIX NOTE','PASS','FAIL','STATIONS','YIELD'].join('\t'));
+            dayRows.forEach(function(r){ lines.push([r.day,(this.state.dayStationFilter||'ALL'),r.runs,r.snCount,r.prefixNote,r.pass,r.fail,r.stationCount,r.yieldText].join('\t')); }, this);
+            var blob = new Blob([lines.join('\\n')], {type:'text/tab-separated-values;charset=utf-8'});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'SMTinel_Issue_Impact_Station_Progress.tsv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ try { URL.revokeObjectURL(a.href); a.remove(); } catch(_) {} }, 250);
+        };
+        IssueImpactCesiumTynePanel.prototype.serialPrefix = function(sn){
+            var raw = traceOpsIssueImpactUpper(sn || '').replace(/[^A-Z0-9]+/g,'');
+            var m = raw.match(/^([A-Z]{2,4}[0-9]{3,5})/);
+            if (m && m[1]) return m[1].slice(0,7);
+            return raw ? raw.slice(0,7) : 'UNMAPPED';
+        };
+        IssueImpactCesiumTynePanel.prototype.prefixRank = function(prefix){
+            var m = String(prefix || '').match(/([0-9]{3,5})$/);
+            return m ? parseInt(m[1], 10) : -1;
+        };
+        IssueImpactCesiumTynePanel.prototype.globalFreshPrefix = function(rows){
+            var map = {};
+            (rows || []).forEach(function(r){
+                if (!r || !r.sn) return;
+                var p = IssueImpactCesiumTynePanel.prototype.serialPrefix(r.sn);
+                if (!map[p]) map[p] = {prefix:p, sn:{}, rank:IssueImpactCesiumTynePanel.prototype.prefixRank(p)};
+                map[p].sn[r.sn] = true;
+            });
+            var arr = Object.keys(map).map(function(k){ var m=map[k]; m.count=Object.keys(m.sn).length; return m; });
+            arr.sort(function(a,b){
+                if (b.rank !== a.rank) return b.rank - a.rank;
+                return b.count - a.count;
+            });
+            return arr.length ? arr[0].prefix : '';
+        };
+        IssueImpactCesiumTynePanel.prototype.prefixNoteFromSnSet = function(snObj, freshPrefix){
+            snObj = snObj || {};
+            var map = {};
+            Object.keys(snObj).forEach(function(sn){
+                var p = IssueImpactCesiumTynePanel.prototype.serialPrefix(sn);
+                if (!map[p]) map[p] = 0;
+                map[p] += 1;
+            });
+            var arr = Object.keys(map).map(function(k){ return {prefix:k, count:map[k], rank:IssueImpactCesiumTynePanel.prototype.prefixRank(k)}; });
+            arr.sort(function(a,b){ return b.count-a.count || b.rank-a.rank || String(a.prefix).localeCompare(String(b.prefix)); });
+            if (!arr.length) return '-';
+            var top = arr.slice(0,3).map(function(x){ return x.prefix + ' ' + x.count; }).join(', ');
+            var hasFresh = freshPrefix && map[freshPrefix];
+            var hasOlder = arr.some(function(x){ return freshPrefix && x.prefix !== freshPrefix; });
+            var note = '';
+            if (hasFresh && hasOlder) note = 'Mezcla actual / otra semana';
+            else if (hasFresh) note = 'Corrida actual';
+            else note = 'Unidades de otra semana';
+            return top + ' | ' + note;
+        };
+        IssueImpactCesiumTynePanel.prototype.buildSerialPrefixSummary = function(rows){
+            var fresh = this.globalFreshPrefix(rows || []);
+            var snByPrefix = {};
+            var stationByPrefix = {};
+            var passByPrefix = {};
+            var failByPrefix = {};
+            (rows || []).forEach(function(r){
+                if (!r || !r.sn) return;
+                var p = IssueImpactCesiumTynePanel.prototype.serialPrefix(r.sn);
+                if (!snByPrefix[p]) snByPrefix[p] = {};
+                if (!stationByPrefix[p]) stationByPrefix[p] = {};
+                snByPrefix[p][r.sn] = true;
+                if (r.station) stationByPrefix[p][r.station] = true;
+                if (r.impact === 'Passed') passByPrefix[p] = (passByPrefix[p] || 0) + 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered') failByPrefix[p] = (failByPrefix[p] || 0) + 1;
+            });
+            return Object.keys(snByPrefix).map(function(p){
+                var cnt = Object.keys(snByPrefix[p]).length;
+                var pass = passByPrefix[p] || 0;
+                var fail = failByPrefix[p] || 0;
+                return {
+                    prefix:p,
+                    snCount:cnt,
+                    stations:Object.keys(stationByPrefix[p] || {}).sort().join(', ') || '-',
+                    pass:pass,
+                    fail:fail,
+                    note:(p === fresh ? 'Corrida actual' : 'Unidades de otra semana')
+                };
+            }).sort(function(a,b){ return b.snCount-a.snCount || IssueImpactCesiumTynePanel.prototype.prefixRank(b.prefix)-IssueImpactCesiumTynePanel.prototype.prefixRank(a.prefix); });
+        };
+        IssueImpactCesiumTynePanel.prototype.buildStationBreakdown = function(rows){
+            var map = {};
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var self = this;
+            (rows || []).forEach(function(r){
+                var station = r.station || 'UNMAPPED';
+                if (!map[station]) map[station] = { station: station, runs:0, sn:{}, pass:0, fail:0, failMap:{}, failRows:[] };
+                var m = map[station];
+                m.runs += 1;
+                if (r.sn) m.sn[r.sn] = true;
+                if (r.impact === 'Passed') m.pass += 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered') {
+                    m.fail += 1;
+                    m.failRows.push(r);
+                    var ft = r.failTest || r.result || 'Fail';
+                    m.failMap[ft] = (m.failMap[ft] || 0) + 1;
+                }
+            });
+            return Object.keys(map).map(function(k){
+                var m = map[k];
+                var topFail = '-';
+                Object.keys(m.failMap).sort(function(a,b){ return m.failMap[b]-m.failMap[a]; }).slice(0,1).forEach(function(x){ topFail = x + ' (' + m.failMap[x] + ')'; });
+                var denom = m.pass + m.fail;
+                return { station:m.station, runs:m.runs, snCount:Object.keys(m.sn).length, pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', topFail:topFail, prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix) };
+            }).sort(function(a,b){ return (b.runs-a.runs) || String(a.station).localeCompare(String(b.station)); });
+        };
+        IssueImpactCesiumTynePanel.prototype.stationFlowRank = function(station){
+            var s = traceOpsIssueImpactUpper(station || '').replace(/[^A-Z0-9]+/g,'');
+            var ranks = [
+                ['PASTE',10],['SPI',15],['AOI',20],['AOI2',21],['AOI4',22],['FIVEDX',30],['XRAY',31],
+                ['ICT',40],['FCT',45],['PCBDG',50],['PCBP',55],['PCBPM',56],['PCBPM3',57],
+                ['PCBFT',60],['PCBHIPO',65],['PCBA',70],['PCBAASY',75],['PCBASSY',75],['SYSASSY',80],
+                ['ASSY',85],['QI',90],['QI2',91],['PACK',95],['STOCKIN',100]
+            ];
+            for (var i=0;i<ranks.length;i++){ if (s.indexOf(ranks[i][0]) >= 0) return ranks[i][1]; }
+            return 500;
+        };
+        IssueImpactCesiumTynePanel.prototype.buildSerialFlowProgress = function(rows){
+            var stationMap = {};
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var self = this;
+            var snStation = {};
+            (rows || []).forEach(function(r){
+                var station = r.station || 'UNMAPPED';
+                var sn = r.sn || '';
+                if (!stationMap[station]) stationMap[station] = { station:station, firstMs:r.timeMs || 0, sn:{}, pass:0, fail:0, failRows:[] };
+                var m = stationMap[station];
+                if (r.timeMs && (!m.firstMs || r.timeMs < m.firstMs)) m.firstMs = r.timeMs;
+                if (sn) { m.sn[sn] = true; if (!snStation[sn]) snStation[sn] = {}; snStation[sn][station] = true; }
+                if (r.impact === 'Passed') m.pass += 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered') { m.fail += 1; m.failRows.push(r); }
+            });
+            var ordered = Object.keys(stationMap).map(function(k){ return stationMap[k]; }).sort(function(a,b){
+                var ra = IssueImpactCesiumTynePanel.prototype.stationFlowRank(a.station);
+                var rb = IssueImpactCesiumTynePanel.prototype.stationFlowRank(b.station);
+                if (ra !== rb) return ra - rb;
+                if ((a.firstMs || 0) !== (b.firstMs || 0)) return (a.firstMs || 0) - (b.firstMs || 0);
+                return String(a.station).localeCompare(String(b.station));
+            });
+            var prev = null;
+            return ordered.map(function(m, idx){
+                var reached = Object.keys(m.sn).length;
+                var prevReached = prev ? prev.reached : reached;
+                var drop = prev ? Math.max(prevReached - reached, 0) : 0;
+                var flow = prev ? (prevReached ? (reached / prevReached) * 100 : 0) : 100;
+                var denom = m.pass + m.fail;
+                var row = {
+                    seq: idx + 1,
+                    station: m.station,
+                    reached: reached,
+                    prevStation: prev ? prev.station : '-',
+                    prevReached: prev ? prev.reached : '-',
+                    drop: prev ? drop : '-',
+                    flowText: prev ? flow.toFixed(2) + '%' : '100.00%',
+                    pass: m.pass,
+                    fail: m.fail,
+                    yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A',
+                    failRows: m.failRows || [],
+                    prefixNote: self.prefixNoteFromSnSet(m.sn, freshPrefix)
+                };
+                prev = row;
+                return row;
+            });
+        };
+        IssueImpactCesiumTynePanel.prototype.buildCurrentProcessStatus = function(rows){
+            var bySn = {};
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var self = this;
+            (rows || []).forEach(function(r){
+                if (!r || !r.sn) return;
+                if (!bySn[r.sn]) bySn[r.sn] = [];
+                bySn[r.sn].push(r);
+            });
+            var stationMap = {};
+            Object.keys(bySn).forEach(function(sn){
+                var list = bySn[sn].slice().sort(function(a,b){ return (a.timeMs || 0) - (b.timeMs || 0); });
+                var latest = list[list.length - 1];
+                if (!latest) return;
+                var station = latest.station || 'UNMAPPED';
+                if (!stationMap[station]) stationMap[station] = { station:station, sn:{}, pass:0, fail:0, observed:0, lastMs:0, failMap:{}, failRows:[] };
+                var m = stationMap[station];
+                m.sn[sn] = true;
+                if (latest.timeMs && latest.timeMs > m.lastMs) m.lastMs = latest.timeMs;
+                if (latest.impact === 'Passed') m.pass += 1;
+                else if (latest.impact === 'Critical' || latest.impact === 'Recovered' || latest.impact === 'Failed') {
+                    m.fail += 1;
+                    m.failRows.push(latest);
+                    var ft = latest.failTest || latest.result || 'Fail';
+                    m.failMap[ft] = (m.failMap[ft] || 0) + 1;
+                } else {
+                    m.observed += 1;
+                }
+            });
+            var totalSn = Object.keys(bySn).length;
+            return Object.keys(stationMap).map(function(k){
+                var m = stationMap[k];
+                var topFail = '-';
+                Object.keys(m.failMap).sort(function(a,b){ return m.failMap[b]-m.failMap[a]; }).slice(0,1).forEach(function(x){ topFail = x + ' (' + m.failMap[x] + ')'; });
+                var qty = Object.keys(m.sn).length;
+                return {
+                    station:m.station,
+                    current:qty,
+                    pctText: totalSn ? ((qty / totalSn) * 100).toFixed(2) + '%' : 'N/A',
+                    pass:m.pass,
+                    fail:m.fail,
+                    observed:m.observed,
+                    lastSeen: m.lastMs ? traceOpsIssueImpactFmt(m.lastMs) : '-',
+                    topFail:topFail,
+                    failRows:m.failRows || [],
+                    prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix)
+                };
+            }).sort(function(a,b){
+                var ra = IssueImpactCesiumTynePanel.prototype.stationFlowRank(a.station);
+                var rb = IssueImpactCesiumTynePanel.prototype.stationFlowRank(b.station);
+                if (ra !== rb) return ra - rb;
+                return String(a.station).localeCompare(String(b.station));
+            });
+        };
+        IssueImpactCesiumTynePanel.prototype.buildYieldByDay = function(rows, stationFilter){
+            var map = {};
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var self = this;
+            var sf = traceOpsIssueImpactUpper(stationFilter || 'ALL');
+            (rows || []).forEach(function(r){
+                if (sf && sf !== 'ALL' && traceOpsIssueImpactUpper(r.station || 'UNMAPPED') !== sf) return;
+                var day = 'Unknown';
+                if (r.timeMs) {
+                    try { var d = new Date(r.timeMs); day = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); } catch(_) {}
+                }
+                if (!map[day]) map[day] = { day:day, runs:0, sn:{}, station:{}, pass:0, fail:0, failRows:[] };
+                var m = map[day];
+                m.runs += 1;
+                if (r.sn) m.sn[r.sn] = true;
+                if (r.station) m.station[r.station] = true;
+                if (r.impact === 'Passed') m.pass += 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered') { m.fail += 1; m.failRows.push(r); }
+            });
+            return Object.keys(map).map(function(k){
+                var m = map[k];
+                var denom = m.pass + m.fail;
+                return { day:m.day, runs:m.runs, snCount:Object.keys(m.sn).length, stationCount:Object.keys(m.station).length, pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix) };
+            }).sort(function(a,b){ return String(a.day).localeCompare(String(b.day)); });
+        };
+
+        IssueImpactCesiumTynePanel.prototype.buildYieldByHour = function(rows, stationFilter){
+            var map = {};
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var self = this;
+            var sf = traceOpsIssueImpactUpper(stationFilter || 'ALL');
+            (rows || []).forEach(function(r){
+                if (sf && sf !== 'ALL' && traceOpsIssueImpactUpper(r.station || 'UNMAPPED') !== sf) return;
+                var day = 'Unknown';
+                var hourKey = 'Unknown';
+                var hourLabel = 'Unknown';
+                if (r.timeMs) {
+                    try {
+                        var d = new Date(r.timeMs);
+                        day = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+                        var hh = String(d.getHours()).padStart(2,'0');
+                        hourKey = day + ' ' + hh;
+                        hourLabel = hh + ':00 - ' + hh + ':59';
+                    } catch(_) {}
+                }
+                var key = day + '|' + hourKey;
+                if (!map[key]) map[key] = { day:day, hourKey:hourKey, hourLabel:hourLabel, runs:0, sn:{}, station:{}, pass:0, fail:0, failRows:[] };
+                var m = map[key];
+                m.runs += 1;
+                if (r.sn) m.sn[r.sn] = true;
+                if (r.station) m.station[r.station] = true;
+                if (r.impact === 'Passed') m.pass += 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered') { m.fail += 1; m.failRows.push(r); }
+            });
+            return Object.keys(map).map(function(k){
+                var m = map[k];
+                var denom = m.pass + m.fail;
+                return { day:m.day, hourKey:m.hourKey, hourLabel:m.hourLabel, runs:m.runs, snCount:Object.keys(m.sn).length, stationCount:Object.keys(m.station).length, pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText: denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix) };
+            }).sort(function(a,b){ return String(a.hourKey).localeCompare(String(b.hourKey)); });
+        };
+
+        IssueImpactCesiumTynePanel.prototype.aoiSideForRow = function(row){
+            var cutoff = traceOpsIssueImpactDateMs(this.state.aoiTopStartText || '2026-06-12T13:00');
+            var t = row && row.timeMs ? row.timeMs : traceOpsIssueImpactDateMs(traceOpsIssueImpactTimeValue(row || {}));
+            if (!cutoff || !t) return 'AOI Unclassified';
+            return t >= cutoff ? 'AOI TOP' : 'AOI BOTTOM';
+        };
+        IssueImpactCesiumTynePanel.prototype.buildAoiBottomTopSplit = function(rows){
+            var self = this;
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var map = {};
+            ['AOI BOTTOM','AOI TOP'].forEach(function(side){
+                map[side] = { side:side, criteria: side === 'AOI TOP' ? ('AOI record >= ' + (self.state.aoiTopStartText || 'N/D')) : ('AOI record < ' + (self.state.aoiTopStartText || 'N/D')), runs:0, sn:{}, pass:0, fail:0, firstMs:null, lastMs:null, failMap:{}, failRows:[] };
+            });
+            (rows || []).forEach(function(r){
+                if (!r || traceOpsIssueImpactUpper(r.station || '') !== 'AOI') return;
+                var side = self.aoiSideForRow(r);
+                if (!map[side]) map[side] = { side:side, criteria:'Sin fecha suficiente para clasificar', runs:0, sn:{}, pass:0, fail:0, firstMs:null, lastMs:null, failMap:{}, failRows:[] };
+                var m = map[side];
+                m.runs += 1;
+                if (r.sn) m.sn[r.sn] = true;
+                if (r.timeMs && (m.firstMs == null || r.timeMs < m.firstMs)) m.firstMs = r.timeMs;
+                if (r.timeMs && (m.lastMs == null || r.timeMs > m.lastMs)) m.lastMs = r.timeMs;
+                if (r.impact === 'Passed') m.pass += 1;
+                if (r.impact === 'Critical' || r.impact === 'Recovered' || r.impact === 'Failed') {
+                    m.fail += 1;
+                    m.failRows.push(r);
+                    var ft = r.failTest || r.result || 'Fail';
+                    m.failMap[ft] = (m.failMap[ft] || 0) + 1;
+                }
+            });
+            return Object.keys(map).map(function(k){
+                var m = map[k];
+                var topFail = '-';
+                Object.keys(m.failMap).sort(function(a,b){ return m.failMap[b] - m.failMap[a]; }).slice(0,1).forEach(function(x){ topFail = x + ' (' + m.failMap[x] + ')'; });
+                var denom = m.pass + m.fail;
+                return { side:m.side, criteria:m.criteria, runs:m.runs, snCount:Object.keys(m.sn).length, prefixNote:self.prefixNoteFromSnSet(m.sn, freshPrefix), pass:m.pass, fail:m.fail, failRows:m.failRows || [], yieldText:denom ? ((m.pass/denom)*100).toFixed(2)+'%' : 'N/A', firstSeen:m.firstMs ? traceOpsIssueImpactFmt(m.firstMs) : '-', lastSeen:m.lastMs ? traceOpsIssueImpactFmt(m.lastMs) : '-', topFail:topFail };
+            }).sort(function(a,b){ return a.side === 'AOI BOTTOM' ? -1 : (b.side === 'AOI BOTTOM' ? 1 : String(a.side).localeCompare(String(b.side))); });
+        };
+        IssueImpactCesiumTynePanel.prototype.buildSmtCurrentProcessRows = function(rows){
+            var self = this;
+            var freshPrefix = this.globalFreshPrefix(rows || []);
+            var cutoff = traceOpsIssueImpactDateMs(this.state.aoiTopStartText || '2026-06-12T13:00');
+            var bottomSn = {}, topSn = {}, bottomRows = [], topRows = [];
+            var bottomPass = 0, topPass = 0, bottomFail = 0, topFail = 0;
+            var bottomFailRows = [], topFailRows = [];
+            var bottomLast = 0, topLast = 0;
+            var bottomFailMap = {}, topFailMap = {};
+            (rows || []).forEach(function(r){
+                if (!r || traceOpsIssueImpactUpper(r.station || '') !== 'AOI') return;
+                var sn = r.sn || '';
+                var side = self.aoiSideForRow(r);
+                var isFail = (r.impact === 'Critical' || r.impact === 'Recovered' || r.impact === 'Failed');
+                var ft = r.failTest || r.result || 'Fail';
+                if (side === 'AOI TOP') {
+                    topRows.push(r);
+                    if (sn) topSn[sn] = true;
+                    if (r.impact === 'Passed') topPass += 1;
+                    if (isFail) { topFail += 1; topFailRows.push(r); topFailMap[ft] = (topFailMap[ft] || 0) + 1; }
+                    if (r.timeMs && r.timeMs > topLast) topLast = r.timeMs;
+                } else if (side === 'AOI BOTTOM') {
+                    bottomRows.push(r);
+                    if (sn) bottomSn[sn] = true;
+                    if (r.impact === 'Passed') bottomPass += 1;
+                    if (isFail) { bottomFail += 1; bottomFailRows.push(r); bottomFailMap[ft] = (bottomFailMap[ft] || 0) + 1; }
+                    if (r.timeMs && r.timeMs > bottomLast) bottomLast = r.timeMs;
+                }
+            });
+            function topFailText(map){
+                var txt = '-';
+                Object.keys(map || {}).sort(function(a,b){ return map[b]-map[a]; }).slice(0,1).forEach(function(x){ txt = x + ' (' + map[x] + ')'; });
+                return txt;
+            }
+            function pct(qty, total){ return total ? ((qty / total) * 100).toFixed(2) + '%' : 'N/A'; }
+            function snCount(obj){ return Object.keys(obj || {}).length; }
+            var totalAoiSn = {};
+            Object.keys(bottomSn).forEach(function(sn){ totalAoiSn[sn] = true; });
+            Object.keys(topSn).forEach(function(sn){ totalAoiSn[sn] = true; });
+            var pendingTopSn = {};
+            Object.keys(bottomSn).forEach(function(sn){ if (!topSn[sn]) pendingTopSn[sn] = true; });
+            var total = snCount(totalAoiSn) || snCount(bottomSn) || snCount(topSn);
+            var pendingCount = snCount(pendingTopSn);
+            var rowsOut = [];
+            rowsOut.push({
+                station:'AOI2 procesadas',
+                current:snCount(bottomSn),
+                prefixNote:self.prefixNoteFromSnSet(bottomSn, freshPrefix),
+                pctText:pct(snCount(bottomSn), total),
+                pass:bottomPass,
+                fail:bottomFail,
+                observed:0,
+                lastSeen: bottomLast ? traceOpsIssueImpactFmt(bottomLast) : '-',
+                topFail:topFailText(bottomFailMap),
+                failRows:bottomFailRows,
+                smtRow:true
+            });
+            rowsOut.push({
+                station:'AOI4 procesadas',
+                current:snCount(topSn),
+                prefixNote:self.prefixNoteFromSnSet(topSn, freshPrefix),
+                pctText:pct(snCount(topSn), total),
+                pass:topPass,
+                fail:topFail,
+                observed:0,
+                lastSeen: topLast ? traceOpsIssueImpactFmt(topLast) : '-',
+                topFail:topFailText(topFailMap),
+                failRows:topFailRows,
+                smtRow:true
+            });
+            rowsOut.push({
+                station:'Pendientes AOI4',
+                current:pendingCount,
+                prefixNote:self.prefixNoteFromSnSet(pendingTopSn, freshPrefix),
+                pctText:pct(pendingCount, total),
+                pass:'-',
+                fail:0,
+                observed:pendingCount,
+                lastSeen: bottomLast ? traceOpsIssueImpactFmt(bottomLast) : '-',
+                topFail:'Unidades con Bottom sin registro TOP',
+                failRows:[],
+                smtRow:true
+            });
+            return rowsOut.filter(function(r){ return r.current !== 0 && r.current !== '0'; });
+        };
+        IssueImpactCesiumTynePanel.prototype.render = function(){
+            var rows = this.getRows();
+            var snMap = {}, stationMap = {};
+            rows.forEach(function(r){ snMap[r.sn] = true; if (r.station) stationMap[r.station] = true; });
             var failed = rows.filter(function(r){ return r.impact === 'Critical' || r.impact === 'Recovered'; }).length;
             var recovered = rows.filter(function(r){ return r.impact === 'Recovered'; }).length;
-            var critical = rows.filter(function(r){ return r.impact === 'Critical'; }).length;
-            var hold = rows.filter(function(r){ return r.impact === 'Hold Risk'; }).length;
-            var stations = {}; rows.forEach(function(r){ if(r.station) stations[r.station]=true; });
-            var topFail = '-';
-            var failMap = {}; rows.forEach(function(r){ var k = r.failTest || '-'; failMap[k]=(failMap[k]||0)+1; });
-            Object.keys(failMap).sort(function(a,b){ return failMap[b]-failMap[a]; }).slice(0,1).forEach(function(k){ topFail=k; });
+            var passed = rows.filter(function(r){ return r.impact === 'Passed'; }).length;
             var poolDebug = traceOpsIssueImpactPoolDebug(this.props.model || {});
+            var modelOptions = traceOpsIssueImpactModelOptions(this.props.model || {});
+            var selectedModel = this.state.modelFilter || 'Unmapped model';
+            var stationRows = this.buildStationBreakdown(rows);
+            var flowRows = this.buildSerialFlowProgress(rows);
+            var currentRows = this.buildCurrentProcessStatus(rows);
+            var dayStationOptions = Object.keys(stationMap).sort(function(a,b){
+                var ra = IssueImpactCesiumTynePanel.prototype.stationFlowRank(a);
+                var rb = IssueImpactCesiumTynePanel.prototype.stationFlowRank(b);
+                if (ra !== rb) return ra - rb;
+                return String(a).localeCompare(String(b));
+            });
+            var selectedDayStation = this.state.dayStationFilter || 'ALL';
+            if (selectedDayStation !== 'ALL' && dayStationOptions.indexOf(selectedDayStation) < 0) selectedDayStation = 'ALL';
+            var dayRows = this.buildYieldByDay(rows, selectedDayStation);
+            var selectedHourStation = this.state.hourStationFilter || 'ALL';
+            if (selectedHourStation !== 'ALL' && dayStationOptions.indexOf(selectedHourStation) < 0) selectedHourStation = 'ALL';
+            var hourRows = this.buildYieldByHour(rows, selectedHourStation);
+            var prefixRows = this.buildSerialPrefixSummary(rows);
+            var aoiSplitRows = this.buildAoiBottomTopSplit(rows);
+            if (selectedModel && selectedModel !== 'ALL' && !modelOptions.some(function(o){ return o.value === selectedModel; })) {
+                modelOptions = [{ label:selectedModel + ' (manual)', value:selectedModel, count:0 }].concat(modelOptions);
+            }
             function kpi(label, value, cls){ return h('div',{className:'traceops-kpi-card',key:label},[h('div',{className:'traceops-kpi-label'},label),h('div',{className:'traceops-kpi-value '+(cls||'')},String(value))]); }
+            function badge(text, tone){ return h('span',{className:'traceops-material-badge',style:{background:(tone==='fail'?'#FDEEEE':(tone==='pass'?'#EAF7EF':'#FFF7E8')),color:(tone==='fail'?'#C44141':(tone==='pass'?'#1A7A3C':'#9A6A16'))}},text); }
+            var selfPanel = this;
+            function failCell(row, title){
+                var n = row && row.fail ? row.fail : 0;
+                if (!n) return h('span',null,'0');
+                return h('button',{className:'traceops-material-btn',style:{padding:'4px 10px',fontSize:11,lineHeight:'1.2'},onClick:function(){ selfPanel.openFailDetail(title, (row && row.failRows) || []); }},String(n));
+            }
+            function sectionTitle(title, note){ return h('div',{className:'traceops-material-head',style:{padding:'16px 0 8px',borderBottom:'0'}},[h('div',null,[h('h3',{style:{margin:0,fontSize:16}},title),note?h('div',{className:'traceops-material-note'},note):null])]); }
             return h('div',{id:'issueimpact-section', className:'traceops-material-panel'},[
-                h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Foto forense por ventana de tiempo: seriales, modelo, estación efectiva, proceso, falla y recuperación posterior. Stable V7 con bridge directo a Yield Flow: FT, SFC, Repair y cache snapshot.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
+                h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Cesium TXT RAW only: status de unidades por proceso, flujo acumulado por estacion, AOI2/AOI4 integrado al estado actual, yield diario y hora por hora usando moduleno. No depende de SFC ni de WO.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
                 h('div',{className:'traceops-material-body',key:'body'},[
-                    h('div',{style:{display:'grid',gridTemplateColumns:'repeat(2,minmax(220px,1fr))',gap:12},key:'filters'},[h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Inicio',h('input',{type:'datetime-local',value:this.state.startText,onChange:this.setStart,className:'api-input',style:{width:'100%',marginTop:6}})]),h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Fin',h('input',{type:'datetime-local',value:this.state.endText,onChange:this.setEnd,className:'api-input',style:{width:'100%',marginTop:6}})])]),
-                    h('div',{className:'traceops-kpi-strip',style:{gridTemplateColumns:'repeat(6,minmax(0,1fr))'},key:'kpis'},[kpi('SN Window',rows.length,'info'),kpi('Failed',failed,'fail'),kpi('Recovered',recovered,'pass'),kpi('Critical',critical,'fail'),kpi('Hold Risk',hold,'warn'),kpi('Stations',Object.keys(stations).length,'info')]),
-                    h('details',{className:'traceops-material-empty',key:'diag',open: rows.length===0, style:{textAlign:'left'}},[h('summary',{style:{cursor:'pointer',fontWeight:900}},'Data bridge diagnostics'),h('div',{style:{fontSize:12,marginTop:8,whiteSpace:'pre-wrap'}}, poolDebug.length ? poolDebug.map(function(p){return (p.name||p.source)+': '+p.rows+' rows';}).join('\n') : 'No pools detected. Carga Yield Flow primero y vuelve a abrir este modulo.')]),
-                    h('div',{className:'traceops-material-tablewrap',key:'table'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['SN','Modelo','WO','Estacion','Proceso','Resultado','Test fallido','Hora','Impacto'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, rows.length? rows.slice(0,500).map(function(r){return h('tr',{key:r.sn+'|'+r.issueTime},[h('td',null,r.sn),h('td',null,r.model),h('td',null,r.wo),h('td',null,r.station),h('td',null,r.process),h('td',null,r.result),h('td',null,r.failTest),h('td',null,r.issueTime),h('td',null,h('span',{className:'traceops-material-badge',style:{background:r.impact==='Critical'?'#FDEEEE':(r.impact==='Recovered'?'#EAF7EF':'#FFF7E8'),color:r.impact==='Critical'?'#C44141':(r.impact==='Recovered'?'#1A7A3C':'#9A6A16')}},r.impact))]);}) : h('tr',null,h('td',{colSpan:9},'Sin seriales con actividad dentro de la ventana seleccionada. Revisa fecha/hora o carga ZIP Yield Flow.')))])),
-                    h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: durante la ventana seleccionada SMTinel detectó '+rows.length+' SN con actividad; '+failed+' fallaron, '+recovered+' muestran recuperación posterior y '+critical+' quedan sin evidencia de recovery. Top failure: '+topFail+'.')
+                    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 260px 240px',gap:12},key:'filters'},[
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Inicio',h('input',{type:'datetime-local',value:this.state.startText,onChange:this.setStart,className:'api-input',style:{width:'100%',marginTop:6}})]),
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Fin',h('input',{type:'datetime-local',value:this.state.endText,onChange:this.setEnd,className:'api-input',style:{width:'100%',marginTop:6}})]),
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Modelo',h('select',{value:selectedModel,onChange:this.setModelFilter,className:'api-input',style:{width:'100%',marginTop:6}},modelOptions.map(function(o){ return h('option',{key:o.value,value:o.value},o.label + (o.count ? ' (' + o.count + ')' : '')); }))]),
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['AOI TOP inicia',h('input',{type:'datetime-local',value:this.state.aoiTopStartText,onChange:this.setAoiTopStart,className:'api-input',style:{width:'100%',marginTop:6}})])
+                    ]),
+                    h('div',{className:'traceops-kpi-strip',style:{gridTemplateColumns:'repeat(6,minmax(0,1fr))'},key:'kpis'},[kpi('Cesium rows',rows.length,'info'),kpi('Unique SN',Object.keys(snMap).length,'info'),kpi('Passed',passed,'pass'),kpi('Failed',failed,'fail'),kpi('Recovered',recovered,'pass'),kpi('Stations',Object.keys(stationMap).length,'info')]),
+                    h('details',{className:'traceops-material-empty',key:'diag',open: rows.length===0, style:{textAlign:'left'}},[h('summary',{style:{cursor:'pointer',fontWeight:900}},'Cesium data diagnostics'),h('div',{style:{fontSize:12,marginTop:8,whiteSpace:'pre-wrap'}}, poolDebug.length ? poolDebug.map(function(p){return (p.name||p.source)+': '+p.rows+' rows' + (p.keys ? '\n  keys: '+p.keys : '');}).join('\n') : 'No Cesium pools detected. Carga Yield Flow con Cesium.txt y vuelve a abrir este modulo.')]),
+                    h('div',{className:'traceops-material-empty',key:'stationOnlyNote'},'Detalle serial por serial retirado. Esta vista muestra cuantas unidades lleva el lote por proceso usando Cesium TXT crudo: estado actual por estacion, flujo acumulado y yield diario. Tambien identifica el prefijo del serial y separa AOI en BOTTOM/TOP por fecha del record Cesium. Sirve aunque los seriales todavia no tengan WO en SFC.'),
+                    sectionTitle('Serial prefix / Fresh vs Bonepile','Agrupa seriales por prefijo tipo FJZ3024. El prefijo numericamente mas reciente del filtro se marca como Corrida actual; prefijos anteriores se marcan como Unidades de otra semana.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'prefixSummary'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Serial prefix','Unique SN','Stations','Pass','Fail','Nota'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, prefixRows.length? prefixRows.map(function(r){ return h('tr',{key:'pref-'+r.prefix},[h('td',null,r.prefix),h('td',null,r.snCount),h('td',null,r.stations),h('td',null,r.pass),h('td',null,r.fail),h('td',null,r.note)]); }) : h('tr',null,h('td',{colSpan:6},'Sin prefijos detectados para el filtro actual.')))])),
+                    sectionTitle('AOI2 / AOI4 split','AOI se divide por lado/proceso: antes del inicio TOP = AOI2; desde el inicio TOP = AOI4. Las unidades con AOI2 sin AOI4 quedan como pendientes de AOI4.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'aoiSplit'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Proceso AOI','Criterio','Runs','Unique SN','Serial prefix note','Pass','Fail','Yield','Primer registro','Ultimo registro','Top fail'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, aoiSplitRows.length ? aoiSplitRows.map(function(r){ var sideLabel = (r.side === 'AOI BOTTOM' ? 'AOI2' : (r.side === 'AOI TOP' ? 'AOI4' : r.side)); return h('tr',{key:'aoi-'+r.side},[h('td',null,sideLabel),h('td',null,r.criteria),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'AOI2/AOI4 - '+sideLabel)),h('td',null,r.yieldText),h('td',null,r.firstSeen),h('td',null,r.lastSeen),h('td',null,r.topFail)]); }) : [h('tr',null,h('td',{colSpan:11},'Sin registros AOI para el filtro actual.'))])])),
+                    sectionTitle('Estado actual por proceso','Vista consolidada: integra AOI2, AOI4 y pendientes de AOI4 junto con la ultima estacion alcanzada por serial. Asi se responde cuantas unidades llevamos y en que proceso estan ahora.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'currentStatus'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Estacion actual','SN actuales','Serial prefix note','% del total','Pass','Fail','Observed','Ultimo registro','Top fail'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, currentRows.length? currentRows.map(function(r){ return h('tr',{key:'cur-'+r.station},[h('td',null,r.station),h('td',null,r.current),h('td',null,r.prefixNote),h('td',null,r.pctText),h('td',null,r.pass),h('td',null,failCell(r,'Estado actual - '+r.station)),h('td',null,r.observed),h('td',null,r.lastSeen),h('td',null,r.topFail)]); }) : h('tr',null,h('td',{colSpan:9},'Sin estado actual por proceso para el filtro actual.')))])),
+                    sectionTitle('Flujo acumulado por estación','Avance acumulado: cuantos seriales ya alcanzaron cada estacion dentro de la ventana. Ejemplo: PASTE 220, AOI 220, ICT 20.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'serialFlow'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Seq','Estacion','Seriales alcanzados','Serial prefix note','Prev station','Prev reached','Drop','Flow %','Pass','Fail','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, flowRows.length? flowRows.map(function(r){ return h('tr',{key:r.seq+'-'+r.station},[h('td',null,r.seq),h('td',null,r.station),h('td',null,r.reached),h('td',null,r.prefixNote),h('td',null,r.prevStation),h('td',null,r.prevReached),h('td',null,r.drop),h('td',null,r.flowText),h('td',null,r.pass),h('td',null,failCell(r,'Flujo acumulado - '+r.station)),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:11},'Sin flujo serial por estacion para el filtro actual.')))])),
+                    sectionTitle('Avance por estación','Vista consolidada por estación usando solo corridas Cesium filtradas por ventana y moduleno.'),
+                    h('div',{className:'traceops-material-tablewrap',key:'stationBreakdown'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Yield','Top fail'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, stationRows.length? stationRows.map(function(r){ return h('tr',{key:r.station},[h('td',null,r.station),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Avance por estacion - '+r.station)),h('td',null,r.yieldText),h('td',null,r.topFail)]); }) : h('tr',null,h('td',{colSpan:8},'Sin breakdown para el filtro actual.')))])),
+                    sectionTitle('Yield by Day','Yield diario dentro de la ventana seleccionada. Ahora puedes filtrar una estacion individual para responder por proceso: PASTE, AOI, XRAY, ICT, etc.'),
+                    h('div',{key:'yieldDayFilters',style:{display:'grid',gridTemplateColumns:'260px 1fr',gap:12,alignItems:'end',margin:'0 0 10px'}},[
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Estacion para Yield by Day',h('select',{value:selectedDayStation,onChange:this.setDayStationFilter,className:'api-input',style:{width:'100%',marginTop:6}},[h('option',{key:'ALL',value:'ALL'},'All stations')].concat(dayStationOptions.map(function(st){ return h('option',{key:st,value:st},st); })))]),
+                        h('div',{className:'traceops-material-note'}, selectedDayStation==='ALL' ? 'Mostrando yield diario consolidado de todas las estaciones.' : ('Mostrando yield diario solo para la estacion '+selectedDayStation+'.'))
+                    ]),
+                    h('div',{className:'traceops-material-tablewrap',key:'yieldByDay'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, dayRows.length? dayRows.map(function(r){ return h('tr',{key:r.day+'-'+selectedDayStation},[h('td',null,r.day),h('td',null,selectedDayStation==='ALL'?'ALL':selectedDayStation),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Day - '+r.day+' - '+(selectedDayStation==='ALL'?'ALL':selectedDayStation))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:9},'Sin yield diario para la estacion seleccionada.')))])),
+                    sectionTitle('Yield hour by hour','Desglose hora por hora dentro de la ventana seleccionada. Usa el mismo Cesium TXT crudo y permite filtrar por estacion individual para ver ritmo de avance, pass/fail y fallas por hora.'),
+                    h('div',{key:'yieldHourFilters',style:{display:'grid',gridTemplateColumns:'260px 1fr',gap:12,alignItems:'end',margin:'0 0 10px'}},[
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Estacion para hora por hora',h('select',{value:selectedHourStation,onChange:this.setHourStationFilter,className:'api-input',style:{width:'100%',marginTop:6}},[h('option',{key:'ALLH',value:'ALL'},'All stations')].concat(dayStationOptions.map(function(st){ return h('option',{key:'H-'+st,value:st},st); })))]),
+                        h('div',{className:'traceops-material-note'}, selectedHourStation==='ALL' ? 'Mostrando ritmo hora por hora consolidado de todas las estaciones.' : ('Mostrando ritmo hora por hora solo para la estacion '+selectedHourStation+'.'))
+                    ]),
+                    h('div',{className:'traceops-material-tablewrap',key:'yieldByHour'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Hora','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, hourRows.length? hourRows.map(function(r){ return h('tr',{key:r.hourKey+'-'+selectedHourStation},[h('td',null,r.day),h('td',null,r.hourLabel),h('td',null,selectedHourStation==='ALL'?'ALL':selectedHourStation),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Hour - '+r.day+' '+r.hourLabel+' - '+(selectedHourStation==='ALL'?'ALL':selectedHourStation))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:10},'Sin datos hora por hora para la estacion seleccionada.')))])),
+                    h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: estado actual y flujo acumulado desde Cesium TXT crudo. El modelo sale solo de moduleno. En la ventana seleccionada detecto '+rows.length+' corridas para '+(this.state.modelFilter||'Unmapped model')+', con '+Object.keys(snMap).length+' seriales unicos. Estado actual: '+(currentRows.length?currentRows.map(function(r){return r.station+': '+r.current;}).slice(0,6).join(', '):'sin procesos')+'. Flujo acumulado: '+(flowRows.length?flowRows.map(function(r){return r.station+': '+r.reached;}).slice(0,6).join(', '):'sin estaciones')+'. Prefijos: '+(prefixRows.length?prefixRows.slice(0,4).map(function(r){return r.prefix+': '+r.snCount+' '+r.note;}).join(', '):'sin prefijos')+'. AOI split: '+(aoiSplitRows.length?aoiSplitRows.map(function(r){return r.side+': '+r.snCount+' SN';}).join(', '):'sin AOI')+'.'),
+                    this.state.failDetail ? h('div',{key:'failModal',style:{position:'fixed',zIndex:99999,left:0,top:0,right:0,bottom:0,background:'rgba(5,20,35,0.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
+                        h('div',{className:'traceops-material-panel',style:{width:'min(1120px,96vw)',maxHeight:'86vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,0.35)'}},[
+                            h('div',{className:'traceops-material-head'},[
+                                h('div',null,[h('h3',null,(this.state.failDetail.title || 'Seriales afectados')+' ('+((this.state.failDetail.rows||[]).length)+')'),h('div',{className:'traceops-material-note'},'Seriales con falla detectada desde Cesium TXT crudo. Click en Export affected TSV para compartir el detalle.')]),
+                                h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn',onClick:function(){ selfPanel.exportAffectedTsv(selfPanel.state.failDetail); }},'Export affected TSV'),h('button',{className:'traceops-material-btn primary',onClick:this.closeFailDetail},'Cerrar')])
+                            ]),
+                            h('div',{className:'traceops-material-tablewrap'},h('table',{className:'traceops-material-table'},[
+                                h('thead',null,h('tr',null,['SN','Prefix','Modelo','WO','Estacion','Resultado','Test info','Hora','Impacto'].map(function(x){return h('th',{key:x},x);}))),
+                                h('tbody',null,(this.state.failDetail.rows||[]).length ? (this.state.failDetail.rows||[]).map(function(r,i){ return h('tr',{key:(r.sn||'SN')+'-'+(r.timeMs||i)+'-'+i},[h('td',null,r.sn||'-'),h('td',null,selfPanel.serialPrefix(r.sn||'')),h('td',null,r.model||'-'),h('td',null,r.wo||'-'),h('td',null,r.station||'-'),h('td',null,r.result||'-'),h('td',null,r.failTest||'-'),h('td',null,r.timeText||traceOpsIssueImpactFmt(r.timeMs)),h('td',null,r.impact||'-')]); }) : h('tr',null,h('td',{colSpan:9},'Sin seriales fallados para esta seleccion.')))
+                            ]))
+                        ])
+                    ) : null
                 ])
             ]);
         };
-        return h(IssueImpactStablePanel, { model: modelRef });
+        return h(IssueImpactCesiumTynePanel, { model: modelRef });
     }
+
     var moduleNavItems = [
         {
             key: "sentinelux",
@@ -36408,9 +37017,6 @@ body.traceops-premium-shell [class*="impact"]{
   }
 }
 </style>
-
-
-
 </body> for valid HTML structure -->
 <style id="traceops-contrast-refresh">
 /* SMTinel contrast refresh: lighter shell surfaces for dark Hugin/Munin badges */
@@ -42399,7 +43005,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -42536,7 +43142,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -44044,8 +44650,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -44065,7 +44671,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -44370,8 +44976,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   }
 
   function updateBadge(){
@@ -44517,7 +45123,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -44690,7 +45296,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -44787,7 +45393,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
         + '</div>';
     }).join('') : '<div style="font-size:12px;color:#5F766C;padding:10px 0">No SMT defect data in current scope.</div>';
     return '<section id="smtinel-smt-top-offenders-pareto" style="background:linear-gradient(135deg,#FFFFFF,#F7FAFF);border:1px solid #D9E6F7;border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(20,32,51,.045);margin-top:12px">'
-      + '<div style="padding:14px 18px;background:#F7FAFF;border-bottom:1px solid #ECF3FF;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:950;color:#102A43">SMT Top Offenders Pareto</div><div style="font-size:10.5px;color:#5F766C;margin-top:4px">Top 5 defect modes + Others. Counts use distinct SN in the active Board Impact scope.</div></div><span style="display:inline-flex;border-radius:999px;padding:5px 9px;background:#EEF8F2;color:#1A7A3C;border:1px solid rgba(26,122,60,.14);font-size:10px;font-weight:950">'+pareto.modeCount+' modes · '+pareto.total+' SN</span></div>'
+      + '<div style="padding:14px 18px;background:#F7FAFF;border-bottom:1px solid #ECF3FF;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:950;color:#102A43">AOI4 Offenders Pareto</div><div style="font-size:10.5px;color:#5F766C;margin-top:4px">Top 5 defect modes + Others. Counts use distinct SN in the active Board Impact scope.</div></div><span style="display:inline-flex;border-radius:999px;padding:5px 9px;background:#EEF8F2;color:#1A7A3C;border:1px solid rgba(26,122,60,.14);font-size:10px;font-weight:950">'+pareto.modeCount+' modes · '+pareto.total+' SN</span></div>'
       + '<div style="padding:14px 18px">'+body+'</div>'
       + '</section>';
   }
@@ -44955,7 +45561,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -44981,7 +45587,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -45005,7 +45611,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45179,7 +45785,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var badgeText = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -45202,7 +45808,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -45221,7 +45827,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+  var versionText = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -45325,7 +45931,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var label = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -45343,7 +45949,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var VERSION_LABEL = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -45593,7 +46199,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var badge = 'SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -45972,7 +46578,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -46057,7 +46663,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var VERSION='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -47539,7 +48145,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+  var label='SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -53739,6 +54345,50 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   will-change:auto !important;
 }
 </style>
+
+<!-- SMTinel V13.12.4 station yield by day v22 -->
+<script>
+(function(){
+  "use strict";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.2 - AOI2 AOI4 Stable V29 - 2026-06-13";
+  function exposeRawCesium(rows, source){
+    try {
+      if (!Array.isArray(rows)) return;
+      window.TRACEOPS_YIELD_RAW_CESIUM_ROWS = rows;
+      window.TRACEOPS_YIELD_CESIUM_RAW_ROWS = rows;
+      window.TRACEOPS_ISSUE_IMPACT_RAW_CESIUM_ROWS = rows;
+      window.TRACEOPS_ISSUE_IMPACT_RAW_CESIUM_META = { rows: rows.length, source: source || "traceOpsYieldBuildFromImported", updatedAt: new Date().toISOString() };
+      try { console.info("[SMTinel Issue Impact] Raw Cesium rows exposed", window.TRACEOPS_ISSUE_IMPACT_RAW_CESIUM_META); } catch(_) {}
+    } catch(e) { try { console.warn("[SMTinel Issue Impact] could not expose raw Cesium rows", e); } catch(_) {} }
+  }
+  function wrapBuild(){
+    try {
+      var prevBuild = window.traceOpsYieldBuildFromImported;
+      if (typeof prevBuild === "function" && !prevBuild.__issueImpactRawCesiumV14) {
+        var wrapped = function(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows){
+          exposeRawCesium(cesiumRows || [], "traceOpsYieldBuildFromImported argument");
+          return prevBuild.call(this, workRows || [], sfcRows || [], repairRows || [], sourceMeta || {}, calendarRows || [], dbModelRows || [], cesiumRows || [], bomRows || []);
+        };
+        wrapped.__issueImpactRawCesiumV14 = true;
+        window.traceOpsYieldBuildFromImported = wrapped;
+      }
+    } catch(e) { try { console.warn("[SMTinel Issue Impact] bridge wrap failed", e); } catch(_) {} }
+  }
+  function updateBadge(){
+    try {
+      var nodes = document.querySelectorAll("body *");
+      for (var i=0;i<nodes.length;i++){
+        var el = nodes[i];
+        if (!el || !el.textContent) continue;
+        if (/SMTinel V\d+\.\d+/.test(el.textContent) && el.textContent.length < 180) el.textContent = window.SMTINEL_BUILD_BADGE;
+      }
+    } catch(_) {}
+  }
+  wrapBuild();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ wrapBuild(); setTimeout(updateBadge, 900); });
+  else setTimeout(function(){ wrapBuild(); updateBadge(); }, 900);
+})();
+</script>
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
@@ -54255,3 +54905,7 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   background:none !important;
 }
 </style>
+
+<!-- SMTinel V13.12.9 AOI2 AOI4 Stable V29 -->
+
+<!-- SMTinel V13.12.9 AOI2 AOI4 Stable V29 -->
