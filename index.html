@@ -6122,10 +6122,10 @@ function traceOpsNormalizeWhatsAppLineLocal(raw) {
 function traceOpsIsWhatsAppSystemLineLocal(line) {
   var s = traceOpsNormalizeWhatsAppLineLocal(line);
   if (!s) return false;
-  var bracketUser = /^\[\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?\]\s*[^:]+?:\s*/i;
-  var dashUser = /^\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?\s*-\s*[^:]+?:\s*/i;
+  var bracketUser = /^\[\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\]\s*[^:]+?:\s*/i;
+  var dashUser = /^\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\s*-\s*[^:]+?:\s*/i;
   if (bracketUser.test(s) || dashUser.test(s)) return false;
-  var tsOnly = /^(?:\[)?\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?(?:\])?\s*-\s*/i;
+  var tsOnly = /^(?:\[)?\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?(?:\])?\s*-\s*/i;
   return tsOnly.test(s);
 }
 
@@ -6133,8 +6133,8 @@ function parseWhatsApp(txt) {
   var lines = txt.split(/\r?\n/);
   var msgs = [];
   var dateOrder = inferWhatsAppDateOrder(txt);
-  var reA = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\]\s*([^:]+?):\s*(.*)$/i;
-  var reB = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\s*-\s*([^:]+?):\s*(.*)$/i;
+  var reA = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\]\s*([^:]+?):\s*(.*)$/i;
+  var reB = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\s*-\s*([^:]+?):\s*(.*)$/i;
   var cur = null;
   for (var i = 0; i < lines.length; i++) {
     var line = traceOpsNormalizeWhatsAppLineLocal(lines[i]);
@@ -6290,7 +6290,7 @@ function cleanMsgs(msgs) {
 
 function inferWhatsAppDateOrder(txt) {
   var lines = String(txt || '').split(/\r?\n/);
-  var re = /^(?:\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\]\s*([^:]+?):\s*(.*)|(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\s*-\s*([^:]+?):\s*(.*))$/i;
+  var re = /^(?:\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\]\s*([^:]+?):\s*(.*)|(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\s*-\s*([^:]+?):\s*(.*))$/i;
   var dmyScore = 0;
   var mdyScore = 0;
   var inspected = 0;
@@ -6708,8 +6708,8 @@ async function readZip(file) {
 
   if (txt) {
     var dateOrder = inferWhatsAppDateOrder(txt);
-    var reA = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\]\s*([^:]+?):\s*(.*)$/i;
-    var reB = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\s*-\s*([^:]+?):\s*(.*)$/i;
+    var reA = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\]\s*([^:]+?):\s*(.*)$/i;
+    var reB = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?\s*-\s*([^:]+?):\s*(.*)$/i;
     var lastMeta = null;
     var lastTextAny = '';
     var lastTextBySender = {};
@@ -13364,7 +13364,7 @@ function traceOpsCmaHourMinuteFromRow(row) {
     if (typeof raw === 'number' && isFinite(raw)) return { hour: Math.max(0, Math.min(23, Math.floor(raw))), minute: 0, explicitShift: explicitShift || '' };
     var txt = String(raw).trim();
     if (!txt) return { hour: null, minute: 0, explicitShift: explicitShift || '' };
-    var timeMatch = txt.match(/(?:^|\D)([01]?\d|2[0-3])(?::(\d{2}))(?:[:\d]*)?\s*(a\.?m\.?|p\.?m\.?)?/i);
+    var timeMatch = txt.match(/(?:^|\D)([01]?\d|2[0-3])(?::(\d{2}))(?:[:\d]*)?\s*(a\s*\.?\s*m\.?|p\s*\.?\s*m\.?)?/i);
     if (timeMatch) {
         var hh = Number(timeMatch[1]);
         var mm = Number(timeMatch[2] || 0);
@@ -32193,7 +32193,7 @@ body:has(#recovery-section) .main-content.expanded{
 
 
 
-    /* SMTinel Issue Impact Analyzer V11 - RAW Cesium TXT only / moduleno filter */
+    /* SMTinel Issue Impact Analyzer V37 - Prefix filter for current FJZ run */
     function traceOpsIssueImpactNorm(v) {
         return String(v == null ? "" : v).trim();
     }
@@ -32487,6 +32487,7 @@ body:has(#recovery-section) .main-content.expanded{
                 startText: savedFilters.startText || defaults.start,
                 endText: savedFilters.endText || defaults.end,
                 modelFilter: savedFilters.modelFilter || traceOpsIssueImpactDefaultModel(modelRef),
+                serialPrefixFilter: savedFilters.serialPrefixFilter || 'CURRENT',
                 dayStationFilter: savedFilters.dayStationFilter || 'ALL',
                 hourStationFilter: savedFilters.hourStationFilter || 'ALL',
                 aoiTopStartText: savedFilters.aoiTopStartText || '2026-06-12T13:00',
@@ -32495,6 +32496,7 @@ body:has(#recovery-section) .main-content.expanded{
             this.setStart = this.setStart.bind(this);
             this.setEnd = this.setEnd.bind(this);
             this.setModelFilter = this.setModelFilter.bind(this);
+            this.setSerialPrefixFilter = this.setSerialPrefixFilter.bind(this);
             this.setDayStationFilter = this.setDayStationFilter.bind(this);
             this.setHourStationFilter = this.setHourStationFilter.bind(this);
             this.setAoiTopStart = this.setAoiTopStart.bind(this);
@@ -32505,16 +32507,30 @@ body:has(#recovery-section) .main-content.expanded{
         }
         IssueImpactCesiumTynePanel.prototype = Object.create(React.Component.prototype);
         IssueImpactCesiumTynePanel.prototype.constructor = IssueImpactCesiumTynePanel;
-        IssueImpactCesiumTynePanel.prototype.getRows = function(){
+        IssueImpactCesiumTynePanel.prototype.getRowsBase = function(){
             var startMs = traceOpsIssueImpactDateMs(this.state.startText);
             var endMs = traceOpsIssueImpactDateMs(this.state.endText);
             if (!startMs || !endMs || endMs < startMs) return [];
             try { return traceOpsBuildIssueImpactRows(this.props.model || {}, startMs, endMs, this.state.modelFilter || 'Unmapped model') || []; }
             catch(e) { console.warn('[SMTinel] Issue Impact Cesium compute failed', e); return []; }
         };
+        IssueImpactCesiumTynePanel.prototype.filterRowsByPrefix = function(rows){
+            rows = rows || [];
+            var f = this.state.serialPrefixFilter || 'CURRENT';
+            if (!f || f === 'ALL') return rows;
+            var fresh = this.globalFreshPrefix(rows || []);
+            var target = (f === 'CURRENT') ? fresh : f;
+            if (!target) return rows;
+            var filtered = rows.filter(function(r){ return IssueImpactCesiumTynePanel.prototype.serialPrefix(r && r.sn || '') === target; });
+            return filtered.length ? filtered : rows;
+        };
+        IssueImpactCesiumTynePanel.prototype.getRows = function(){
+            return this.filterRowsByPrefix(this.getRowsBase());
+        };
         IssueImpactCesiumTynePanel.prototype.setStart = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ startText:v }); this.setState({ startText:v }); };
         IssueImpactCesiumTynePanel.prototype.setEnd = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ endText:v }); this.setState({ endText:v }); };
-        IssueImpactCesiumTynePanel.prototype.setModelFilter = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ modelFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); this.setState({ modelFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setModelFilter = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ modelFilter:v, serialPrefixFilter:'CURRENT', dayStationFilter:'ALL', hourStationFilter:'ALL' }); this.setState({ modelFilter:v, serialPrefixFilter:'CURRENT', dayStationFilter:'ALL', hourStationFilter:'ALL' }); };
+        IssueImpactCesiumTynePanel.prototype.setSerialPrefixFilter = function(e){ var v = e && e.target ? e.target.value : 'CURRENT'; traceOpsIssueImpactSaveFilterV33({ serialPrefixFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); this.setState({ serialPrefixFilter:v, dayStationFilter:'ALL', hourStationFilter:'ALL' }); };
         IssueImpactCesiumTynePanel.prototype.setDayStationFilter = function(e){ var v = e && e.target ? e.target.value : 'ALL'; traceOpsIssueImpactSaveFilterV33({ dayStationFilter:v }); this.setState({ dayStationFilter:v }); };
         IssueImpactCesiumTynePanel.prototype.setHourStationFilter = function(e){ var v = e && e.target ? e.target.value : 'ALL'; traceOpsIssueImpactSaveFilterV33({ hourStationFilter:v }); this.setState({ hourStationFilter:v }); };
         IssueImpactCesiumTynePanel.prototype.setAoiTopStart = function(e){ var v = e && e.target ? e.target.value : ''; traceOpsIssueImpactSaveFilterV33({ aoiTopStartText:v }); this.setState({ aoiTopStartText:v }); };
@@ -32652,6 +32668,25 @@ body:has(#recovery-section) .main-content.expanded{
                     note:(p === fresh ? 'Corrida actual' : 'Unidades de otra semana')
                 };
             }).sort(function(a,b){ return b.snCount-a.snCount || IssueImpactCesiumTynePanel.prototype.prefixRank(b.prefix)-IssueImpactCesiumTynePanel.prototype.prefixRank(a.prefix); });
+        };
+        IssueImpactCesiumTynePanel.prototype.buildSerialPrefixOptions = function(rows){
+            rows = rows || [];
+            var fresh = this.globalFreshPrefix(rows || []);
+            var snByPrefix = {};
+            rows.forEach(function(r){
+                if (!r || !r.sn) return;
+                var p = IssueImpactCesiumTynePanel.prototype.serialPrefix(r.sn);
+                if (!snByPrefix[p]) snByPrefix[p] = {};
+                snByPrefix[p][r.sn] = true;
+            });
+            var arr = Object.keys(snByPrefix).map(function(p){
+                return { prefix:p, count:Object.keys(snByPrefix[p] || {}).length, rank:IssueImpactCesiumTynePanel.prototype.prefixRank(p) };
+            }).sort(function(a,b){ return b.rank-a.rank || b.count-a.count || String(a.prefix).localeCompare(String(b.prefix)); });
+            var opts = [];
+            opts.push({ value:'CURRENT', label:fresh ? ('Corrida actual / prefijo reciente: ' + fresh) : 'Corrida actual / prefijo reciente', count:fresh && snByPrefix[fresh] ? Object.keys(snByPrefix[fresh]).length : 0 });
+            opts.push({ value:'ALL', label:'Todos los prefijos', count:Object.keys(rows.reduce(function(acc,r){ if(r && r.sn) acc[r.sn]=1; return acc; },{})).length });
+            arr.forEach(function(x){ opts.push({ value:x.prefix, label:x.prefix + (x.prefix === fresh ? ' - corrida actual' : ' - otra semana'), count:x.count }); });
+            return opts;
         };
         IssueImpactCesiumTynePanel.prototype.buildStationBreakdown = function(rows){
             var map = {};
@@ -33045,7 +33080,11 @@ body:has(#recovery-section) .main-content.expanded{
             return rowsOut.filter(function(r){ return r.current !== 0 && r.current !== '0'; });
         };
         IssueImpactCesiumTynePanel.prototype.render = function(){
-            var rows = this.getRows();
+            var baseRows = this.getRowsBase();
+            var prefixOptions = this.buildSerialPrefixOptions(baseRows);
+            var selectedPrefix = this.state.serialPrefixFilter || 'CURRENT';
+            if (selectedPrefix !== 'CURRENT' && selectedPrefix !== 'ALL' && !prefixOptions.some(function(o){ return o.value === selectedPrefix; })) selectedPrefix = 'CURRENT';
+            var rows = this.filterRowsByPrefix(baseRows);
             var snMap = {}, stationMap = {};
             rows.forEach(function(r){ snMap[r.sn] = true; if (r.station) stationMap[r.station] = true; });
             var failed = rows.filter(function(r){ return r.impact === 'Critical' || r.impact === 'Recovered'; }).length;
@@ -33237,17 +33276,18 @@ body:has(#recovery-section) .main-content.expanded{
             return h('div',{id:'issueimpact-section', className:'traceops-material-panel'},[
                 h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Cesium TXT RAW only: matriz tipo WIP por proceso, estado actual, AOI2/AOI4, flujo acumulado, yield diario y hora por hora usando moduleno. No depende de SFC ni de WO.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
                 h('div',{className:'traceops-material-body',key:'body'},[
-                    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 260px 240px',gap:12},key:'filters'},[
+                    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 260px 300px 240px',gap:12},key:'filters'},[
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Inicio',h('input',{type:'datetime-local',value:this.state.startText,onChange:this.setStart,className:'api-input',style:{width:'100%',marginTop:6}})]),
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Fin',h('input',{type:'datetime-local',value:this.state.endText,onChange:this.setEnd,className:'api-input',style:{width:'100%',marginTop:6}})]),
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Modelo',h('select',{value:selectedModel,onChange:this.setModelFilter,className:'api-input',style:{width:'100%',marginTop:6}},modelOptions.map(function(o){ return h('option',{key:o.value,value:o.value},o.label + (o.count ? ' (' + o.count + ')' : '')); }))]),
+                        h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Prefijo FJZ / corrida',h('select',{value:selectedPrefix,onChange:this.setSerialPrefixFilter,className:'api-input',style:{width:'100%',marginTop:6}},prefixOptions.map(function(o){ return h('option',{key:o.value,value:o.value},o.label + (o.count ? ' (' + o.count + ' SN)' : '')); }))]),
                         h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['AOI TOP inicia',h('input',{type:'datetime-local',value:this.state.aoiTopStartText,onChange:this.setAoiTopStart,className:'api-input',style:{width:'100%',marginTop:6}})])
                     ]),
                     h('div',{className:'traceops-kpi-strip',style:{gridTemplateColumns:'repeat(6,minmax(0,1fr))'},key:'kpis'},[kpi('Cesium rows',rows.length,'info'),kpi('Unique SN',Object.keys(snMap).length,'info'),kpi('Passed',passed,'pass'),kpi('Failed',failed,'fail'),kpi('Recovered',recovered,'pass'),kpi('Stations',Object.keys(stationMap).length,'info')]),
                     h('details',{className:'traceops-material-empty',key:'diag',open: rows.length===0, style:{textAlign:'left'}},[h('summary',{style:{cursor:'pointer',fontWeight:900}},'Cesium data diagnostics'),h('div',{style:{fontSize:12,marginTop:8,whiteSpace:'pre-wrap'}}, poolDebug.length ? poolDebug.map(function(p){return (p.name||p.source)+': '+p.rows+' rows' + (p.keys ? '\n  keys: '+p.keys : '');}).join('\n') : 'No Cesium pools detected. Carga Yield Flow con Cesium.txt y vuelve a abrir este modulo.')]),
-                    h('div',{className:'traceops-material-empty',key:'stationOnlyNote'},'Detalle serial por serial retirado. Esta vista muestra cuantas unidades lleva el lote por proceso usando Cesium TXT crudo: estado actual por estacion, flujo acumulado y yield diario. Tambien identifica el prefijo del serial y separa AOI en BOTTOM/TOP por fecha del record Cesium. Sirve aunque los seriales todavia no tengan WO en SFC.'),
+                    h('div',{className:'traceops-material-empty',key:'stationOnlyNote'},'Detalle serial por serial retirado. Esta vista muestra cuantas unidades lleva el lote por proceso usando Cesium TXT crudo. Usa el filtro de prefijo FJZ para aislar la corrida mas reciente o revisar unidades de otra semana sin mezclar ruido de corridas anteriores.'),
                     renderVisualPerformanceSummary.call(this),
-                    sectionTitle('Serial prefix / Fresh vs Bonepile','Agrupa seriales por prefijo tipo FJZ3024. El prefijo numericamente mas reciente del filtro se marca como Corrida actual; prefijos anteriores se marcan como Unidades de otra semana.'),
+                    sectionTitle('Serial prefix / Corrida actual vs otra semana','Agrupa seriales por prefijo tipo FJZ3024. Usa el filtro superior para quedarte solo con la corrida actual o seleccionar otra semana.'),
                     h('div',{className:'traceops-material-tablewrap',key:'prefixSummary'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Serial prefix','Unique SN','Stations','Pass','Fail','Nota'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, prefixRows.length? prefixRows.map(function(r){ return h('tr',{key:'pref-'+r.prefix},[h('td',null,r.prefix),h('td',null,r.snCount),h('td',null,r.stations),h('td',null,r.pass),h('td',null,r.fail),h('td',null,r.note)]); }) : h('tr',null,h('td',{colSpan:6},'Sin prefijos detectados para el filtro actual.')))])),
                     sectionTitle('AOI2 / AOI4 split','AOI se divide por lado/proceso: antes del inicio TOP = AOI2; desde el inicio TOP = AOI4. Las unidades con AOI2 sin AOI4 quedan como pendientes de AOI4.'),
                     h('div',{className:'traceops-material-tablewrap',key:'aoiSplit'},h('table',{className:'traceops-material-table'},[
@@ -33282,7 +33322,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h('div',{className:'traceops-material-tablewrap',key:'yieldByHour'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Dia','Hora','Estacion','Runs','Unique SN','Serial prefix note','Pass','Fail','Stations','Yield'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, hourRows.length? hourRows.map(function(r){ return h('tr',{key:r.hourKey+'-'+(r.station||selectedHourStation)},[h('td',null,r.day),h('td',null,r.hourLabel),h('td',null,r.station || (selectedHourStation==='ALL'?'ALL':selectedHourStation)),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.prefixNote),h('td',null,r.pass),h('td',null,failCell(r,'Yield by Hour - '+r.day+' '+r.hourLabel+' - '+(r.station || (selectedHourStation==='ALL'?'ALL':selectedHourStation)))),h('td',null,r.stationCount),h('td',null,r.yieldText)]); }) : h('tr',null,h('td',{colSpan:10},'Sin datos hora por hora para la estacion seleccionada.')))])),
                     sectionTitle('Production Pace / Run Rate','Ritmo real observado desde Cesium. No calcula OEE porque no hay UPH objetivo confiable; muestra piezas por hora activa, yield y ultima hora registrada por estacion.'),
                     h('div',{className:'traceops-material-tablewrap',key:'productionPace'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['Estacion','Horas activas','Runs','Unique SN','Pass','Fail','Yield','Pace real','Ultima hora','Runs ult. hora','Ultimo registro','Comentario'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, productionRows.length? productionRows.map(function(r){ return h('tr',{key:'pace-'+r.station},[h('td',null,r.station),h('td',null,r.activeHours),h('td',null,r.runs),h('td',null,r.snCount),h('td',null,r.pass),h('td',null,failCell(r,'Production Pace - '+r.station)),h('td',null,r.yieldText),h('td',null,r.paceText),h('td',null,r.lastHour),h('td',null,r.lastHourRuns),h('td',null,r.lastSeen),h('td',null,r.comment)]); }) : h('tr',null,h('td',{colSpan:12},'Sin ritmo de produccion para el filtro actual.')))])),
-                    h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: estado actual y flujo acumulado desde Cesium TXT crudo. El modelo sale solo de moduleno. En la ventana seleccionada detecto '+rows.length+' corridas para '+(this.state.modelFilter||'Unmapped model')+', con '+Object.keys(snMap).length+' seriales unicos. Estado actual: '+(currentRows.length?currentRows.map(function(r){return r.station+': '+r.current;}).slice(0,6).join(', '):'sin procesos')+'. Flujo acumulado: '+(flowRows.length?flowRows.map(function(r){return r.station+': '+r.reached;}).slice(0,6).join(', '):'sin estaciones')+'. Prefijos: '+(prefixRows.length?prefixRows.slice(0,4).map(function(r){return r.prefix+': '+r.snCount+' '+r.note;}).join(', '):'sin prefijos')+'. AOI split: '+(aoiSplitRows.length?aoiSplitRows.map(function(r){return r.side+': '+r.snCount+' SN';}).join(', '):'sin AOI')+'.'),
+                    h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: estado actual y flujo acumulado desde Cesium TXT crudo. El modelo sale solo de moduleno. En la ventana seleccionada detecto '+rows.length+' corridas para '+(this.state.modelFilter||'Unmapped model')+' / prefijo '+(selectedPrefix==='CURRENT'?'corrida actual':selectedPrefix)+', con '+Object.keys(snMap).length+' seriales unicos. Estado actual: '+(currentRows.length?currentRows.map(function(r){return r.station+': '+r.current;}).slice(0,6).join(', '):'sin procesos')+'. Flujo acumulado: '+(flowRows.length?flowRows.map(function(r){return r.station+': '+r.reached;}).slice(0,6).join(', '):'sin estaciones')+'. Prefijos: '+(prefixRows.length?prefixRows.slice(0,4).map(function(r){return r.prefix+': '+r.snCount+' '+r.note;}).join(', '):'sin prefijos')+'. AOI split: '+(aoiSplitRows.length?aoiSplitRows.map(function(r){return r.side+': '+r.snCount+' SN';}).join(', '):'sin AOI')+'.'),
                     this.state.failDetail ? h('div',{key:'failModal',style:{position:'fixed',zIndex:99999,left:0,top:0,right:0,bottom:0,background:'rgba(5,20,35,0.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
                         h('div',{className:'traceops-material-panel',style:{width:'min(1120px,96vw)',maxHeight:'86vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,0.35)'}},[
                             h('div',{className:'traceops-material-head'},[
@@ -43262,7 +43302,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -43399,7 +43439,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -44907,8 +44947,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -44928,7 +44968,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -45233,8 +45273,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   }
 
   function updateBadge(){
@@ -45380,7 +45420,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45553,7 +45593,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -45818,7 +45858,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var badge = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -45844,7 +45884,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -45868,7 +45908,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var badgeText = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -46042,7 +46082,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var badgeText = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -46065,7 +46105,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var badge = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -46084,7 +46124,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  var versionText = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -46188,7 +46228,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var label = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -46206,7 +46246,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var VERSION_LABEL = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -46456,7 +46496,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var badge = 'SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -46835,7 +46875,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var VERSION='SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -46920,7 +46960,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var VERSION='SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -48402,7 +48442,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13';
+  var label='SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -54607,7 +54647,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.13.8 - Performance Charts V35 - 2026-06-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.0 - RCCA Parser + Prefix Filter V38 - 2026-06-13";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -55167,4 +55207,6 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
 
 <!-- SMTinel V13.12.9 AOI2 AOI4 Fix V29 -->
 
-<!-- SMTinel V13.13.8 Performance Charts V35 -->
+<!-- SMTinel V13.14.0 RCCA Parser Prefix Filter V38 -->
+
+<!-- SMTinel V13.14.0 RCCA Parser Prefix Filter V38 -->
