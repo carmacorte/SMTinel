@@ -11344,23 +11344,6 @@ function traceOpsYieldNormalizeSequenceStation(value) {
     return raw;
 }
 
-
-/* SMTinel hotfix: Cesium fail/pass helpers must be available before station breakdown runs. */
-function traceOpsYieldCesiumRowLooksFail(row) {
-    row = row || {};
-    var status = String(row.status || row.Status || row.result || row.Result || row.resultado || row.Resultado || row.teststatus || row.testStatus || row.test_result || row.testResult || '').trim().toUpperCase();
-    var testInfo = String(row.testinfo || row.testInfo || row.TESTINFO || row.failingTestName || row.testfailed || row.testFailed || row.failtest || row.failTest || row.failure || row.failureMode || '').trim().toUpperCase();
-    if (status === 'F' || status === 'FAIL' || status === 'FAILED' || status === 'NG' || status === 'NOK' || status === 'ERROR' || status === 'REJECT' || status === 'ABORT') return true;
-    if (/\b(FAIL|FAILED|NG|NOK|ERROR|REJECT|ABORT)\b/.test(status)) return true;
-    if (testInfo && testInfo !== '-' && testInfo !== 'NA' && testInfo !== 'N/A' && !/^(PASS|PASSED|OK)$/.test(testInfo)) return true;
-    return false;
-}
-function traceOpsYieldCesiumRowLooksPass(row) {
-    row = row || {};
-    var status = String(row.status || row.Status || row.result || row.Result || row.resultado || row.Resultado || row.teststatus || row.testStatus || row.test_result || row.testResult || '').trim().toUpperCase();
-    return status === 'S' || status === 'P' || status === 'PASS' || status === 'PASSED' || status === 'OK';
-}
-
 function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
     options = options || {};
     var sequence = TRACEOPS_YIELD_STATION_SEQUENCE || [];
@@ -11393,21 +11376,12 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
         if (days <= 365) return 'age91_365';
         return 'ageOver365';
     }
-    function traceOpsYieldStationFromSfcForBreakdown(r) {
-        r = r || {};
-        var rawStatus = String(r.status || r.sfcStatus || r.boxstatus || r.Status || "").trim().toUpperCase();
-        var testStation = traceOpsYieldNormalizeSequenceStation(r.testStation || r.teststation || r.testst || "");
-        var currentEvent = traceOpsYieldNormalizeSequenceStation(r.event || r.currentEvent || r.station || "");
-        var genericCurrent = /^(ASSY|QI|QI2|STOCKIN|PACK|OBA)$/i.test(currentEvent || "");
-        if (testStation && (rawStatus === "F" || rawStatus === "FAIL" || rawStatus === "FAILED" || genericCurrent)) return testStation;
-        return currentEvent || testStation || "UNMAPPED";
-    }
     var snCurrent = {};
     Object.keys(snToSfc || {}).forEach(function (k) {
         var r = snToSfc[k] || {};
         var sn = traceOpsYieldCleanSn(r.sn || r.sfcSn || k || "");
         if (!sn || snCurrent[sn]) return;
-        var st = traceOpsYieldStationFromSfcForBreakdown(r);
+        var st = traceOpsYieldNormalizeSequenceStation(r.event || r.currentEvent || r.station || "");
         snCurrent[sn] = { station: st || "UNMAPPED", bucket: ageBucketForSfc(r), sfc: r };
     });
     var latestFtBySn = {};
@@ -11427,13 +11401,8 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
             var currentStation = traceOpsYieldNormalizeSequenceStation(snCurrent[sn].station || '');
             // Cesium test area is a downstream location only after the unit is already at STOCKIN.
             // Do not let Cesium/FT overwrite active pre-STOCKIN SFC stations.
-            var sfcRow = (snCurrent[sn] && snCurrent[sn].sfc) || {};
-            var sfcStatus = String(sfcRow.status || sfcRow.sfcStatus || sfcRow.boxstatus || '').trim().toUpperCase();
-            var sfcTestStation = traceOpsYieldNormalizeSequenceStation(sfcRow.testStation || sfcRow.teststation || sfcRow.testst || '');
-            var cesiumStation = latestFtBySn[sn].station;
-            var cesiumFail = traceOpsYieldCesiumRowLooksFail(latestFtBySn[sn].row || {});
-            if (currentStation === 'STOCKIN' || (cesiumFail && sfcTestStation && cesiumStation === sfcTestStation) || (cesiumFail && /^(ASSY|QI|QI2)$/i.test(currentStation || ''))) {
-                snCurrent[sn].station = cesiumStation;
+            if (currentStation === 'STOCKIN') {
+                snCurrent[sn].station = latestFtBySn[sn].station;
                 snCurrent[sn].latestCesium = latestFtBySn[sn].row || null;
             }
         }
@@ -11470,9 +11439,8 @@ function traceOpsYieldBuildStationSequenceBreakdown(snToSfc, ftRows, options) {
                 line: sfc.line || ft.line || '',
                 station: seqMap[st].station,
                 currentEvent: sfc.event || sfc.currentEvent || sfc.station || '',
-                testStation: sfc.testStation || sfc.teststation || '',
                 testArea: ft.testArea || ft.station || '',
-                status: ft.status || sfc.status || '',
+                status: ft.status || '',
                 failingTestName: traceOpsYieldCleanFailureSignal([ft.failingTestName, ft.testInfo]),
                 buildStartDate: sfc.buildStartDate || ft.buildStartDate || '',
                 ageBucket: bucket,
@@ -13251,31 +13219,19 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         (topRiskSku || []).reduce(function (a, b) { return a + Number(b.risk || 0); }, 0),
         (failurePatterns || []).reduce(function (a, b) { return a + Number(b.units || 0); }, 0)
     );
-
-    // V13.2.47 Yield consistency fix:
-    // The dashboard was mixing two different risk bases:
-    // - Clean/Risk/FR used traceOpsCorrectedRiskUnits.
-    // - Clean Yield/OJT Touch still used weightedYield/weightedTouch from the original WO rows.
-    // That produced impossible views such as 206 risk units / 392 total with ~90% yield.
-    // Use one denominator and one risk source for the executive KPI block.
-    var traceOpsExecutiveRiskUnits = totalUnits ? Math.min(Math.max(0, traceOpsCorrectedRiskUnits), totalUnits) : Math.max(0, traceOpsCorrectedRiskUnits);
-    var traceOpsExecutiveCleanUnits = totalUnits ? Math.max(0, totalUnits - traceOpsExecutiveRiskUnits) : 0;
-    var traceOpsExecutiveYieldPct = totalUnits ? (traceOpsExecutiveCleanUnits / totalUnits * 100) : 0;
-    var traceOpsExecutiveTouchPct = totalUnits ? (traceOpsExecutiveRiskUnits / totalUnits * 100) : 0;
-
     return {
         filters: filters,
         options: options,
         kpi: {
             orders: rows.length,
             units: totalUnits,
-            clean: traceOpsExecutiveCleanUnits,
-            risk: traceOpsExecutiveRiskUnits,
+            clean: Math.max(0, totalUnits - traceOpsCorrectedRiskUnits),
+            risk: traceOpsCorrectedRiskUnits,
             builtUnits: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0),
-            failureRateManufactured: totalUnits ? (traceOpsExecutiveRiskUnits / totalUnits * 100) : 0,
-            failureRateBuilt: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0) ? (traceOpsExecutiveRiskUnits / Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 1) * 100) : 0,
-            yield: traceOpsExecutiveYieldPct,
-            touch: traceOpsExecutiveTouchPct,
+            failureRateManufactured: totalUnits ? (traceOpsCorrectedRiskUnits / totalUnits * 100) : 0,
+            failureRateBuilt: Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 0) ? (traceOpsCorrectedRiskUnits / Number((stationSequenceBreakdown && stationSequenceBreakdown.totalUnits) || 1) * 100) : 0,
+            yield: weightedYield,
+            touch: weightedTouch,
             avgLeadHours: flowHours.length ? (flowHours.reduce(function (a, b) { return a + b; }, 0) / flowHours.length) : 0,
             avgFtHours: ftHours.length ? (ftHours.reduce(function (a, b) { return a + b; }, 0) / ftHours.length) : null,
             avgStockinHours: stockinHours.length ? (stockinHours.reduce(function (a, b) { return a + b; }, 0) / stockinHours.length) : null,
@@ -13952,6 +13908,18 @@ function App() {
     var activeModuleArr = _useState("sentinelux");
     var activeModule = activeModuleArr[0];
     var setActiveModule = activeModuleArr[1];
+    var planAgentRowsArr = _useState([]);
+    var planAgentRows = planAgentRowsArr[0];
+    var setPlanAgentRows = planAgentRowsArr[1];
+    var planAgentFindingsArr = _useState([]);
+    var planAgentFindings = planAgentFindingsArr[0];
+    var setPlanAgentFindings = planAgentFindingsArr[1];
+    var planAgentEmailArr = _useState(null);
+    var planAgentEmail = planAgentEmailArr[0];
+    var setPlanAgentEmail = planAgentEmailArr[1];
+    var planAgentStateArr = _useState({ status: "idle", message: "Plan Agent ready. Load an SMT plan only when needed." });
+    var planAgentState = planAgentStateArr[0];
+    var setPlanAgentState = planAgentStateArr[1];
     var boardImpactContextArr = _useState(null);
     var boardImpactContext = boardImpactContextArr[0];
     var setBoardImpactContext = boardImpactContextArr[1];
@@ -26485,8 +26453,12 @@ body:has(#recovery-section) .main-content.expanded{
         return "N/D";
     }
 
-    function traceOpsYieldCesiumRowLooksFailLegacy(row) {
-        return traceOpsYieldCesiumRowLooksFail(row);
+    function traceOpsYieldCesiumRowLooksFail(row) {
+        row = row || {};
+        var status = String(row.status || row.teststatus || row.TestStatus || row.result || row.Result || "").toLowerCase();
+        var sig = traceOpsYieldPickCesiumTestSignature(row);
+        if (sig && sig !== "N/D" && !/pass|passed|ok/.test(sig.toLowerCase())) return true;
+        return /fail|failed|ng|error|reject|abort|false/.test(status);
     }
 
     function traceOpsYieldBuildCesiumTestSignaturePareto(rows, maxItems) {
@@ -31955,8 +31927,514 @@ body:has(#recovery-section) .main-content.expanded{
         ]);
     }
 
+
+    function planAgentClean(value) {
+        return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
+    }
+    function planAgentCompact(value) {
+        return planAgentClean(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    }
+    function planAgentNumber(value) {
+        var n = Number(String(value == null ? "" : value).replace(/,/g, "").replace(/[^0-9.\-]/g, ""));
+        return isFinite(n) ? n : 0;
+    }
+    function planAgentPick(obj, names) {
+        var keys = Object.keys(obj || {});
+        for (var i = 0; i < names.length; i++) {
+            var target = planAgentCompact(names[i]);
+            for (var j = 0; j < keys.length; j++) {
+                if (planAgentCompact(keys[j]) === target) return obj[keys[j]];
+            }
+        }
+        for (var a = 0; a < names.length; a++) {
+            var loose = planAgentCompact(names[a]);
+            for (var b = 0; b < keys.length; b++) {
+                var k = planAgentCompact(keys[b]);
+                if (k.indexOf(loose) >= 0 || loose.indexOf(k) >= 0) return obj[keys[b]];
+            }
+        }
+        return "";
+    }
+    function planAgentNormalizeRow(row, idx) {
+        var dateRaw = planAgentPick(row, ["Visible dates", "Visible date", "Date", "Fecha", "Fecha visible", "Production date", "Start date"]);
+        return {
+            id: "PLAN-" + String(idx + 1).padStart(4, "0"),
+            bu: planAgentClean(planAgentPick(row, ["BU", "Business Unit", "Unit"])),
+            fiscalWeek: planAgentClean(planAgentPick(row, ["Fiscal week", "FW", "Week", "Cisco Week"])),
+            reportDate: planAgentClean(planAgentPick(row, ["Fecha de corte", "Cut date", "Report date", "Snapshot date"])),
+            model: planAgentClean(planAgentPick(row, ["Model", "Modelo", "Product", "Family", "UUT Type", "Product Family"])),
+            sku: planAgentClean(planAgentPick(row, ["SKU", "PN", "Part Number", "Skuno", "Assembly", "Product ID"])),
+            wo: planAgentClean(planAgentPick(row, ["WO", "Work Order", "WorkOrder", "Order"])),
+            line: planAgentClean(planAgentPick(row, ["Line", "Linea", "Línea"])),
+            shift: planAgentClean(planAgentPick(row, ["Shift", "Turno"])),
+            qty: planAgentNumber(planAgentPick(row, ["Qty", "Quantity", "Plan qty", "WO Qty", "Build Qty"])),
+            visibleDates: planAgentClean(dateRaw),
+            raw: row
+        };
+    }
+    function planAgentParseCsv(text) {
+        var lines = String(text || "").split(/\r?\n/).filter(function(x){ return x.trim(); });
+        if (!lines.length) return [];
+        function split(line) {
+            var out = [], cur = "", q = false;
+            for (var i = 0; i < line.length; i++) {
+                var ch = line[i];
+                if (ch === '"') { q = !q; continue; }
+                if ((ch === ',' || ch === '\t' || ch === ';') && !q) { out.push(cur); cur = ""; continue; }
+                cur += ch;
+            }
+            out.push(cur);
+            return out;
+        }
+        var headers = split(lines[0]).map(planAgentClean);
+        return lines.slice(1).map(function(line, idx) {
+            var vals = split(line), obj = {};
+            headers.forEach(function(h, i){ obj[h || ("Column_" + (i + 1))] = vals[i] || ""; });
+            return planAgentNormalizeRow(obj, idx);
+        }).filter(function(r){ return r.model || r.sku || r.wo; });
+    }
+    async function handlePlanAgentFile(file) {
+        if (!file) return;
+        setActiveModule("planagent");
+        setPlanAgentState({ status: "loading", message: "Reading SMT plan on demand. No Plan Agent processing runs during initial site load." });
+        setPlanAgentEmail(null);
+        try {
+            var rows = [];
+            if (/\.csv$|\.txt$|\.tsv$/i.test(file.name || "")) {
+                rows = planAgentParseCsv(await file.text());
+            } else {
+                await window.ensureExcelTools();
+                var wb = new ExcelJS.Workbook();
+                await wb.xlsx.load(await file.arrayBuffer());
+                var ws = wb.worksheets[0];
+                if (!ws) throw new Error("No worksheet found in plan file.");
+                var headerRow = null, headerIndex = 1;
+                ws.eachRow({ includeEmpty: false }, function(row, rowNumber) {
+                    if (headerRow) return;
+                    var vals = [];
+                    row.eachCell({ includeEmpty: true }, function(cell, colNumber){ vals[colNumber - 1] = planAgentClean(cell && cell.text != null ? cell.text : cell.value); });
+                    var joined = vals.map(planAgentCompact).join("|");
+                    if (joined.indexOf("WO") >= 0 || joined.indexOf("WORKORDER") >= 0 || joined.indexOf("MODEL") >= 0 || joined.indexOf("SKU") >= 0) {
+                        headerRow = vals;
+                        headerIndex = rowNumber;
+                    }
+                });
+                if (!headerRow) throw new Error("Could not detect plan headers. Expected Model/SKU/WO/Line/Shift/Qty fields.");
+                ws.eachRow({ includeEmpty: false }, function(row, rowNumber) {
+                    if (rowNumber <= headerIndex) return;
+                    var obj = {};
+                    row.eachCell({ includeEmpty: true }, function(cell, colNumber){
+                        var hname = headerRow[colNumber - 1] || ("Column_" + colNumber);
+                        obj[hname] = planAgentClean(cell && cell.text != null ? cell.text : cell.value);
+                    });
+                    var n = planAgentNormalizeRow(obj, rows.length);
+                    if (n.model || n.sku || n.wo) rows.push(n);
+                });
+            }
+            setPlanAgentRows(rows);
+            setPlanAgentFindings([]);
+            setPlanAgentState({ status: rows.length ? "ok" : "empty", message: rows.length ? ("Plan loaded: " + rows.length + " references. Run risk analysis when ready.") : "Plan loaded, but no usable Model/SKU/WO rows were detected." });
+        } catch (err) {
+            setPlanAgentState({ status: "error", message: err && err.message ? err.message : String(err) });
+        }
+    }
+    function planAgentMatchYieldRows(plan, model) {
+        var rows = (model && model.rows) || [];
+        var pWo = planAgentCompact(plan.wo), pSku = planAgentCompact(plan.sku), pModel = planAgentCompact(plan.model), pLine = planAgentCompact(plan.line);
+        return rows.filter(function(r){
+            var rWo = planAgentCompact(r.wo || r.workOrder || r.WorkOrder);
+            var rSku = planAgentCompact(r.sku || r.skuno || r.SKU);
+            var rModel = planAgentCompact(r.family || r.model || r.uuttype || r.Model);
+            var rLine = planAgentCompact(r.line || r.Line);
+            var hit = (pWo && rWo === pWo) || (pSku && rSku === pSku) || (pModel && rModel === pModel);
+            if (pLine && rLine && pLine !== rLine && !hit) return false;
+            return !!hit;
+        }).slice(0, 80);
+    }
+    function planAgentFindFailurePatterns(plan, model) {
+        var pats = (model && model.failurePatterns) || [];
+        var pWo = planAgentCompact(plan.wo), pSku = planAgentCompact(plan.sku), pModel = planAgentCompact(plan.model);
+        return pats.map(function(pat){
+            var serials = (pat.serials || []).filter(function(r){
+                return (pWo && planAgentCompact(r.wo) === pWo) || (pSku && planAgentCompact(r.sku) === pSku) || (pModel && planAgentCompact(r.family || r.model) === pModel);
+            });
+            return Object.assign({}, pat, { planSerials: serials, planHits: serials.length });
+        }).filter(function(x){ return x.planHits > 0; }).sort(function(a,b){ return b.planHits - a.planHits; }).slice(0, 5);
+    }
+    function planAgentClassify(plan, yfRows, patterns) {
+        var score = 0, reasons = [];
+        var total = yfRows.reduce(function(a,r){ return a + planAgentNumber(r.total || r.boardQty || r.qty); }, 0);
+        var risk = yfRows.reduce(function(a,r){ return a + planAgentNumber(r.risk || r.fail || r.defects); }, 0);
+        var y = total ? ((total - risk) / total) * 100 : null;
+        if (y != null && y < 95) { score += 30; reasons.push("recent yield below 95%"); }
+        if (patterns.length) { score += 25; reasons.push("active repeated failure pattern"); }
+        if (patterns.some(function(p){ return (p.refs || []).length || p.location; })) { score += 20; reasons.push("board focus / refdes exposure"); }
+        if (patterns.some(function(p){ return p.criticality === "Critical" || p.planHits >= 5; })) { score += 20; reasons.push("critical offender concentration"); }
+        if (plan.qty >= 1000) { score += 10; reasons.push("high planned quantity exposure"); }
+        if (plan.line && yfRows.some(function(r){ return r.line && planAgentCompact(r.line) !== planAgentCompact(plan.line); })) { score += 8; reasons.push("line change / mixed line history"); }
+        return { level: score >= 70 ? "Critical" : (score >= 50 ? "High" : (score >= 30 ? "Medium" : "Low")), score: score, yieldPct: y, reasons: reasons };
+    }
+    function planAgentSuggestedAction(plan, risk, patterns) {
+        var top = patterns[0] || {};
+        var refs = (top.refs || []).slice(0, 3).join(", ") || top.location || "board focus";
+        if (risk.level === "Critical") return "Hold release review. Validate Yield Flow, Repair Record and Board Impact for " + (refs || plan.model || plan.sku || plan.wo) + "; confirm containment evidence before production start.";
+        if (risk.level === "High") return "Run pre-start checklist: program/setup, stencil/paste condition, first article evidence and repair criteria for " + (plan.model || plan.sku || plan.wo || "planned reference") + ".";
+        if (risk.level === "Medium") return "Monitor first-pass results during startup and confirm no recurrence on the main failure mode.";
+        return "Release under normal control. Keep Yield Flow monitoring active.";
+    }
+    function runPlanAgentRisk() {
+        if (!planAgentRows.length) {
+            setPlanAgentState({ status: "empty", message: "Load an SMT plan first. The module does not process anything at page startup." });
+            return;
+        }
+        setPlanAgentState({ status: "loading", message: "Cross-checking plan vs active Yield Flow scope on demand..." });
+        var run = function() {
+            try {
+                var findings = planAgentRows.map(function(plan){
+                    var yfRows = planAgentMatchYieldRows(plan, yieldFlowModel);
+                    var patterns = planAgentFindFailurePatterns(plan, yieldFlowModel);
+                    var risk = planAgentClassify(plan, yfRows, patterns);
+                    var top = patterns[0] || {};
+                    return Object.assign({}, plan, {
+                        yfRows: yfRows.length,
+                        fail: yfRows.reduce(function(a,r){ return a + planAgentNumber(r.risk || r.fail || r.defects); }, 0),
+                        yieldPct: risk.yieldPct,
+                        risk: risk.level,
+                        riskScore: risk.score,
+                        riskReasons: risk.reasons,
+                        topFailureModes: patterns.map(function(p){ return p.pattern || p.failureMode || p.name || "Failure mode"; }),
+                        boardFocus: ((top.refs || []).slice(0, 4).join(", ") || top.location || "N/D"),
+                        suggestedAction: planAgentSuggestedAction(plan, risk, patterns)
+                    });
+                }).sort(function(a,b){
+                    var rank = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+                    return (rank[b.risk] || 0) - (rank[a.risk] || 0) || (b.riskScore || 0) - (a.riskScore || 0) || (b.qty || 0) - (a.qty || 0);
+                });
+                setPlanAgentFindings(findings);
+                setPlanAgentState({ status: "ok", message: "Risk analysis complete: " + findings.length + " planned references evaluated against active Yield Flow data." });
+            } catch (err) {
+                setPlanAgentState({ status: "error", message: err && err.message ? err.message : String(err) });
+            }
+        };
+        if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 900 }); else setTimeout(run, 0);
+    }
+    function buildPlanAgentEmail() {
+        var findings = planAgentFindings.length ? planAgentFindings : planAgentRows;
+        var top = (planAgentFindings || []).filter(function(x){ return x.risk !== "Low"; }).slice(0, 5);
+        var bu = (findings[0] && findings[0].bu) || yieldFilters.bu || "BU";
+        var fw = (findings[0] && findings[0].fiscalWeek) || yieldFilters.week || "TBD";
+        var date = new Date().toISOString().slice(0, 10);
+        var fpy = yieldFlowModel && yieldFlowModel.kpi && yieldFlowModel.kpi.yield != null ? traceOpsYieldFlowFmt(yieldFlowModel.kpi.yield, 2) + "%" : "N/D";
+        var subject = "Weekly yield follow-up - " + bu + " - FW " + fw + " - " + date;
+        var lines = [
+            "Equipo,", "",
+            "Compartimos seguimiento ejecutivo de yield/fallas para " + bu + ".", "",
+            "Fiscal week: " + fw + " | Fecha de corte: " + date + " | FPY actual: " + fpy + " | Target: TBD", "",
+            "Hallazgos principales:",
+            "- Top offender 80/20: " + ((top[0] && top[0].topFailureModes && top[0].topFailureModes[0]) || (yieldFlowModel.kpi && yieldFlowModel.kpi.topFailure) || "N/D"),
+            "- Modelos mas expuestos: " + (top.map(function(x){ return x.model || x.sku || x.wo; }).filter(Boolean).slice(0, 5).join(", ") || "N/D"),
+            "- Avance semanal PF: revisar cierre de acciones abiertas y contencion por Board Impact.", "",
+            "Retos para produccion:",
+            "- Arranque de linea con contencion confirmada para referencias Critical/High.",
+            "- Validar setup, stencil/pasta, programa y evidencia de liberacion antes de producir.", "",
+            "Retos para reparacion / bonepile:",
+            "- Priorizar unidades asociadas a top offenders y refdes recurrentes.",
+            "- Confirmar calidad de reparacion y salida efectiva del bonepile.", "",
+            "Acciones abiertas:"
+        ];
+        (top.length ? top : findings.slice(0, 3)).forEach(function(f, i){
+            lines.push((i + 1) + ". " + (f.suggestedAction || "Confirm containment and evidence before release.") + " | Owner: TBD | Due: TBD | Status: Open");
+        });
+        lines.push("", "Favor validar el heatmap de Board Impact, confirmar contencion y cerrar las acciones antes de liberar producto.", "", "Prepared by: Carlos Martinez / Quality");
+        var plain = lines.join("\n");
+        var markdown = "# " + subject + "\n\n```text\n" + plain + "\n```";
+        var html = "<p>Equipo,</p><p>Compartimos seguimiento ejecutivo de yield/fallas para <b>" + bu + "</b>.</p><p><b>Fiscal week:</b> " + fw + "<br><b>Fecha de corte:</b> " + date + "<br><b>FPY actual:</b> " + fpy + "<br><b>Target:</b> TBD</p><p>Favor validar el heatmap de <b>Board Impact</b>, confirmar contencion y cerrar acciones antes de liberar producto.</p>";
+        setPlanAgentEmail({ subject: subject, plain_text: plain, markdown: markdown, html: html });
+        setPlanAgentState({ status: "ok", message: "Weekly email generated locally. Copy it when ready." });
+    }
+    function renderPlanAgentSection() {
+        var h = React.createElement;
+        var riskCount = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+        (planAgentFindings || []).forEach(function(f){ riskCount[f.risk] = (riskCount[f.risk] || 0) + 1; });
+        var kpiCard = function(label, value, tone) { return h("div", { className: "traceops-kpi-card" }, [h("div", { className: "traceops-kpi-label" }, label), h("div", { className: "traceops-kpi-value " + (tone || "") }, value), h("div", { className: "traceops-kpi-meta" }, "Lazy module: calculated on demand")]); };
+        var badge = function(risk) { var cls = risk === "Critical" ? "crit" : (risk === "High" ? "high" : "med"); return h("span", { className: "traceops-alert-badge " + cls }, risk || "Low"); };
+        return h("div", { id: "planagent-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } }, [
+            h("section", { className: "traceops-context" }, [
+                h("div", { className: "traceops-context-main" }, [
+                    h("div", { className: "traceops-context-kicker" }, "Plan Agent · Lazy risk engine"),
+                    h("div", { className: "traceops-context-title" }, "Plan vs Yield Flow early detection"),
+                    h("div", { className: "traceops-context-subtitle" }, "Carga el plan SMT solo cuando se necesite. El modulo cruza WO/SKU/modelo contra Yield Flow, failure patterns y Board Impact sin ejecutar procesamiento pesado durante la carga inicial del sitio."),
+                    h("div", { className: "traceops-context-chips" }, [h("span", null, "No startup processing"), h("span", null, "Excel libs on demand"), h("span", null, "Risk + email output")])
+                ]),
+                h("div", { className: "traceops-context-actions" }, [
+                    h("label", { className: "saas-header-btn primary", style: { cursor: "pointer" } }, ["Upload SMT Plan", h("input", { type: "file", accept: ".xlsx,.xlsm,.csv,.txt,.tsv", style: { display: "none" }, onChange: function(e){ handlePlanAgentFile(e.target.files && e.target.files[0]); e.target.value = ""; } })]),
+                    h("button", { className: "saas-header-btn", onClick: runPlanAgentRisk }, "Run Plan Risk"),
+                    h("button", { className: "saas-header-btn", onClick: buildPlanAgentEmail }, "Generate Weekly Email")
+                ])
+            ]),
+            h("div", { className: "traceops-kpi-strip" }, [kpiCard("Plan rows", planAgentRows.length, "info"), kpiCard("Critical", riskCount.Critical || 0, "fail"), kpiCard("High", riskCount.High || 0, "warn"), kpiCard("Medium", riskCount.Medium || 0, "info"), kpiCard("Low", riskCount.Low || 0, "pass")]),
+            h("section", { className: "traceops-panel" }, [
+                h("div", { className: "traceops-panel-head" }, [h("div", null, [h("h3", null, "Early detection findings"), h("span", null, planAgentState.message)]), h("span", null, "Status: " + planAgentState.status)]),
+                h("div", { className: "traceops-panel-body" }, planAgentFindings.length ? h("div", { style: { overflowX: "auto" } }, h("table", { style: { minWidth: 1180 } }, [
+                    h("thead", null, h("tr", null, ["Risk", "Model", "SKU", "WO", "Line", "Shift", "Qty", "YF rows", "Fail", "Yield", "Top failure modes", "Board focus", "Action"].map(function(x){ return h("th", { key: x }, x); }))),
+                    h("tbody", null, planAgentFindings.slice(0, 80).map(function(f){ return h("tr", { key: f.id }, [
+                        h("td", null, badge(f.risk)), h("td", null, f.model || "N/D"), h("td", null, f.sku || "N/D"), h("td", null, f.wo || "N/D"), h("td", null, f.line || "N/D"), h("td", null, f.shift || "N/D"), h("td", null, f.qty || 0), h("td", null, f.yfRows || 0), h("td", null, f.fail || 0), h("td", null, f.yieldPct == null ? "N/D" : traceOpsYieldFlowFmt(f.yieldPct, 2) + "%"), h("td", null, (f.topFailureModes || []).slice(0, 3).join("; ") || "N/D"), h("td", null, f.boardFocus || "N/D"), h("td", { style: { minWidth: 260 } }, f.suggestedAction)
+                    ]); }))
+                ])) : h("div", { className: "traceops-material-empty" }, planAgentRows.length ? "Plan loaded. Press Run Plan Risk to evaluate exposure." : "Upload an SMT plan to start. No Plan Agent data is loaded at startup."))
+            ]),
+            planAgentEmail && h("section", { className: "traceops-panel" }, [
+                h("div", { className: "traceops-panel-head" }, [h("div", null, [h("h3", null, "Weekly executive email"), h("span", null, planAgentEmail.subject)]), h("button", { className: "saas-header-btn", onClick: function(){ try { navigator.clipboard.writeText(planAgentEmail.plain_text); } catch(_){} } }, "Copy plain text")]),
+                h("div", { className: "traceops-panel-body" }, h("pre", { style: { whiteSpace: "pre-wrap", margin: 0, fontFamily: "Inter, Segoe UI, sans-serif", fontSize: 12, lineHeight: 1.55, color: "#102A43" } }, planAgentEmail.plain_text))
+            ])
+        ]);
+    }
+
     var criticalModelResultForNav = (criticalModelAnalysisState && criticalModelAnalysisState.result) || (window.traceOpsState && window.traceOpsState.criticalModelAnalysis) || null;
     var criticalModelGroupCount = criticalModelResultForNav && criticalModelResultForNav.groups ? criticalModelResultForNav.groups.length : 0;
+
+
+    /* SMTinel Issue Time Impact Analyzer - merged on current index */
+    function traceOpsIssueImpactNorm(v) {
+        return String(v == null ? "" : v).trim();
+    }
+    function traceOpsIssueImpactUpper(v) {
+        return traceOpsIssueImpactNorm(v).toUpperCase();
+    }
+    function traceOpsIssueImpactSn(row) {
+        row = row || {};
+        return traceOpsIssueImpactUpper(row.sn || row.SN || row.boxsn || row.boxsn2 || row.sysserialno || row.sysSerialNo || row.sys_serial_no || row.serial || row.Serial || row.serialNumber || row.serial_number);
+    }
+    function traceOpsIssueImpactPick(row, keys) {
+        row = row || {};
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (row[k] != null && String(row[k]).trim() !== "") return row[k];
+        }
+        var own = Object.keys(row);
+        for (var j = 0; j < own.length; j++) {
+            var nk = String(own[j]).toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (i = 0; i < keys.length; i++) {
+                var kk = String(keys[i]).toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (nk === kk && row[own[j]] != null && String(row[own[j]]).trim() !== "") return row[own[j]];
+            }
+        }
+        return "";
+    }
+    function traceOpsIssueImpactDateMs(v) {
+        if (v == null || v === "") return null;
+        if (v instanceof Date) { var d0 = v.getTime(); return isNaN(d0) ? null : d0; }
+        if (typeof v === "number") {
+            if (v > 20000 && v < 90000) return Math.round((v - 25569) * 86400000);
+            if (v > 1000000000) return v < 10000000000 ? v * 1000 : v;
+        }
+        var s = String(v).trim();
+        if (!s) return null;
+        var native = Date.parse(s.replace(/\.(\d{3})\d+/, '.$1'));
+        if (!isNaN(native)) return native;
+        var m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +(m[6]||0)).getTime();
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+        if (m) {
+            var hh = +m[4]; var ap = String(m[7] || '').toUpperCase();
+            if (ap === 'PM' && hh < 12) hh += 12;
+            if (ap === 'AM' && hh === 12) hh = 0;
+            return new Date(+m[3], +m[1]-1, +m[2], hh, +m[5], +(m[6]||0)).getTime();
+        }
+        return null;
+    }
+    function traceOpsIssueImpactFmt(ms) {
+        if (!ms) return "";
+        try { return new Date(ms).toLocaleString(); } catch(_) { return String(ms); }
+    }
+    function traceOpsIssueImpactStatus(row) {
+        row = row || {};
+        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['status','Status','result','Result','resultado','Resultado','teststatus','testStatus','test_result','testResult','state']));
+    }
+    function traceOpsIssueImpactLooksFail(row) {
+        var st = traceOpsIssueImpactStatus(row);
+        var failInfo = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['testinfo','testInfo','testfailed','testFailed','failtest','failTest','failure','failureMode','symptom']));
+        if (/^(F|FAIL|FAILED|NG|NOK)$/.test(st)) return true;
+        if (/\b(FAIL|FAILED|ERROR|NG|NOK)\b/.test(st)) return true;
+        if (failInfo && failInfo !== '-' && failInfo !== 'NA' && failInfo !== 'N/A' && failInfo !== 'PASS' && failInfo !== 'PASSED') return true;
+        return false;
+    }
+    function traceOpsIssueImpactLooksPass(row) {
+        var st = traceOpsIssueImpactStatus(row);
+        return /^(S|P|PASS|PASSED|OK)$/.test(st);
+    }
+    function traceOpsIssueImpactStationFromSfc(row) {
+        row = row || {};
+        var status = traceOpsIssueImpactStatus(row);
+        var testStation = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['testStation','teststation','testst','testsStation','TestStation']));
+        var current = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['boxcurrentevent','boxCurrentEvent','currentEvent','event','station','Station']));
+        var next = traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row, ['boxnextevent','boxNextEvent','nextEvent']));
+        var generic = /^(ASSY|QI|QI2|STOCKIN|PACK|OBA|ASSY7)$/.test(current || '');
+        if (testStation && (/^(F|FAIL|FAILED|NG|NOK)$/.test(status) || generic)) return testStation;
+        return current || testStation || next || 'UNMAPPED';
+    }
+    function traceOpsIssueImpactStationFromCesium(row) {
+        return traceOpsIssueImpactUpper(traceOpsIssueImpactPick(row || {}, ['station','Station','teststation','testStation','área de test','Área de Test','area','area_de_test','test_area','stationname']));
+    }
+    function traceOpsIssueImpactRowsFromModel(model) {
+        model = model || {};
+        var pools = [];
+        var seen = [];
+        function addPool(source, rows, name) {
+            if (!Array.isArray(rows) || !rows.length) return;
+            if (seen.indexOf(rows) >= 0) return;
+            seen.push(rows);
+            pools.push({ source: source || name || 'Raw', name: name || source || 'Raw', rows: rows });
+        }
+        function addObjectValues(source, obj, name) {
+            if (!obj || typeof obj !== 'object') return;
+            var arr = [];
+            Object.keys(obj).forEach(function(k) {
+                var v = obj[k];
+                if (Array.isArray(v)) addPool(source, v, (name || source || 'object') + '.' + k);
+                else if (v && typeof v === 'object') arr.push(v);
+            });
+            if (arr.length) addPool(source, arr, name || source || 'objectValues');
+        }
+
+        ['sfcRows','sfc','sfcRaw','sfcRecords','sfcEvents'].forEach(function(k){ addPool('SFC', model[k], 'yieldFlowModel.' + k); });
+        ['cesiumRows','cesium','cesiumRaw','ftRows','ictRows','ftAreaRows'].forEach(function(k){ addPool('Cesium', model[k], 'yieldFlowModel.' + k); });
+        ['stationSequence','failurePatterns','causeSummary','serialRows','rows','flowRows','repairRows'].forEach(function(k){ addPool(k, model[k], 'yieldFlowModel.' + k); });
+        if (model.raw && typeof model.raw === 'object') {
+            Object.keys(model.raw).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), model.raw[k], 'yieldFlowModel.raw.' + k); });
+        }
+
+        try { addPool('Cesium', window.TRACEOPS_YIELD_FT_ROWS, 'TRACEOPS_YIELD_FT_ROWS'); } catch(_) {}
+        try { addPool('Cesium', window.TRACEOPS_YIELD_FT_AREA_ROWS, 'TRACEOPS_YIELD_FT_AREA_ROWS'); } catch(_) {}
+        try { addPool('SFC', window.TRACEOPS_YIELD_SFC_EVENTS, 'TRACEOPS_YIELD_SFC_EVENTS'); } catch(_) {}
+        try { addObjectValues('SFC', window.TRACEOPS_YIELD_SN_TO_SFC, 'TRACEOPS_YIELD_SN_TO_SFC'); } catch(_) {}
+        try { addObjectValues('Repair', window.TRACEOPS_YIELD_REPAIRS_BY_SN, 'TRACEOPS_YIELD_REPAIRS_BY_SN'); } catch(_) {}
+        try { addPool('YieldFlow', window.TRACEOPS_YIELD_BY_WO_ROWS, 'TRACEOPS_YIELD_BY_WO_ROWS'); } catch(_) {}
+        try { addPool('YieldFlow', window.TRACEOPS_YIELD_FLOW_TRACKER, 'TRACEOPS_YIELD_FLOW_TRACKER'); } catch(_) {}
+        try { addPool('Risk', window.TRACEOPS_RISK_SUMMARY_ROWS, 'TRACEOPS_RISK_SUMMARY_ROWS'); } catch(_) {}
+        try {
+            var snap = window.traceOpsYieldCacheSnapshot && window.traceOpsYieldCacheSnapshot();
+            if (snap && typeof snap === 'object') {
+                Object.keys(snap).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), snap[k], 'traceOpsYieldCacheSnapshot.' + k); });
+            }
+        } catch(_) {}
+        try {
+            if (window.TRACEOPS_YIELD_FLOW_RAW && typeof window.TRACEOPS_YIELD_FLOW_RAW === 'object') {
+                Object.keys(window.TRACEOPS_YIELD_FLOW_RAW).forEach(function(k){ addPool(/cesium|ict|ft/i.test(k) ? 'Cesium' : (/repair/i.test(k) ? 'Repair' : 'SFC'), window.TRACEOPS_YIELD_FLOW_RAW[k], 'TRACEOPS_YIELD_FLOW_RAW.' + k); });
+            }
+        } catch(_) {}
+        try {
+            window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG = pools.map(function(p){ return { name: p.name || p.source, source: p.source, rows: (p.rows || []).length }; });
+        } catch(_) {}
+        return pools;
+    }
+    function traceOpsIssueImpactPoolDebug(model) {
+        try {
+            traceOpsIssueImpactRowsFromModel(model || {});
+            return window.TRACEOPS_ISSUE_IMPACT_POOL_DEBUG || [];
+        } catch(_) { return []; }
+    }
+    function traceOpsBuildIssueImpactRows(model, startMs, endMs) {
+        var bySn = {};
+        traceOpsIssueImpactRowsFromModel(model).forEach(function(pool){
+            (pool.rows || []).forEach(function(r){
+                if (!r || typeof r !== 'object') return;
+                var sn = traceOpsIssueImpactSn(r);
+                if (!sn) return;
+                var t = traceOpsIssueImpactDateMs(traceOpsIssueImpactPick(r, ['recordTime','eventTime','repairTime','testdate','testDate','fecha','fecha_registro','regdate','createdate','eventdate','updatedate','lastupdate','time','timestamp','date','datetime','DateTime','Rec Time','Record Time','RECTIME','SQLTIMESTAMP','lasteditdt','Last Edit DT']));
+                if (!t) return;
+                var isCesium = /cesium|ict|ft/i.test(pool.source || '') || traceOpsIssueImpactStationFromCesium(r);
+                var station = isCesium ? traceOpsIssueImpactStationFromCesium(r) : traceOpsIssueImpactStationFromSfc(r);
+                if (!station) station = traceOpsIssueImpactStationFromSfc(r);
+                var ev = {
+                    source: pool.source || '', sn: sn, timeMs: t, timeText: traceOpsIssueImpactFmt(t),
+                    model: traceOpsIssueImpactPick(r, ['sku','skuno','model','modelno','uuttype','moduleNo','moduleno']) || '',
+                    wo: traceOpsIssueImpactPick(r, ['workorderno','workorder','wo','WO']) || '',
+                    station: station || 'UNMAPPED',
+                    process: [traceOpsIssueImpactPick(r, ['boxcurrentevent','currentEvent','event']), traceOpsIssueImpactPick(r, ['boxnextevent','nextEvent'])].filter(Boolean).join(' → ') || traceOpsIssueImpactPick(r, ['process','testinfo','testInfo']) || '',
+                    result: traceOpsIssueImpactPick(r, ['status','result','resultado','Status','Result']) || '',
+                    failTest: traceOpsIssueImpactPick(r, ['failingTestName','failName','testName','testinfo','testInfo','testfailed','testFailed','failureMode','symptom','rootCause','rootcause','Root Cause','FailSymptom']) || '',
+                    raw: r
+                };
+                if (!bySn[sn]) bySn[sn] = [];
+                bySn[sn].push(ev);
+            });
+        });
+        var out = [];
+        Object.keys(bySn).forEach(function(sn){
+            var events = bySn[sn].sort(function(a,b){ return a.timeMs-b.timeMs; });
+            var before = null, after = null, during = [];
+            events.forEach(function(ev){ if (ev.timeMs < startMs) before = ev; else if (ev.timeMs <= endMs) during.push(ev); else if (!after) after = ev; });
+            if (!during.length) return;
+            var failDuring = during.some(traceOpsIssueImpactLooksFail);
+            var passAfter = after && traceOpsIssueImpactLooksPass(after);
+            var impact = failDuring && !passAfter ? 'Critical' : (failDuring && passAfter ? 'Recovered' : (!after ? 'Hold Risk' : 'Observed'));
+            var main = during.find(traceOpsIssueImpactLooksFail) || during[0];
+            out.push({ sn: sn, model: main.model || (before && before.model) || (after && after.model) || '', wo: main.wo || (before && before.wo) || (after && after.wo) || '', station: main.station || '', process: main.process || '', result: main.result || '', failTest: main.failTest || '', issueTime: main.timeText || '', impact: impact, before: before, after: after, during: during });
+        });
+        return out.sort(function(a,b){ return String(a.impact).localeCompare(String(b.impact)) || String(a.station).localeCompare(String(b.station)) || String(a.sn).localeCompare(String(b.sn)); });
+    }
+    function renderIssueTimeImpactAnalyzerSection() {
+        var h = React.createElement;
+        var modelRef = yieldFlowModel;
+        function localInput(d){ try { var z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); } catch(_) { return ''; } }
+        var now = new Date();
+        var defaultEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0, 0);
+        var defaultStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0, 0);
+        function IssueImpactStablePanel(props){
+            React.Component.call(this, props);
+            this.state = { startText: localInput(defaultStart), endText: localInput(defaultEnd) };
+            this.setStart = this.setStart.bind(this);
+            this.setEnd = this.setEnd.bind(this);
+            this.exportTsv = this.exportTsv.bind(this);
+        }
+        IssueImpactStablePanel.prototype = Object.create(React.Component.prototype);
+        IssueImpactStablePanel.prototype.constructor = IssueImpactStablePanel;
+        IssueImpactStablePanel.prototype.getRows = function(){
+            var startMs = traceOpsIssueImpactDateMs(this.state.startText);
+            var endMs = traceOpsIssueImpactDateMs(this.state.endText);
+            if (!startMs || !endMs || endMs < startMs) return [];
+            try { return traceOpsBuildIssueImpactRows(this.props.model || {}, startMs, endMs) || []; }
+            catch(e) { console.warn('[SMTinel] Issue Impact compute failed', e); return []; }
+        };
+        IssueImpactStablePanel.prototype.setStart = function(e){ this.setState({ startText: e && e.target ? e.target.value : '' }); };
+        IssueImpactStablePanel.prototype.setEnd = function(e){ this.setState({ endText: e && e.target ? e.target.value : '' }); };
+        IssueImpactStablePanel.prototype.exportTsv = function(){
+            var rows = this.getRows();
+            var headers = ['SN','MODELO','WO','ESTACION','PROCESO','RESULTADO','TEST FALLIDO','HORA','IMPACTO'];
+            var lines = [headers.join('\t')].concat(rows.map(function(r){ return [r.sn,r.model,r.wo,r.station,r.process,r.result,r.failTest,r.issueTime,r.impact].map(function(v){ return String(v||'').replace(/[\t\r\n]+/g,' '); }).join('\t'); }));
+            var blob = new Blob([lines.join('\n')], {type:'text/tab-separated-values;charset=utf-8'});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'SMTinel_Issue_Time_Impact.tsv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ try { URL.revokeObjectURL(a.href); a.remove(); } catch(_) {} }, 250);
+        };
+        IssueImpactStablePanel.prototype.render = function(){
+            var rows = this.getRows();
+            var failed = rows.filter(function(r){ return r.impact === 'Critical' || r.impact === 'Recovered'; }).length;
+            var recovered = rows.filter(function(r){ return r.impact === 'Recovered'; }).length;
+            var critical = rows.filter(function(r){ return r.impact === 'Critical'; }).length;
+            var hold = rows.filter(function(r){ return r.impact === 'Hold Risk'; }).length;
+            var stations = {}; rows.forEach(function(r){ if(r.station) stations[r.station]=true; });
+            var topFail = '-';
+            var failMap = {}; rows.forEach(function(r){ var k = r.failTest || '-'; failMap[k]=(failMap[k]||0)+1; });
+            Object.keys(failMap).sort(function(a,b){ return failMap[b]-failMap[a]; }).slice(0,1).forEach(function(k){ topFail=k; });
+            var poolDebug = traceOpsIssueImpactPoolDebug(this.props.model || {});
+            function kpi(label, value, cls){ return h('div',{className:'traceops-kpi-card',key:label},[h('div',{className:'traceops-kpi-label'},label),h('div',{className:'traceops-kpi-value '+(cls||'')},String(value))]); }
+            return h('div',{id:'issueimpact-section', className:'traceops-material-panel'},[
+                h('div',{className:'traceops-material-head',key:'head'},[h('div',null,[h('h3',null,'Issue Impact Analyzer'),h('div',{className:'traceops-material-note'},'Foto forense por ventana de tiempo: seriales, modelo, estación efectiva, proceso, falla y recuperación posterior. Stable V7 con bridge directo a Yield Flow: FT, SFC, Repair y cache snapshot.')]),h('div',{className:'traceops-material-actions'},[h('button',{className:'traceops-material-btn primary',onClick:this.exportTsv},'Export TSV')])]),
+                h('div',{className:'traceops-material-body',key:'body'},[
+                    h('div',{style:{display:'grid',gridTemplateColumns:'repeat(2,minmax(220px,1fr))',gap:12},key:'filters'},[h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Inicio',h('input',{type:'datetime-local',value:this.state.startText,onChange:this.setStart,className:'api-input',style:{width:'100%',marginTop:6}})]),h('label',{style:{fontSize:10,fontWeight:800,color:'#5F766C',textTransform:'uppercase'}},['Fin',h('input',{type:'datetime-local',value:this.state.endText,onChange:this.setEnd,className:'api-input',style:{width:'100%',marginTop:6}})])]),
+                    h('div',{className:'traceops-kpi-strip',style:{gridTemplateColumns:'repeat(6,minmax(0,1fr))'},key:'kpis'},[kpi('SN Window',rows.length,'info'),kpi('Failed',failed,'fail'),kpi('Recovered',recovered,'pass'),kpi('Critical',critical,'fail'),kpi('Hold Risk',hold,'warn'),kpi('Stations',Object.keys(stations).length,'info')]),
+                    h('details',{className:'traceops-material-empty',key:'diag',open: rows.length===0, style:{textAlign:'left'}},[h('summary',{style:{cursor:'pointer',fontWeight:900}},'Data bridge diagnostics'),h('div',{style:{fontSize:12,marginTop:8,whiteSpace:'pre-wrap'}}, poolDebug.length ? poolDebug.map(function(p){return (p.name||p.source)+': '+p.rows+' rows';}).join('\n') : 'No pools detected. Carga Yield Flow primero y vuelve a abrir este modulo.')]),
+                    h('div',{className:'traceops-material-tablewrap',key:'table'},h('table',{className:'traceops-material-table'},[h('thead',null,h('tr',null,['SN','Modelo','WO','Estacion','Proceso','Resultado','Test fallido','Hora','Impacto'].map(function(x){return h('th',{key:x},x);}))),h('tbody',null, rows.length? rows.slice(0,500).map(function(r){return h('tr',{key:r.sn+'|'+r.issueTime},[h('td',null,r.sn),h('td',null,r.model),h('td',null,r.wo),h('td',null,r.station),h('td',null,r.process),h('td',null,r.result),h('td',null,r.failTest),h('td',null,r.issueTime),h('td',null,h('span',{className:'traceops-material-badge',style:{background:r.impact==='Critical'?'#FDEEEE':(r.impact==='Recovered'?'#EAF7EF':'#FFF7E8'),color:r.impact==='Critical'?'#C44141':(r.impact==='Recovered'?'#1A7A3C':'#9A6A16')}},r.impact))]);}) : h('tr',null,h('td',{colSpan:9},'Sin seriales con actividad dentro de la ventana seleccionada. Revisa fecha/hora o carga ZIP Yield Flow.')))])),
+                    h('div',{className:'traceops-material-empty',key:'summary'},'Lectura ejecutiva: durante la ventana seleccionada SMTinel detectó '+rows.length+' SN con actividad; '+failed+' fallaron, '+recovered+' muestran recuperación posterior y '+critical+' quedan sin evidencia de recovery. Top failure: '+topFail+'.')
+                ])
+            ]);
+        };
+        return h(IssueImpactStablePanel, { model: modelRef });
+    }
     var moduleNavItems = [
         {
             key: "sentinelux",
@@ -31999,6 +32477,14 @@ body:has(#recovery-section) .main-content.expanded{
             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
         },
         {
+            key: "planagent",
+            label: "Plan Agent",
+            shortLabel: "Early production risk detection from SMT plan vs Yield Flow and Board Impact",
+            count: planAgentFindings.length || planAgentRows.length || "PA",
+            anchorId: "planagent-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
+        },
+        {
             key: "yieldweek",
             label: "Yield by Week",
             shortLabel: "Weekly yield chart by station, calculated only on demand",
@@ -32037,6 +32523,14 @@ body:has(#recovery-section) .main-content.expanded{
             count: criticalModelGroupCount,
             anchorId: "criticalmodel-section",
             tone: { bg: "#FFF7F5", border: "#F1B5AE", color: "#A43B2E" }
+        },
+        {
+            key: "issueimpact",
+            label: "Issue Impact Analyzer",
+            shortLabel: "Analiza seriales afectados por ventana de tiempo: estación, proceso, falla y recovery",
+            count: "ITA",
+            anchorId: "issueimpact-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
         },
         {
             key: "intellog",
@@ -33982,7 +34476,9 @@ body:has(#recovery-section) .main-content.expanded{
                                             React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#A43B2E", textTransform: "uppercase" } }, "Bloqueo de cierre"),
                                             React.createElement("div", { style: { fontSize: 11.5, color: "#6E4038", lineHeight: 1.55, marginTop: 6 } }, "No habilitar aprobacion final si falta D6, evidencia de implementacion, owner responsable o monitoreo de recurrencia. Si aparece recurrencia post-cierre, el caso debe reabrirse o vincular una nueva NC.")))))),
                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
+                        activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
+                        activeModule === "planagent" && renderPlanAgentSection(),
                         activeModule === "yieldweek" && renderYieldByWeekSection(),
                         activeModule === "recovery" && renderRecoveryIntelligenceSection(),
                         activeModule === "boardimpact" && renderBoardImpactSection(),
@@ -34031,7 +34527,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, rccaList.filter(function (r) { if (!rccaFilter)
                                     return true; var q = rccaFilter.toLowerCase(); return (r.modelo || "").toLowerCase().indexOf(q) >= 0 || (r.linea || "").toLowerCase().indexOf(q) >= 0 || (r.problema || "").toLowerCase().indexOf(q) >= 0 || (r.rcca_id || "").toLowerCase().indexOf(q) >= 0; }).map(function (r) { return React.createElement(RccaCard, { key: r.rcca_id, r: r, score: 0 }); })))))),
                         activeModule === "8d" && renderEightdAnalyzerSection(),
-                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
+                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Bitacora de eventos (",
@@ -34125,15 +34621,15 @@ body:has(#recovery-section) .main-content.expanded{
                                         React.createElement(RccaCell, { evId: e.id, modelo: e.modelo, linea: e.linea_estacion, fecha: e.fecha, problema: e.evento_detectado })),
                                     imgNames.length > 0 && React.createElement(EvidenceCell, { e: e })));
                             }))))),
-                activeModule !== "yieldflow" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
+                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Pendientes operativos (",
                             pend.length,
                             ")")),
                     React.createElement("div", { className: "plist" }, pend.map(function (e, i) { return React.createElement(PendItem, { key: i, e: e }); }))),
-                activeModule !== "yieldflow" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
-                activeModule !== "yieldflow" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
+                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
+                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
                     React.createElement("div", { style: { padding: "0", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
                         React.createElement("div", { style: { margin: 16, borderRadius: 18, overflow: "hidden", background: "linear-gradient(135deg,#0B1F33 0%,#16324F 48%,#1F3A5F 100%)", border: "1px solid rgba(49,102,128,.35)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)" } },
                             React.createElement("div", { style: { padding: "18px 20px 16px", position: "relative" } },
@@ -37363,6 +37859,8 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     signal:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.3-5.2 4.7 5.2 7 0s4.7 5.2 7 0 4.7 5.2 7 0"/></svg>',
     memory:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 2.8A3.2 3.2 0 0 0 7.2 14H9"/><path d="M15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 2 2.8A3.2 3.2 0 0 1 16.8 14H15"/><path d="M9 4v16"/><path d="M15 4v16"/><path d="M9 12h6"/><path d="M9 18h6"/></svg>',
     log:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 5h12v16H6z"/><path d="M9 11h6"/><path d="M9 15h6"/></svg>',
+    plan:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M4 10h16"/><path d="M8 14h3"/><path d="M13 14h3"/><path d="M8 17h5"/></svg>',
+    issue:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5"/><path d="M12 17h.01"/><path d="M4 5h16v14H4z"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>',
     more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>'
   };
   var modules=[
@@ -37372,10 +37870,12 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"8d",label:"8D Analyzer",icon:icons.eightd,aliases:["8D Analyzer","8D","EightD Analyzer","Quality Gate 8D"]},
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
     {key:"yieldweek",label:"Yield by Week",icon:icons.yield,aliases:["Yield by Week","Yield Week","YBW"]},
+    {key:"planagent",label:"Plan Agent",icon:icons.plan,aliases:["Plan Agent","Plan Risk","Weekly Follow-up","PlanAgent"]},
     {key:"boardimpact",label:"Board Impact",icon:icons.board,aliases:["Board Impact"]},
     {key:"recovery",label:"Recovery Intel",icon:icons.recovery,aliases:["Recovery Intelligence","Recovery Intel"]},
     {key:"criticalchars",label:"Características Críticas",icon:icons.critical,aliases:["Características Críticas","Caracteristicas Criticas","Critical Characteristics","CC Register"]},
     {key:"criticalmodel",label:"CMA",icon:icons.critical,aliases:["CMA","Critical Model Analysis","Critical Analysis","Análisis Crítico","Analisis Critico"]},
+    {key:"issueimpact",label:"Issue Impact Analyzer",icon:icons.issue||icons.signal,aliases:["Issue Impact Analyzer","Issue Impact","Issue Time Impact","Time Impact"]},
     {key:"intellog",label:"Intel Log",icon:icons.log,aliases:["Intel Log","Maintenance Log"]}
   ];
   var mobileKeys=["sentinelux","rcca","storyline","yieldflow","boardimpact"];
@@ -37430,6 +37930,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
   window.openSignalProcessing=function(){navTo("sentinelux");};
   window.openMuninnMemory=function(){navTo("sentinelux");};
   window.openIntelLog=function(){navTo("intellog");};
+  window.openPlanAgent=function(){navTo("planagent");};
   function buttonHTML(m,cls){return '<button type="button" class="'+cls+'" data-smtinel-module="'+m.key+'"><span class="'+(cls.indexOf('side')>=0?'smtinel-side-ico':'smtinel-tab-icon')+'">'+m.icon+'</span><span class="'+(cls.indexOf('side')>=0?'smtinel-side-label':'')+'">'+m.label+'</span></button>';}
   function build(){
     if(document.getElementById("smtinel-desktop-sidebar")) return;
@@ -41898,7 +42399,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -42035,7 +42536,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -43543,8 +44044,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -43564,7 +44065,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -43869,8 +44370,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   }
 
   function updateBadge(){
@@ -44016,7 +44517,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -44189,7 +44690,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -44454,7 +44955,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -44480,7 +44981,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -44504,7 +45005,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var badgeText = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -44678,7 +45179,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var badgeText = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -44701,7 +45202,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -44720,7 +45221,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08";
+  var versionText = "SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -44824,7 +45325,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var label = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -44842,7 +45343,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var VERSION_LABEL = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -45092,7 +45593,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var badge = 'SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -45471,7 +45972,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -45556,7 +46057,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var VERSION='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -47038,7 +47539,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.10.2 - Recovery Intelligence Premium Light - QA No Preload - 2026-06-08';
+  var label='SMTinel V13.10.9 - Issue Impact Data Bridge V7 - 2026-06-13';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
