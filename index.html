@@ -54891,7 +54891,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script id="smtinel-board-impact-export-native-v69">
 (function(){
   "use strict";
-  var VERSION = "v69-board-impact-export-native-guard";
+  var VERSION = "v70-board-impact-repair-record-enriched";
   function txt(v){ return String(v == null ? "" : v).trim(); }
   function upper(v){ return txt(v).toUpperCase(); }
   function esc(v){ return txt(v).replace(/[&<>\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
@@ -54940,21 +54940,70 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
     candidates.forEach(function(arr){ if(Array.isArray(arr) && arr.length > best.length) best = arr; });
     return best;
   }
+  function repairsForRow(row, idx){
+    var map = window.TRACEOPS_YIELD_REPAIRS_BY_SN || {};
+    var keys = [];
+    function add(v){ v = cleanSn(v); if(v && keys.indexOf(v) < 0) keys.push(v); }
+    add(serial(row, idx));
+    ["sn","SN","serial","Serial","serialNumber","sfcSn","bridgeKey","parentsernum","partsernum","repairSn","boxsn","BOXSN","cesiumSn"].forEach(function(k){ if(row && row[k] != null) add(row[k]); });
+    for(var i=0;i<keys.length;i++){
+      if(Array.isArray(map[keys[i]]) && map[keys[i]].length) return map[keys[i]];
+    }
+    return [];
+  }
+  function repairRef(rep){ return txt(first(rep,["refdes","RefDes","refDes","location","failLocation","FailLocation","referenceDesignator","repairLocation"])) || refsFromRow(rep); }
+  function repairPart(rep){ return txt(first(rep,["partNumber","PartNumber","componentPn","componentPN","componentCode","component_code","pn","PN","componentType","componentDescription"])) || partNumber(rep); }
+  function repairFailureMode(rep){ return txt(first(rep,["failureMode","mode","rootCause","repairSymptom","symptom","rawRootCause","rawRepairSymptom","detectionSymptom"])) || failureMode(rep); }
+  function repairFailure(rep){ return txt(first(rep,["failure","rawRootCause","rootCause","repairSymptom","symptom","detectionSymptom","actionDesc","repairType"])) || repairFailureMode(rep); }
   function buildTrackerRows(){
     var rows = getRows();
     var seen = {}, out = [];
     rows.forEach(function(row, idx){
-      var rec = {
-        SN: serial(row, idx),
-        Failure: failure(row),
-        RefDes: refsFromRow(row),
-        PartNumber: partNumber(row),
-        WorkOrder: workOrder(row),
-        FailureMode: failureMode(row)
-      };
-      var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode].join("|");
-      if(!seen[key]){ seen[key]=1; out.push(rec); }
+      row = row || {};
+      var sn = serial(row, idx);
+      var reps = repairsForRow(row, idx);
+      if(reps.length){
+        reps.forEach(function(rep){
+          var rec = {
+            SN: sn || serial(rep, idx),
+            Failure: repairFailure(rep),
+            RefDes: repairRef(rep),
+            PartNumber: repairPart(rep),
+            WorkOrder: workOrder(rep) !== "N/D" ? workOrder(rep) : workOrder(row),
+            FailureMode: repairFailureMode(rep)
+          };
+          var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
+          if(!seen[key]){ seen[key]=1; out.push(rec); }
+        });
+      } else {
+        var rec = {
+          SN: sn,
+          Failure: failure(row),
+          RefDes: refsFromRow(row),
+          PartNumber: partNumber(row),
+          WorkOrder: workOrder(row),
+          FailureMode: failureMode(row)
+        };
+        var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
+        if(!seen[key]){ seen[key]=1; out.push(rec); }
+      }
     });
+    if(!out.length && window.TRACEOPS_YIELD_REPAIRS_BY_SN){
+      Object.keys(window.TRACEOPS_YIELD_REPAIRS_BY_SN).forEach(function(snKey){
+        (window.TRACEOPS_YIELD_REPAIRS_BY_SN[snKey] || []).forEach(function(rep, idx){
+          var rec = {
+            SN: cleanSn(rep.sn || rep.sfcSn || snKey),
+            Failure: repairFailure(rep),
+            RefDes: repairRef(rep),
+            PartNumber: repairPart(rep),
+            WorkOrder: workOrder(rep),
+            FailureMode: repairFailureMode(rep)
+          };
+          var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
+          if(!seen[key]){ seen[key]=1; out.push(rec); }
+        });
+      });
+    }
     return out;
   }
   function downloadExcel(type){
@@ -55000,7 +55049,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
   setInterval(run, 350);
   try { new MutationObserver(function(){ clearTimeout(window.__smtinelBoardExportV69Timer); window.__smtinelBoardExportV69Timer = setTimeout(run, 80); }).observe(document.documentElement,{childList:true,subtree:true}); } catch(_){ }
-  window.SMTINEL_BOARD_IMPACT_EXPORT_V69 = {version:VERSION, exportIssue:function(){downloadExcel("Issue");}, exportAction:function(){downloadExcel("Action");}, rows:buildTrackerRows};
+  window.SMTINEL_BOARD_IMPACT_EXPORT_V70 = {version:VERSION, exportIssue:function(){downloadExcel("Issue");}, exportAction:function(){downloadExcel("Action");}, rows:buildTrackerRows};
 })();
 </script>
 
