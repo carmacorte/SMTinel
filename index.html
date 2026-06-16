@@ -16710,6 +16710,31 @@ body.traceops-premium-shell .main-content.expanded {
 }
 </style>
 
+
+<style id="smtinel-board-impact-export-fix-v68">
+#board-impact-export-center.traceops-board-export-center{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  z-index:25!important;
+}
+#board-impact-export-center .traceops-board-export-btn{
+  display:inline-flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  align-items:center;
+  justify-content:center;
+}
+@media(max-width:820px){
+  #board-impact-export-center.traceops-board-export-center{
+    align-items:stretch!important;
+  }
+  #board-impact-export-center .traceops-board-export-btn{
+    width:100%;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -28095,6 +28120,175 @@ body:has(#recovery-section) .main-content.expanded{
             ])
         ]);
     }
+
+  async function exportBoardImpactExcelWorkbook(payload) {
+    try {
+      payload = payload || {};
+      var actionExport = !!payload.actionExport;
+      var ctx = payload.ctx || {};
+      var scopeRows = Array.isArray(payload.rows) ? payload.rows : [];
+      var snList = Array.isArray(payload.snList) ? payload.snList : [];
+      var refs = Array.isArray(payload.uniqueRefs) ? payload.uniqueRefs : [];
+      var refStats = Array.isArray(payload.refStats) ? payload.refStats : [];
+      var modeOptions = Array.isArray(payload.modeOptions) ? payload.modeOptions : [];
+      var today = new Date().toISOString().slice(0, 10);
+      function clean(v){ return v == null ? '' : String(v); }
+      function arr(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+      function firstText(){
+        for (var i = 0; i < arguments.length; i++) {
+          var v = arguments[i];
+          if (Array.isArray(v)) v = v.filter(Boolean).join(', ');
+          v = clean(v).trim();
+          if (v) return v;
+        }
+        return '';
+      }
+      function rowSn(r, i){ return firstText(r && (r.sn || r.serial || r.sysserialno || r.serialNumber || r.serial_no || r.SN), i != null ? 'SN-' + String(i + 1).padStart(3,'0') : ''); }
+      function rowWo(r){ return firstText(r && (r.wo || r.workOrder || r.work_order || r.WorkOrder || r.orderno), ctx.wo); }
+      function rowRef(r){ return firstText(r && (r.ref || r.refdes || r.refDes || r.referenceDesignator || r.refs), payload.selectedRef, ctx.refdes); }
+      function rowPart(r){ return firstText(r && (r.partNumber || r.part_number || r.pn || r.PN || r.componentPn || r.componentCode || r.component_code || r.part || r.item), ctx.partNumber); }
+      function rowFailure(r){ return firstText(r && (r.failure || r.fail || r.defect || r.symptom || r.description || r.defectDescription), ctx.failure, ctx.symptom); }
+      function rowFailureMode(r){ return firstText(r && (r.failureMode || r.failure_mode || r.mode || r.pattern || r.repairAction), ctx.mode); }
+      function rowStation(r){ return firstText(r && (r.station || r.testStation || r.process), ctx.station, 'Repair'); }
+      function saveBlob(name, blob){
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ try { URL.revokeObjectURL(a.href); } catch(_){} }, 1000);
+      }
+      if (window.ensureExcelTools) await window.ensureExcelTools();
+      if (!window.ExcelJS) {
+        var csvRows = [['Issue ID','SN','Failure','Ref Des','Part Number','Work Order','Failure Mode','Station','Side','Yield Impact','Source','Status','Risk Level','Owner','Due Date']];
+        var csvSource = (snList.length ? snList : (scopeRows.length ? scopeRows : refStats)).slice(0, 5000);
+        csvSource.forEach(function(r, i){
+          if (typeof r === 'string') r = { sn: r };
+          csvRows.push([
+            'ISS-' + String(i + 1).padStart(3,'0'),
+            rowSn(r, i),
+            rowFailure(r),
+            rowRef(r),
+            rowPart(r),
+            rowWo(r),
+            rowFailureMode(r),
+            rowStation(r),
+            clean(payload.boardSide || ctx.side || ''),
+            clean(r.rate || r.yieldImpact || payload.boardFailureRateBuilt || ''),
+            'Board Impact / Yield Flow',
+            'Open',
+            clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),
+            '',
+            ''
+          ]);
+        });
+        var csv = csvRows.map(function(row){ return row.map(function(v){ return '"' + clean(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+        saveBlob((actionExport ? 'SMTinel_Board_Impact_Action_Tracker_' : 'SMTinel_Board_Impact_Issue_Tracker_') + today + '.csv', new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+        return;
+      }
+      var wb = new ExcelJS.Workbook();
+      wb.creator = 'SMTinel';
+      wb.created = new Date();
+      function addSheet(name, columns, data) {
+        var ws = wb.addWorksheet(name);
+        ws.columns = columns.map(function(c){ return { header: c, key: c, width: Math.max(14, Math.min(34, c.length + 6)) }; });
+        (data || []).forEach(function(row){ ws.addRow(row); });
+        ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF102A43' } };
+        ws.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+        ws.views = [{ state: 'frozen', ySplit: 1 }];
+        ws.eachRow(function(row){ row.eachCell(function(cell){ cell.alignment = { vertical:'top', wrapText:true }; }); });
+        return ws;
+      }
+      var issueRows = [];
+      var issueSource = (snList.length ? snList : (scopeRows.length ? scopeRows : refStats)).slice(0, 5000);
+      issueSource.forEach(function(r, i){
+        if (typeof r === 'string') r = { sn: r };
+        issueRows.push({
+          'Issue ID': 'ISS-' + String(i + 1).padStart(3,'0'),
+          'SN': rowSn(r, i),
+          'Failure': rowFailure(r),
+          'Ref Des': rowRef(r),
+          'Part Number': rowPart(r),
+          'Work Order': rowWo(r),
+          'Failure Mode': rowFailureMode(r),
+          'Station': rowStation(r),
+          'Side': clean(payload.boardSide || ctx.side || ''),
+          'Defect Description': firstText(rowFailure(r), rowFailureMode(r), 'Scope sin descripción detallada'),
+          'Qty SN': 1,
+          'Yield Impact': clean(r.rate || r.yieldImpact || payload.boardFailureRateBuilt || ''),
+          'Source': 'Board Impact / Yield Flow',
+          'Evidence / Link': '',
+          'Root Cause Hypothesis': '',
+          'Status': 'Open',
+          'Risk Level': clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),
+          'Owner': '',
+          'Due Date': '',
+          'Aging Days': '',
+          'Containment': 'Revisar serial afectado, validar RefDes/PN y confirmar disposición/retest.'
+        });
+      });
+      if (!issueRows.length) issueRows.push({'Issue ID':'ISS-001','SN':'','Failure':'Scope sin registros detallados','Ref Des':clean(payload.selectedRef || ''),'Part Number':'','Work Order':clean(ctx.wo || ''),'Failure Mode':clean(ctx.mode || ''),'Station':clean(ctx.station || ''),'Side':clean(payload.boardSide || ''),'Defect Description':'Scope sin registros detallados','Qty SN':clean(payload.affectedSerials || 0),'Yield Impact':clean(payload.boardFailureRateBuilt || ''),'Source':'Board Impact / Yield Flow','Evidence / Link':'','Root Cause Hypothesis':'','Status':'Open','Risk Level':clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),'Owner':'','Due Date':'','Aging Days':'','Containment':''});
+      var snRows = [];
+      var snSource = snList.length ? snList : scopeRows.slice(0, 500);
+      snSource.forEach(function(r, i){
+        if (typeof r === 'string') r = { sn: r };
+        snRows.push({
+          'SN': rowSn(r, i),
+          'WO': rowWo(r),
+          'Station': rowStation(r),
+          'RefDes': rowRef(r),
+          'Part Number': rowPart(r),
+          'Failure': rowFailure(r),
+          'Failure Mode': rowFailureMode(r),
+          'Source': clean(r.source || 'Board Impact / Cesium'),
+          'Disposition': clean(r.disposition || ''),
+          'Repaired?': clean(r.repaired || ''),
+          'Retest Result': clean(r.retestResult || r.status || ''),
+          'Comments': clean(r.comments || '')
+        });
+      });
+      var actionRows = issueRows.map(function(r, i){ return {
+        'Action ID': 'ACT-' + String(i + 1).padStart(3,'0'),
+        'Issue ID': r['Issue ID'],
+        'RefDes': r['Ref Des'],
+        'Station': r['Station'],
+        'Failure Mode': r['Failure Mode'],
+        'Risk Level': r['Risk Level'],
+        'Action Required': 'Confirmar contención, validar seriales afectados y cerrar evidencia de reparación/retest.',
+        'Owner': r['Owner'],
+        'Due Date': r['Due Date'],
+        'Status': 'Open',
+        'Aging Days': r['Aging Days'],
+        'Closure Criteria': 'SN contenidos, causa revisada, evidencia adjunta y retest documentado.',
+        'Evidence Link': r['Evidence / Link'],
+        'Comments': ''
+      }; });
+      addSheet('Issue Tracker', ['Issue ID','SN','Failure','Ref Des','Part Number','Work Order','Failure Mode','Station','Side','Defect Description','Qty SN','Yield Impact','Source','Evidence / Link','Root Cause Hypothesis','Status','Risk Level','Owner','Due Date','Aging Days','Containment'], issueRows);
+      addSheet('SN Log', ['SN','WO','Station','RefDes','Part Number','Failure','Failure Mode','Source','Disposition','Repaired?','Retest Result','Comments'], snRows);
+      var paretoRows = issueRows.map(function(r){ return {'Failure Mode':r['Failure Mode'],'Ref Des':r['Ref Des'],'Part Number':r['Part Number'],'Qty SN':r['Qty SN'],'Yield Impact':r['Yield Impact']}; });
+      addSheet('Pareto', ['Failure Mode','Ref Des','Part Number','Qty SN','Yield Impact'], paretoRows);
+      var stationMap = {};
+      issueRows.forEach(function(r){ var s = r['Station'] || 'N/D'; stationMap[s] = (stationMap[s] || 0) + (Number(r['Qty SN']) || 0); });
+      addSheet('Station Breakdown', ['Station','Qty SN'], Object.keys(stationMap).map(function(k){ return {'Station':k,'Qty SN':stationMap[k]}; }));
+      addSheet('Summary', ['Metric','Value'], [
+        {'Metric':'WO','Value':clean(ctx.wo || '')}, {'Metric':'Model/SKU','Value':clean(ctx.sku || ctx.model || '')}, {'Metric':'Active RefDes','Value':clean(payload.selectedRef || '')}, {'Metric':'Affected WOs','Value':clean(payload.affectedWos || '')}, {'Metric':'Affected Serials','Value':clean(payload.affectedSerials || '')}, {'Metric':'FR vs MFG','Value':clean(payload.boardFailureRateManufactured || '')}, {'Metric':'FR vs Built','Value':clean(payload.boardFailureRateBuilt || '')}
+      ]);
+      if (actionExport) {
+        addSheet('Action Tracker', ['Action ID','Issue ID','RefDes','Station','Failure Mode','Risk Level','Action Required','Owner','Due Date','Status','Aging Days','Closure Criteria','Evidence Link','Comments'], actionRows);
+        addSheet('Open Actions', ['Action ID','Issue ID','RefDes','Station','Risk Level','Action Required','Owner','Due Date','Status'], actionRows.map(function(r){ return {'Action ID':r['Action ID'],'Issue ID':r['Issue ID'],'RefDes':r['RefDes'],'Station':r['Station'],'Risk Level':r['Risk Level'],'Action Required':r['Action Required'],'Owner':r['Owner'],'Due Date':r['Due Date'],'Status':r['Status']}; }));
+        var ownerMap = {};
+        actionRows.forEach(function(r){ var o = r.Owner || 'N/D'; ownerMap[o] = (ownerMap[o] || 0) + 1; });
+        addSheet('Owner Summary', ['Owner','Open Actions'], Object.keys(ownerMap).map(function(k){ return {'Owner':k,'Open Actions':ownerMap[k]}; }));
+      }
+      var buf = await wb.xlsx.writeBuffer();
+      saveBlob((actionExport ? 'SMTinel_Board_Impact_Action_Tracker_' : 'SMTinel_Board_Impact_Issue_Tracker_') + today + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    } catch (err) {
+      alert('No se pudo exportar Board Impact: ' + (err && err.message ? err.message : err));
+    }
+  }
+
     function exportBoardImpactQualityAlertPpt(payload) {
         payload = payload || {};
         var ctx = payload.ctx || {};
@@ -29179,6 +29373,14 @@ body:has(#recovery-section) .main-content.expanded{
                     h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #F1C04E", background: "linear-gradient(135deg,#FFF7D8,#FFFFFF)", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
                     h("button", { type: "button", onClick: function () { var v = prompt("Buscar RefDes en PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Buscar RefDes"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
+
+            h("section", { key: "board-impact-export-center", id: "board-impact-export-center", className: "traceops-board-export-center", style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "14px" : "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
+                h("div", { style: { minWidth: 220 } },
+                    h("div", { style: { fontSize: 15, fontWeight: 950, color: "#102A43" } }, "Board Impact Export Center"),
+                    h("div", { style: { fontSize: 11, color: "#5F766C", marginTop: 4 } }, "Exports usando el scope activo de Board Impact.")),
+                h("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
+                    h("button", { key: "board-export-issue-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
+                    h("button", { key: "board-export-action-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } },
                 kpi("WOs impactadas", affectedWos, "scope filtrado", "blue"),
                 kpi("Seriales afectados", affectedSerials, ctx.station || "Repair / SFC", "amber"),
@@ -54686,6 +54888,122 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   else setTimeout(function(){ wrapBuild(); updateBadge(); }, 900);
 })();
 </script>
+<script id="smtinel-board-impact-export-native-v69">
+(function(){
+  "use strict";
+  var VERSION = "v69-board-impact-export-native-guard";
+  function txt(v){ return String(v == null ? "" : v).trim(); }
+  function upper(v){ return txt(v).toUpperCase(); }
+  function esc(v){ return txt(v).replace(/[&<>\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function cleanSn(v){ return upper(v).replace(/[^A-Z0-9]/g,""); }
+  function first(row, keys){
+    row = row || {};
+    for(var i=0;i<keys.length;i++){
+      var k = keys[i];
+      if(row[k] != null && txt(row[k]) !== "") return row[k];
+    }
+    return "";
+  }
+  function refsFromRow(row){
+    row = row || {};
+    var direct = first(row,["ref","refdes","RefDes","refDes","referenceDesignator","failLocation","failureLocation","location"]);
+    var raw = [direct,row.description,row.symptom,row.failureMode,row.mode,row.repairAction,row.action,row.comment].join(" ");
+    var m = upper(raw).match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
+    var seen = {}, out = [];
+    m.forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } });
+    return out.length ? out.join(", ") : txt(direct || "N/D");
+  }
+  function failureMode(row){
+    return txt(first(row,["failureMode","mode","symptom","repairSymptom","defect","description","fail_desc","failDesc","FailureMode"])) || "N/D";
+  }
+  function failure(row){
+    return txt(first(row,["failure","failureDescription","description","symptom","defect","fail","error","repairAction","comment"])) || failureMode(row) || "N/D";
+  }
+  function partNumber(row){
+    return txt(first(row,["partNumber","PartNumber","componentPn","componentPN","componentCode","component_code","pn","PN","sku","SKU","skuno","moduleno","repairSku","sourceSku"])) || "N/D";
+  }
+  function workOrder(row){
+    return txt(first(row,["wo","WO","workOrder","WorkOrder","work_order","orderno","orderNo","repairWo","sourceWo"])) || "N/D";
+  }
+  function serial(row, idx){
+    return cleanSn(first(row,["sn","SN","serial","Serial","serialNumber","sysserialno","syserialno","parentsn","parentsenum","boxsn","BOXSN"])) || ("ROW_" + (idx+1));
+  }
+  function getRows(){
+    var candidates = [];
+    try { if(window.boardImpactContext && Array.isArray(window.boardImpactContext.rows)) candidates.push(window.boardImpactContext.rows); } catch(_){ }
+    try { if(window.__traceOpsBoardImpactLastPayload && Array.isArray(window.__traceOpsBoardImpactLastPayload.rows)) candidates.push(window.__traceOpsBoardImpactLastPayload.rows); } catch(_){ }
+    try { if(window.yieldFlowModel && Array.isArray(window.yieldFlowModel.rows)) candidates.push(window.yieldFlowModel.rows); } catch(_){ }
+    try { if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) candidates.push(window.TRACEOPS_YIELD_FLOW_TRACKER); } catch(_){ }
+    try { if(Array.isArray(window.TRACEOPS_YIELD_FT_ROWS)) candidates.push(window.TRACEOPS_YIELD_FT_ROWS); } catch(_){ }
+    try { if(Array.isArray(window.TRACEOPS_RISK_SUMMARY_ROWS)) candidates.push(window.TRACEOPS_RISK_SUMMARY_ROWS); } catch(_){ }
+    var best = [];
+    candidates.forEach(function(arr){ if(Array.isArray(arr) && arr.length > best.length) best = arr; });
+    return best;
+  }
+  function buildTrackerRows(){
+    var rows = getRows();
+    var seen = {}, out = [];
+    rows.forEach(function(row, idx){
+      var rec = {
+        SN: serial(row, idx),
+        Failure: failure(row),
+        RefDes: refsFromRow(row),
+        PartNumber: partNumber(row),
+        WorkOrder: workOrder(row),
+        FailureMode: failureMode(row)
+      };
+      var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode].join("|");
+      if(!seen[key]){ seen[key]=1; out.push(rec); }
+    });
+    return out;
+  }
+  function downloadExcel(type){
+    var rows = buildTrackerRows();
+    if(!rows.length){ alert("No hay datos disponibles para exportar. Carga Yield Flow / Repair Record y vuelve a Board Impact."); return; }
+    var headers = ["SN","Failure","Ref Des","Part Number","Work Order","Failure Mode"];
+    var html = '<html><head><meta charset="utf-8"><style>body{font-family:Segoe UI,Arial,sans-serif}table{border-collapse:collapse;width:100%;font-size:10pt}th{background:#102A43;color:#fff}td,th{border:1px solid #b8c7d9;padding:6px;text-align:left;vertical-align:top}.meta{color:#5F766C;font-size:10pt}</style></head><body>';
+    html += '<h2>SMTinel Board Impact '+esc(type)+' Tracker</h2><p class="meta">Generated '+esc(new Date().toLocaleString())+' · '+esc(VERSION)+' · Rows: '+rows.length+'</p><table><thead><tr>';
+    headers.forEach(function(h){ html += '<th>'+esc(h)+'</th>'; });
+    html += '</tr></thead><tbody>';
+    rows.forEach(function(r){ html += '<tr><td>'+esc(r.SN)+'</td><td>'+esc(r.Failure)+'</td><td>'+esc(r.RefDes)+'</td><td>'+esc(r.PartNumber)+'</td><td>'+esc(r.WorkOrder)+'</td><td>'+esc(r.FailureMode)+'</td></tr>'; });
+    html += '</tbody></table></body></html>';
+    var blob = new Blob([html], {type:"application/vnd.ms-excel;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "SMTinel_Board_Impact_" + type.replace(/\s+/g,"_") + "_Tracker_" + new Date().toISOString().slice(0,10) + ".xls";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function ensureCenter(){
+    var root = document.getElementById("boardimpact-section");
+    if(!root) return;
+    var center = document.getElementById("board-impact-export-center");
+    if(!center){
+      center = document.createElement("section");
+      center.id = "board-impact-export-center";
+      center.className = "traceops-board-export-center";
+      var first = root.children && root.children[0];
+      if(first) first.insertAdjacentElement("afterend", center); else root.insertBefore(center, root.firstChild);
+    }
+    center.style.display = "flex";
+    center.style.visibility = "visible";
+    center.style.opacity = "1";
+    if(!center.querySelector("[data-smtinel-board-native-export='true']")){
+      center.innerHTML = '<div style="min-width:220px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Exports usando el scope activo de Board Impact.</div></div><div data-smtinel-board-native-export="true" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" data-board-export-issue style="border:1px solid #BFE7D1;background:#EAF7EF;color:#0F6B3F;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:950;cursor:pointer;white-space:nowrap">Export Issue Tracker XLS</button><button type="button" data-board-export-action style="border:1px solid #F1C04E;background:#FFF7D8;color:#8A5A00;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:950;cursor:pointer;white-space:nowrap">Export Action Tracker XLS</button></div>';
+    }
+    var issue = center.querySelector("[data-board-export-issue]");
+    var action = center.querySelector("[data-board-export-action]");
+    if(issue && !issue.__smtinelV69){ issue.__smtinelV69 = true; issue.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); downloadExcel("Issue"); }, true); }
+    if(action && !action.__smtinelV69){ action.__smtinelV69 = true; action.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); downloadExcel("Action"); }, true); }
+  }
+  function run(){ ensureCenter(); }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  setInterval(run, 350);
+  try { new MutationObserver(function(){ clearTimeout(window.__smtinelBoardExportV69Timer); window.__smtinelBoardExportV69Timer = setTimeout(run, 80); }).observe(document.documentElement,{childList:true,subtree:true}); } catch(_){ }
+  window.SMTINEL_BOARD_IMPACT_EXPORT_V69 = {version:VERSION, exportIssue:function(){downloadExcel("Issue");}, exportAction:function(){downloadExcel("Action");}, rows:buildTrackerRows};
+})();
+</script>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
