@@ -18305,6 +18305,7 @@ body:has(#recovery-section) .main-content.expanded{
   #recovery-section .ri-aging-match-kpis{justify-content:flex-start!important;}
 }
 </style>
+<!-- SMTinel v86: Board Impact exports use Yield Flow scoped React payload; legacy unscoped guards disabled. -->
 </body>
 </html>`;
     }
@@ -28486,7 +28487,7 @@ body:has(#recovery-section) .main-content.expanded{
 
 
 
-  // v85 polished Board Impact export override: dashboard-aligned tracker, true paretos, cleaned RefDes, separated component description/remarks.
+  // v86 scoped Board Impact export override: dashboard-aligned tracker, true paretos, cleaned RefDes, separated component description/remarks.
   async function exportBoardImpactExcelWorkbook(payload) {
     try {
       payload = payload || {};
@@ -28499,7 +28500,7 @@ body:has(#recovery-section) .main-content.expanded{
       var yieldFlowKpi = payload.yieldFlowKpi || {};
       var yieldFlowScope = payload.yieldFlowScope || {};
       var today = new Date().toISOString().slice(0, 10);
-      var versionTag = 'v85-dashboard-export-polished';
+      var versionTag = 'v86-yieldflow-scoped-export';
 
       function clean(v){ return v == null ? '' : String(v); }
       function trim(v){ return clean(v).trim(); }
@@ -48290,8 +48291,7 @@ document.addEventListener("DOMContentLoaded",sched);document.addEventListener("c
   function download(type){ save(type==='Action'?actionBook():issueBook(), type); }
   function ensureCenter(){ var root=document.getElementById('boardimpact-section'); if(!root) return; var center=document.getElementById('board-impact-export-center'); if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); } center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1'; center.innerHTML='<div style="min-width:300px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Issue export y Action/RCCA export separados. No clones.</div></div><button data-smtinel-board-native-export="v80" data-board-export-issue="1" class="traceops-board-export-btn" type="button">Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v80" data-board-export-action="1" class="traceops-board-export-btn" type="button">Export Action / RCCA XLS</button>'; Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); }); }
   function run(){ try{ ensureCenter(); }catch(e){ console.warn('[SMTinel] Board Impact v79 export guard:',e); } }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  /* v86: legacy unscoped export guard disabled. Use React Board Impact scoped payload. */
   window.SMTINEL_BOARD_IMPACT_EXPORT_V80={version:VERSION,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
@@ -55655,8 +55655,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
     });
   }
   function run(){ try{ ensureCenter(); }catch(e){} }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  /* v86: legacy unscoped export guard disabled. Use React Board Impact scoped payload. */
   window.SMTINEL_BOARD_IMPACT_EXPORT_V77={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, buildBook:buildBook};
 })();
 </script>
@@ -55891,7 +55890,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   function save(book,type){ if(!book) return; var today=new Date().toISOString().slice(0,10); var blob=new Blob([book],{type:'application/vnd.ms-excel;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download= type==='Action' ? 'SMTinel_Board_Impact_Action_RCCA_Tracker_'+today+'_v84.xls' : 'SMTinel_Board_Impact_Issue_Tracker_'+today+'_v84.xls'; document.body.appendChild(a); a.click(); setTimeout(function(){try{URL.revokeObjectURL(a.href)}catch(e){} a.remove();},1000); }
   function download(type){ save(type==='Action'?actionBook():issueBook(), type); }
   function ensureCenter(){ var root=document.getElementById('boardimpact-section'); if(!root) return; var center=document.getElementById('board-impact-export-center'); if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); } center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1'; center.innerHTML='<div style="min-width:300px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">v84: paretos visibles en ambos exports + calidad de datos + RefDes real.</div></div><button data-smtinel-board-native-export="v84" data-board-export-issue="1" class="traceops-board-export-btn" type="button">Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v84" data-board-export-action="1" class="traceops-board-export-btn" type="button">Export Action / RCCA XLS</button>'; Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); }); }
-  function bindGlobalExportHijack(){
+  function bindGlobalExportHijack(){ return;
     if(window.__SMTINEL_BOARD_EXPORT_V84_HIJACK__) return;
     window.__SMTINEL_BOARD_EXPORT_V84_HIJACK__ = true;
     document.addEventListener('click', function(e){
@@ -55911,8 +55910,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
     }, true);
   }
   function run(){ try{ ensureCenter(); bindGlobalExportHijack(); }catch(e){ console.warn('[SMTinel] Board Impact v84 export guard:', e); } }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  /* v86: legacy unscoped export guard disabled. Use React Board Impact scoped payload. */
   window.SMTINEL_BOARD_IMPACT_EXPORT_V84={version:VERSION,model:buildModel,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
