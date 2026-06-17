@@ -28128,28 +28128,44 @@ body:has(#recovery-section) .main-content.expanded{
       var ctx = payload.ctx || {};
       var scopeRows = Array.isArray(payload.rows) ? payload.rows : [];
       var snList = Array.isArray(payload.snList) ? payload.snList : [];
-      var refs = Array.isArray(payload.uniqueRefs) ? payload.uniqueRefs : [];
       var refStats = Array.isArray(payload.refStats) ? payload.refStats : [];
-      var modeOptions = Array.isArray(payload.modeOptions) ? payload.modeOptions : [];
+      var yieldFlowKpi = payload.yieldFlowKpi || {};
+      var yieldFlowScope = payload.yieldFlowScope || {};
       var today = new Date().toISOString().slice(0, 10);
+      var versionTag = 'v76-consolidated-component-pn-rcca';
+
       function clean(v){ return v == null ? '' : String(v); }
-      function arr(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+      function num(v){ var n = Number(String(v == null ? '' : v).replace('%','').replace(',','')); return isFinite(n) ? n : 0; }
       function firstText(){
         for (var i = 0; i < arguments.length; i++) {
           var v = arguments[i];
           if (Array.isArray(v)) v = v.filter(Boolean).join(', ');
           v = clean(v).trim();
-          if (v) return v;
+          if (v && v !== 'N/D' && v !== 'undefined' && v !== 'null') return v;
         }
         return '';
       }
-      function rowSn(r, i){ return firstText(r && (r.sn || r.serial || r.sysserialno || r.serialNumber || r.serial_no || r.SN), i != null ? 'SN-' + String(i + 1).padStart(3,'0') : ''); }
-      function rowWo(r){ return firstText(r && (r.wo || r.workOrder || r.work_order || r.WorkOrder || r.orderno), ctx.wo); }
-      function rowRef(r){ return firstText(r && (r.ref || r.refdes || r.refDes || r.referenceDesignator || r.refs), payload.selectedRef, ctx.refdes); }
-      function rowPart(r){ return firstText(r && (r.partNumber || r.part_number || r.pn || r.PN || r.componentPn || r.componentCode || r.component_code || r.part || r.item), ctx.partNumber); }
-      function rowFailure(r){ return firstText(r && (r.failure || r.fail || r.defect || r.symptom || r.description || r.defectDescription), ctx.failure, ctx.symptom); }
-      function rowFailureMode(r){ return firstText(r && (r.failureMode || r.failure_mode || r.mode || r.pattern || r.repairAction), ctx.mode); }
-      function rowStation(r){ return firstText(r && (r.station || r.testStation || r.process), ctx.station, 'Repair'); }
+      function pick(obj, keys){
+        obj = obj || {};
+        for (var i=0;i<keys.length;i++) {
+          var k = keys[i];
+          if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k];
+        }
+        return '';
+      }
+      function rowSn(r, i){ return firstText(pick(r, ['sn','serial','sysserialno','serialNumber','serial_no','SN','sfcSn','bridgeKey']), i != null ? 'SN-' + String(i + 1).padStart(3,'0') : ''); }
+      function rowWo(r){ return firstText(pick(r, ['wo','workOrder','work_order','WorkOrder','orderno']), ctx.wo); }
+      function rowRef(r){ return firstText(pick(r, ['ref','refdes','refDes','referenceDesignator','refs','failLocation','location']), payload.selectedRef, ctx.refdes); }
+      function rowAssemblyPart(r){ return firstText(pick(r, ['assemblyPartNumber','assyPartNumber','assyPn','assy_pn','modelPartNumber','modelPN','sku','SKU','skuno','SKUNO','uuttype','UUTTYPE','partNumber','part_number','PN']), ctx.partNumber, ctx.sku, ctx.model); }
+      function rowComponentPart(r){
+        return firstText(pick(r, [
+          'componentPartNumber','component_part_number','componentPn','componentPN','component_pn','Component PN','Component P/N','componentCode','ComponentCode','component_code','component','Component','item','ITEM','replacedPartNumber','replacedPN','removedPartNumber','installedPartNumber','partNo','PartNo','mpn','MPN','mfrPN','Mfr PN','manufacturerPN','Manufacturer PN'
+        ]));
+      }
+      function rowFailure(r){ return firstText(pick(r, ['failure','fail','defect','symptom','description','defectDescription','rootCause','repairSymptom']), ctx.failure, ctx.symptom); }
+      function rowFailureMode(r){ return firstText(pick(r, ['failureMode','failure_mode','mode','pattern','repairAction','symptom','rootCause']), ctx.mode); }
+      function rowStation(r){ return firstText(pick(r, ['station','testStation','process','responsibleArea','detectionStation']), ctx.station, 'Repair'); }
+      function rowSide(r){ return firstText(pick(r, ['side','boardSide','Side']), payload.boardSide, ctx.side); }
       function saveBlob(name, blob){
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -28159,30 +28175,199 @@ body:has(#recovery-section) .main-content.expanded{
         document.body.removeChild(a);
         setTimeout(function(){ try { URL.revokeObjectURL(a.href); } catch(_){} }, 1000);
       }
-      if (window.ensureExcelTools) await window.ensureExcelTools();
-      if (!window.ExcelJS) {
-        var csvRows = [['Issue ID','SN','Failure','Ref Des','Part Number','Work Order','Failure Mode','Station','Side','Yield Impact','Source','Status','Risk Level','Owner','Due Date']];
-        var csvSource = (snList.length ? snList : (scopeRows.length ? scopeRows : refStats)).slice(0, 5000);
-        csvSource.forEach(function(r, i){
-          if (typeof r === 'string') r = { sn: r };
-          csvRows.push([
-            'ISS-' + String(i + 1).padStart(3,'0'),
-            rowSn(r, i),
-            rowFailure(r),
-            rowRef(r),
-            rowPart(r),
-            rowWo(r),
-            rowFailureMode(r),
-            rowStation(r),
-            clean(payload.boardSide || ctx.side || ''),
-            clean(r.rate || r.yieldImpact || payload.boardFailureRateBuilt || ''),
-            'Board Impact / Yield Flow',
-            'Open',
-            clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),
-            '',
-            ''
-          ]);
+      function getRepairsForSn(sn) {
+        sn = clean(sn).trim();
+        if (!sn || !window.TRACEOPS_YIELD_REPAIRS_BY_SN) return [];
+        var direct = window.TRACEOPS_YIELD_REPAIRS_BY_SN[sn] || [];
+        if (direct.length) return direct;
+        var up = sn.toUpperCase();
+        return window.TRACEOPS_YIELD_REPAIRS_BY_SN[up] || [];
+      }
+      function enrichedBaseRows(){
+        var src = (snList.length ? snList : (scopeRows.length ? scopeRows : refStats));
+        var out = [];
+        src.forEach(function(item, idx){
+          var r = (typeof item === 'string') ? { sn: item } : (item || {});
+          var sn = rowSn(r, idx);
+          var repairs = getRepairsForSn(sn);
+          if (repairs.length) {
+            repairs.forEach(function(rep){
+              out.push({
+                sn: sn,
+                wo: firstText(rowWo(rep), rowWo(r)),
+                station: firstText(rowStation(rep), rowStation(r)),
+                refdes: firstText(rowRef(rep), rowRef(r)),
+                componentPartNumber: firstText(rowComponentPart(rep), rowComponentPart(r), 'N/D'),
+                assemblyPartNumber: firstText(rowAssemblyPart(rep), rowAssemblyPart(r)),
+                componentCode: firstText(pick(rep, ['componentCode','ComponentCode','component_code']), pick(r, ['componentCode','ComponentCode','component_code']), rowComponentPart(rep), rowComponentPart(r)),
+                failure: firstText(rowFailure(rep), rowFailure(r)),
+                failureMode: firstText(rowFailureMode(rep), rowFailureMode(r)),
+                side: firstText(rowSide(rep), rowSide(r)),
+                source: 'Repair Record / Board Impact',
+                disposition: firstText(pick(rep, ['disposition','repairType','actionDesc','action','repairAction']), ''),
+                repaired: firstText(pick(rep, ['repaired','isRepaired','repairStatus']), ''),
+                retestResult: firstText(pick(rep, ['retestResult','status','testResult']), ''),
+                comments: firstText(pick(rep, ['comments','comment','actionDesc','componentDescription']), ''),
+                repairTime: firstText(pick(rep, ['repairTime','eventTime','time']), '')
+              });
+            });
+          } else {
+            out.push({
+              sn: sn,
+              wo: rowWo(r),
+              station: rowStation(r),
+              refdes: rowRef(r) || 'N/D',
+              componentPartNumber: firstText(rowComponentPart(r), 'N/D'),
+              assemblyPartNumber: rowAssemblyPart(r),
+              componentCode: firstText(pick(r, ['componentCode','ComponentCode','component_code']), rowComponentPart(r)),
+              failure: rowFailure(r),
+              failureMode: rowFailureMode(r) || rowFailure(r),
+              side: rowSide(r),
+              source: 'Board Impact / Yield Flow',
+              disposition: firstText(pick(r, ['disposition']), ''),
+              repaired: firstText(pick(r, ['repaired']), ''),
+              retestResult: firstText(pick(r, ['retestResult','status']), ''),
+              comments: firstText(pick(r, ['comments','comment']), '')
+            });
+          }
         });
+        return out.filter(function(r){ return r.sn || r.refdes || r.failureMode; });
+      }
+      function riskFromQty(qty, impact) {
+        var p = num(impact);
+        if (qty >= 10 || p >= 5) return 'Critical';
+        if (qty >= 5 || p >= 2) return 'High';
+        if (qty >= 2 || p >= 1) return 'Medium';
+        return 'Low';
+      }
+      function statusFromRow(r) {
+        var t = (clean(r.retestResult) + ' ' + clean(r.disposition) + ' ' + clean(r.repaired)).toLowerCase();
+        if (/pass|closed|done|repair|repaired|yes|ok/.test(t)) return 'In Progress';
+        return 'Open';
+      }
+      function buildTrackers(){
+        var detail = enrichedBaseRows();
+        var scopeRiskUnits = Number(yieldFlowKpi.risk || payload.affectedSerials || detail.length || 0);
+        var scopeCleanUnits = Number(yieldFlowKpi.clean || 0);
+        var totalBuilt = Math.max(1, Number(payload.totalBuiltUnits || yieldFlowKpi.units || detail.length || 1));
+        var totalMfg = Math.max(1, Number(payload.totalManufacturedUnits || yieldFlowKpi.units || totalBuilt || detail.length || 1));
+        var scopeFrBuiltNum = Number(payload.boardFailureRateBuilt || yieldFlowKpi.failureRateBuilt || (scopeRiskUnits / totalBuilt * 100) || 0);
+        var scopeFrMfgNum = Number(payload.boardFailureRateManufactured || yieldFlowKpi.failureRateManufactured || (scopeRiskUnits / totalMfg * 100) || 0);
+        var scopeCleanYieldNum = Number(yieldFlowKpi.yield || (totalBuilt ? (scopeCleanUnits / totalBuilt * 100) : 0) || 0);
+        var scopeRiskRateNum = Number(totalBuilt ? (scopeRiskUnits / totalBuilt * 100) : 0);
+        var scopeFrBuilt = scopeFrBuiltNum.toFixed(2) + '%';
+        var scopeFrMfg = scopeFrMfgNum.toFixed(2) + '%';
+        var scopeCleanYield = scopeCleanYieldNum.toFixed(2) + '%';
+        var scopeRiskRate = scopeRiskRateNum.toFixed(2) + '%';
+        var map = {};
+        detail.forEach(function(r){
+          var key = [r.side || 'N/D', r.station || 'N/D', r.refdes || 'N/D', r.componentPartNumber || r.componentCode || 'N/D', r.failureMode || r.failure || 'N/D'].join('|');
+          if (!map[key]) map[key] = { side:r.side || 'N/D', station:r.station || 'N/D', refdes:r.refdes || 'N/D', componentPartNumber:r.componentPartNumber || r.componentCode || 'N/D', assemblyPartNumber:r.assemblyPartNumber || 'N/D', componentCode:r.componentCode || r.componentPartNumber || 'N/D', failureMode:r.failureMode || r.failure || 'N/D', failure:r.failure || r.failureMode || 'N/D', sns:{}, wos:{}, rows:[] };
+          map[key].rows.push(r);
+          if (r.sn) map[key].sns[r.sn] = true;
+          if (r.wo) map[key].wos[r.wo] = true;
+        });
+        var issues = Object.keys(map).map(function(k, i){
+          var g = map[k];
+          var sns = Object.keys(g.sns);
+          var wos = Object.keys(g.wos);
+          var qty = sns.length || g.rows.length || 1;
+          var frBuilt = (qty / totalBuilt * 100).toFixed(2) + '%';
+          var frMfg = (qty / totalMfg * 100).toFixed(2) + '%';
+          var impact = frBuilt;
+          var risk = riskFromQty(qty, impact);
+          return {
+            'Issue ID': 'ISS-' + String(i + 1).padStart(3,'0'),
+            'Side': g.side,
+            'Station': g.station,
+            'RefDes': g.refdes,
+            'Component Code': g.componentCode,
+            'Component Part Number': g.componentPartNumber,
+            'Assembly Part Number': g.assemblyPartNumber,
+            'Failure Mode': g.failureMode,
+            'Failure Detail': g.failure,
+            'Qty SN': qty,
+            'Issue FR vs Build %': frBuilt,
+            'Issue FR vs MFG %': frMfg,
+            'Yield Impact %': impact,
+            'Yield Impact': impact,
+            'Risk Level': risk,
+            'Yield Flow Risk Units': scopeRiskUnits,
+            'Yield Flow FR vs Build %': scopeFrBuilt,
+            'Yield Flow FR vs MFG %': scopeFrMfg,
+            'Yield Flow Clean Yield %': scopeCleanYield,
+            'Yield Flow Risk Rate %': scopeRiskRate,
+            'Affected SN': sns.slice(0, 25).join(', ') + (sns.length > 25 ? ' +' + (sns.length - 25) + ' more' : ''),
+            'WO Impacted': wos.join(', '),
+            'Source': 'Board Impact / Repair Record',
+            'Status': risk === 'Critical' ? 'Open' : 'Open',
+            'Priority': risk,
+            'Owner': risk === 'Critical' || risk === 'High' ? 'Process / QA' : 'Production / QA',
+            'Action Required': 'Validar contención, confirmar RefDes/PN en Repair Record, revisar recurrencia por WO y documentar evidencia de reparación/retest.',
+            'Due Date': '',
+            'Comments': ''
+          };
+        }).sort(function(a,b){ return (b['Qty SN'] || 0) - (a['Qty SN'] || 0); });
+        issues.forEach(function(r, i){ r['Issue ID'] = 'ISS-' + String(i + 1).padStart(3,'0'); });
+        var snLog = detail.map(function(r, i){
+          return {
+            'Log ID': 'LOG-' + String(i + 1).padStart(4,'0'),
+            'SN': r.sn,
+            'WO': r.wo,
+            'Station': r.station,
+            'Side': r.side || 'N/D',
+            'RefDes': r.refdes || 'N/D',
+            'Component Part Number': r.componentPartNumber || r.componentCode || 'N/D',
+            'Assembly Part Number': r.assemblyPartNumber || 'N/D',
+            'Failure Mode': r.failureMode || r.failure || 'N/D',
+            'Failure Detail': r.failure || r.failureMode || 'N/D',
+            'Disposition': r.disposition || '',
+            'Repaired?': r.repaired || '',
+            'Retest Result': r.retestResult || '',
+            'Repair Time': r.repairTime || '',
+            'Source': r.source,
+            'Comments': r.comments || ''
+          };
+        });
+        var topMap = {};
+        detail.forEach(function(r){
+          var key = [r.refdes || 'N/D', r.componentPartNumber || r.componentCode || 'N/D', r.failureMode || r.failure || 'N/D'].join('|');
+          if (!topMap[key]) topMap[key] = { ref:r.refdes || 'N/D', componentPn:r.componentPartNumber || r.componentCode || 'N/D', assemblyPn:r.assemblyPartNumber || 'N/D', mode:r.failureMode || r.failure || 'N/D', sns:{}, wos:{} };
+          if (r.sn) topMap[key].sns[r.sn] = true;
+          if (r.wo) topMap[key].wos[r.wo] = true;
+        });
+        var top = Object.keys(topMap).map(function(k){
+          var g = topMap[k], qty = Object.keys(g.sns).length;
+          var impact = (qty / totalBuilt * 100).toFixed(2) + '%';
+          return {'Rank':'', 'RefDes':g.ref, 'Component Part Number':g.componentPn, 'Assembly Part Number':g.assemblyPn, 'Failure Mode':g.mode, 'Qty SN Impacted':qty, 'Issue FR vs Build %':impact, 'Yield Flow FR vs Build %':scopeFrBuilt, 'Yield Impact %':impact, 'WO Impacted':Object.keys(g.wos).join(', '), 'Criticality Ranking':riskFromQty(qty, impact)};
+        }).sort(function(a,b){ return (b['Qty SN Impacted'] || 0) - (a['Qty SN Impacted'] || 0); });
+        top.forEach(function(r, i){ r.Rank = i + 1; });
+        var actions = issues.map(function(r, i){
+          return {
+            'Action ID': 'ACT-' + String(i + 1).padStart(3,'0'),
+            'Issue ID': r['Issue ID'],
+            'RefDes': r.RefDes,
+            'Component Part Number': r['Component Part Number'],
+            'Assembly Part Number': r['Assembly Part Number'],
+            'Station': r.Station,
+            'Failure Mode': r['Failure Mode'],
+            'Priority': r.Priority,
+            'Action Required': r['Action Required'],
+            'Owner': r.Owner,
+            'Due Date': r['Due Date'],
+            'Status': r.Status,
+            'Closure Criteria': 'SN contenidos, causa revisada, evidencia adjunta, reparación/retest documentado y recurrencia monitoreada.',
+            'Evidence Link': '',
+            'Comments': ''
+          };
+        });
+        return { issues: issues, snLog: snLog, top: top, actions: actions, scope: { riskUnits: scopeRiskUnits, cleanUnits: scopeCleanUnits, totalBuilt: totalBuilt, totalMfg: totalMfg, frBuilt: scopeFrBuilt, frMfg: scopeFrMfg, cleanYield: scopeCleanYield, riskRate: scopeRiskRate } };
+      }
+      if (window.ensureExcelTools) await window.ensureExcelTools();
+      var trackers = buildTrackers();
+      if (!window.ExcelJS) {
+        var csvCols = actionExport ? Object.keys(trackers.actions[0] || {}) : Object.keys(trackers.issues[0] || {});
+        var csvRows = [csvCols].concat((actionExport ? trackers.actions : trackers.issues).map(function(r){ return csvCols.map(function(c){ return r[c]; }); }));
         var csv = csvRows.map(function(row){ return row.map(function(v){ return '"' + clean(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
         saveBlob((actionExport ? 'SMTinel_Board_Impact_Action_Tracker_' : 'SMTinel_Board_Impact_Issue_Tracker_') + today + '.csv', new Blob([csv], {type:'text/csv;charset=utf-8;'}));
         return;
@@ -28190,98 +28375,108 @@ body:has(#recovery-section) .main-content.expanded{
       var wb = new ExcelJS.Workbook();
       wb.creator = 'SMTinel';
       wb.created = new Date();
-      function addSheet(name, columns, data) {
-        var ws = wb.addWorksheet(name);
-        ws.columns = columns.map(function(c){ return { header: c, key: c, width: Math.max(14, Math.min(34, c.length + 6)) }; });
-        (data || []).forEach(function(row){ ws.addRow(row); });
-        ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF102A43' } };
-        ws.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-        ws.views = [{ state: 'frozen', ySplit: 1 }];
-        ws.eachRow(function(row){ row.eachCell(function(cell){ cell.alignment = { vertical:'top', wrapText:true }; }); });
+      wb.modified = new Date();
+      wb.properties = { title: 'SMTinel Board Impact Tracker', subject: 'Board Impact tracker exported from Yield Flow', keywords: 'SMTinel, Board Impact, Repair Record, Yield Flow' };
+
+      function argb(hex){ return 'FF' + String(hex || 'FFFFFF').replace('#','').toUpperCase(); }
+      function borderCell(cell){ cell.border = { top:{style:'thin', color:{argb:'FFD7E2F0'}}, left:{style:'thin', color:{argb:'FFD7E2F0'}}, bottom:{style:'thin', color:{argb:'FFD7E2F0'}}, right:{style:'thin', color:{argb:'FFD7E2F0'}} }; }
+      function priorityFill(priority){
+        priority = clean(priority).toLowerCase();
+        if (priority.indexOf('critical') >= 0) return 'FFFFE5E8';
+        if (priority.indexOf('high') >= 0) return 'FFFFF1DA';
+        if (priority.indexOf('medium') >= 0) return 'FFFFF7D8';
+        if (priority.indexOf('low') >= 0) return 'FFEAF7EF';
+        return 'FFFFFFFF';
+      }
+      function fitWidth(ws, min, max){
+        ws.columns.forEach(function(col){
+          var w = min || 12;
+          col.eachCell({ includeEmpty: true }, function(cell){
+            var len = clean(cell.value && cell.value.richText ? cell.value.richText.map(function(x){return x.text;}).join('') : cell.value).length;
+            w = Math.max(w, Math.min(max || 42, len + 3));
+          });
+          col.width = w;
+        });
+      }
+      function addTrackerSheet(name, title, subtitle, columns, data, options) {
+        options = options || {};
+        var ws = wb.addWorksheet(name.substring(0,31));
+        var endCol = Math.max(1, columns.length);
+        ws.mergeCells(1,1,1,endCol);
+        ws.getCell(1,1).value = title;
+        ws.getCell(1,1).font = { bold:true, size:20, color:{argb:'FF102A43'} };
+        ws.getCell(1,1).alignment = { vertical:'middle', horizontal:'left' };
+        ws.getRow(1).height = 28;
+        ws.mergeCells(2,1,2,endCol);
+        ws.getCell(2,1).value = subtitle;
+        ws.getCell(2,1).font = { size:10, color:{argb:'FF5B6B7A'} };
+        ws.getRow(2).height = 22;
+        var headerRow = 4;
+        columns.forEach(function(c, idx){
+          var cell = ws.getCell(headerRow, idx + 1);
+          cell.value = c;
+          cell.font = { bold:true, color:{argb:'FFFFFFFF'} };
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb: options.headerColor || 'FF102A43'} };
+          cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+          borderCell(cell);
+        });
+        (data || []).forEach(function(rowObj, rIdx){
+          var row = ws.getRow(headerRow + 1 + rIdx);
+          columns.forEach(function(c, idx){
+            var cell = row.getCell(idx + 1);
+            cell.value = rowObj[c] == null ? '' : rowObj[c];
+            cell.alignment = { vertical:'top', wrapText:true };
+            cell.font = { size:10, color:{argb:'FF0F172A'} };
+            cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb: rIdx % 2 ? 'FFF8FBFF' : 'FFFFFFFF'} };
+            if (/Priority|Risk|Criticality/i.test(c)) cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb: priorityFill(cell.value)} };
+            if (/Status/i.test(c) && /pass|closed|done/i.test(clean(cell.value))) cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEAF7EF'} };
+            borderCell(cell);
+          });
+        });
+        ws.views = [{ state:'frozen', ySplit: headerRow }];
+        ws.autoFilter = { from: { row: headerRow, column: 1 }, to: { row: headerRow, column: columns.length } };
+        fitWidth(ws, 12, 44);
+        ws.getColumn(1).width = Math.max(ws.getColumn(1).width || 12, 14);
         return ws;
       }
-      var issueRows = [];
-      var issueSource = (snList.length ? snList : (scopeRows.length ? scopeRows : refStats)).slice(0, 5000);
-      issueSource.forEach(function(r, i){
-        if (typeof r === 'string') r = { sn: r };
-        issueRows.push({
-          'Issue ID': 'ISS-' + String(i + 1).padStart(3,'0'),
-          'SN': rowSn(r, i),
-          'Failure': rowFailure(r),
-          'Ref Des': rowRef(r),
-          'Part Number': rowPart(r),
-          'Work Order': rowWo(r),
-          'Failure Mode': rowFailureMode(r),
-          'Station': rowStation(r),
-          'Side': clean(payload.boardSide || ctx.side || ''),
-          'Defect Description': firstText(rowFailure(r), rowFailureMode(r), 'Scope sin descripción detallada'),
-          'Qty SN': 1,
-          'Yield Impact': clean(r.rate || r.yieldImpact || payload.boardFailureRateBuilt || ''),
-          'Source': 'Board Impact / Yield Flow',
-          'Evidence / Link': '',
-          'Root Cause Hypothesis': '',
-          'Status': 'Open',
-          'Risk Level': clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),
-          'Owner': '',
-          'Due Date': '',
-          'Aging Days': '',
-          'Containment': 'Revisar serial afectado, validar RefDes/PN y confirmar disposición/retest.'
-        });
-      });
-      if (!issueRows.length) issueRows.push({'Issue ID':'ISS-001','SN':'','Failure':'Scope sin registros detallados','Ref Des':clean(payload.selectedRef || ''),'Part Number':'','Work Order':clean(ctx.wo || ''),'Failure Mode':clean(ctx.mode || ''),'Station':clean(ctx.station || ''),'Side':clean(payload.boardSide || ''),'Defect Description':'Scope sin registros detallados','Qty SN':clean(payload.affectedSerials || 0),'Yield Impact':clean(payload.boardFailureRateBuilt || ''),'Source':'Board Impact / Yield Flow','Evidence / Link':'','Root Cause Hypothesis':'','Status':'Open','Risk Level':clean((payload.selectedSeverity && payload.selectedSeverity.label) || 'Medium'),'Owner':'','Due Date':'','Aging Days':'','Containment':''});
-      var snRows = [];
-      var snSource = snList.length ? snList : scopeRows.slice(0, 500);
-      snSource.forEach(function(r, i){
-        if (typeof r === 'string') r = { sn: r };
-        snRows.push({
-          'SN': rowSn(r, i),
-          'WO': rowWo(r),
-          'Station': rowStation(r),
-          'RefDes': rowRef(r),
-          'Part Number': rowPart(r),
-          'Failure': rowFailure(r),
-          'Failure Mode': rowFailureMode(r),
-          'Source': clean(r.source || 'Board Impact / Cesium'),
-          'Disposition': clean(r.disposition || ''),
-          'Repaired?': clean(r.repaired || ''),
-          'Retest Result': clean(r.retestResult || r.status || ''),
-          'Comments': clean(r.comments || '')
-        });
-      });
-      var actionRows = issueRows.map(function(r, i){ return {
-        'Action ID': 'ACT-' + String(i + 1).padStart(3,'0'),
-        'Issue ID': r['Issue ID'],
-        'RefDes': r['Ref Des'],
-        'Station': r['Station'],
-        'Failure Mode': r['Failure Mode'],
-        'Risk Level': r['Risk Level'],
-        'Action Required': 'Confirmar contención, validar seriales afectados y cerrar evidencia de reparación/retest.',
-        'Owner': r['Owner'],
-        'Due Date': r['Due Date'],
-        'Status': 'Open',
-        'Aging Days': r['Aging Days'],
-        'Closure Criteria': 'SN contenidos, causa revisada, evidencia adjunta y retest documentado.',
-        'Evidence Link': r['Evidence / Link'],
-        'Comments': ''
-      }; });
-      addSheet('Issue Tracker', ['Issue ID','SN','Failure','Ref Des','Part Number','Work Order','Failure Mode','Station','Side','Defect Description','Qty SN','Yield Impact','Source','Evidence / Link','Root Cause Hypothesis','Status','Risk Level','Owner','Due Date','Aging Days','Containment'], issueRows);
-      addSheet('SN Log', ['SN','WO','Station','RefDes','Part Number','Failure','Failure Mode','Source','Disposition','Repaired?','Retest Result','Comments'], snRows);
-      var paretoRows = issueRows.map(function(r){ return {'Failure Mode':r['Failure Mode'],'Ref Des':r['Ref Des'],'Part Number':r['Part Number'],'Qty SN':r['Qty SN'],'Yield Impact':r['Yield Impact']}; });
-      addSheet('Pareto', ['Failure Mode','Ref Des','Part Number','Qty SN','Yield Impact'], paretoRows);
-      var stationMap = {};
-      issueRows.forEach(function(r){ var s = r['Station'] || 'N/D'; stationMap[s] = (stationMap[s] || 0) + (Number(r['Qty SN']) || 0); });
-      addSheet('Station Breakdown', ['Station','Qty SN'], Object.keys(stationMap).map(function(k){ return {'Station':k,'Qty SN':stationMap[k]}; }));
-      addSheet('Summary', ['Metric','Value'], [
-        {'Metric':'WO','Value':clean(ctx.wo || '')}, {'Metric':'Model/SKU','Value':clean(ctx.sku || ctx.model || '')}, {'Metric':'Active RefDes','Value':clean(payload.selectedRef || '')}, {'Metric':'Affected WOs','Value':clean(payload.affectedWos || '')}, {'Metric':'Affected Serials','Value':clean(payload.affectedSerials || '')}, {'Metric':'FR vs MFG','Value':clean(payload.boardFailureRateManufactured || '')}, {'Metric':'FR vs Built','Value':clean(payload.boardFailureRateBuilt || '')}
-      ]);
-      if (actionExport) {
-        addSheet('Action Tracker', ['Action ID','Issue ID','RefDes','Station','Failure Mode','Risk Level','Action Required','Owner','Due Date','Status','Aging Days','Closure Criteria','Evidence Link','Comments'], actionRows);
-        addSheet('Open Actions', ['Action ID','Issue ID','RefDes','Station','Risk Level','Action Required','Owner','Due Date','Status'], actionRows.map(function(r){ return {'Action ID':r['Action ID'],'Issue ID':r['Issue ID'],'RefDes':r['RefDes'],'Station':r['Station'],'Risk Level':r['Risk Level'],'Action Required':r['Action Required'],'Owner':r['Owner'],'Due Date':r['Due Date'],'Status':r['Status']}; }));
-        var ownerMap = {};
-        actionRows.forEach(function(r){ var o = r.Owner || 'N/D'; ownerMap[o] = (ownerMap[o] || 0) + 1; });
-        addSheet('Owner Summary', ['Owner','Open Actions'], Object.keys(ownerMap).map(function(k){ return {'Owner':k,'Open Actions':ownerMap[k]}; }));
+      function addSummarySheet(){
+        var ws = wb.addWorksheet('Executive Summary');
+        ws.mergeCells(1,1,1,6);
+        ws.getCell(1,1).value = 'SMTinel Board Impact Executive Summary';
+        ws.getCell(1,1).font = { bold:true, size:20, color:{argb:'FF102A43'} };
+        ws.mergeCells(2,1,2,6);
+        ws.getCell(2,1).value = 'Generated ' + new Date().toLocaleString() + ' · ' + versionTag + ' · Repair Record enriched';
+        ws.getCell(2,1).font = { size:10, color:{argb:'FF5B6B7A'} };
+        var cards = [
+          ['Yield Flow Risk Units', clean(trackers.scope.riskUnits)],
+          ['Clean Yield', clean(trackers.scope.cleanYield)],
+          ['Failure Rate vs Build', clean(trackers.scope.frBuilt)],
+          ['Failure Rate vs MFG', clean(trackers.scope.frMfg)],
+          ['Risk Rate', clean(trackers.scope.riskRate)],
+          ['Total Built Units', clean(trackers.scope.totalBuilt)],
+          ['Total MFG Units', clean(trackers.scope.totalMfg)],
+          ['Affected WOs', clean(payload.affectedWos || '')],
+          ['Unique RefDes', clean((function(){ var m={}; trackers.issues.forEach(function(r){m[r.RefDes]=1;}); return Object.keys(m).length; })())],
+          ['Critical Issues', clean(trackers.issues.filter(function(r){return r.Priority === 'Critical';}).length)]
+        ];
+        ws.getRow(4).values = ['Metric','Value'];
+        ws.getRow(4).font = { bold:true, color:{argb:'FFFFFFFF'} };
+        ws.getRow(4).eachCell(function(c){ c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF102A43'}}; borderCell(c); });
+        cards.forEach(function(r, i){ ws.getRow(5+i).values = r; ws.getRow(5+i).eachCell(function(c){ c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:i%2?'FFF8FBFF':'FFFFFFFF'}}; borderCell(c); }); });
+        ws.getRow(13).values = ['Context','Value'];
+        ws.getRow(13).font = { bold:true, color:{argb:'FFFFFFFF'} };
+        ws.getRow(13).eachCell(function(c){ c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1F4E79'}}; borderCell(c); });
+        [['WO',ctx.wo], ['Model/SKU', firstText(ctx.sku, ctx.model)], ['Active RefDes', payload.selectedRef], ['Board Side', payload.boardSide], ['Selected Failure', firstText(ctx.mode, ctx.failure)]].forEach(function(r,i){ ws.getRow(14+i).values = [r[0], clean(r[1])]; ws.getRow(14+i).eachCell(function(c){ borderCell(c); }); });
+        ws.columns = [{width:26},{width:34},{width:18},{width:18},{width:18},{width:18}];
+        return ws;
       }
+      addSummarySheet();
+      addTrackerSheet('Issue & Action Tracker', 'SMTinel Board Impact - Tracker Preview: Issue & Action', 'Generated ' + new Date().toLocaleString() + ' · ' + versionTag + ' · Consolidated issues: ' + trackers.issues.length + ' · Scope FR Build: ' + trackers.scope.frBuilt + ' · Scope FR MFG: ' + trackers.scope.frMfg, ['Issue ID','Side','Station','RefDes','Failure Mode','Qty SN','Yield Impact','Source','Status','Risk Level','Owner','Due Date'], trackers.issues, { headerColor:'FF102A43' });
+      addTrackerSheet('SN Impact Log', 'SMTinel Board Impact - SN Log Preview: Impact Log', 'SN level log enriched from TRACEOPS_YIELD_REPAIRS_BY_SN / Repair Record · Rows: ' + trackers.snLog.length, ['SN','WO','Station','RefDes','Failure Mode','Disposition','Repaired?','Retest Result','Comments'], trackers.snLog, { headerColor:'FF1F4E79' });
+      addTrackerSheet('Top Impact Components', 'SMTinel Board Impact Top Components', 'Pareto by RefDes / Component Part Number / Failure Mode', ['Rank','RefDes','Component Part Number','Failure Mode','Qty SN Impacted','Issue FR vs Build %','Yield Flow FR vs Build %','Yield Impact %','WO Impacted','Criticality Ranking'], trackers.top, { headerColor:'FF0F6B3F' });
+      addTrackerSheet('Detailed Data', 'SMTinel Board Impact Detailed Data', 'Full technical export with component PN, assembly PN and Yield Flow metrics', ['Issue ID','Side','Station','RefDes','Component Code','Component Part Number','Assembly Part Number','Failure Mode','Failure Detail','Qty SN','Issue FR vs Build %','Issue FR vs MFG %','Yield Impact %','Yield Flow Risk Units','Yield Flow FR vs Build %','Yield Flow FR vs MFG %','Yield Flow Clean Yield %','Yield Flow Risk Rate %','Affected SN','WO Impacted','Source','Status','Priority','Owner','Action Required','Due Date','Comments'], trackers.issues, { headerColor:'FF334155' });
+      if (actionExport) addTrackerSheet('Action Tracker', 'SMTinel Board Impact Action Tracker', 'Action plan generated from Issue & Action Tracker', ['Action ID','Issue ID','RefDes','Component Part Number','Assembly Part Number','Station','Failure Mode','Priority','Action Required','Owner','Due Date','Status','Closure Criteria','Evidence Link','Comments'], trackers.actions, { headerColor:'FF8A5A00' });
+
       var buf = await wb.xlsx.writeBuffer();
       saveBlob((actionExport ? 'SMTinel_Board_Impact_Action_Tracker_' : 'SMTinel_Board_Impact_Issue_Tracker_') + today + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
     } catch (err) {
@@ -29379,8 +29574,8 @@ body:has(#recovery-section) .main-content.expanded{
                     h("div", { style: { fontSize: 15, fontWeight: 950, color: "#102A43" } }, "Board Impact Export Center"),
                     h("div", { style: { fontSize: 11, color: "#5F766C", marginTop: 4 } }, "Exports usando el scope activo de Board Impact.")),
                 h("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
-                    h("button", { key: "board-export-issue-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
-                    h("button", { key: "board-export-action-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
+                    h("button", { key: "board-export-issue-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
+                    h("button", { key: "board-export-action-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } },
                 kpi("WOs impactadas", affectedWos, "scope filtrado", "blue"),
                 kpi("Seriales afectados", affectedSerials, ctx.station || "Repair / SFC", "amber"),
@@ -47806,6 +48001,35 @@ function quote(v){return '"'+String(v||"").replace(/"/g,'""')+'"'}
 function csv(data){var h=["CC ID","Components","Severity","Program","Models","Owner","Risk","Required Action","Validation Method","Status","Source"];return [h.join(",")].concat(data.map(function(r){return [r.id,r.components,r.severity,r.program,r.models,r.owner,r.risk,r.action,r.validation,r.status,r.source].map(quote).join(",")})).join("\n")}
 function xls(data){var d=new Date().toLocaleString(),crit=data.filter(function(x){return /critical/i.test(x.severity)}).length,high=data.filter(function(x){return /high/i.test(x.severity)}).length,active=data.filter(function(x){return /active/i.test(x.status)}).length;var h='<html><head><meta charset="utf-8"><style>body{font-family:Segoe UI,Arial}h2{color:#145f7a}table{border-collapse:collapse;width:100%;font-size:11pt}th{background:#145f7a;color:#fff}td,th{border:1px solid #999;padding:6px;text-align:left;vertical-align:top}.critical{background:#f8d7da}.high{background:#fff3cd}.active{color:#0f7a32;font-weight:bold}</style></head><body><h2>SMTinel Critical Characteristics Register</h2><p>Generated by SMTinel V13.9.9 · '+esc(d)+'</p><h3>Executive Summary</h3><table><tr><th>Total CC</th><th>Critical</th><th>High</th><th>Active</th><th>Closed</th></tr><tr><td>'+data.length+'</td><td>'+crit+'</td><td>'+high+'</td><td>'+active+'</td><td>'+(data.length-active)+'</td></tr></table><h3>CC Register</h3><table><thead><tr><th>CC ID</th><th>Components</th><th>Severity</th><th>Program</th><th>Models</th><th>Owner</th><th>Risk</th><th>Required Action</th><th>Validation Method</th><th>Status</th><th>Source</th></tr></thead><tbody>';data.forEach(function(r){var cls=/critical/i.test(r.severity)?"critical":(/high/i.test(r.severity)?"high":"");h+='<tr class="'+cls+'"><td>'+esc(r.id)+'</td><td>'+esc(r.components)+'</td><td>'+esc(r.severity)+'</td><td>'+esc(r.program)+'</td><td>'+esc(r.models)+'</td><td>'+esc(r.owner)+'</td><td>'+esc(r.risk)+'</td><td>'+esc(r.action)+'</td><td>'+esc(r.validation)+'</td><td class="active">'+esc(r.status)+'</td><td>'+esc(r.source)+'</td></tr>'});h+='</tbody></table><h3>PPR Readiness</h3><table><tr><th>Program</th><th>CC Qty</th><th>Status</th></tr>';var by={};data.forEach(function(r){by[r.program]=(by[r.program]||0)+1});Object.keys(by).forEach(function(k){h+='<tr><td>'+esc(k)+'</td><td>'+by[k]+'</td><td>READY</td></tr>'});return h+'</table></body></html>'}
 function pack(data){var d=new Date().toLocaleDateString(),h='<html><head><meta charset="utf-8"><style>@page{size:landscape}body{font-family:Segoe UI,Arial;margin:28px;color:#102a43}h1{font-size:28px;color:#123a5c}h2{font-size:18px;color:#145f7a;border-bottom:2px solid #145f7a;padding-bottom:6px}.card{border:1px solid #ccd6e0;border-left:8px solid #c44141;border-radius:12px;padding:14px;margin:14px 0}.high{border-left-color:#d4891c}.meta{color:#5f766c;font-size:12px}.sev{float:right;font-weight:bold;color:#c44141}.label{font-size:11px;text-transform:uppercase;color:#5f766c;font-weight:bold}</style></head><body><h1>Critical Characteristics Register</h1><p class="meta">Generated by SMTinel · '+esc(d)+' · PPR / Line Release Package</p><h2>Executive Summary</h2><p>Total CC: <b>'+data.length+'</b> · Critical: <b>'+data.filter(function(x){return /critical/i.test(x.severity)}).length+'</b> · High: <b>'+data.filter(function(x){return /high/i.test(x.severity)}).length+'</b></p><h2>Critical Characteristics</h2>';data.forEach(function(r){h+='<div class="card '+(/high/i.test(r.severity)?'high':'')+'"><span class="sev">'+esc(r.severity)+' · '+esc(r.risk)+'</span><h2>'+esc(r.id)+' · '+esc(r.components)+'</h2><p><span class="label">Program / Models</span><br>'+esc(r.program)+' / '+esc(r.models)+'</p><p><span class="label">Required Action</span><br>'+esc(r.action)+'</p><p><span class="label">Validation</span><br>'+esc(r.validation)+'</p><p><span class="label">Owner</span><br>'+esc(r.owner)+'</p></div>'});return h+'</body></html>'}
+})();
+</script>
+<script id="smtinel-board-impact-export-native-v80-script-block-fixed">
+(function(){
+  "use strict";
+  var VERSION="v80-script-block-fixed";
+  function txt(v){ return String(v == null ? "" : v).trim(); }
+  function esc(v){ return txt(v).replace(/[&<>'\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","'":"&apos;","\"":"&quot;"}[c]; }); }
+  function num(v){ var n=Number(txt(v).replace(/,/g,"").replace("%", "")); return isFinite(n)?n:0; }
+  function xmlCell(v,style,type){ var t=type || (typeof v==='number' && isFinite(v)?'Number':'String'); return '<Cell'+(style?' ss:StyleID="'+style+'"':'')+'><Data ss:Type="'+t+'">'+esc(v)+'</Data></Cell>'; }
+  function colWidths(cols){ return (cols||[]).map(function(c){ var w=90; if(/Problem|Corrective|Preventive|Action|Containment|Evidence|Comments|Affected|Description/.test(c)) w=275; else if(/Failure Mode|Top/.test(c)) w=220; else if(/Component|Assembly|RefDes/.test(c)) w=135; else if(/Yield|Failure Rate|FR|Pareto|Cumulative|%/.test(c)) w=95; else if(/Issue|RCCA|Rank|Qty|WO|SN|Owner|Status/.test(c)) w=90; return '<Column ss:Width="'+w+'"/>'; }).join(''); }
+  function wsXml(name,title,subtitle,cols,rows){ var x='<Worksheet ss:Name="'+esc(name).slice(0,31)+'"><Table>'+colWidths(cols); x+='<Row ss:Height="28">'+xmlCell(title,'title')+'</Row>'; x+='<Row>'+xmlCell(subtitle,'sub')+'</Row><Row></Row><Row>'; (cols||[]).forEach(function(c){x+=xmlCell(c,'hdr');}); x+='</Row>'; (rows||[]).forEach(function(r){ x+='<Row>'; cols.forEach(function(c){ var val=r&&r[c]!=null?r[c]:''; var st='cell'; if(/Risk|Priority|Status/.test(c)) st='flag'; if(/Pareto %|Cumulative %|Yield Impact|Failure Rate|FR|Rate/.test(c)) st='pct'; x+=xmlCell(val,st); }); x+='</Row>'; }); x+='</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>'; return x; }
+  function bookStart(){ return '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="18" ss:Color="#102A43"/></Style><Style ss:ID="sub"><Font ss:Size="10" ss:Color="#5F766C"/></Style><Style ss:ID="hdr"><Interior ss:Color="#102A43" ss:Pattern="Solid"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style><Style ss:ID="cell"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style><Style ss:ID="flag"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#B3261E"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style><Style ss:ID="pct"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#5E35B1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style></Styles>'; }
+  function getBase(){ var b=null; try{ b=window.SMTINEL_BOARD_IMPACT_EXPORT_V76&&window.SMTINEL_BOARD_IMPACT_EXPORT_V76.model?window.SMTINEL_BOARD_IMPACT_EXPORT_V76.model():null; }catch(e){} if(!b||!b.issues||!b.issues.length){ alert('No hay issues reales para exportar. Aplica Board Impact con Repair Record cargado.'); return null; } return b; }
+  function paretoFromIssues(issues,keyName,label){ var map={},total=0; (issues||[]).forEach(function(r){ var key=txt(r[keyName]||'N/D')||'N/D'; var qty=num(r['Qty SN']); if(qty<=0) qty=1; total+=qty; if(!map[key]) map[key]={name:key,issues:0,qty:0,wo:{},sn:{},fm:{},ref:{},pn:{},maxRisk:'Low'}; var o=map[key]; o.issues++; o.qty+=qty; txt(r['WO Impacted']).split(/[,;]+/).forEach(function(w){w=txt(w); if(w) o.wo[w]=1;}); txt(r['Affected SN']).split(/[,;]+/).forEach(function(s){s=txt(s); if(s) o.sn[s]=1;}); if(txt(r['Failure Mode'])) o.fm[txt(r['Failure Mode'])]=1; if(txt(r.RefDes)) o.ref[txt(r.RefDes)]=1; if(txt(r['Component PN'])) o.pn[txt(r['Component PN'])]=1; var order={Low:1,Medium:2,High:3,Critical:4}; var rk=txt(r['Risk Level'])||'Low'; if((order[rk]||1)>(order[o.maxRisk]||1)) o.maxRisk=rk; }); var cum=0; return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.qty-a.qty;}).map(function(o,i){ cum+=o.qty; var row={'Rank':i+1}; row[label]=o.name; row['Qty SN Impacted']=o.qty; row['Issue Count']=o.issues; row['Pareto %']=total?(o.qty/total*100).toFixed(2)+'%':'0.00%'; row['Cumulative %']=total?(cum/total*100).toFixed(2)+'%':'0.00%'; row['WO Count']=Object.keys(o.wo).length; row['SN Count']=Object.keys(o.sn).length||o.qty; row['Top Failure Modes']=Object.keys(o.fm).slice(0,8).join(', '); row['Top RefDes']=Object.keys(o.ref).slice(0,12).join(', '); row['Top Component PN']=Object.keys(o.pn).slice(0,12).join(', '); row['Highest Risk']=o.maxRisk; return row; }); }
+  function paretoByWo(detail,built,mfg){ var map={},total=0; (detail||[]).forEach(function(r){ var wo=txt(r.WO||r.WorkOrder||'N/D')||'N/D', sn=txt(r.SN||''); if(!map[wo]) map[wo]={wo:wo,rows:0,sn:{},fm:{},ref:{},pn:{}}; var o=map[wo]; o.rows++; if(sn)o.sn[sn]=1; if(txt(r.FailureMode))o.fm[txt(r.FailureMode)]=1; if(txt(r.RefDes))o.ref[txt(r.RefDes)]=1; if(txt(r.ComponentPartNumber))o.pn[txt(r.ComponentPartNumber)]=1; }); Object.keys(map).forEach(function(k){total+=Object.keys(map[k].sn).length||map[k].rows;}); var cum=0; return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return (Object.keys(b.sn).length||b.rows)-(Object.keys(a.sn).length||a.rows);}).map(function(o,i){var qty=Object.keys(o.sn).length||o.rows; cum+=qty; return {'Rank':i+1,'Work Order':o.wo,'Qty SN Impacted':qty,'Repair Rows':o.rows,'Pareto %':total?(qty/total*100).toFixed(2)+'%':'0.00%','Cumulative %':total?(cum/total*100).toFixed(2)+'%':'0.00%','FR vs Build':built?(qty/built*100).toFixed(2)+'%':'0.00%','FR vs MFG':mfg?(qty/mfg*100).toFixed(2)+'%':'0.00%','Top Failure Modes':Object.keys(o.fm).slice(0,8).join(', '),'Top RefDes':Object.keys(o.ref).slice(0,12).join(', '),'Top Component PN':Object.keys(o.pn).slice(0,12).join(', ')};}); }
+  function issueBook(){ var base=getBase(); if(!base) return null; var now=new Date(); var summary=[{'Metric':'Risk Units','Value':base.kpi.risk},{'Metric':'Clean Yield','Value':num(base.kpi.cleanYield).toFixed(2)+'%'},{'Metric':'FR vs Build','Value':num(base.kpi.frBuild).toFixed(2)+'%'},{'Metric':'FR vs MFG','Value':num(base.kpi.frMfg).toFixed(2)+'%'},{'Metric':'Total Built','Value':base.kpi.built},{'Metric':'Total MFG','Value':base.kpi.mfg},{'Metric':'Consolidated Issues','Value':base.issues.length},{'Metric':'Detailed SN Logs','Value':(base.detail||[]).length},{'Metric':'Export Type','Value':'Issue tracker + Paretos'}]; var issueCols=['Issue ID','Side','Station','RefDes','Failure Mode','Qty SN','Yield Impact','Source','Status','Risk Level','Owner','Due Date','Action Required','Component PN','Assembly PN','WO Impacted','Issue FR vs Build','Issue FR vs MFG','Affected SN']; var detail=(base.detail||[]).map(function(r){return {SN:r.SN,WO:r.WO||r.WorkOrder,Station:r.Station,RefDes:r.RefDes,FailureMode:r.FailureMode,ComponentPartNumber:r.ComponentPartNumber,AssemblyPartNumber:r.AssemblyPartNumber,Disposition:r.Disposition,Repaired:r.Repaired,RetestResult:r.RetestResult,Comments:r.Comments};}); var paretoCols=['Rank','Failure Mode','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top RefDes','Top Component PN','Highest Risk']; var refCols=['Rank','RefDes','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top Failure Modes','Top Component PN','Highest Risk']; var pnCols=['Rank','Component PN','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top Failure Modes','Top RefDes','Highest Risk']; var woCols=['Rank','Work Order','Qty SN Impacted','Repair Rows','Pareto %','Cumulative %','FR vs Build','FR vs MFG','Top Failure Modes','Top RefDes','Top Component PN']; var b=bookStart(); b+=wsXml('Executive Summary','SMTinel Board Impact Executive Summary','Generated '+now.toLocaleString()+' - '+VERSION,['Metric','Value'],summary); b+=wsXml('Issue & Action Tracker','TRACKER PREVIEW - ISSUE & ACTION','Consolidated by Failure Mode + RefDes + Component PN',issueCols,base.issues); b+=wsXml('Pareto Failure Mode','Pareto - Failure Mode','Consolidated by failure mode, sorted by Qty SN Impacted',paretoCols,paretoFromIssues(base.issues,'Failure Mode','Failure Mode')); b+=wsXml('Pareto RefDes','Pareto - RefDes','Consolidated by reference designator, sorted by Qty SN Impacted',refCols,paretoFromIssues(base.issues,'RefDes','RefDes')); b+=wsXml('Pareto Component PN','Pareto - Component PN','Component PN only. Assembly/model PN excluded.',pnCols,paretoFromIssues(base.issues,'Component PN','Component PN')); b+=wsXml('Pareto Work Order','Pareto - Work Order Impact','WO impact calculated from SN Impact Log',woCols,paretoByWo(base.detail,base.kpi.built,base.kpi.mfg)); b+=wsXml('SN Impact Log','SN LOG PREVIEW - IMPACT LOG','Detailed SN-level Repair Record log',['SN','WO','Station','RefDes','FailureMode','ComponentPartNumber','AssemblyPartNumber','Disposition','Repaired','RetestResult','Comments'],detail); b+='</Workbook>'; return b; }
+  function actionRowsFromIssues(issues){ return (issues||[]).map(function(r,i){ return {'Action ID':'ACT-'+String(i+1).padStart(4,'0'),'Issue ID':r['Issue ID'],'Failure Mode':r['Failure Mode'],'RefDes':r.RefDes,'Component PN':r['Component PN'],'Risk Level':r['Risk Level'],'Status':r.Status||'Open','Owner':r.Owner||'Process / QA','Due Date':r['Due Date']||'','Action Required':r['Action Required']||'Validate containment and repair evidence.','Evidence Required':'Repair record, AOI/SPI/ICT evidence, affected SN sample, retest result, before/after picture if available.','Effectiveness Check':'Verify no recurrence in next WO / shift / production lot.','Comments':''}; }); }
+  function actionBook(){ var base=getBase(); if(!base) return null; var now=new Date(); var summary=[{'Metric':'Export Type','Value':'Action / RCCA tracker only'},{'Metric':'RCCA Items','Value':(base.rcca||[]).length},{'Metric':'Open Actions','Value':(base.issues||[]).length},{'Metric':'High/Critical Issues','Value':(base.issues||[]).filter(function(r){return /High|Critical/i.test(txt(r['Risk Level']));}).length},{'Metric':'Generated','Value':now.toLocaleString()},{'Metric':'Source','Value':'Board Impact consolidated issues + Repair Record'}]; var b=bookStart(); b+=wsXml('Action Summary','SMTinel Board Impact Action Summary','Generated '+now.toLocaleString()+' - '+VERSION,['Metric','Value'],summary); b+=wsXml('Action Register','Action / RCCA Follow Up','One action line per consolidated Board Impact issue',['Action ID','Issue ID','Failure Mode','RefDes','Component PN','Risk Level','Status','Owner','Due Date','Action Required','Evidence Required','Effectiveness Check','Comments'],actionRowsFromIssues(base.issues)); b+=wsXml('RCCA Embedded','Embedded RCCA Tracker','RCCA skeleton generated from consolidated issues',['RCCA ID','Issue ID','Problem Statement','Containment','Root Cause','Corrective Action','Preventive Action','Owner','Due Date','Status','Evidence / Comments'],base.rcca||[]); b+=wsXml('Failure Mode Summary','Failure Mode Consolidation','Used to prioritize RCCA and containment',['Failure Mode','Issue Count','Qty SN','Failure Rate vs Build','Failure Rate vs MFG','Top RefDes','Top Component PN','Highest Risk'],base.modeSummary||[]); b+=wsXml('Pareto Failure Mode','Pareto - Failure Mode','RCCA prioritization by dominant mode',['Rank','Failure Mode','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top RefDes','Top Component PN','Highest Risk'],paretoFromIssues(base.issues,'Failure Mode','Failure Mode')); b+='</Workbook>'; return b; }
+  function save(book,type){ if(!book) return; var today=new Date().toISOString().slice(0,10); var blob=new Blob([book],{type:'application/vnd.ms-excel;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download= type==='Action' ? 'SMTinel_Board_Impact_Action_RCCA_Tracker_'+today+'_v80.xls' : 'SMTinel_Board_Impact_Issue_Tracker_'+today+'_v80.xls'; document.body.appendChild(a); a.click(); setTimeout(function(){try{URL.revokeObjectURL(a.href)}catch(e){} a.remove();},1000); }
+  function download(type){ save(type==='Action'?actionBook():issueBook(), type); }
+  function ensureCenter(){ var root=document.getElementById('boardimpact-section'); if(!root) return; var center=document.getElementById('board-impact-export-center'); if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); } center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1'; center.innerHTML='<div style="min-width:300px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Issue export y Action/RCCA export separados. No clones.</div></div><button data-smtinel-board-native-export="v80" data-board-export-issue="1" class="traceops-board-export-btn" type="button">Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v80" data-board-export-action="1" class="traceops-board-export-btn" type="button">Export Action / RCCA XLS</button>'; Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); }); }
+  function run(){ try{ ensureCenter(); }catch(e){ console.warn('[SMTinel] Board Impact v79 export guard:',e); } }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  setInterval(run,700);
+  window.SMTINEL_BOARD_IMPACT_EXPORT_V80={version:VERSION,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
+})();
+</script>
+</body></html>'}
 function dl(name,type,content){var a=document.createElement("a"),b=new Blob([content],{type:type});a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
 function render(p,data){var c=data.filter(function(x){return /critical/i.test(x.severity)}).length,h=data.filter(function(x){return /high/i.test(x.severity)}).length,a=data.filter(function(x){return /active/i.test(x.status)}).length;p.querySelector("[data-ccx-summary]").innerHTML='<div class="smt-ccx-summary"><div class="smt-ccx-kpi"><span>Total CC</span><b>'+data.length+'</b></div><div class="smt-ccx-kpi"><span>Critical</span><b>'+c+'</b></div><div class="smt-ccx-kpi"><span>High</span><b>'+h+'</b></div><div class="smt-ccx-kpi"><span>Active</span><b>'+a+'</b></div><div class="smt-ccx-kpi"><span>PPR Status</span><b>READY</b></div></div>';p.querySelector("[data-ccx-prev]").innerHTML='<table class="smt-ccx-table"><thead><tr><th>CC ID</th><th>Components</th><th>Severity</th><th>Program</th><th>Models</th><th>Owner</th><th>Risk</th><th>Validation</th><th>Status</th></tr></thead><tbody>'+data.map(function(r){return'<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.components)+'</td><td><span class="smt-ccx-pill '+String(r.severity).toLowerCase()+'">'+esc(r.severity)+'</span></td><td>'+esc(r.program)+'</td><td>'+esc(r.models)+'</td><td>'+esc(r.owner)+'</td><td>'+esc(r.risk)+'</td><td>'+esc(r.validation)+'</td><td>'+esc(r.status)+'</td></tr>'}).join("")+'</tbody></table>'}
 function mount(){var root=document.querySelector("main")||document.body;if(document.querySelector("[data-smt-ccx]"))return true;var p=document.createElement("section");p.className="smt-ccx";p.setAttribute("data-smt-ccx","true");p.innerHTML='<div class="smt-ccx-h"><div class="smt-ccx-k">CC Register Export</div><div class="smt-ccx-t">Critical Characteristics package for PPR / Line Release</div><div class="smt-ccx-s">Exports CC register, executive summary, PPR readiness and audit checklist.</div></div><div class="smt-ccx-b"><div class="smt-ccx-actions"><button class="smt-ccx-btn" data-r>Refresh CC Preview</button><button class="smt-ccx-btn primary" data-x>Export CC Register XLS</button><button class="smt-ccx-btn" data-c>Export CC CSV</button><button class="smt-ccx-btn dark" data-p>Export CC Package HTML</button></div><div class="smt-ccx-note">Uses the local CC register when available; otherwise includes active U8300 and supplier-mix controls.</div><div data-ccx-summary></div><div class="smt-ccx-prev" data-ccx-prev></div></div>';var anchor=document.querySelector("[data-smt-ictx]")||document.querySelector("[data-smt-v139='true']")||document.querySelector("[data-smt-v138='true']")||root.firstElementChild;if(anchor&&anchor.parentElement)anchor.parentElement.insertBefore(p,anchor.nextSibling);else root.appendChild(p);p.querySelector("[data-r]").onclick=function(){render(p,getCC())};p.querySelector("[data-c]").onclick=function(){var d=getCC();render(p,d);dl("SMTinel_CC_Register.csv","text/csv;charset=utf-8",csv(d))};p.querySelector("[data-x]").onclick=function(){var d=getCC();render(p,d);dl("SMTinel_CC_Register.xls","application/vnd.ms-excel;charset=utf-8",xls(d))};p.querySelector("[data-p]").onclick=function(){var d=getCC();render(p,d);dl("SMTinel_CC_PPR_Package.html","text/html;charset=utf-8",pack(d))};render(p,getCC());window.SMTINEL_CC_EXPORT={version:VERSION,available:true,mode:"lazy"};return true}
@@ -54888,171 +55112,297 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   else setTimeout(function(){ wrapBuild(); updateBadge(); }, 900);
 })();
 </script>
-<script id="smtinel-board-impact-export-native-v69">
+<script id="smtinel-board-impact-export-native-v76-consolidated-rcca">
 (function(){
   "use strict";
-  var VERSION = "v70-board-impact-repair-record-enriched";
+  var VERSION = "v76-consolidated-component-pn-rcca";
   function txt(v){ return String(v == null ? "" : v).trim(); }
   function upper(v){ return txt(v).toUpperCase(); }
-  function esc(v){ return txt(v).replace(/[&<>\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
-  function cleanSn(v){ return upper(v).replace(/[^A-Z0-9]/g,""); }
-  function first(row, keys){
-    row = row || {};
-    for(var i=0;i<keys.length;i++){
-      var k = keys[i];
-      if(row[k] != null && txt(row[k]) !== "") return row[k];
-    }
-    return "";
+  function cleanSn(v){ return upper(v).replace(/[^A-Z0-9]/g, ""); }
+  function esc(v){ return txt(v).replace(/[&<>'\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","'":"&apos;","\"":"&quot;"}[c]; }); }
+  function first(row, keys){ row=row||{}; for(var i=0;i<keys.length;i++){ var k=keys[i]; if(row[k]!=null && txt(row[k])!=="") return row[k]; } return ""; }
+  function toNum(v){ var n=Number(txt(v).replace(/,/g,"").replace("%", "")); return isFinite(n)?n:0; }
+  function isModelPn(v){ v=upper(v); return /^(?:73|74|68|800)-\d{4,}/.test(v) || /^PID[:\s-]/.test(v) || /^ESS-|^C\d{3,}/.test(v); }
+  function isUsefulPn(v){ v=upper(v); if(!v || v==="N/D" || v==="0" || v==="PASS") return false; return /^[A-Z0-9]{1,4}-/.test(v) || /^\d{2}-\d{4,}/.test(v) || /^CS-/.test(v); }
+  function componentPn(row){
+    row=row||{};
+    var explicit = first(row,["componentPartNumber","component_part_number","componentPn","componentPN","Component PN","Component P/N","component_pn","replacedPartNumber","replacementPartNumber","removedPartNumber","newPartNumber","oldPartNumber","itemPartNumber","componentItem","componentCode","ComponentCode","component_code","componentType"]);
+    if(isUsefulPn(explicit) && !isModelPn(explicit)) return txt(explicit);
+    var generic = first(row,["partNumber","PartNumber","pn","PN","item","ITEM"]);
+    if(isUsefulPn(generic) && !isModelPn(generic)) return txt(generic);
+    var desc = first(row,["componentDescription","description","comments","comment"]);
+    var m = upper(desc).match(/\b(?:\d{2}-\d{4,}(?:-\d+)?|CS-[A-Z0-9-]+)\b/);
+    return m && !isModelPn(m[0]) ? m[0] : "N/D";
+  }
+  function assemblyPn(row){
+    row=row||{};
+    var explicit = first(row,["assemblyPartNumber","assyPartNumber","assyPn","assy_pn","modelPartNumber","modelPN","sourceSku","repairSku","sku","SKU","skuno","SKUNO","uuttype","UUTTYPE","moduleno"]);
+    if(txt(explicit)) return txt(explicit);
+    var generic = first(row,["partNumber","PartNumber","pn","PN"]);
+    return isModelPn(generic) ? txt(generic) : "";
   }
   function refsFromRow(row){
-    row = row || {};
-    var direct = first(row,["ref","refdes","RefDes","refDes","referenceDesignator","failLocation","failureLocation","location"]);
-    var raw = [direct,row.description,row.symptom,row.failureMode,row.mode,row.repairAction,row.action,row.comment].join(" ");
-    var m = upper(raw).match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g) || [];
-    var seen = {}, out = [];
-    m.forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } });
-    return out.length ? out.join(", ") : txt(direct || "N/D");
+    row=row||{};
+    var direct=first(row,["ref","refdes","RefDes","refDes","referenceDesignator","failLocation","failureLocation","location","repairLocation"]);
+    if(txt(direct)) return txt(direct);
+    var raw=[row.description,row.symptom,row.failureMode,row.mode,row.repairAction,row.action,row.comment,row.comments].join(" ");
+    var m=upper(raw).match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g)||[];
+    var seen={}, out=[]; m.forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } });
+    return out.length?out.join(", "):"N/D";
   }
-  function failureMode(row){
-    return txt(first(row,["failureMode","mode","symptom","repairSymptom","defect","description","fail_desc","failDesc","FailureMode"])) || "N/D";
+  function failureMode(row){ return txt(first(row,["failureMode","FailureMode","mode","rootCause","rawRootCause","repairSymptom","symptom","defect","description","fail_desc","failDesc","detectionSymptom"])) || "N/D"; }
+  function failure(row){ return txt(first(row,["failure","Failure","failureDescription","description","symptom","defect","fail","error","repairAction","actionDesc","comment","comments"])) || failureMode(row) || "N/D"; }
+  function station(row){ return txt(first(row,["station","Station","testStation","process","responsibleArea","detectionStation"])) || "N/D"; }
+  function side(row){ return txt(first(row,["side","Side","boardSide","BoardSide"])) || "N/D"; }
+  function workOrder(row){ return txt(first(row,["wo","WO","workOrder","WorkOrder","work_order","orderno","orderNo","repairWo","sourceWo"])) || "N/D"; }
+  function serial(row,idx){ return cleanSn(first(row,["sn","SN","serial","Serial","serialNumber","sysserialno","syserialno","parentsn","parentsernum","partsernum","boxsn","BOXSN","sfcSn","bridgeKey"])) || (idx!=null ? ("ROW_"+(idx+1)) : ""); }
+  function getCandidateRows(){
+    var candidates=[];
+    try{ if(window.__traceOpsBoardImpactLastPayload && Array.isArray(window.__traceOpsBoardImpactLastPayload.rows)) candidates.push(window.__traceOpsBoardImpactLastPayload.rows); }catch(_){ }
+    try{ if(window.boardImpactContext && Array.isArray(window.boardImpactContext.rows)) candidates.push(window.boardImpactContext.rows); }catch(_){ }
+    try{ if(window.yieldFlowModel && Array.isArray(window.yieldFlowModel.rows)) candidates.push(window.yieldFlowModel.rows); }catch(_){ }
+    try{ if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) candidates.push(window.TRACEOPS_YIELD_FLOW_TRACKER); }catch(_){ }
+    try{ if(Array.isArray(window.TRACEOPS_YIELD_FT_ROWS)) candidates.push(window.TRACEOPS_YIELD_FT_ROWS); }catch(_){ }
+    var best=[]; candidates.forEach(function(a){ if(Array.isArray(a) && a.length>best.length) best=a; }); return best;
   }
-  function failure(row){
-    return txt(first(row,["failure","failureDescription","description","symptom","defect","fail","error","repairAction","comment"])) || failureMode(row) || "N/D";
-  }
-  function partNumber(row){
-    return txt(first(row,["partNumber","PartNumber","componentPn","componentPN","componentCode","component_code","pn","PN","sku","SKU","skuno","moduleno","repairSku","sourceSku"])) || "N/D";
-  }
-  function workOrder(row){
-    return txt(first(row,["wo","WO","workOrder","WorkOrder","work_order","orderno","orderNo","repairWo","sourceWo"])) || "N/D";
-  }
-  function serial(row, idx){
-    return cleanSn(first(row,["sn","SN","serial","Serial","serialNumber","sysserialno","syserialno","parentsn","parentsenum","boxsn","BOXSN"])) || ("ROW_" + (idx+1));
-  }
-  function getRows(){
-    var candidates = [];
-    try { if(window.boardImpactContext && Array.isArray(window.boardImpactContext.rows)) candidates.push(window.boardImpactContext.rows); } catch(_){ }
-    try { if(window.__traceOpsBoardImpactLastPayload && Array.isArray(window.__traceOpsBoardImpactLastPayload.rows)) candidates.push(window.__traceOpsBoardImpactLastPayload.rows); } catch(_){ }
-    try { if(window.yieldFlowModel && Array.isArray(window.yieldFlowModel.rows)) candidates.push(window.yieldFlowModel.rows); } catch(_){ }
-    try { if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) candidates.push(window.TRACEOPS_YIELD_FLOW_TRACKER); } catch(_){ }
-    try { if(Array.isArray(window.TRACEOPS_YIELD_FT_ROWS)) candidates.push(window.TRACEOPS_YIELD_FT_ROWS); } catch(_){ }
-    try { if(Array.isArray(window.TRACEOPS_RISK_SUMMARY_ROWS)) candidates.push(window.TRACEOPS_RISK_SUMMARY_ROWS); } catch(_){ }
-    var best = [];
-    candidates.forEach(function(arr){ if(Array.isArray(arr) && arr.length > best.length) best = arr; });
-    return best;
-  }
-  function repairsForRow(row, idx){
-    var map = window.TRACEOPS_YIELD_REPAIRS_BY_SN || {};
-    var keys = [];
-    function add(v){ v = cleanSn(v); if(v && keys.indexOf(v) < 0) keys.push(v); }
-    add(serial(row, idx));
-    ["sn","SN","serial","Serial","serialNumber","sfcSn","bridgeKey","parentsernum","partsernum","repairSn","boxsn","BOXSN","cesiumSn"].forEach(function(k){ if(row && row[k] != null) add(row[k]); });
-    for(var i=0;i<keys.length;i++){
-      if(Array.isArray(map[keys[i]]) && map[keys[i]].length) return map[keys[i]];
-    }
+  function repairsForRow(row,idx){
+    var map=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{}; var keys=[];
+    function add(v){ v=cleanSn(v); if(v && keys.indexOf(v)<0) keys.push(v); }
+    add(serial(row,idx)); ["sn","SN","serial","Serial","serialNumber","sfcSn","bridgeKey","parentsernum","partsernum","repairSn","boxsn","BOXSN","cesiumSn"].forEach(function(k){ if(row && row[k]!=null) add(row[k]); });
+    for(var i=0;i<keys.length;i++){ if(Array.isArray(map[keys[i]]) && map[keys[i]].length) return map[keys[i]]; }
     return [];
   }
-  function repairRef(rep){ return txt(first(rep,["refdes","RefDes","refDes","location","failLocation","FailLocation","referenceDesignator","repairLocation"])) || refsFromRow(rep); }
-  function repairPart(rep){ return txt(first(rep,["partNumber","PartNumber","componentPn","componentPN","componentCode","component_code","pn","PN","componentType","componentDescription"])) || partNumber(rep); }
-  function repairFailureMode(rep){ return txt(first(rep,["failureMode","mode","rootCause","repairSymptom","symptom","rawRootCause","rawRepairSymptom","detectionSymptom"])) || failureMode(rep); }
-  function repairFailure(rep){ return txt(first(rep,["failure","rawRootCause","rootCause","repairSymptom","symptom","detectionSymptom","actionDesc","repairType"])) || repairFailureMode(rep); }
-  function buildTrackerRows(){
-    var rows = getRows();
-    var seen = {}, out = [];
-    rows.forEach(function(row, idx){
-      row = row || {};
-      var sn = serial(row, idx);
-      var reps = repairsForRow(row, idx);
-      if(reps.length){
-        reps.forEach(function(rep){
-          var rec = {
-            SN: sn || serial(rep, idx),
-            Failure: repairFailure(rep),
-            RefDes: repairRef(rep),
-            PartNumber: repairPart(rep),
-            WorkOrder: workOrder(rep) !== "N/D" ? workOrder(rep) : workOrder(row),
-            FailureMode: repairFailureMode(rep)
-          };
-          var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
-          if(!seen[key]){ seen[key]=1; out.push(rec); }
-        });
-      } else {
-        var rec = {
-          SN: sn,
-          Failure: failure(row),
-          RefDes: refsFromRow(row),
-          PartNumber: partNumber(row),
-          WorkOrder: workOrder(row),
-          FailureMode: failureMode(row)
-        };
-        var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
-        if(!seen[key]){ seen[key]=1; out.push(rec); }
-      }
-    });
-    if(!out.length && window.TRACEOPS_YIELD_REPAIRS_BY_SN){
-      Object.keys(window.TRACEOPS_YIELD_REPAIRS_BY_SN).forEach(function(snKey){
-        (window.TRACEOPS_YIELD_REPAIRS_BY_SN[snKey] || []).forEach(function(rep, idx){
-          var rec = {
-            SN: cleanSn(rep.sn || rep.sfcSn || snKey),
-            Failure: repairFailure(rep),
-            RefDes: repairRef(rep),
-            PartNumber: repairPart(rep),
-            WorkOrder: workOrder(rep),
-            FailureMode: repairFailureMode(rep)
-          };
-          var key = [rec.SN,rec.RefDes,rec.PartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
-          if(!seen[key]){ seen[key]=1; out.push(rec); }
-        });
-      });
+  function isRealIssue(r){ var f=upper((r && (r.FailureMode || r.Failure)) || ""); var ref=upper((r && r.RefDes) || ""); return !!(f && f!=="0" && f!=="N/D" && f!=="PASS" && ref && ref!=="N/D"); }
+  function detailRows(){
+    var rows=getCandidateRows(), seen={}, out=[];
+    function push(rec){
+      rec.ComponentPartNumber = isModelPn(rec.ComponentPartNumber) ? "N/D" : (rec.ComponentPartNumber || "N/D");
+      rec.AssemblyPartNumber = rec.AssemblyPartNumber || "";
+      if(!isRealIssue(rec)) return;
+      var key=[rec.SN,rec.RefDes,rec.ComponentPartNumber,rec.AssemblyPartNumber,rec.WorkOrder,rec.FailureMode,rec.Failure].join("|");
+      if(!seen[key]){ seen[key]=1; out.push(rec); }
     }
+    rows.forEach(function(row,idx){
+      row=row||{}; var sn=serial(row,idx); var reps=repairsForRow(row,idx);
+      if(reps.length){ reps.forEach(function(rep){ push({SN:sn||serial(rep,idx), WO:workOrder(rep)!=="N/D"?workOrder(rep):workOrder(row), WorkOrder:workOrder(rep)!=="N/D"?workOrder(rep):workOrder(row), Station:station(rep)!=="N/D"?station(rep):station(row), Side:side(rep)!=="N/D"?side(rep):side(row), RefDes:refsFromRow(rep), ComponentPartNumber:componentPn(rep), AssemblyPartNumber:assemblyPn(row)||assemblyPn(rep), Failure:failure(rep), FailureMode:failureMode(rep), Disposition:first(rep,["disposition","repairType","action","actionDesc"]), Repaired:first(rep,["repaired","isRepaired","repairStatus"]), RetestResult:first(rep,["retestResult","status","testResult"]), Comments:first(rep,["comments","comment","componentDescription","actionDesc"]) }); }); }
+      else { push({SN:sn, WO:workOrder(row), WorkOrder:workOrder(row), Station:station(row), Side:side(row), RefDes:refsFromRow(row), ComponentPartNumber:componentPn(row), AssemblyPartNumber:assemblyPn(row), Failure:failure(row), FailureMode:failureMode(row), Disposition:first(row,["disposition"]), Repaired:first(row,["repaired"]), RetestResult:first(row,["retestResult","status"]), Comments:first(row,["comments","comment"]) }); }
+    });
+    if(!out.length && window.TRACEOPS_YIELD_REPAIRS_BY_SN){ Object.keys(window.TRACEOPS_YIELD_REPAIRS_BY_SN).forEach(function(snKey){ (window.TRACEOPS_YIELD_REPAIRS_BY_SN[snKey]||[]).forEach(function(rep,idx){ push({SN:cleanSn(rep.sn||rep.sfcSn||snKey), WO:workOrder(rep), WorkOrder:workOrder(rep), Station:station(rep), Side:side(rep), RefDes:refsFromRow(rep), ComponentPartNumber:componentPn(rep), AssemblyPartNumber:assemblyPn(rep), Failure:failure(rep), FailureMode:failureMode(rep), Disposition:first(rep,["disposition","repairType","action","actionDesc"]), Repaired:first(rep,["repaired","isRepaired","repairStatus"]), RetestResult:first(rep,["retestResult","status","testResult"]), Comments:first(rep,["comments","comment","componentDescription","actionDesc"]) }); }); }); }
     return out;
   }
-  function downloadExcel(type){
-    var rows = buildTrackerRows();
-    if(!rows.length){ alert("No hay datos disponibles para exportar. Carga Yield Flow / Repair Record y vuelve a Board Impact."); return; }
-    var headers = ["SN","Failure","Ref Des","Part Number","Work Order","Failure Mode"];
-    var html = '<html><head><meta charset="utf-8"><style>body{font-family:Segoe UI,Arial,sans-serif}table{border-collapse:collapse;width:100%;font-size:10pt}th{background:#102A43;color:#fff}td,th{border:1px solid #b8c7d9;padding:6px;text-align:left;vertical-align:top}.meta{color:#5F766C;font-size:10pt}</style></head><body>';
-    html += '<h2>SMTinel Board Impact '+esc(type)+' Tracker</h2><p class="meta">Generated '+esc(new Date().toLocaleString())+' · '+esc(VERSION)+' · Rows: '+rows.length+'</p><table><thead><tr>';
-    headers.forEach(function(h){ html += '<th>'+esc(h)+'</th>'; });
-    html += '</tr></thead><tbody>';
-    rows.forEach(function(r){ html += '<tr><td>'+esc(r.SN)+'</td><td>'+esc(r.Failure)+'</td><td>'+esc(r.RefDes)+'</td><td>'+esc(r.PartNumber)+'</td><td>'+esc(r.WorkOrder)+'</td><td>'+esc(r.FailureMode)+'</td></tr>'; });
-    html += '</tbody></table></body></html>';
-    var blob = new Blob([html], {type:"application/vnd.ms-excel;charset=utf-8"});
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "SMTinel_Board_Impact_" + type.replace(/\s+/g,"_") + "_Tracker_" + new Date().toISOString().slice(0,10) + ".xls";
-    document.body.appendChild(a); a.click();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  function scopeKpi(detail){
+    var payload=window.__traceOpsBoardImpactLastPayload||{}; var kpi=payload.yieldFlowKpi||{};
+    var built=toNum(payload.totalBuiltUnits)||toNum(kpi.units)||getCandidateRows().length||detail.length||1;
+    var mfg=toNum(payload.totalManufacturedUnits)||built;
+    var risk=toNum(kpi.risk)||detail.length;
+    var clean=toNum(kpi.clean)||Math.max(0,built-risk);
+    function pct(a,b){ return (b? (a/b*100):0); }
+    return {built:built,mfg:mfg,risk:risk,clean:clean,cleanYield:pct(clean,built),frBuild:toNum(payload.boardFailureRateBuilt)||toNum(kpi.failureRateBuilt)||pct(risk,built),frMfg:toNum(payload.boardFailureRateManufactured)||toNum(kpi.failureRateManufactured)||pct(risk,mfg),riskRate:pct(risk,built)};
+  }
+  function riskFrom(qty,fr){ if(qty>=10 || fr>=5) return "Critical"; if(qty>=5 || fr>=2) return "High"; if(qty>=2 || fr>=1) return "Medium"; return "Low"; }
+  function actionByMode(mode,ref,pn){ var m=upper(mode); if(/SOLDER BRIDGE|SHORT/.test(m)) return "Validate solder bridge containment at "+ref+", inspect stencil aperture/paste volume, review SPI/AOI coverage, clean affected boards and confirm retest pass."; if(/REVERSE|REVERSED|WRONG COMPONENT|POLAR/.test(m)) return "Verify polarity/component setup for "+ref+", audit feeder/material loading, confirm BOM/AVL PN "+pn+" and validate AOI polarity detection."; if(/TEST POINT/.test(m)) return "Inspect test point "+ref+" for solder/contamination, validate ICT fixture probe contact, review AOI/visual criteria and confirm retest."; if(/CONTAMINATION|FLUX/.test(m)) return "Confirm cleaning process and contamination source at "+ref+", review handling/flux residue controls and document before/after evidence."; if(/MISSING/.test(m)) return "Contain missing component at "+ref+", verify feeder pick/place, placement program and AOI missing-part inspection."; return "Contain affected SN, validate Repair Record evidence, confirm disposition/retest and monitor recurrence by WO for "+ref+" / "+pn+"."; }
+  function buildModel(){
+    var detail=detailRows(); var k=scopeKpi(detail); var map={};
+    detail.forEach(function(r){ var key=[r.Side||"N/D",r.Station||"N/D",r.RefDes||"N/D",r.ComponentPartNumber||"N/D",r.FailureMode||r.Failure||"N/D"].join("|"); if(!map[key]) map[key]={Side:r.Side||"N/D",Station:r.Station||"N/D",RefDes:r.RefDes||"N/D",ComponentPartNumber:r.ComponentPartNumber||"N/D",AssemblyPartNumbers:{},FailureMode:r.FailureMode||r.Failure||"N/D",Failure:r.Failure||r.FailureMode||"N/D",sns:{},wos:{},rows:[]}; var g=map[key]; g.rows.push(r); if(r.SN)g.sns[r.SN]=1; if(r.WO||r.WorkOrder)g.wos[r.WO||r.WorkOrder]=1; if(r.AssemblyPartNumber)g.AssemblyPartNumbers[r.AssemblyPartNumber]=1; });
+    var issues=Object.keys(map).map(function(key){ var g=map[key], qty=Object.keys(g.sns).length||g.rows.length, frB=k.built?qty/k.built*100:0, frM=k.mfg?qty/k.mfg*100:0, risk=riskFrom(qty,frB); return {"Issue ID":"","Side":g.Side,"Station":g.Station,"RefDes":g.RefDes,"Failure Mode":g.FailureMode,"Qty SN":qty,"Yield Impact":frB.toFixed(2)+"%","Issue FR vs Build":frB.toFixed(2)+"%","Issue FR vs MFG":frM.toFixed(2)+"%","Component PN":g.ComponentPartNumber,"Assembly PN":Object.keys(g.AssemblyPartNumbers).join(", "),"WO Impacted":Object.keys(g.wos).join(", "),"Affected SN":Object.keys(g.sns).slice(0,20).join(", "),"Source":"Repair Record / Yield Flow","Status":"Open","Risk Level":risk,"Owner":risk==="Critical"||risk==="High"?"Process / QA":"Production / QA","Due Date":"","Action Required":actionByMode(g.FailureMode,g.RefDes,g.ComponentPartNumber)}; }).sort(function(a,b){return b["Qty SN"]-a["Qty SN"]});
+    issues.forEach(function(r,i){ r["Issue ID"]="ISS-"+String(i+1).padStart(3,"0"); });
+    var modes={}; issues.forEach(function(r){ var m=r["Failure Mode"]||"N/D"; if(!modes[m]) modes[m]={"Failure Mode":m,"Issue Count":0,"Qty SN":0,"Top RefDes":{},"Top Component PN":{},"Highest Risk":"Low"}; modes[m]["Issue Count"]++; modes[m]["Qty SN"]+=r["Qty SN"]||0; modes[m]["Top RefDes"][r.RefDes]=1; modes[m]["Top Component PN"][r["Component PN"]]=1; if(["Low","Medium","High","Critical"].indexOf(r["Risk Level"])>["Low","Medium","High","Critical"].indexOf(modes[m]["Highest Risk"])) modes[m]["Highest Risk"]=r["Risk Level"]; });
+    var modeSummary=Object.keys(modes).map(function(m){ var r=modes[m]; return {"Failure Mode":r["Failure Mode"],"Issue Count":r["Issue Count"],"Qty SN":r["Qty SN"],"Failure Rate vs Build":(k.built?r["Qty SN"]/k.built*100:0).toFixed(2)+"%","Failure Rate vs MFG":(k.mfg?r["Qty SN"]/k.mfg*100:0).toFixed(2)+"%","Top RefDes":Object.keys(r["Top RefDes"]).slice(0,10).join(", "),"Top Component PN":Object.keys(r["Top Component PN"]).slice(0,10).join(", "),"Highest Risk":r["Highest Risk"]}; }).sort(function(a,b){return b["Qty SN"]-a["Qty SN"]});
+    var rcca=issues.map(function(r){ return {"RCCA ID":"RCCA-"+r["Issue ID"].replace("ISS-","") ,"Issue ID":r["Issue ID"],"Problem Statement":r["Qty SN"]+" SN affected by "+r["Failure Mode"]+" at "+r.RefDes+" / component PN "+r["Component PN"]+".","Containment":"Hold/segregate affected SN and confirm Repair Record/retest evidence for impacted WO(s): "+r["WO Impacted"],"Root Cause":"Pending validation. Review process/material/equipment conditions related to "+r["Failure Mode"]+".","Corrective Action":r["Action Required"],"Preventive Action":"Update control plan/AOI/ICT criteria or process check as applicable. Monitor recurrence in next build window.","Owner":r.Owner,"Due Date":r["Due Date"],"Status":r.Status,"Evidence / Comments":"Attach photos, Repair Record extract, retest result and WO recurrence analysis."}; });
+    return {detail:detail,issues:issues,modeSummary:modeSummary,rcca:rcca,kpi:k};
+  }
+  function xmlCell(v,style){ return '<Cell'+(style?' ss:StyleID="'+style+'"':'')+'><Data ss:Type="String">'+esc(v)+'</Data></Cell>'; }
+  function wsXml(name,title,subtitle,cols,rows){ var x='<Worksheet ss:Name="'+esc(name).slice(0,31)+'"><Table>'; x+='<Row ss:Height="26">'+xmlCell(title,'title')+'</Row>'; x+='<Row>'+xmlCell(subtitle,'sub')+'</Row><Row></Row><Row>'; cols.forEach(function(c){x+=xmlCell(c,'hdr')}); x+='</Row>'; rows.forEach(function(r){x+='<Row>'; cols.forEach(function(c){ var st=/Risk|Priority|Status/.test(c)?'flag':'cell'; x+=xmlCell(r[c]==null?'':r[c],st); }); x+='</Row>';}); return x+'</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>'; }
+  function download(type){
+    var m=buildModel(); if(!m.issues.length){ alert("No hay issues reales para exportar. Aplica Board Impact con Repair Record cargado."); return; }
+    var now=new Date(), today=now.toISOString().slice(0,10);
+    var issueCols=["Issue ID","Side","Station","RefDes","Failure Mode","Qty SN","Yield Impact","Source","Status","Risk Level","Owner","Due Date","Action Required","Component PN","Assembly PN","WO Impacted","Issue FR vs Build","Issue FR vs MFG","Affected SN"];
+    var logCols=["SN","WO","Station","RefDes","FailureMode","ComponentPartNumber","AssemblyPartNumber","Disposition","Repaired","RetestResult","Comments"];
+    var detail=m.detail.map(function(r){ return {SN:r.SN,WO:r.WO||r.WorkOrder,Station:r.Station,RefDes:r.RefDes,FailureMode:r.FailureMode,ComponentPartNumber:r.ComponentPartNumber,AssemblyPartNumber:r.AssemblyPartNumber,Disposition:r.Disposition,Repaired:r.Repaired,RetestResult:r.RetestResult,Comments:r.Comments}; });
+    var summary=[{"Metric":"Risk Units","Value":m.kpi.risk},{"Metric":"Clean Yield","Value":m.kpi.cleanYield.toFixed(2)+"%"},{"Metric":"FR vs Build","Value":m.kpi.frBuild.toFixed(2)+"%"},{"Metric":"FR vs MFG","Value":m.kpi.frMfg.toFixed(2)+"%"},{"Metric":"Total Built","Value":m.kpi.built},{"Metric":"Total MFG","Value":m.kpi.mfg},{"Metric":"Consolidated Issues","Value":m.issues.length},{"Metric":"Detailed SN Logs","Value":m.detail.length}];
+    var book='<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="18" ss:Color="#102A43"/></Style><Style ss:ID="sub"><Font ss:Size="10" ss:Color="#5F766C"/></Style><Style ss:ID="hdr"><Interior ss:Color="#102A43" ss:Pattern="Solid"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style><Style ss:ID="cell"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style><Style ss:ID="flag"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#B3261E"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style></Styles>';
+    book += wsXml('Executive Summary','SMTinel Board Impact Executive Summary','Generated '+now.toLocaleString()+' · '+VERSION+' · Yield Flow metrics reused',['Metric','Value'],summary);
+    book += wsXml('Issue & Action Tracker','TRACKER PREVIEW - ISSUE & ACTION','Consolidated by Failure Mode + RefDes + Component PN. No model PN mixed in component column.',issueCols,m.issues);
+    book += wsXml('SN Impact Log','SN LOG PREVIEW - IMPACT LOG','Detailed SN-level Repair Record log',logCols,detail);
+    book += wsXml('Failure Mode Summary','Failure Mode Consolidation','Pareto consolidated by mode of failure',['Failure Mode','Issue Count','Qty SN','Failure Rate vs Build','Failure Rate vs MFG','Top RefDes','Top Component PN','Highest Risk'],m.modeSummary);
+    book += wsXml('RCCA Embedded','Embedded RCCA Tracker','RCCA skeleton generated from consolidated issues',['RCCA ID','Issue ID','Problem Statement','Containment','Root Cause','Corrective Action','Preventive Action','Owner','Due Date','Status','Evidence / Comments'],m.rcca);
+    book += '</Workbook>';
+    var blob=new Blob([book],{type:'application/vnd.ms-excel;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SMTinel_Board_Impact_'+(type||'Issue')+'_Tracker_'+today+'_v76.xls'; document.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},1000);
   }
   function ensureCenter(){
-    var root = document.getElementById("boardimpact-section");
-    if(!root) return;
-    var center = document.getElementById("board-impact-export-center");
-    if(!center){
-      center = document.createElement("section");
-      center.id = "board-impact-export-center";
-      center.className = "traceops-board-export-center";
-      var first = root.children && root.children[0];
-      if(first) first.insertAdjacentElement("afterend", center); else root.insertBefore(center, root.firstChild);
-    }
-    center.style.display = "flex";
-    center.style.visibility = "visible";
-    center.style.opacity = "1";
-    if(!center.querySelector("[data-smtinel-board-native-export='true']")){
-      center.innerHTML = '<div style="min-width:220px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Exports usando el scope activo de Board Impact.</div></div><div data-smtinel-board-native-export="true" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" data-board-export-issue style="border:1px solid #BFE7D1;background:#EAF7EF;color:#0F6B3F;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:950;cursor:pointer;white-space:nowrap">Export Issue Tracker XLS</button><button type="button" data-board-export-action style="border:1px solid #F1C04E;background:#FFF7D8;color:#8A5A00;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:950;cursor:pointer;white-space:nowrap">Export Action Tracker XLS</button></div>';
-    }
-    var issue = center.querySelector("[data-board-export-issue]");
-    var action = center.querySelector("[data-board-export-action]");
-    if(issue && !issue.__smtinelV69){ issue.__smtinelV69 = true; issue.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); downloadExcel("Issue"); }, true); }
-    if(action && !action.__smtinelV69){ action.__smtinelV69 = true; action.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); downloadExcel("Action"); }, true); }
+    var root=document.getElementById('boardimpact-section'); if(!root) return;
+    var center=document.getElementById('board-impact-export-center'); if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); }
+    center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1';
+    if(!center.querySelector('[data-smtinel-board-native-export="v76"]')) center.innerHTML='<div style="min-width:260px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Tracker consolidado, Failure Mode Summary y RCCA embebido.</div></div><button data-smtinel-board-native-export="v76" data-board-export-issue="1" class="traceops-board-export-btn" type="button">📘 Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v76" data-board-export-action="1" class="traceops-board-export-btn" type="button">📗 Export Action / RCCA XLS</button>';
+    Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ if(btn.__smtinelV76) return; btn.__smtinelV76=true; btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); });
   }
   function run(){ ensureCenter(); }
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
-  setInterval(run, 350);
-  try { new MutationObserver(function(){ clearTimeout(window.__smtinelBoardExportV69Timer); window.__smtinelBoardExportV69Timer = setTimeout(run, 80); }).observe(document.documentElement,{childList:true,subtree:true}); } catch(_){ }
-  window.SMTINEL_BOARD_IMPACT_EXPORT_V70 = {version:VERSION, exportIssue:function(){downloadExcel("Issue");}, exportAction:function(){downloadExcel("Action");}, rows:buildTrackerRows};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  setInterval(run,450);
+  window.SMTINEL_BOARD_IMPACT_EXPORT_V76={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, model:buildModel};
 })();
 </script>
 
+
+<script id="smtinel-board-impact-export-native-v77-paretos">
+(function(){
+  "use strict";
+  var VERSION="v77-paretos-consolidated-rcca";
+  function txt(v){ return String(v == null ? "" : v).trim(); }
+  function esc(v){ return txt(v).replace(/[&<>'\"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","'":"&apos;","\"":"&quot;"}[c]; }); }
+  function num(v){ var n=Number(txt(v).replace(/,/g,"").replace("%", "")); return isFinite(n)?n:0; }
+  function pct(n,d){ n=num(n); d=num(d); return d>0 ? (n/d*100) : 0; }
+  function xmlCell(v,style,type){
+    var t = type || (typeof v === 'number' && isFinite(v) ? 'Number' : 'String');
+    return '<Cell'+(style?' ss:StyleID="'+style+'"':'')+'><Data ss:Type="'+t+'">'+esc(v)+'</Data></Cell>';
+  }
+  function colWidths(cols){
+    return cols.map(function(c){
+      var w=90;
+      if(/Problem|Corrective|Preventive|Action|Containment|Evidence|Comments|Affected/.test(c)) w=260;
+      else if(/Failure Mode|Top|Description/.test(c)) w=220;
+      else if(/Component|Assembly|RefDes/.test(c)) w=130;
+      else if(/Yield|Failure Rate|FR|%/.test(c)) w=90;
+      else if(/Issue|RCCA|Rank|Qty|WO|SN/.test(c)) w=85;
+      return '<Column ss:Width="'+w+'"/>';
+    }).join('');
+  }
+  function wsXml(name,title,subtitle,cols,rows,opts){
+    opts=opts||{};
+    var x='<Worksheet ss:Name="'+esc(name).slice(0,31)+'"><Table>'+colWidths(cols);
+    x+='<Row ss:Height="28">'+xmlCell(title,'title')+'</Row>';
+    x+='<Row>'+xmlCell(subtitle,'sub')+'</Row><Row></Row><Row>';
+    cols.forEach(function(c){ x+=xmlCell(c,'hdr'); });
+    x+='</Row>';
+    (rows||[]).forEach(function(r){
+      x+='<Row>';
+      cols.forEach(function(c){
+        var val = r && r[c] != null ? r[c] : '';
+        var st='cell';
+        if(/Risk|Priority|Status/.test(c)) st='flag';
+        if(/Pareto %|Cumulative %|Yield Impact|Failure Rate|FR/.test(c)) st='pct';
+        x+=xmlCell(val,st);
+      });
+      x+='</Row>';
+    });
+    x+='</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>';
+    return x;
+  }
+  function paretoFromIssues(issues, keyName, label){
+    var map={}, total=0;
+    (issues||[]).forEach(function(r){
+      var key=txt(r[keyName] || 'N/D') || 'N/D';
+      var qty=num(r['Qty SN']);
+      if(qty<=0) qty=1;
+      total+=qty;
+      if(!map[key]) map[key]={name:key, issues:0, qty:0, wo:{}, sn:{}, fm:{}, ref:{}, pn:{}, maxRisk:'Low'};
+      var o=map[key];
+      o.issues+=1; o.qty+=qty;
+      txt(r['WO Impacted']).split(/[,;]+/).forEach(function(w){w=txt(w); if(w) o.wo[w]=1;});
+      txt(r['Affected SN']).split(/[,;]+/).forEach(function(s){s=txt(s); if(s) o.sn[s]=1;});
+      if(txt(r['Failure Mode'])) o.fm[txt(r['Failure Mode'])]=1;
+      if(txt(r['RefDes'])) o.ref[txt(r['RefDes'])]=1;
+      if(txt(r['Component PN'])) o.pn[txt(r['Component PN'])]=1;
+      var order={Low:1,Medium:2,High:3,Critical:4};
+      var rk=txt(r['Risk Level'])||'Low'; if((order[rk]||1)>(order[o.maxRisk]||1)) o.maxRisk=rk;
+    });
+    var cum=0;
+    return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.qty-a.qty; }).map(function(o,i){
+      cum+=o.qty;
+      return {
+        'Rank':i+1,
+        [label]:o.name,
+        'Qty SN Impacted':o.qty,
+        'Issue Count':o.issues,
+        'Pareto %': total ? (o.qty/total*100).toFixed(2)+'%' : '0.00%',
+        'Cumulative %': total ? (cum/total*100).toFixed(2)+'%' : '0.00%',
+        'WO Count':Object.keys(o.wo).length,
+        'SN Count':Object.keys(o.sn).length || o.qty,
+        'Top Failure Modes':Object.keys(o.fm).slice(0,8).join(', '),
+        'Top RefDes':Object.keys(o.ref).slice(0,12).join(', '),
+        'Top Component PN':Object.keys(o.pn).slice(0,12).join(', '),
+        'Highest Risk':o.maxRisk
+      };
+    });
+  }
+  function paretoByWo(detail, built, mfg){
+    var map={}, total=0;
+    (detail||[]).forEach(function(r){
+      var wo=txt(r.WO || r.WorkOrder || 'N/D') || 'N/D';
+      var sn=txt(r.SN || '');
+      if(!map[wo]) map[wo]={wo:wo, rows:0, sn:{}, fm:{}, ref:{}, pn:{}};
+      var o=map[wo]; o.rows+=1; if(sn) o.sn[sn]=1;
+      if(txt(r.FailureMode)) o.fm[txt(r.FailureMode)]=1;
+      if(txt(r.RefDes)) o.ref[txt(r.RefDes)]=1;
+      if(txt(r.ComponentPartNumber)) o.pn[txt(r.ComponentPartNumber)]=1;
+    });
+    Object.keys(map).forEach(function(k){ total += Object.keys(map[k].sn).length || map[k].rows; });
+    var cum=0;
+    return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return (Object.keys(b.sn).length||b.rows)-(Object.keys(a.sn).length||a.rows); }).map(function(o,i){
+      var qty=Object.keys(o.sn).length || o.rows; cum+=qty;
+      return {'Rank':i+1,'Work Order':o.wo,'Qty SN Impacted':qty,'Repair Rows':o.rows,'Pareto %':total?(qty/total*100).toFixed(2)+'%':'0.00%','Cumulative %':total?(cum/total*100).toFixed(2)+'%':'0.00%','FR vs Build':built?(qty/built*100).toFixed(2)+'%':'0.00%','FR vs MFG':mfg?(qty/mfg*100).toFixed(2)+'%':'0.00%','Top Failure Modes':Object.keys(o.fm).slice(0,8).join(', '),'Top RefDes':Object.keys(o.ref).slice(0,12).join(', '),'Top Component PN':Object.keys(o.pn).slice(0,12).join(', ')};
+    });
+  }
+  function buildBook(type){
+    var base = window.SMTINEL_BOARD_IMPACT_EXPORT_V76 && window.SMTINEL_BOARD_IMPACT_EXPORT_V76.model ? window.SMTINEL_BOARD_IMPACT_EXPORT_V76.model() : null;
+    if(!base || !base.issues || !base.issues.length){ alert('No hay issues reales para exportar. Aplica Board Impact con Repair Record cargado.'); return null; }
+    var now=new Date();
+    var issueCols=['Issue ID','Side','Station','RefDes','Failure Mode','Qty SN','Yield Impact','Source','Status','Risk Level','Owner','Due Date','Action Required','Component PN','Assembly PN','WO Impacted','Issue FR vs Build','Issue FR vs MFG','Affected SN'];
+    var detail=(base.detail||[]).map(function(r){ return {SN:r.SN,WO:r.WO||r.WorkOrder,Station:r.Station,RefDes:r.RefDes,FailureMode:r.FailureMode,ComponentPartNumber:r.ComponentPartNumber,AssemblyPartNumber:r.AssemblyPartNumber,Disposition:r.Disposition,Repaired:r.Repaired,RetestResult:r.RetestResult,Comments:r.Comments}; });
+    var summary=[
+      {'Metric':'Risk Units','Value':base.kpi.risk},
+      {'Metric':'Clean Yield','Value':base.kpi.cleanYield.toFixed(2)+'%'},
+      {'Metric':'FR vs Build','Value':base.kpi.frBuild.toFixed(2)+'%'},
+      {'Metric':'FR vs MFG','Value':base.kpi.frMfg.toFixed(2)+'%'},
+      {'Metric':'Total Built','Value':base.kpi.built},
+      {'Metric':'Total MFG','Value':base.kpi.mfg},
+      {'Metric':'Consolidated Issues','Value':base.issues.length},
+      {'Metric':'Detailed SN Logs','Value':base.detail.length},
+      {'Metric':'Pareto Sheets','Value':'Failure Mode, RefDes, Component PN, Work Order'}
+    ];
+    var paretoCols=['Rank','Failure Mode','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top RefDes','Top Component PN','Highest Risk'];
+    var refCols=['Rank','RefDes','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top Failure Modes','Top Component PN','Highest Risk'];
+    var pnCols=['Rank','Component PN','Qty SN Impacted','Issue Count','Pareto %','Cumulative %','WO Count','SN Count','Top Failure Modes','Top RefDes','Highest Risk'];
+    var woCols=['Rank','Work Order','Qty SN Impacted','Repair Rows','Pareto %','Cumulative %','FR vs Build','FR vs MFG','Top Failure Modes','Top RefDes','Top Component PN'];
+    var book='<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="18" ss:Color="#102A43"/></Style><Style ss:ID="sub"><Font ss:Size="10" ss:Color="#5F766C"/></Style><Style ss:ID="hdr"><Interior ss:Color="#102A43" ss:Pattern="Solid"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style><Style ss:ID="cell"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style><Style ss:ID="flag"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#B3261E"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style><Style ss:ID="pct"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#5E35B1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B8C7D9"/></Borders></Style></Styles>';
+    book += wsXml('Executive Summary','SMTinel Board Impact Executive Summary','Generated '+now.toLocaleString()+' · '+VERSION+' · Yield Flow metrics reused',['Metric','Value'],summary);
+    book += wsXml('Issue & Action Tracker','TRACKER PREVIEW - ISSUE & ACTION','Consolidated by Failure Mode + RefDes + Component PN',issueCols,base.issues);
+    book += wsXml('Pareto Failure Mode','Pareto - Failure Mode','Consolidated by failure mode, sorted by Qty SN Impacted',paretoCols,paretoFromIssues(base.issues,'Failure Mode','Failure Mode'));
+    book += wsXml('Pareto RefDes','Pareto - RefDes','Consolidated by reference designator, sorted by Qty SN Impacted',refCols,paretoFromIssues(base.issues,'RefDes','RefDes'));
+    book += wsXml('Pareto Component PN','Pareto - Component PN','Consolidated by component part number only. Assembly/model PN excluded.',pnCols,paretoFromIssues(base.issues,'Component PN','Component PN'));
+    book += wsXml('Pareto Work Order','Pareto - Work Order Impact','WO impact calculated from SN Impact Log',woCols,paretoByWo(base.detail,base.kpi.built,base.kpi.mfg));
+    book += wsXml('SN Impact Log','SN LOG PREVIEW - IMPACT LOG','Detailed SN-level Repair Record log',['SN','WO','Station','RefDes','FailureMode','ComponentPartNumber','AssemblyPartNumber','Disposition','Repaired','RetestResult','Comments'],detail);
+    book += wsXml('Failure Mode Summary','Failure Mode Consolidation','Summary preserved from consolidated tracker',['Failure Mode','Issue Count','Qty SN','Failure Rate vs Build','Failure Rate vs MFG','Top RefDes','Top Component PN','Highest Risk'],base.modeSummary);
+    book += wsXml('RCCA Embedded','Embedded RCCA Tracker','RCCA skeleton generated from consolidated issues',['RCCA ID','Issue ID','Problem Statement','Containment','Root Cause','Corrective Action','Preventive Action','Owner','Due Date','Status','Evidence / Comments'],base.rcca);
+    book += '</Workbook>';
+    return book;
+  }
+  function download(type){
+    var book=buildBook(type); if(!book) return;
+    var today=new Date().toISOString().slice(0,10);
+    var blob=new Blob([book],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='SMTinel_Board_Impact_'+(type||'Issue')+'_Tracker_'+today+'_v77.xls';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},1000);
+  }
+  function ensureCenter(){
+    var root=document.getElementById('boardimpact-section'); if(!root) return;
+    var center=document.getElementById('board-impact-export-center');
+    if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); }
+    center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1';
+    center.innerHTML='<div style="min-width:280px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Tracker consolidado + Pareto Failure Mode / RefDes / Component PN / WO + RCCA.</div></div><button data-smtinel-board-native-export="v77" data-board-export-issue="1" class="traceops-board-export-btn" type="button">📘 Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v77" data-board-export-action="1" class="traceops-board-export-btn" type="button">📗 Export Action / RCCA XLS</button>';
+    Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){
+      btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true);
+    });
+  }
+  function run(){ try{ ensureCenter(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  setInterval(run,700);
+  window.SMTINEL_BOARD_IMPACT_EXPORT_V77={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, buildBook:buildBook};
+})();
+</script>
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
