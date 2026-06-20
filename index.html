@@ -18311,6 +18311,172 @@ body:has(#recovery-section) .main-content.expanded{
 </style>
 
 <!-- SMTinel v92: stable restore based on last working dashboard export. No navigation override / no board-impact route mutation. -->
+
+<style id="dock-readable-final-override-v24">
+/* FINAL DOCK READABILITY OVERRIDE - loaded last on purpose */
+html body{padding-bottom:118px !important;}
+html body .main-content,
+html body .main-content.expanded,
+html body #root{padding-bottom:118px !important;}
+html body .smtinel-bottom-nav{
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:18px !important;
+  transform:translateX(-50%) !important;
+  width:min(1180px, calc(100vw - 96px)) !important;
+  max-width:1180px !important;
+  min-height:88px !important;
+  height:88px !important;
+  padding:9px 16px !important;
+  display:grid !important;
+  grid-template-columns:repeat(6, minmax(96px,1fr)) !important;
+  align-items:center !important;
+  justify-items:stretch !important;
+  gap:8px !important;
+  overflow:visible !important;
+  border-radius:34px !important;
+  background:linear-gradient(180deg, rgba(13,50,89,.98) 0%, rgba(7,31,61,.99) 100%) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  box-shadow:0 18px 42px rgba(3,18,39,.38), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.35) !important;
+  backdrop-filter:blur(20px) saturate(1.35) !important;
+}
+html body .smtinel-bottom-nav::before{display:none !important;content:none !important;}
+html body .smtinel-bottom-nav .smtinel-tab,
+html body .smtinel-bottom-nav button{
+  appearance:none !important;
+  position:relative !important;
+  inset:auto !important;
+  transform:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:70px !important;
+  min-height:70px !important;
+  max-height:70px !important;
+  margin:0 !important;
+  padding:7px 8px 10px !important;
+  gap:4px !important;
+  border:0 !important;
+  border-radius:24px !important;
+  background:transparent !important;
+  color:rgba(238,246,255,.94) !important;
+  overflow:visible !important;
+  box-shadow:none !important;
+  text-align:center !important;
+  font-family:"Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab-icon,
+html body .smtinel-bottom-nav button .smtinel-tab-icon,
+html body .smtinel-bottom-nav .smtinel-tab > span:first-child,
+html body .smtinel-bottom-nav button > span:first-child{
+  position:static !important;
+  transform:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 27px !important;
+  width:27px !important;
+  height:27px !important;
+  min-width:27px !important;
+  min-height:27px !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+html body .smtinel-bottom-nav svg,
+html body .smtinel-bottom-nav .smtinel-tab-icon svg{
+  display:block !important;
+  width:25px !important;
+  height:25px !important;
+  min-width:25px !important;
+  min-height:25px !important;
+  color:rgba(236,246,255,.92) !important;
+  stroke:currentColor !important;
+  fill:none !important;
+  stroke-width:2.15 !important;
+  overflow:visible !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab span:last-child,
+html body .smtinel-bottom-nav button span:last-child{
+  position:static !important;
+  inset:auto !important;
+  transform:none !important;
+  display:block !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  height:auto !important;
+  min-height:28px !important;
+  margin:0 !important;
+  padding:0 !important;
+  color:rgba(255,255,255,.98) !important;
+  font-size:13px !important;
+  line-height:1.08 !important;
+  font-weight:750 !important;
+  letter-spacing:-.015em !important;
+  text-align:center !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:unset !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab.active,
+html body .smtinel-bottom-nav button.active{
+  background:rgba(255,255,255,.16) !important;
+  color:#fff !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14), 0 8px 20px rgba(0,0,0,.18) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab.active::after,
+html body .smtinel-bottom-nav button.active::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:5px !important;
+  transform:translateX(-50%) !important;
+  width:36px !important;
+  height:4px !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#ff4d6d,#ff2d55) !important;
+  box-shadow:0 0 9px rgba(255,45,85,.48) !important;
+}
+@media(max-width:900px){
+  html body .smtinel-bottom-nav{
+    width:calc(100vw - 32px) !important;
+    height:84px !important;
+    min-height:84px !important;
+    bottom:12px !important;
+    padding:8px 8px !important;
+    gap:3px !important;
+    grid-template-columns:repeat(6, minmax(0,1fr)) !important;
+  }
+  html body .smtinel-bottom-nav .smtinel-tab,
+  html body .smtinel-bottom-nav button{
+    height:68px !important;
+    min-height:68px !important;
+    max-height:68px !important;
+    padding:6px 3px 9px !important;
+  }
+  html body .smtinel-bottom-nav .smtinel-tab span:last-child,
+  html body .smtinel-bottom-nav button span:last-child{
+    font-size:11px !important;
+    min-height:24px !important;
+  }
+}
+</style>
+
 </body>
 </html>`;
     }
@@ -56214,6 +56380,531 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 })();
 </script>
 <!-- /SMTinel RCCA/YieldFlow scope guard hotfix v2026-06-19 -->
+
+
+<!-- SMTinel Apple Music Premium Polish v2.0 -->
+<style id="smtinel-apple-music-premium-polish-v2">
+/* =========================================================
+   Apple Music polish v2
+   Goals: lighter Dock, less obstruction, compact topbar,
+   softer cards, better table readability. Logo assets untouched.
+   ========================================================= */
+html body.smtinel-apple-premium{
+  --am-bg:#F5F7FA;
+  --am-surface:rgba(255,255,255,.78);
+  --am-surface-strong:rgba(255,255,255,.92);
+  --am-line:rgba(20,20,20,.085);
+  --am-text:#17171A;
+  --am-muted:#6E7378;
+  --am-red:#FA2D55;
+  --am-red-dark:#D7193F;
+  --am-blue:#1F6FAE;
+  --am-green:#14845B;
+  --am-shadow:0 14px 34px rgba(20,20,20,.075);
+  --am-shadow-soft:0 8px 24px rgba(20,20,20,.055);
+  background:
+    radial-gradient(circle at 16% 8%, rgba(255,255,255,.95), rgba(255,255,255,0) 26%),
+    radial-gradient(circle at 84% 8%, rgba(232,246,255,.78), rgba(255,255,255,0) 30%),
+    linear-gradient(180deg,#F7FAFC 0%,#F3F5F8 100%) !important;
+}
+
+/* Give content enough breathing room so the floating bar does not cover tables. */
+html body.smtinel-apple-premium .main-content,
+html body.smtinel-apple-premium .main-content.expanded,
+html body.smtinel-apple-premium main,
+html body.smtinel-apple-premium #root{
+  padding-bottom:132px !important;
+}
+html body.smtinel-apple-premium .tcard:last-child,
+html body.smtinel-apple-premium .traceops-panel:last-child,
+html body.smtinel-apple-premium .traceops-material-panel:last-child,
+html body.smtinel-apple-premium .pf-card:last-child{
+  margin-bottom:112px !important;
+}
+
+/* Compact Apple-like frosted toolbar. Less corporate bumper car, more desktop app. */
+html body.smtinel-apple-premium .saas-topbar{
+  height:58px !important;
+  min-height:58px !important;
+  padding:8px 18px !important;
+  background:rgba(255,255,255,.74) !important;
+  border:1px solid rgba(20,20,20,.075) !important;
+  border-top:0 !important;
+  border-radius:0 0 26px 26px !important;
+  box-shadow:0 10px 28px rgba(20,20,20,.075) !important;
+  backdrop-filter:blur(28px) saturate(1.35) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.35) !important;
+}
+html body.smtinel-apple-premium .saas-topbar-actions{
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  padding:0 2px 2px !important;
+}
+html body.smtinel-apple-premium .saas-topbar-actions::-webkit-scrollbar{display:none !important;}
+html body.smtinel-apple-premium .saas-header-btn,
+html body.smtinel-apple-premium .saas-menu-btn,
+html body.smtinel-apple-premium .saas-header-pill{
+  height:38px !important;
+  min-height:38px !important;
+  padding:0 13px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.82) !important;
+  border:1px solid rgba(20,20,20,.09) !important;
+  box-shadow:0 6px 18px rgba(20,20,20,.045) !important;
+  color:#1F2933 !important;
+  white-space:nowrap !important;
+}
+html body.smtinel-apple-premium .saas-menu-btn{width:38px !important;padding:0 !important;}
+html body.smtinel-apple-premium .saas-header-btn.primary{
+  background:linear-gradient(135deg,#1F6FAE 0%,#128260 100%) !important;
+  border-color:rgba(31,111,174,.22) !important;
+  color:#fff !important;
+  box-shadow:0 10px 24px rgba(31,111,174,.18) !important;
+}
+html body.smtinel-apple-premium .saas-topbar-title{
+  font-size:15px !important;
+  letter-spacing:-.02em !important;
+}
+html body.smtinel-apple-premium .saas-topbar-subtitle{
+  font-size:10px !important;
+  color:rgba(20,20,20,.46) !important;
+}
+
+/* Softer surfaces: less huge blobs, better density for data work. */
+html body.smtinel-apple-premium .traceops-context,
+html body.smtinel-apple-premium .traceops-kpi-card,
+html body.smtinel-apple-premium .traceops-panel,
+html body.smtinel-apple-premium .traceops-engineering-card,
+html body.smtinel-apple-premium .traceops-calendar,
+html body.smtinel-apple-premium .tcard,
+html body.smtinel-apple-premium .pf-card,
+html body.smtinel-apple-premium .cmp,
+html body.smtinel-apple-premium .foot,
+html body.smtinel-apple-premium .up,
+html body.smtinel-apple-premium .prog,
+html body.smtinel-apple-premium .api-bar,
+html body.smtinel-apple-premium .traceops-material-panel,
+html body.smtinel-apple-premium .traceops-material-kpi,
+html body.smtinel-apple-premium .traceops-material-bar,
+html body.smtinel-apple-premium .traceops-material-driver,
+html body.smtinel-apple-premium [class*="card"],
+html body.smtinel-apple-premium [class*="panel"]{
+  border-radius:18px !important;
+  background:var(--am-surface) !important;
+  border:1px solid var(--am-line) !important;
+  box-shadow:var(--am-shadow-soft) !important;
+  backdrop-filter:blur(18px) saturate(1.12) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.12) !important;
+}
+html body.smtinel-apple-premium .traceops-panel-head,
+html body.smtinel-apple-premium .traceops-calendar-head,
+html body.smtinel-apple-premium .tcard-hdr,
+html body.smtinel-apple-premium .pf-hdr,
+html body.smtinel-apple-premium .traceops-material-head,
+html body.smtinel-apple-premium .filter-bar{
+  border-radius:18px 18px 0 0 !important;
+  background:rgba(250,251,253,.76) !important;
+  padding-top:13px !important;
+  padding-bottom:13px !important;
+}
+
+/* Tame the huge oval KPI shapes in dense operational areas without killing the hero look. */
+html body.smtinel-apple-premium .traceops-kpi-card,
+html body.smtinel-apple-premium .traceops-material-kpi,
+html body.smtinel-apple-premium .pf-stat,
+html body.smtinel-apple-premium .krow{
+  border-radius:16px !important;
+  box-shadow:0 7px 20px rgba(20,20,20,.05) !important;
+}
+html body.smtinel-apple-premium .traceops-kpi-value,
+html body.smtinel-apple-premium .traceops-material-kpi .val,
+html body.smtinel-apple-premium .pf-stat-val{
+  letter-spacing:-.045em !important;
+}
+
+/* Tables: compact but readable, like a library list instead of a warehouse receipt. */
+html body.smtinel-apple-premium th{
+  height:38px !important;
+  padding:9px 12px !important;
+  background:rgba(248,249,251,.72) !important;
+  color:#6E7378 !important;
+}
+html body.smtinel-apple-premium td{
+  padding:9px 12px !important;
+  line-height:1.42 !important;
+}
+html body.smtinel-apple-premium .tscroll,
+html body.smtinel-apple-premium .traceops-material-tablewrap{
+  border-radius:16px !important;
+}
+
+/* Buttons: keep Apple accent, but reduce the screaming-pink situation. */
+html body.smtinel-apple-premium ._s2p,
+html body.smtinel-apple-premium ._s2cta button:first-child,
+html body.smtinel-apple-premium .traceops-tab.active,
+html body.smtinel-apple-premium .day-btn.active,
+html body.smtinel-apple-premium .traceops-calendar-btn.active,
+html body.smtinel-apple-premium .traceops-calendar-chip.active{
+  background:linear-gradient(135deg,#FA2D55 0%,#D7193F 100%) !important;
+  color:#fff !important;
+  border-color:rgba(215,25,63,.22) !important;
+  box-shadow:0 10px 24px rgba(250,45,85,.16) !important;
+}
+html body.smtinel-apple-premium .traceops-material-btn.primary,
+html body.smtinel-apple-premium .up-btn{
+  background:linear-gradient(135deg,#1F6FAE 0%,#14845B 100%) !important;
+  color:#fff !important;
+  border-color:rgba(31,111,174,.22) !important;
+}
+
+/* Lighter, shorter Dock: closer to Apple Music control bar and less obstruction. */
+html body.smtinel-apple-premium .smtinel-bottom-nav,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+  width:min(900px,calc(100vw - 56px)) !important;
+  height:58px !important;
+  min-height:58px !important;
+  bottom:18px !important;
+  padding:6px 8px !important;
+  border-radius:22px !important;
+  background:rgba(248,250,252,.72) !important;
+  border:1px solid rgba(20,20,20,.12) !important;
+  box-shadow:0 16px 42px rgba(20,20,20,.15), inset 0 1px 0 rgba(255,255,255,.92) !important;
+  backdrop-filter:blur(34px) saturate(1.55) !important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.55) !important;
+  gap:3px !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+html body.smtinel-apple-premium .smtinel-bottom-nav button{
+  min-height:46px !important;
+  height:46px !important;
+  border-radius:16px !important;
+  color:#5F666D !important;
+  font-size:10.5px !important;
+  line-height:1.05 !important;
+  padding:5px 10px !important;
+  gap:3px !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav svg,
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon svg{
+  width:20px !important;
+  height:20px !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab:hover,
+html body.smtinel-apple-premium .smtinel-bottom-nav button:hover{
+  background:rgba(20,20,20,.055) !important;
+  color:#1E2227 !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav [data-active="true"],
+html body.smtinel-apple-premium .smtinel-bottom-nav [aria-current="page"]{
+  background:rgba(250,45,85,.105) !important;
+  color:var(--am-red-dark) !important;
+  box-shadow:inset 0 0 0 1px rgba(250,45,85,.12) !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active::after,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active::after{
+  height:2px !important;
+  bottom:3px !important;
+  background:var(--am-red) !important;
+}
+
+/* Version pill: keep it subtle and out of the way. */
+html body.smtinel-apple-premium [class*="version"],
+html body.smtinel-apple-premium .smtinel-version-badge,
+html body.smtinel-apple-premium .traceops-version-badge{
+  background:rgba(255,255,255,.74) !important;
+  color:#4B5157 !important;
+  border:1px solid rgba(20,20,20,.10) !important;
+  box-shadow:0 12px 28px rgba(20,20,20,.12) !important;
+  backdrop-filter:blur(22px) saturate(1.25) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.25) !important;
+}
+
+/* Better behavior on small screens. */
+@media(max-width:900px){
+  html body.smtinel-apple-premium .saas-topbar{
+    height:62px !important;
+    min-height:62px !important;
+    padding:10px 12px !important;
+  }
+  html body.smtinel-apple-premium .saas-header-btn,
+  html body.smtinel-apple-premium .saas-header-pill{
+    height:36px !important;
+    min-height:36px !important;
+    padding:0 11px !important;
+    font-size:11px !important;
+  }
+  html body.smtinel-apple-premium .main-content,
+  html body.smtinel-apple-premium .main-content.expanded,
+  html body.smtinel-apple-premium main,
+  html body.smtinel-apple-premium #root{
+    padding-bottom:116px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav,
+  html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+    width:calc(100vw - 24px) !important;
+    height:56px !important;
+    min-height:56px !important;
+    bottom:10px !important;
+    border-radius:20px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+  html body.smtinel-apple-premium .smtinel-bottom-nav button{
+    min-height:44px !important;
+    height:44px !important;
+    font-size:9.5px !important;
+    padding:4px 6px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav svg,
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon svg{
+    width:18px !important;
+    height:18px !important;
+  }
+}
+</style>
+<script id="smtinel-apple-music-premium-polish-v2-script">
+(function(){
+  function apply(){
+    try{ document.body.classList.add('smtinel-apple-premium'); }catch(e){}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
+  else apply();
+})();
+</script>
+<!-- /SMTinel Apple Music Premium Polish v2.0 -->
+
+
+<!-- SMTinel Apple Music Premium v2.2 Less Round Content Patch -->
+<style id="smtinel-apple-premium-v22-less-round">
+/* Less-round correction: keep the premium Apple-style surface, but stop turning data cards into giant pills. */
+html body.smtinel-apple-premium .main-content .traceops-context,
+html body.smtinel-apple-premium .main-content .traceops-kpi-card,
+html body.smtinel-apple-premium .main-content .traceops-panel,
+html body.smtinel-apple-premium .main-content .traceops-engineering-card,
+html body.smtinel-apple-premium .main-content .traceops-calendar,
+html body.smtinel-apple-premium .main-content .tcard,
+html body.smtinel-apple-premium .main-content .pf-card,
+html body.smtinel-apple-premium .main-content .cmp,
+html body.smtinel-apple-premium .main-content .foot,
+html body.smtinel-apple-premium .main-content .up,
+html body.smtinel-apple-premium .main-content .prog,
+html body.smtinel-apple-premium .main-content .api-bar,
+html body.smtinel-apple-premium .main-content .ic-wrap,
+html body.smtinel-apple-premium .main-content .img-panel,
+html body.smtinel-apple-premium .main-content .ic-card.active,
+html body.smtinel-apple-premium .main-content .krow,
+html body.smtinel-apple-premium .main-content .pf-stat,
+html body.smtinel-apple-premium .main-content .pitem,
+html body.smtinel-apple-premium .main-content .traceops-calendar-month,
+html body.smtinel-apple-premium .main-content .traceops-calendar-strip-day,
+html body.smtinel-apple-premium .main-content .traceops-alert-item,
+html body.smtinel-apple-premium .main-content .traceops-bullet,
+html body.smtinel-apple-premium .main-content .traceops-material-panel,
+html body.smtinel-apple-premium .main-content .traceops-material-kpi,
+html body.smtinel-apple-premium .main-content .traceops-material-bar,
+html body.smtinel-apple-premium .main-content .traceops-material-driver,
+html body.smtinel-apple-premium .main-content .smt-exec-panel,
+html body.smtinel-apple-premium .main-content .smt-exec-card,
+html body.smtinel-apple-premium .main-content .smt-exec-8d,
+html body.smtinel-apple-premium .main-content [class*="card"],
+html body.smtinel-apple-premium .main-content [class*="panel"]{
+  border-radius:14px !important;
+  box-shadow:0 10px 28px rgba(20,20,20,.055) !important;
+}
+
+html body.smtinel-apple-premium .main-content .traceops-panel-head,
+html body.smtinel-apple-premium .main-content .traceops-calendar-head,
+html body.smtinel-apple-premium .main-content .tcard-hdr,
+html body.smtinel-apple-premium .main-content .pf-hdr,
+html body.smtinel-apple-premium .main-content .traceops-calendar-month-head,
+html body.smtinel-apple-premium .main-content .filter-bar,
+html body.smtinel-apple-premium .main-content .ic-tabs,
+html body.smtinel-apple-premium .main-content .ic-card-head,
+html body.smtinel-apple-premium .main-content .traceops-material-head{
+  border-radius:14px 14px 0 0 !important;
+}
+
+/* The original Apple pass rounded every button to 999px. That made Yield/Board data cards look like beach balls. */
+html body.smtinel-apple-premium .main-content button{
+  border-radius:12px !important;
+}
+
+/* Keep true chips/badges pill-shaped. Those are labels, not cards. */
+html body.smtinel-apple-premium .main-content .chip,
+html body.smtinel-apple-premium .main-content .ptag,
+html body.smtinel-apple-premium .main-content .badge,
+html body.smtinel-apple-premium .main-content .traceops-window-pill,
+html body.smtinel-apple-premium .main-content span[class*="badge"],
+html body.smtinel-apple-premium .main-content span[class*="pill"]{
+  border-radius:999px !important;
+}
+
+/* Inline cards from Yield Flow / Board Impact. Reduce their radius without damaging tiny circular status dots. */
+html body.smtinel-apple-premium .main-content [style*="borderRadius: 14"],
+html body.smtinel-apple-premium .main-content [style*="border-radius: 14"],
+html body.smtinel-apple-premium .main-content [style*="borderRadius: 16"],
+html body.smtinel-apple-premium .main-content [style*="border-radius: 16"],
+html body.smtinel-apple-premium .main-content [style*="borderRadius: 22"],
+html body.smtinel-apple-premium .main-content [style*="border-radius: 22"]{
+  border-radius:12px !important;
+}
+
+html body.smtinel-apple-premium .main-content input,
+html body.smtinel-apple-premium .main-content select,
+html body.smtinel-apple-premium .main-content textarea,
+html body.smtinel-apple-premium .main-content .api-input,
+html body.smtinel-apple-premium .main-content .pf-select{
+  border-radius:12px !important;
+}
+
+/* Preserve dock/topbar shape because those are navigation controls, not data cards. */
+html body.smtinel-apple-premium .smtinel-bottom-nav,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+  border-radius:28px !important;
+}
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+html body.smtinel-apple-premium .smtinel-bottom-nav button{
+  border-radius:20px !important;
+}
+html body.smtinel-apple-premium .saas-topbar,
+html body.smtinel-apple-premium .saas-header-btn,
+html body.smtinel-apple-premium .saas-menu-btn,
+html body.smtinel-apple-premium .saas-header-pill{
+  border-radius:999px !important;
+}
+html body.smtinel-apple-premium .saas-topbar{
+  border-radius:0 0 20px 20px !important;
+}
+</style>
+<!-- /SMTinel Apple Music Premium v2.2 Less Round Content Patch -->
+
+<style id="dock-label-final-fix">
+/* Final dock fix: stop label clipping by forcing a two-row layout inside every tab. */
+html body .smtinel-bottom-nav{
+  min-height:104px !important;
+  height:104px !important;
+  padding:12px 18px 14px !important;
+  bottom:18px !important;
+  border-radius:36px !important;
+  overflow:visible !important;
+  align-items:center !important;
+  background:linear-gradient(180deg,rgba(15,49,86,.98),rgba(7,31,62,.98)) !important;
+  box-shadow:0 18px 44px rgba(2,16,35,.42), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab,
+html body .smtinel-bottom-nav button{
+  height:78px !important;
+  min-height:78px !important;
+  max-height:78px !important;
+  padding:8px 8px 10px !important;
+  border-radius:26px !important;
+  display:grid !important;
+  grid-template-rows:34px 26px !important;
+  grid-template-columns:1fr !important;
+  align-items:center !important;
+  justify-items:center !important;
+  gap:4px !important;
+  overflow:visible !important;
+  transform:none !important;
+  line-height:1 !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab *,
+html body .smtinel-bottom-nav button *{
+  transform:none !important;
+  overflow:visible !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab-icon,
+html body .smtinel-bottom-nav button .smtinel-tab-icon,
+html body .smtinel-bottom-nav svg{
+  grid-row:1 !important;
+  align-self:center !important;
+  justify-self:center !important;
+  width:30px !important;
+  height:30px !important;
+  max-width:30px !important;
+  max-height:30px !important;
+  margin:0 !important;
+  color:rgba(255,255,255,.94) !important;
+  stroke:rgba(255,255,255,.94) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab span:last-child,
+html body .smtinel-bottom-nav button span:last-child,
+html body .smtinel-bottom-nav .smtinel-tab-label,
+html body .smtinel-bottom-nav [class*="label"]{
+  grid-row:2 !important;
+  align-self:start !important;
+  justify-self:center !important;
+  display:block !important;
+  position:static !important;
+  inset:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:24px !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  color:#ffffff !important;
+  font-size:13px !important;
+  line-height:1.05 !important;
+  font-weight:850 !important;
+  letter-spacing:-.012em !important;
+  text-align:center !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow:visible !important;
+  text-overflow:unset !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab.active,
+html body .smtinel-bottom-nav button.active{
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.12)) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 8px 20px rgba(0,0,0,.18) !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab.active span:last-child,
+html body .smtinel-bottom-nav button.active span:last-child{
+  color:#fff !important;
+}
+html body .smtinel-bottom-nav .smtinel-tab.active::after,
+html body .smtinel-bottom-nav button.active::after{
+  bottom:7px !important;
+  width:38px !important;
+  height:4px !important;
+  border-radius:999px !important;
+  background:#ff2d55 !important;
+  box-shadow:0 0 10px rgba(255,45,85,.45) !important;
+}
+body.traceops-premium-shell .main-content,
+body.traceops-premium-shell .main-content.expanded,
+html body .main-content{
+  padding-bottom:160px !important;
+}
+@media(max-width:900px){
+  html body .smtinel-bottom-nav{
+    left:10px !important;
+    right:10px !important;
+    min-height:100px !important;
+    height:100px !important;
+    padding:10px 8px 13px !important;
+  }
+  html body .smtinel-bottom-nav .smtinel-tab,
+  html body .smtinel-bottom-nav button{
+    height:74px !important;
+    min-height:74px !important;
+    grid-template-rows:31px 25px !important;
+    padding:7px 3px 9px !important;
+  }
+  html body .smtinel-bottom-nav .smtinel-tab span:last-child,
+  html body .smtinel-bottom-nav button span:last-child{
+    font-size:11px !important;
+    line-height:1.05 !important;
+  }
+}
+</style>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
@@ -57053,3 +57744,559 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
 })();
 </script>
 <!-- /SMTinel Recovery Intelligence - Clean Fusion Layer v1.1 -->
+
+<!-- SMTinel Apple Music Premium Workspace Theme v1.0 -->
+<style id="smtinel-apple-music-premium-theme-v1">
+html body.smtinel-apple-premium,
+html body.smtinel-apple-premium #root{
+  font-family:"Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif !important;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255,255,255,.92), rgba(255,255,255,0) 30%),
+    radial-gradient(circle at 84% 18%, rgba(235,246,255,.82), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg,#F7F8FA 0%,#F1F3F6 100%) !important;
+  color:#141414 !important;
+}
+
+html body.smtinel-apple-premium *{
+  font-family:"Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif !important;
+}
+
+/* Top chrome: Apple Music-like frosted bar */
+html body.smtinel-apple-premium .saas-topbar{
+  background:rgba(248,249,251,.76) !important;
+  border:1px solid rgba(40,40,40,.08) !important;
+  border-top:0 !important;
+  box-shadow:0 18px 44px rgba(20,20,20,.08) !important;
+  backdrop-filter:blur(26px) saturate(1.35) !important;
+  -webkit-backdrop-filter:blur(26px) saturate(1.35) !important;
+  border-radius:0 0 28px 28px !important;
+}
+
+html body.smtinel-apple-premium .saas-topbar-title,
+html body.smtinel-apple-premium .sidebar-brand h2{
+  color:#121212 !important;
+  font-weight:800 !important;
+  letter-spacing:-.035em !important;
+}
+
+html body.smtinel-apple-premium .saas-topbar-subtitle,
+html body.smtinel-apple-premium .sidebar-brand h2 span{
+  color:#7B7B80 !important;
+}
+
+html body.smtinel-apple-premium .saas-menu-btn,
+html body.smtinel-apple-premium .saas-header-btn,
+html body.smtinel-apple-premium .saas-header-pill{
+  min-height:42px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.78) !important;
+  border:1px solid rgba(20,20,20,.10) !important;
+  color:#222226 !important;
+  box-shadow:0 8px 22px rgba(20,20,20,.06) !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+  font-weight:700 !important;
+}
+
+html body.smtinel-apple-premium .saas-header-btn.primary,
+html body.smtinel-apple-premium .sidebar-nuevo,
+html body.smtinel-apple-premium .up-btn,
+html body.smtinel-apple-premium button.primary{
+  background:linear-gradient(135deg,#FA2D55 0%,#D7193F 100%) !important;
+  color:#fff !important;
+  border-color:rgba(215,25,63,.28) !important;
+  box-shadow:0 16px 28px rgba(250,45,85,.18) !important;
+}
+
+/* Sidebar: light library panel */
+html body.smtinel-apple-premium .sidebar{
+  background:rgba(247,247,249,.82) !important;
+  color:#151517 !important;
+  border-right:1px solid rgba(20,20,20,.08) !important;
+  box-shadow:24px 0 52px rgba(20,20,20,.08) !important;
+  backdrop-filter:blur(28px) saturate(1.25) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.25) !important;
+}
+
+html body.smtinel-apple-premium .sidebar-header,
+html body.smtinel-apple-premium .sidebar-section,
+html body.smtinel-apple-premium .sidebar-footer{
+  border-color:rgba(20,20,20,.07) !important;
+}
+
+html body.smtinel-apple-premium .sidebar-section-title{
+  color:#86868B !important;
+  letter-spacing:.10em !important;
+  font-weight:800 !important;
+}
+
+html body.smtinel-apple-premium .sidebar-btn,
+html body.smtinel-apple-premium .sidebar-nuevo{
+  border-radius:14px !important;
+  color:#242428 !important;
+}
+
+html body.smtinel-apple-premium .sidebar-btn:hover{
+  background:rgba(230,230,235,.74) !important;
+}
+
+html body.smtinel-apple-premium .sidebar-btn.active{
+  background:rgba(250,45,85,.11) !important;
+  color:#D7193F !important;
+  font-weight:800 !important;
+}
+
+html body.smtinel-apple-premium .sidebar-api-input,
+html body.smtinel-apple-premium .api-input,
+html body.smtinel-apple-premium input,
+html body.smtinel-apple-premium select,
+html body.smtinel-apple-premium textarea,
+html body.smtinel-apple-premium .pf-select{
+  background:rgba(255,255,255,.82) !important;
+  border:1px solid rgba(20,20,20,.10) !important;
+  color:#17171A !important;
+  border-radius:14px !important;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.7), 0 5px 18px rgba(20,20,20,.035) !important;
+}
+
+html body.smtinel-apple-premium input:focus,
+html body.smtinel-apple-premium select:focus,
+html body.smtinel-apple-premium textarea:focus,
+html body.smtinel-apple-premium .api-input:focus{
+  border-color:rgba(250,45,85,.55) !important;
+  box-shadow:0 0 0 4px rgba(250,45,85,.12), inset 0 1px 1px rgba(255,255,255,.7) !important;
+  outline:none !important;
+}
+
+/* Starter / landing: premium Apple-like hero */
+html body.smtinel-apple-premium .smtinel-starter,
+html body.smtinel-apple-premium ._s2h{
+  background:
+    radial-gradient(circle at 20% 12%, rgba(255,255,255,.92), rgba(255,255,255,0) 32%),
+    radial-gradient(circle at 76% 20%, rgba(235,248,255,.75), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg,#F8FAFC 0%,#F3F5F8 100%) !important;
+}
+
+html body.smtinel-apple-premium ._s2g,
+html body.smtinel-apple-premium ._s2hw{
+  letter-spacing:-.055em !important;
+}
+
+html body.smtinel-apple-premium ._s2b,
+html body.smtinel-apple-premium ._s2s,
+html body.smtinel-apple-premium ._s2t{
+  color:#6D6D72 !important;
+}
+
+html body.smtinel-apple-premium ._s2p,
+html body.smtinel-apple-premium ._s2cta button:first-child{
+  background:linear-gradient(135deg,#FA2D55 0%,#D7193F 100%) !important;
+  color:#fff !important;
+  border-color:rgba(215,25,63,.28) !important;
+  box-shadow:0 18px 36px rgba(250,45,85,.18) !important;
+}
+
+html body.smtinel-apple-premium ._s2s,
+html body.smtinel-apple-premium ._s2cta button:not(:first-child){
+  background:rgba(255,255,255,.80) !important;
+  color:#222226 !important;
+  border:1px solid rgba(20,20,20,.10) !important;
+  box-shadow:0 12px 28px rgba(20,20,20,.07) !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+}
+
+/* Cards / surfaces */
+html body.smtinel-apple-premium .main-content,
+html body.smtinel-apple-premium .main-content.expanded{
+  background:transparent !important;
+}
+
+html body.smtinel-apple-premium .traceops-context,
+html body.smtinel-apple-premium .traceops-kpi-card,
+html body.smtinel-apple-premium .traceops-panel,
+html body.smtinel-apple-premium .traceops-engineering-card,
+html body.smtinel-apple-premium .traceops-calendar,
+html body.smtinel-apple-premium .tcard,
+html body.smtinel-apple-premium .pf-card,
+html body.smtinel-apple-premium .cmp,
+html body.smtinel-apple-premium .foot,
+html body.smtinel-apple-premium .up,
+html body.smtinel-apple-premium .prog,
+html body.smtinel-apple-premium .api-bar,
+html body.smtinel-apple-premium .picker-box,
+html body.smtinel-apple-premium .lb-box,
+html body.smtinel-apple-premium .ic-wrap,
+html body.smtinel-apple-premium .img-panel,
+html body.smtinel-apple-premium .ic-card.active,
+html body.smtinel-apple-premium .picker-card,
+html body.smtinel-apple-premium .krow,
+html body.smtinel-apple-premium .pf-stat,
+html body.smtinel-apple-premium .pitem,
+html body.smtinel-apple-premium .traceops-calendar-month,
+html body.smtinel-apple-premium .traceops-calendar-strip-day,
+html body.smtinel-apple-premium .traceops-alert-item,
+html body.smtinel-apple-premium .traceops-bullet,
+html body.smtinel-apple-premium .traceops-material-panel,
+html body.smtinel-apple-premium .traceops-material-kpi,
+html body.smtinel-apple-premium .traceops-material-bar,
+html body.smtinel-apple-premium .traceops-material-driver,
+html body.smtinel-apple-premium .smt-exec-panel,
+html body.smtinel-apple-premium .smt-exec-card,
+html body.smtinel-apple-premium .smt-exec-8d,
+html body.smtinel-apple-premium [class*="card"],
+html body.smtinel-apple-premium [class*="panel"]{
+  background:rgba(255,255,255,.80) !important;
+  border:1px solid rgba(20,20,20,.09) !important;
+  border-radius:22px !important;
+  box-shadow:0 18px 40px rgba(20,20,20,.07) !important;
+  backdrop-filter:blur(22px) saturate(1.15) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.15) !important;
+}
+
+html body.smtinel-apple-premium .traceops-panel-head,
+html body.smtinel-apple-premium .traceops-calendar-head,
+html body.smtinel-apple-premium .tcard-hdr,
+html body.smtinel-apple-premium .pf-hdr,
+html body.smtinel-apple-premium .picker-head,
+html body.smtinel-apple-premium .lb-hdr,
+html body.smtinel-apple-premium .traceops-calendar-month-head,
+html body.smtinel-apple-premium .filter-bar,
+html body.smtinel-apple-premium .ic-tabs,
+html body.smtinel-apple-premium .ic-card-head,
+html body.smtinel-apple-premium .traceops-material-head{
+  background:rgba(250,250,252,.82) !important;
+  border-color:rgba(20,20,20,.07) !important;
+  border-radius:22px 22px 0 0 !important;
+}
+
+/* Typography */
+html body.smtinel-apple-premium h1,
+html body.smtinel-apple-premium h2,
+html body.smtinel-apple-premium h3,
+html body.smtinel-apple-premium h4,
+html body.smtinel-apple-premium .traceops-context-title,
+html body.smtinel-apple-premium .traceops-kpi-value,
+html body.smtinel-apple-premium .kval,
+html body.smtinel-apple-premium .pf-name,
+html body.smtinel-apple-premium .up h3,
+html body.smtinel-apple-premium .prog h3{
+  color:#151518 !important;
+  letter-spacing:-.035em !important;
+}
+
+html body.smtinel-apple-premium p,
+html body.smtinel-apple-premium td,
+html body.smtinel-apple-premium .traceops-context-subtitle,
+html body.smtinel-apple-premium .traceops-kpi-meta,
+html body.smtinel-apple-premium .traceops-panel-head span,
+html body.smtinel-apple-premium .traceops-engineering-card p,
+html body.smtinel-apple-premium .traceops-material-note{
+  color:#6D6D72 !important;
+}
+
+html body.smtinel-apple-premium .traceops-kpi-value.fail,
+html body.smtinel-apple-premium .badge.bc,
+html body.smtinel-apple-premium .bc{ color:#D7193F !important; }
+html body.smtinel-apple-premium .traceops-kpi-value.pass,
+html body.smtinel-apple-premium .traceops-kpi-value.info{ color:#14845B !important; }
+html body.smtinel-apple-premium .traceops-kpi-value.warn{ color:#B46B00 !important; }
+
+/* Tables: Music-library style */
+html body.smtinel-apple-premium table{
+  background:transparent !important;
+  border-collapse:separate !important;
+  border-spacing:0 !important;
+}
+html body.smtinel-apple-premium th{
+  background:rgba(255,255,255,.55) !important;
+  color:#86868B !important;
+  border-bottom:1px solid rgba(20,20,20,.10) !important;
+  font-size:10px !important;
+  letter-spacing:.08em !important;
+  font-weight:800 !important;
+}
+html body.smtinel-apple-premium td{
+  border-bottom:1px solid rgba(20,20,20,.07) !important;
+  color:#303034 !important;
+}
+html body.smtinel-apple-premium tr:hover td{
+  background:rgba(250,45,85,.045) !important;
+}
+
+/* Buttons and chips */
+html body.smtinel-apple-premium button,
+html body.smtinel-apple-premium .day-btn,
+html body.smtinel-apple-premium .traceops-tab,
+html body.smtinel-apple-premium .pf-clear,
+html body.smtinel-apple-premium .resetbtn,
+html body.smtinel-apple-premium .table-reset-btn,
+html body.smtinel-apple-premium .traceops-material-btn,
+html body.smtinel-apple-premium .chip,
+html body.smtinel-apple-premium .ptag,
+html body.smtinel-apple-premium .badge,
+html body.smtinel-apple-premium .traceops-window-pill{
+  border-radius:999px !important;
+}
+
+html body.smtinel-apple-premium .traceops-tab.active,
+html body.smtinel-apple-premium .day-btn.active,
+html body.smtinel-apple-premium .traceops-calendar-btn.active,
+html body.smtinel-apple-premium .traceops-calendar-chip.active{
+  background:#FA2D55 !important;
+  color:#fff !important;
+  border-color:#FA2D55 !important;
+}
+
+/* Bottom dock: Apple Music playback bar feeling */
+html body.smtinel-apple-premium .smtinel-bottom-nav,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+  width:min(980px,calc(100vw - 44px)) !important;
+  min-height:68px !important;
+  height:68px !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:18px !important;
+  transform:translateX(-50%) !important;
+  background:rgba(255,255,255,.72) !important;
+  border:1px solid rgba(20,20,20,.11) !important;
+  border-radius:26px !important;
+  box-shadow:0 18px 50px rgba(20,20,20,.16), inset 0 1px 0 rgba(255,255,255,.88) !important;
+  backdrop-filter:blur(30px) saturate(1.45) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.45) !important;
+  padding:7px 10px !important;
+  gap:5px !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav::before,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav::before{
+  display:none !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+html body.smtinel-apple-premium .smtinel-bottom-nav button{
+  border-radius:18px !important;
+  color:#6D6D72 !important;
+  background:transparent !important;
+  min-height:52px !important;
+  font-weight:700 !important;
+  transition:background .16s ease, color .16s ease, transform .12s ease !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab:hover,
+html body.smtinel-apple-premium .smtinel-bottom-nav button:hover{
+  background:rgba(20,20,20,.055) !important;
+  color:#222226 !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav [data-active="true"],
+html body.smtinel-apple-premium .smtinel-bottom-nav [aria-current="page"]{
+  background:rgba(250,45,85,.12) !important;
+  color:#D7193F !important;
+  box-shadow:none !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active::after,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active::after{
+  background:#FA2D55 !important;
+  height:3px !important;
+  border-radius:99px !important;
+  bottom:4px !important;
+  box-shadow:0 3px 10px rgba(250,45,85,.35) !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav svg,
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon svg{
+  stroke:currentColor !important;
+}
+
+/* Version badge / floating pills */
+html body.smtinel-apple-premium [class*="version"],
+html body.smtinel-apple-premium .smtinel-version-badge,
+html body.smtinel-apple-premium .traceops-version-badge{
+  background:rgba(255,255,255,.76) !important;
+  color:#404045 !important;
+  border:1px solid rgba(20,20,20,.10) !important;
+  border-radius:999px !important;
+  box-shadow:0 16px 38px rgba(20,20,20,.12) !important;
+  backdrop-filter:blur(22px) !important;
+  -webkit-backdrop-filter:blur(22px) !important;
+}
+
+/* Scrollbars, because apparently even scrollbars need grooming */
+html body.smtinel-apple-premium ::-webkit-scrollbar{width:12px;height:12px}
+html body.smtinel-apple-premium ::-webkit-scrollbar-track{background:rgba(20,20,20,.04);border-radius:999px}
+html body.smtinel-apple-premium ::-webkit-scrollbar-thumb{background:rgba(20,20,20,.24);border:3px solid transparent;background-clip:content-box;border-radius:999px}
+html body.smtinel-apple-premium ::-webkit-scrollbar-thumb:hover{background:rgba(20,20,20,.34);border:3px solid transparent;background-clip:content-box}
+
+@media(max-width:900px){
+  html body.smtinel-apple-premium .saas-topbar{border-radius:0 0 22px 22px !important;}
+  html body.smtinel-apple-premium .smtinel-bottom-nav,
+  html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+    width:calc(100vw - 22px) !important;
+    height:64px !important;
+    min-height:64px !important;
+    bottom:10px !important;
+    border-radius:22px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+  html body.smtinel-apple-premium .smtinel-bottom-nav button{
+    min-height:50px !important;
+  }
+}
+</style>
+<script id="smtinel-apple-music-premium-theme-script-v1">
+(function(){
+  function apply(){
+    try{ document.body.classList.add('smtinel-apple-premium'); }catch(e){}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
+  else apply();
+})();
+</script>
+<!-- /SMTinel Apple Music Premium Workspace Theme v1.0 -->
+
+<!-- SMTinel Apple Music Premium v2.1 SAFE Compact Dock Patch -->
+<style id="smtinel-apple-premium-safe-compact-v21">
+/* Safe compact pass. No runtime JS, no broad layout selectors, no hiding app root. */
+html body.smtinel-apple-premium,
+html body.smtinel-apple-premium #root,
+html body.smtinel-apple-premium .main-content,
+html body.smtinel-apple-premium .main-content.expanded{
+  padding-bottom:max(104px, calc(env(safe-area-inset-bottom, 0px) + 92px)) !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+  left:50% !important;
+  right:auto !important;
+  bottom:max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
+  transform:translateX(-50%) !important;
+  width:clamp(720px, 74vw, 1080px) !important;
+  max-width:calc(100vw - 48px) !important;
+  height:64px !important;
+  min-height:64px !important;
+  padding:7px 12px !important;
+  border-radius:30px !important;
+  gap:7px !important;
+  background:rgba(16,48,84,.78) !important;
+  border:1px solid rgba(255,255,255,.30) !important;
+  box-shadow:0 18px 44px rgba(16,34,54,.24), inset 0 1px 0 rgba(255,255,255,.18) !important;
+  backdrop-filter:blur(22px) saturate(1.25) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.25) !important;
+  overflow:visible !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav::before,
+html body.smtinel-apple-premium nav.smtinel-bottom-nav::before{
+  border-radius:29px !important;
+  inset:1px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.04) 58%,rgba(255,255,255,0)) !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+html body.smtinel-apple-premium .smtinel-bottom-nav button{
+  height:50px !important;
+  min-height:50px !important;
+  padding:6px 8px !important;
+  border-radius:22px !important;
+  gap:3px !important;
+  flex:1 1 0 !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon,
+html body.smtinel-apple-premium .smtinel-bottom-nav button .smtinel-tab-icon{
+  width:22px !important;
+  height:22px !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav svg,
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon svg{
+  width:20px !important;
+  height:20px !important;
+  stroke-width:2.05 !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab span:last-child,
+html body.smtinel-apple-premium .smtinel-bottom-nav button span:last-child{
+  font-size:10.6px !important;
+  line-height:1.05 !important;
+  font-weight:700 !important;
+  letter-spacing:-.01em !important;
+  white-space:nowrap !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active,
+html body.smtinel-apple-premium .smtinel-bottom-nav [aria-current="page"],
+html body.smtinel-apple-premium .smtinel-bottom-nav [data-active="true"]{
+  background:rgba(255,255,255,.18) !important;
+  border:1px solid rgba(255,255,255,.24) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 20px rgba(10,30,55,.18) !important;
+}
+
+html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab.active::after,
+html body.smtinel-apple-premium .smtinel-bottom-nav button.active::after,
+html body.smtinel-apple-premium .smtinel-bottom-nav [aria-current="page"]::after,
+html body.smtinel-apple-premium .smtinel-bottom-nav [data-active="true"]::after{
+  bottom:4px !important;
+  width:32px !important;
+  height:3px !important;
+  border-radius:999px !important;
+}
+
+html body.smtinel-apple-premium .saas-topbar{
+  min-height:58px !important;
+  height:58px !important;
+  padding-top:8px !important;
+  padding-bottom:8px !important;
+  border-radius:0 0 22px 22px !important;
+}
+
+html body.smtinel-apple-premium .saas-header-btn,
+html body.smtinel-apple-premium .saas-menu-btn,
+html body.smtinel-apple-premium .saas-header-pill{
+  height:38px !important;
+  min-height:38px !important;
+  padding-top:0 !important;
+  padding-bottom:0 !important;
+  border-radius:999px !important;
+}
+
+@media(max-width:900px){
+  html body.smtinel-apple-premium,
+  html body.smtinel-apple-premium #root,
+  html body.smtinel-apple-premium .main-content,
+  html body.smtinel-apple-premium .main-content.expanded{
+    padding-bottom:max(96px, calc(env(safe-area-inset-bottom, 0px) + 84px)) !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav,
+  html body.smtinel-apple-premium nav.smtinel-bottom-nav{
+    width:calc(100vw - 28px) !important;
+    max-width:calc(100vw - 28px) !important;
+    height:60px !important;
+    min-height:60px !important;
+    padding:6px 8px !important;
+    border-radius:26px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab,
+  html body.smtinel-apple-premium .smtinel-bottom-nav button{
+    height:46px !important;
+    min-height:46px !important;
+    padding:5px 5px !important;
+    border-radius:19px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav svg,
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab-icon svg{
+    width:18px !important;
+    height:18px !important;
+  }
+  html body.smtinel-apple-premium .smtinel-bottom-nav .smtinel-tab span:last-child,
+  html body.smtinel-apple-premium .smtinel-bottom-nav button span:last-child{
+    font-size:9.4px !important;
+  }
+}
+</style>
+<!-- /SMTinel Apple Music Premium v2.1 SAFE Compact Dock Patch -->
