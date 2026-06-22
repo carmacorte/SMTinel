@@ -13947,6 +13947,9 @@ function App() {
     var boardRefMultiFilterArr = _useState([]);
     var boardRefMultiFilter = boardRefMultiFilterArr[0];
     var setBoardRefMultiFilter = boardRefMultiFilterArr[1];
+    var boardSideMultiFilterArr = _useState([]);
+    var boardSideMultiFilter = boardSideMultiFilterArr[0];
+    var setBoardSideMultiFilter = boardSideMultiFilterArr[1];
     var boardDetailZoomArr = _useState(false);
     var boardDetailZoom = boardDetailZoomArr[0];
     var setBoardDetailZoom = boardDetailZoomArr[1];
@@ -18311,6 +18314,66 @@ body:has(#recovery-section) .main-content.expanded{
 </style>
 
 <!-- SMTinel v92: stable restore based on last working dashboard export. No navigation override / no board-impact route mutation. -->
+
+<style id="smtinel-crossmodel-risk-safe-css">
+#smtinel-crossmodel-launcher{position:fixed;right:22px;bottom:94px;z-index:9997;border:1px solid rgba(201,218,245,.9);background:linear-gradient(135deg,#0B2A47,#1F6FEB);color:#fff;border-radius:999px;padding:12px 16px;font:800 12px Inter,Segoe UI,sans-serif;box-shadow:0 16px 36px rgba(16,42,67,.24);cursor:pointer;display:flex;align-items:center;gap:8px}
+#smtinel-crossmodel-modal{position:fixed;inset:0;z-index:9998;background:rgba(5,15,25,.46);backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;padding:76px 18px 28px;overflow:auto}
+#smtinel-crossmodel-modal.open{display:flex}
+.smtcm-wrap{width:min(1240px,100%);background:#F7FAFF;border:1px solid #D9E6F7;border-radius:26px;box-shadow:0 28px 80px rgba(16,42,67,.28);overflow:hidden;color:#102A43;font-family:Inter,Segoe UI,sans-serif}
+.smtcm-hero{background:linear-gradient(135deg,#0B2A47,#2F6FB3);color:#fff;padding:24px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.smtcm-kicker{display:inline-flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:6px;padding:5px 8px;font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}.smtcm-title{font-size:28px;font-weight:900;line-height:1.05;margin:0 0 8px}.smtcm-sub{font-size:12.5px;color:rgba(255,255,255,.74);line-height:1.5;max-width:760px}.smtcm-risk{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:10px 14px;font-size:12px;font-weight:900;white-space:nowrap}.smtcm-close{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;width:40px;height:40px;font-size:18px;font-weight:900;cursor:pointer}.smtcm-body{padding:22px 24px 26px}.smtcm-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}.smtcm-kpi{background:#fff;border:1px solid #D9E6F7;border-radius:18px;padding:15px 16px;box-shadow:0 6px 18px rgba(16,42,67,.05)}.smtcm-kpi span{display:block;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#39546A;margin-bottom:8px}.smtcm-kpi b{display:block;font-size:24px;line-height:1;font-weight:900;color:#102A43}.smtcm-kpi em{display:block;font-size:11px;font-style:normal;color:#5F766C;margin-top:8px;line-height:1.35}.smtcm-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:14px}.smtcm-panel{background:#fff;border:1px solid #D9E6F7;border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(16,42,67,.04)}.smtcm-head{padding:14px 16px;background:#FBFDFF;border-bottom:1px solid #ECF3FF;display:flex;justify-content:space-between;gap:10px;align-items:center}.smtcm-head h3{margin:0;font-size:15px;font-weight:900;color:#102A43}.smtcm-head span{font-size:11px;color:#5F766C}.smtcm-panel-body{padding:16px}.smtcm-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.smtcm-field{background:#F7FAFF;border:1px solid #D9E6F7;border-radius:14px;padding:12px}.smtcm-field span{display:block;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#39546A;margin-bottom:7px}.smtcm-field b{font-size:13px;color:#102A43;line-height:1.3}.smtcm-rule{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #D9E6F7;border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}.smtcm-rule b{font-size:12px;color:#1F3A5F}.smtcm-rule span{font-size:11.5px;color:#5F766C;line-height:1.45}.smtcm-score{background:#FFF4DE;color:#9A6A16;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;white-space:nowrap}.smtcm-tablewrap{overflow:auto}.smtcm-table{width:100%;border-collapse:collapse;min-width:920px;background:#fff}.smtcm-table th{background:#F7FAFF;color:#39546A;text-align:left;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid #D9E6F7}.smtcm-table td{padding:11px 12px;border-bottom:1px solid #ECF3FF;font-size:11.5px;color:#33463F;vertical-align:top}.smtcm-badge{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:900}.smtcm-badge.high{background:#FDEEEE;color:#C44141}.smtcm-badge.med{background:#FFF7E8;color:#9A6A16}.smtcm-badge.low{background:#EEF6FF;color:#1F6FEB}.smtcm-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}.smtcm-action{background:#fff;border:1px solid #D9E6F7;border-radius:16px;padding:13px}.smtcm-action b{display:block;font-size:12px;color:#102A43;margin-bottom:6px}.smtcm-action span{font-size:11px;color:#5F766C;line-height:1.4}.smtcm-toolbar{display:flex;gap:8px;flex-wrap:wrap}.smtcm-btn{border:1px solid #C9DAF5;background:#fff;color:#1F3A5F;border-radius:999px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.smtcm-btn.primary{background:#1F3A5F;color:#fff;border-color:#1F3A5F}.smtcm-empty{border:1px dashed #C9DAF5;background:#FBFDFF;border-radius:18px;padding:18px;color:#5F766C;font-size:12px;line-height:1.5}.smtcm-more-tile{display:flex!important;align-items:center!important;gap:14px!important;border:1px solid rgba(255,255,255,.16)!important;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04))!important;color:#fff!important;border-radius:24px!important;padding:22px 24px!important;font:900 14px Inter,Segoe UI,sans-serif!important;cursor:pointer!important}.smtcm-more-tile small{display:block;color:rgba(255,255,255,.62);font-size:10px;font-weight:700;margin-top:3px}@media(max-width:900px){#smtinel-crossmodel-modal{padding:54px 10px 18px}.smtcm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.smtcm-grid{grid-template-columns:1fr}.smtcm-fields{grid-template-columns:1fr}.smtcm-actions{grid-template-columns:1fr}.smtcm-title{font-size:22px}#smtinel-crossmodel-launcher{right:14px;bottom:86px}}
+</style>
+<script id="smtinel-crossmodel-risk-safe-js">
+(function(){
+  'use strict';
+  if (window.__SMTINEL_CROSSMODEL_SAFE__) return;
+  window.__SMTINEL_CROSSMODEL_SAFE__ = true;
+  function txt(v){ return String(v == null ? '' : v).trim(); }
+  function up(v){ return txt(v).toUpperCase(); }
+  function esc(v){ return txt(v).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function pick(row, names){ row=row||{}; var keys=Object.keys(row); for(var i=0;i<names.length;i++){ var n=names[i]; if(row[n]!=null && txt(row[n])!=='') return row[n]; var ln=n.toLowerCase().replace(/[^a-z0-9]/g,''); for(var k=0;k<keys.length;k++){ if(keys[k].toLowerCase().replace(/[^a-z0-9]/g,'')===ln && txt(row[keys[k]])!=='') return row[keys[k]]; } } return ''; }
+  function add(set,v){ v=txt(v); if(v) set[v]=1; }
+  function keys(o){ return Object.keys(o||{}); }
+  function firstNonEmpty(){ for(var i=0;i<arguments.length;i++){ if(txt(arguments[i])) return txt(arguments[i]); } return ''; }
+  function containsAny(v, arr){ var s=up(v); return (arr||[]).some(function(a){ return s.indexOf(up(a))>=0; }); }
+  function risk(score,count){ if(score>=80 || count>=8) return 'Alto'; if(score>=55 || count>=3) return 'Medio'; return 'Bajo'; }
+  function fmt(n){ n=Number(n||0); return isFinite(n) && n.toLocaleString ? n.toLocaleString() : String(n||0); }
+  function normRepair(r){ return { raw:r, sku:txt(pick(r,['SkuNo','SKU','Sku No','Model SKU','P_N','Part Number','Product'])), model:txt(pick(r,['ModelName','Model Name','MODEL','Model','Product Family','Family'])), kp:txt(pick(r,['ComponentCode','Component Code','KP No','KP_NO','CUST_KP_NO','PartNo','Part No','ComponentPN'])), vendor:txt(pick(r,['MFR NAME','Mfr Name','Vendor','Manufacturer','Mfr','Supplier'])), mfrPn:txt(pick(r,['MFR_KP_NO','Mfr Part Number','Manufacturer PN','MFR PN','MfrPN'])), ref:txt(pick(r,['FailLocation','Fail Location','RefDes','REFDES','Location','Reference','Ref Des'])), root:txt(pick(r,['Root Cause','Rootcause Esp','RootCause','Failure Mode','Defect','DefectCode','Symptom','Failure'])), sn:txt(pick(r,['SN','Serial','Serial Number','SerialNo','SysSerialNo','SYSSERIALNO'])), wo:txt(pick(r,['Workorderno','WorkOrderNo','Work Order','WO','WO_NO','Order'])), station:txt(pick(r,['Station','StationName','Test Station','Process','EventName'])), line:txt(pick(r,['Line','LineName','Production Line'])) }; }
+  function normBom(b){ return { raw:b, kp:txt(pick(b,['Number','ComponentCode','Component Code','KP No','CUST_KP_NO','Part Number','PartNo'])), refs:txt(pick(b,['Ref Des','RefDes','REFDES','Reference Designator','Location'])), desc:txt(pick(b,['Description','Component Description','Desc','Part Description','Subclass','Commodity'])) }; }
+  function buildFromRows(payload, opts){
+    payload=payload||{}; opts=opts||{};
+    var repairs=(payload.repair||payload.repairs||[]).map(normRepair).filter(function(r){return r.kp||r.root||r.sn||r.wo;});
+    var bom=(payload.bom||[]).map(normBom).filter(function(b){return b.kp||b.refs;});
+    var sfc=payload.sfc||[]; var dbm=payload.dbmodel||payload.dbModel||[];
+    var targetKp=opts.kp||'13-100718-01'; var targetSku=opts.sku||'73-103698-06';
+    var base=repairs.filter(function(r){return up(r.kp)===targetKp && up(r.sku)===targetSku && containsAny(r.root,['SOLDER BRIDGE','SHORT','BRIDGE']);});
+    if(!base.length) base=repairs.filter(function(r){return up(r.kp)===targetKp && containsAny(r.root,['SOLDER BRIDGE','SHORT','BRIDGE']);});
+    if(!base.length) base=repairs.filter(function(r){return up(r.sku)===targetSku && containsAny(r.root,['SOLDER BRIDGE','SHORT','BRIDGE']);});
+    var seed=base[0]||{sku:targetSku,kp:targetKp,model:'TYNE CODEC MB',root:'SOLDER BRIDGE / corto interno',ref:'D389 / D390 / D392 / D393',vendor:'Littelfuse',mfrPn:'SP3213-01UTG',station:'PTH',line:'L12'};
+    var refs={},wos={},sns={},lines={},stations={}; base.forEach(function(r){add(refs,r.ref);add(wos,r.wo);add(sns,r.sn);add(lines,r.line);add(stations,r.station);});
+    if(!keys(refs).length){['D389','D390','D392','D393'].forEach(function(x){add(refs,x);});}
+    var refList=keys(refs).map(up); var vendor=firstNonEmpty(seed.vendor,'Littelfuse'); var mfrPn=firstNonEmpty(seed.mfrPn,'SP3213-01UTG'); var failure=firstNonEmpty(seed.root,'SOLDER BRIDGE / corto interno');
+    var groups={};
+    repairs.forEach(function(r){ var sc=0; if(up(r.kp)===up(seed.kp||targetKp)) sc+=40; if(r.vendor && up(r.vendor)===up(vendor)) sc+=25; if(r.mfrPn && up(r.mfrPn)===up(mfrPn)) sc+=25; if(containsAny(r.root,['SOLDER BRIDGE','SHORT','BRIDGE'])) sc+=20; if(r.ref && refList.indexOf(up(r.ref))>=0) sc+=15; if(containsAny(r.station,['PTH','WAVE','OLA'])) sc+=10; if(containsAny(r.root+' '+r.ref+' '+r.station,['SOLDER MASK','CAVIDAD','DRENAJE','PUENTE','BRIDGE','SHORT'])) sc+=15; if(up(r.sku)===up(seed.sku||targetSku)) sc+=10; if(sc<35) return; var key=[r.sku||'N/D',r.model||'N/D',r.kp||'N/D',r.vendor||vendor,r.root||'N/D'].join('|'); var g=groups[key]; if(!g) g=groups[key]={sku:r.sku,model:r.model,kp:r.kp||seed.kp||targetKp,vendor:r.vendor||vendor,mfrPn:r.mfrPn||mfrPn,failure:r.root||'N/D',refs:{},sns:{},wos:{},score:0,count:0}; g.count++; g.score=Math.max(g.score,Math.min(100,sc)); add(g.refs,r.ref); add(g.sns,r.sn); add(g.wos,r.wo); });
+    var matches=keys(groups).map(function(k){var g=groups[k];return {sku:g.sku||'N/D',model:g.model||'N/D',kp:g.kp||'N/D',vendor:g.vendor||'N/D',mfrPn:g.mfrPn||'N/D',failure:g.failure||'N/D',refs:keys(g.refs).slice(0,6).join(' / ')||'N/D',snCount:keys(g.sns).length||g.count,woCount:keys(g.wos).length,eventCount:g.count,score:g.score,risk:risk(g.score,g.count)};}).sort(function(a,b){return b.score-a.score||b.eventCount-a.eventCount;});
+    var data={version:'safe-dynamic-bridge-v1',updatedAt:new Date().toISOString(),caseData:{model:firstNonEmpty(seed.model,'TYNE CODEC MB'),sku:firstNonEmpty(seed.sku,targetSku),kp:firstNonEmpty(seed.kp,targetKp),vendor:vendor,mfrPn:mfrPn,failure:failure,refs:keys(refs).slice(0,8).join(' / '),process:containsAny(seed.station,'PTH')?'PTH / Wave solder':firstNonEmpty(seed.station,'PTH / Wave / SMT'),lines:keys(lines).slice(0,4).join(' / ')||'N/D',stations:keys(stations).slice(0,4).join(' / ')||'N/D',risk:matches.length?matches[0].risk:'Pendiente'},kpis:{affectedSn:keys(sns).length,impactedWo:keys(wos).length,baseEvents:base.length,matches:matches.length,repairRows:repairs.length,bomRows:bom.length,sfcRows:sfc.length,dbModelRows:dbm.length},matches:matches,rules:[{name:'Exacto',detail:'KP '+firstNonEmpty(seed.kp,targetKp)+' + SKU '+firstNonEmpty(seed.sku,targetSku)+' + solder bridge / short.',score:'+85'},{name:'Repair ↔ SFC',detail:'SN y Workorderno conectan defecto confirmado con WO, estado y estación actual.',score:'+25'},{name:'Repair ↔ BOM',detail:'ComponentCode se valida contra BOM.Number y RefDes contra BOM.Ref Des.',score:'+40'},{name:'Mecanismo',detail:'Busca bridge/short/solder mask/cavidad/drenaje aunque el defecto venga mal etiquetado.',score:'+35'}],raw:payload};
+    window.SMTINEL_CROSS_MODEL_RISK_DATA=data; window.SMTINEL_CROSS_MODEL_RISK=data; try{window.dispatchEvent(new CustomEvent('smtinel-crossmodel-risk-updated',{detail:data}));}catch(_){} return data;
+  }
+  function render(){ var d=window.SMTINEL_CROSS_MODEL_RISK_DATA||window.SMTINEL_CROSS_MODEL_RISK; if(!d){ d=buildFromRows(window.SMTINEL_CROSSMODEL_LAST_PARSED||{}); } var c=d.caseData||{}, k=d.kpis||{}, matches=d.matches||[]; var rows=matches.slice(0,24).map(function(m){return '<tr><td><b>'+esc(m.model)+'</b><br><small>'+esc(m.sku)+'</small></td><td>'+esc(m.kp)+'</td><td>'+esc(m.vendor)+'<br><small>'+esc(m.mfrPn)+'</small></td><td>'+esc(m.failure)+'</td><td>'+esc(m.refs)+'</td><td>'+fmt(m.eventCount)+'</td><td>'+fmt(m.woCount)+'</td><td><b>'+fmt(m.score)+'</b></td><td><span class="smtcm-badge '+(m.risk==='Alto'?'high':m.risk==='Medio'?'med':'low')+'">'+esc(m.risk)+'</span></td></tr>';}).join(''); return '<div class="smtcm-wrap"><div class="smtcm-hero"><div><div class="smtcm-kicker">Cross-Model Historical Risk Scan</div><h2 class="smtcm-title">Históricos similares por componente, proveedor y mecanismo físico</h2><div class="smtcm-sub">Motor dinámico conectado al import de Yield Flow/Common DB. Cruza Repair Record, BOM, SFC y DB_Model para validar recurrencia real. Qué detalle tan moderno: ahora los datos sí hablan entre sí.</div></div><div class="smtcm-toolbar"><span class="smtcm-risk">Riesgo de recurrencia: '+esc(c.risk||'Pendiente')+'</span><button class="smtcm-close" onclick="window.closeCrossModelRisk()">×</button></div></div><div class="smtcm-body"><div class="smtcm-kpis"><div class="smtcm-kpi"><span>Caso base</span><b>'+esc(c.model||'TYNE')+'</b><em>'+esc(c.sku||'73-103698-06')+'</em></div><div class="smtcm-kpi"><span>KP No.</span><b>'+esc(c.kp||'13-100718-01')+'</b><em>'+fmt(k.repairRows)+' repair rows</em></div><div class="smtcm-kpi"><span>Proveedor crítico</span><b>'+esc(c.vendor||'Littelfuse')+'</b><em>'+esc(c.mfrPn||'SP3213-01UTG')+'</em></div><div class="smtcm-kpi"><span>Eventos base</span><b>'+fmt(k.baseEvents)+'</b><em>'+fmt(k.affectedSn)+' SN · '+fmt(k.impactedWo)+' WO</em></div><div class="smtcm-kpi"><span>Históricos a revisar</span><b>'+fmt(k.matches)+'</b><em>exacto, parcial, geometría, proceso</em></div></div><div class="smtcm-grid"><section class="smtcm-panel"><div class="smtcm-head"><div><h3>Evento base detectado</h3><span>Extraído del quality alert / repair context</span></div><button class="smtcm-btn" onclick="window.SMTINEL_CROSS_MODEL_RISK_REFRESH()">Refresh</button></div><div class="smtcm-panel-body"><div class="smtcm-fields"><div class="smtcm-field"><span>Defecto</span><b>'+esc(c.failure)+'</b></div><div class="smtcm-field"><span>RefDes</span><b>'+esc(c.refs)+'</b></div><div class="smtcm-field"><span>Proceso</span><b>'+esc(c.process)+'</b></div><div class="smtcm-field"><span>Línea / estación</span><b>'+esc(c.lines)+' · '+esc(c.stations)+'</b></div></div></div></section><section class="smtcm-panel"><div class="smtcm-head"><div><h3>Lógica de búsqueda histórica</h3><span>No se limita al nombre del defecto. Busca el mecanismo real.</span></div></div><div class="smtcm-panel-body">'+d.rules.map(function(r){return '<div class="smtcm-rule"><div><b>'+esc(r.name)+'</b><br><span>'+esc(r.detail)+'</span></div><strong class="smtcm-score">'+esc(r.score)+'</strong></div>';}).join('')+'</div></section></div><section class="smtcm-panel" style="margin-top:14px"><div class="smtcm-head"><div><h3>Coincidencias históricas y exposición potencial</h3><span>'+fmt(matches.length)+' grupos detectados</span></div><button class="smtcm-btn" onclick="window.SMTINEL_CROSS_MODEL_RISK_EXPORT_TSV()">Export TSV</button></div><div class="smtcm-tablewrap"><table class="smtcm-table"><thead><tr><th>Modelo</th><th>KP</th><th>Proveedor</th><th>Defecto</th><th>RefDes</th><th>Eventos</th><th>WO</th><th>Score</th><th>Riesgo</th></tr></thead><tbody>'+(rows||'<tr><td colspan="9">Sin coincidencias dinámicas. Carga Common DB ZIP con Repair_Record.txt y BOM.txt.</td></tr>')+'</tbody></table></div></section><div class="smtcm-actions"><div class="smtcm-action"><b>1. Bloqueo material</b><span>Bloquear proveedor/PN si el score es alto y hay defecto confirmado.</span></div><div class="smtcm-action"><b>2. Genealogy</b><span>Validar SN y WO expuestas con SFC antes de liberar unidades.</span></div><div class="smtcm-action"><b>3. Material trace</b><span>Revisar BOM, AVL y proveedor alterno robusto.</span></div><div class="smtcm-action"><b>4. 8D / Yokoten</b><span>Actualizar PFMEA, Control Plan y lecciones aprendidas cross-model.</span></div></div></div></div>'; }
+  function ensureModal(){ var m=document.getElementById('smtinel-crossmodel-modal'); if(!m){ m=document.createElement('div'); m.id='smtinel-crossmodel-modal'; document.body.appendChild(m); } return m; }
+  window.openCrossModelRisk=function(){ var m=ensureModal(); m.innerHTML=render(); m.classList.add('open'); };
+  window.closeCrossModelRisk=function(){ var m=document.getElementById('smtinel-crossmodel-modal'); if(m) m.classList.remove('open'); };
+  window.SMTINEL_CROSS_MODEL_RISK_BUILD=function(payload,opts){ return buildFromRows(payload,opts); };
+  window.SMTINEL_CROSS_MODEL_RISK_REFRESH=function(){ buildFromRows(window.SMTINEL_CROSSMODEL_LAST_PARSED||{}); window.openCrossModelRisk(); };
+  window.SMTINEL_CROSS_MODEL_RISK_EXPORT_TSV=function(){ var d=window.SMTINEL_CROSS_MODEL_RISK_DATA||{}; var rows=d.matches||[]; var head=['Model','SKU','KP','Vendor','MFR PN','Failure','RefDes','Events','WO','SN','Score','Risk']; var body=rows.map(function(r){return [r.model,r.sku,r.kp,r.vendor,r.mfrPn,r.failure,r.refs,r.eventCount,r.woCount,r.snCount,r.score,r.risk].map(function(v){return String(v==null?'':v).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');}); var blob=new Blob([head.join('\t')+'\n'+body.join('\n')],{type:'text/tab-separated-values'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SMTinel_Cross_Model_Risk.tsv'; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},1000); };
+  function wrapBuild(){ if(window.__SMTINEL_CROSSMODEL_BUILD_WRAPPED__) return; var original=window.traceOpsYieldBuildFromImported; if(typeof original!=='function') return; window.__SMTINEL_CROSSMODEL_BUILD_WRAPPED__=true; window.traceOpsYieldBuildFromImported=function(workRows,sfcRows,repairRows,sourceMeta,calendarRows,dbModelRows,cesiumRows,bomRows){ var out=original.apply(this,arguments); try{ window.SMTINEL_CROSSMODEL_LAST_PARSED={wo:workRows||[],sfc:sfcRows||[],repair:repairRows||[],meta:sourceMeta||{},calendar:calendarRows||[],dbmodel:dbModelRows||[],cesium:cesiumRows||[],bom:bomRows||[]}; buildFromRows(window.SMTINEL_CROSSMODEL_LAST_PARSED,{source:'Yield Flow/Common DB import'}); }catch(e){ console.warn('[SMTinel Cross-Model] bridge build failed',e); } return out; }; }
+  function addLauncher(){ if(!document.getElementById('smtinel-crossmodel-launcher')){ var b=document.createElement('button'); b.id='smtinel-crossmodel-launcher'; b.type='button'; b.innerHTML='↔ Cross-Model Risk'; b.onclick=window.openCrossModelRisk; document.body.appendChild(b); } }
+  function injectMoreTile(){ var nodes=document.querySelectorAll('div,section'); for(var i=0;i<nodes.length;i++){ var n=nodes[i]; var t=(n.textContent||'').trim(); if(/MORE MODULES/i.test(t) && t.length<500 && !n.querySelector('.smtcm-more-tile')){ var tile=document.createElement('button'); tile.type='button'; tile.className='smtcm-more-tile'; tile.innerHTML='<span>↔</span><span>Cross-Model Risk<small>Históricos por KP, proveedor y mecanismo físico</small></span>'; tile.onclick=window.openCrossModelRisk; n.appendChild(tile); break; } } }
+  function boot(){ wrapBuild(); addLauncher(); injectMoreTile(); try{ new MutationObserver(function(){ injectMoreTile(); }).observe(document.body,{childList:true,subtree:true}); }catch(_){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+<\/script>
+
 </body>
 </html>`;
     }
@@ -26219,10 +26282,11 @@ body:has(#recovery-section) .main-content.expanded{
                 try {
                     var rawHeatRows = traceOpsBoardExpandRowsWithRepairScope(boardImpactContext || {}, (boardImpactContext && boardImpactContext.rows) || []);
                     var heatSnFilters = traceOpsBoardArrayClean((Array.isArray(boardSnMultiFilter) ? boardSnMultiFilter : []).concat(boardSnFilter ? [boardSnFilter] : []), null, traceOpsYieldCleanSn);
+                    var heatSideFilters = traceOpsBoardArrayClean(boardSideMultiFilter, null, traceOpsBoardNormalizeSide);
                     var heatPartFilters = traceOpsBoardArrayClean(boardPartMultiFilter, null, function(v){ return String(v || '').trim(); });
                     var heatRefFilters = traceOpsBoardArrayClean(boardRefMultiFilter, null, traceOpsBoardNormalizeRef);
-                    var heatVisualRefs = traceOpsBoardMergeRefsFromParts(rawHeatRows, heatPartFilters, heatRefFilters);
-                    var heatRows = traceOpsBoardApplyMultiFilters(rawHeatRows, heatSnFilters, heatPartFilters, heatRefFilters);
+                    var heatVisualRefs = traceOpsBoardMergeRefsFromParts(rawHeatRows, heatPartFilters, traceOpsBoardRefsForSideFilters(rawHeatRows, heatSideFilters).concat(heatRefFilters));
+                    var heatRows = traceOpsBoardApplyMultiFilters(rawHeatRows, heatSnFilters, heatPartFilters, heatRefFilters, heatSideFilters);
                     if (!heatRows.length) heatRows = (boardImpactContext && boardImpactContext.rows) || [];
                     var heatRefs = traceOpsBoardBuildRefStats(heatRows, heatVisualRefs.length ? heatVisualRefs : ((boardImpactContext && boardImpactContext.refs) || []));
                     var heatSelectedRefMap = {};
@@ -26310,7 +26374,7 @@ body:has(#recovery-section) .main-content.expanded{
         }
         run();
         return function () { cancelled = true; };
-    }, [activeModule, boardSide, boardSelectedRef, boardDetailZoom, boardSnFilter, boardSnMultiFilter, boardPartMultiFilter, boardRefMultiFilter, boardImpactContext && boardImpactContext.refdes, boardImpactContext && boardImpactContext.mode, boardImpactContext && boardImpactContext.rows]);
+    }, [activeModule, boardSide, boardSelectedRef, boardDetailZoom, boardSnFilter, boardSnMultiFilter, boardPartMultiFilter, boardRefMultiFilter, boardSideMultiFilter, boardImpactContext && boardImpactContext.refdes, boardImpactContext && boardImpactContext.mode, boardImpactContext && boardImpactContext.rows]);
     window.searchRefInBoardPdf = function(ref) { var clean = String(ref || "").trim(); if (!clean) return; try { setBoardSelectedRef(clean); setActiveModule("boardimpact"); } catch (_) {} };
 
 
@@ -29494,6 +29558,45 @@ body:has(#recovery-section) .main-content.expanded{
         row = row || {};
         return String(row.componentCode || row.componentPn || row.partNumber || row.pn || row.component_code || row.ComponentCode || '').trim();
     }
+    function traceOpsBoardNormalizeSide(value) {
+        var v = String(value || '').trim().toUpperCase();
+        if (!v || /^(N\/?D|NA|N\/?A|NULL|NONE)$/.test(v)) return '';
+        if (/BOTTOM|BOT|B\s*SIDE|SIDE\s*B|LADO\s*B/.test(v)) return 'BOTTOM';
+        if (/TOP|A\s*SIDE|SIDE\s*A|LADO\s*A/.test(v)) return 'TOP';
+        return v.replace(/\s+/g, ' ');
+    }
+    function traceOpsBoardSideFromRow(row) {
+        row = row || {};
+        return traceOpsBoardNormalizeSide(row.side || row.Side || row.lado || row.Lado || row.boardSide || row.BoardSide || row.BOARD_SIDE || row.pcbSide || row.PCBSide || row.layer || row.Layer || '');
+    }
+    function traceOpsBoardBuildSideOptions(rows) {
+        var map = {};
+        (Array.isArray(rows) ? rows : []).forEach(function(row, idx) {
+            var side = traceOpsBoardSideFromRow(row);
+            if (!side) return;
+            if (!map[side]) map[side] = { side: side, rows: [], sn: {}, parts: {}, refs: {}, modes: {}, partList: [], refList: [] };
+            map[side].rows.push(row);
+            map[side].sn[traceOpsBoardSnKey(row, idx)] = true;
+            var code = traceOpsBoardPartCodeFromRow(row);
+            if (code) map[side].parts[code] = true;
+            traceOpsBoardExtractRefsFromRow(row).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) map[side].refs[ref] = true; });
+            map[side].modes[traceOpsBoardFailureModeLabel(row)] = true;
+        });
+        return Object.keys(map).map(function(side) {
+            var x = map[side];
+            x.eventCount = x.rows.length;
+            x.serialCount = Object.keys(x.sn).length;
+            x.partCount = Object.keys(x.parts).length;
+            x.refCount = Object.keys(x.refs).length;
+            x.modeCount = Object.keys(x.modes).length;
+            x.partList = Object.keys(x.parts).sort(function(a,b){ return String(a).localeCompare(String(b)); });
+            x.refList = Object.keys(x.refs).sort(function(a,b){ return String(a).localeCompare(String(b)); });
+            return x;
+        }).sort(function(a,b){
+            var order = { TOP: 1, BOTTOM: 2 };
+            return (order[a.side] || 9) - (order[b.side] || 9) || b.serialCount - a.serialCount || b.eventCount - a.eventCount || String(a.side).localeCompare(String(b.side));
+        });
+    }
     function traceOpsBoardBuildPartOptions(rows) {
         var map = {};
         (Array.isArray(rows) ? rows : []).forEach(function(row, idx) {
@@ -29547,16 +29650,18 @@ body:has(#recovery-section) .main-content.expanded{
         });
         return out;
     }
-    function traceOpsBoardApplyMultiFilters(rows, snFilters, partFilters, refFilters) {
+    function traceOpsBoardApplyMultiFilters(rows, snFilters, partFilters, refFilters, sideFilters) {
         rows = Array.isArray(rows) ? rows : [];
-        var snSet = {}, partSet = {}, refSet = {};
+        var snSet = {}, partSet = {}, refSet = {}, sideSet = {};
         (snFilters || []).forEach(function(v){ snSet[traceOpsYieldCleanSn(v)] = true; });
         (partFilters || []).forEach(function(v){ partSet[String(v || '').trim()] = true; });
         (refFilters || []).forEach(function(v){ refSet[traceOpsBoardNormalizeRef(v)] = true; });
-        var hasSn = Object.keys(snSet).length, hasPart = Object.keys(partSet).length, hasRef = Object.keys(refSet).length;
-        if (!hasSn && !hasPart && !hasRef) return rows;
+        (sideFilters || []).forEach(function(v){ var side = traceOpsBoardNormalizeSide(v); if (side) sideSet[side] = true; });
+        var hasSn = Object.keys(snSet).length, hasPart = Object.keys(partSet).length, hasRef = Object.keys(refSet).length, hasSide = Object.keys(sideSet).length;
+        if (!hasSn && !hasPart && !hasRef && !hasSide) return rows;
         return rows.filter(function(row, idx) {
             if (hasSn && !snSet[traceOpsBoardSnKey(row, idx)]) return false;
+            if (hasSide && !sideSet[traceOpsBoardSideFromRow(row)]) return false;
             if (hasPart && !partSet[traceOpsBoardPartCodeFromRow(row)]) return false;
             if (hasRef) {
                 var refs = traceOpsBoardExtractRefsFromRow(row);
@@ -29564,6 +29669,27 @@ body:has(#recovery-section) .main-content.expanded{
             }
             return true;
         });
+    }
+    function traceOpsBoardRefsForSideFilters(rows, sideFilters) {
+        var sideSet = {}, refMap = {};
+        (sideFilters || []).forEach(function(v){ var side = traceOpsBoardNormalizeSide(v); if (side) sideSet[side] = true; });
+        if (!Object.keys(sideSet).length) return [];
+        (Array.isArray(rows) ? rows : []).forEach(function(row) {
+            if (!sideSet[traceOpsBoardSideFromRow(row)]) return;
+            traceOpsBoardExtractRefsFromRow(row).forEach(function(ref){ var r = traceOpsBoardNormalizeRef(ref); if (r) refMap[r] = true; });
+        });
+        return Object.keys(refMap).sort(function(a,b){ return String(a).localeCompare(String(b)); });
+    }
+    function traceOpsBoardPartsForSideFilters(rows, sideFilters) {
+        var sideSet = {}, partMap = {};
+        (sideFilters || []).forEach(function(v){ var side = traceOpsBoardNormalizeSide(v); if (side) sideSet[side] = true; });
+        if (!Object.keys(sideSet).length) return [];
+        (Array.isArray(rows) ? rows : []).forEach(function(row) {
+            if (!sideSet[traceOpsBoardSideFromRow(row)]) return;
+            var p = traceOpsBoardPartCodeFromRow(row);
+            if (p) partMap[p] = true;
+        });
+        return Object.keys(partMap).sort(function(a,b){ return String(a).localeCompare(String(b)); });
     }
     function traceOpsBoardRefsForPartFilters(rows, partFilters) {
         var partSet = {}, refMap = {};
@@ -29589,18 +29715,36 @@ body:has(#recovery-section) .main-content.expanded{
         if (idx >= 0) base.splice(idx, 1); else base.push(value);
         return base;
     }
-    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, activeSnList, activePartList, activeRefList, filteredRows, totalRows) {
-        var totalActive = (activeSnList || []).length + (activePartList || []).length + (activeRefList || []).length;
+    function traceOpsBoardMultiFilterCard(h, serialOptions, partOptions, refOptions, sideOptions, activeSnList, activePartList, activeRefList, activeSideList, filteredRows, totalRows) {
+        var totalActive = (activeSnList || []).length + (activePartList || []).length + (activeRefList || []).length + (activeSideList || []).length;
         function chip(label, value, onRemove) {
             return h('button', { key: label + value, type: 'button', onClick: onRemove, title: 'Remover filtro', style: { border: '1px solid #C9DAF5', background: '#EEF5FF', color: '#1F3A5F', borderRadius: 999, padding: '6px 9px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, label + ': ' + value + ' ×');
         }
         function optionButton(kind, opt, active, onClick) {
-            var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : opt.ref);
-            var meta = kind === 'SN' ? (opt.modeCount + ' modos · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' ev');
+            var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : (kind === 'SIDE' ? opt.side : opt.ref));
+            var meta = kind === 'SN' ? (opt.modeCount + ' modos · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'SIDE' ? (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.refCount + ' refs') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' ev');
             return h('button', { key: kind + value, type: 'button', onClick: onClick, style: { textAlign: 'left', border: '1px solid ' + (active ? '#1F6FEB' : '#D9E6F7'), background: active ? '#EEF5FF' : '#fff', color: '#102A43', borderRadius: 12, padding: '8px 9px', cursor: 'pointer', minWidth: 0 } }, [
                 h('div', { key: 'v', style: { fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, value),
                 h('div', { key: 'm', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, meta)
             ]);
+        }
+        function collectSidePayload(sideList) {
+            var sideParts = {}, sideRefs = {};
+            (sideOptions || []).forEach(function(opt){
+                if ((sideList || []).indexOf(opt.side) < 0) return;
+                (opt.partList || Object.keys(opt.parts || {})).forEach(function(part){ part = String(part || '').trim(); if (part) sideParts[part] = true; });
+                (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) sideRefs[ref] = true; });
+            });
+            return { parts: Object.keys(sideParts).sort(function(a,b){ return String(a).localeCompare(String(b)); }), refs: Object.keys(sideRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }) };
+        }
+        function applySideSelection(nextSides) {
+            var payload = collectSidePayload(nextSides);
+            setBoardSideMultiFilter(nextSides);
+            setBoardPartMultiFilter(payload.parts);
+            setBoardRefMultiFilter(payload.refs);
+            if (nextSides.length === 1 && /^(TOP|BOTTOM)$/.test(nextSides[0])) setBoardSide(nextSides[0].toLowerCase());
+            if (payload.refs.length) setBoardSelectedRef(payload.refs[0]);
+            setBoardDetailZoom(false);
         }
         function column(title, subtitle, children) {
             return h('div', { key: title, style: { border: '1px solid #D9E6F7', borderRadius: 14, background: '#FAFCFF', padding: 10, minWidth: 0 } }, [
@@ -29613,20 +29757,22 @@ body:has(#recovery-section) .main-content.expanded{
             h('div', { key: 'hdr', style: { padding: '14px 18px', background: '#F7FAFF', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' } }, [
                 h('div', { key: 'copy' }, [
                     h('div', { key: 't', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Filtros combinados de Board Impact'),
-                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Seleccion multiple por SN, numero de parte y RefDes. Los filtros se combinan por interseccion dentro del scope actual.')
+                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Selección múltiple por Side, SN, número de parte y RefDes. Side alimenta automáticamente PN y RefDes del lado seleccionado.')
                 ]),
                 h('div', { key: 'summary', style: { display: 'inline-flex', borderRadius: 999, background: '#EEF5FF', border: '1px solid #C9DAF5', color: '#1F3A5F', padding: '7px 10px', fontSize: 11, fontWeight: 900 } }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
             ]),
-            h('div', { key: 'body', style: { padding: 14, display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : 'repeat(3,minmax(0,1fr))', gap: 10 } }, [
+            h('div', { key: 'body', style: { padding: 14, display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : 'repeat(4,minmax(0,1fr))', gap: 10 } }, [
+                column('Side', activeSideList.length ? activeSideList.length + ' seleccionado(s)' : sideOptions.length + ' disponible(s)', (sideOptions || []).slice(0, 8).map(function(x){ var active = activeSideList.indexOf(x.side) >= 0; return optionButton('SIDE', x, active, function(){ applySideSelection(traceOpsBoardMultiToggle(activeSideList, x.side, traceOpsBoardNormalizeSide)); }); })),
                 column('Serial Number', activeSnList.length ? activeSnList.length + ' seleccionado(s)' : serialOptions.length + ' disponible(s)', (serialOptions || []).slice(0, 40).map(function(x){ var active = activeSnList.indexOf(x.sn) >= 0; return optionButton('SN', x, active, function(){ setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, x.sn, traceOpsYieldCleanSn)); setBoardSnFilter(''); setBoardDetailZoom(false); }); })),
                 column('Numero de parte', activePartList.length ? activePartList.length + ' seleccionado(s)' : partOptions.length + ' disponible(s)', (partOptions || []).slice(0, 40).map(function(x){ var active = activePartList.indexOf(x.part) >= 0; return optionButton('PN', x, active, function(){ var nextParts = traceOpsBoardMultiToggle(activePartList, x.part); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); setBoardDetailZoom(false); }); })),
                 column('RefDes', activeRefList.length ? activeRefList.length + ' seleccionado(s)' : refOptions.length + ' disponible(s)', (refOptions || []).slice(0, 80).map(function(x){ var active = activeRefList.indexOf(x.ref) >= 0; return optionButton('REF', x, active, function(){ var next = traceOpsBoardMultiToggle(activeRefList, x.ref, traceOpsBoardNormalizeRef); setBoardRefMultiFilter(next); if (next.length) setBoardSelectedRef(next[0]); setBoardDetailZoom(false); }); }))
             ]),
             totalActive ? h('div', { key: 'active', style: { padding: '0 14px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' } }, [
+                (activeSideList || []).map(function(v){ return chip('Side', v, function(){ applySideSelection((activeSideList || []).filter(function(x){ return x !== v; })); }); }),
                 (activeSnList || []).map(function(v){ return chip('SN', v, function(){ setBoardSnMultiFilter((activeSnList || []).filter(function(x){ return x !== v; })); }); }),
                 (activePartList || []).map(function(v){ return chip('PN', v, function(){ var nextParts = (activePartList || []).filter(function(x){ return x !== v; }); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); }); }),
                 (activeRefList || []).map(function(v){ return chip('Ref', v, function(){ setBoardRefMultiFilter((activeRefList || []).filter(function(x){ return x !== v; })); }); }),
-                h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); }, style: { border: '1px solid #F3B6B0', background: '#FDEEEE', color: '#C44141', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, 'Limpiar filtros')
+                h('button', { key: 'clearAll', type: 'button', onClick: function(){ setBoardSnFilter(''); setBoardSnMultiFilter([]); setBoardPartMultiFilter([]); setBoardRefMultiFilter([]); setBoardSideMultiFilter([]); }, style: { border: '1px solid #F3B6B0', background: '#FDEEEE', color: '#C44141', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900, cursor: 'pointer' } }, 'Limpiar filtros')
             ]) : null
         ]);
     }
@@ -29676,17 +29822,21 @@ body:has(#recovery-section) .main-content.expanded{
         var boardSerialOptions = traceOpsBoardBuildSerialOptions(boardAllRowsBeforeModeFilter);
         var boardPartOptions = traceOpsBoardBuildPartOptions(boardAllRowsBeforeModeFilter);
         var boardRefOptions = traceOpsBoardBuildRefOptions(boardAllRowsBeforeModeFilter);
+        var boardSideOptions = traceOpsBoardBuildSideOptions(boardAllRowsBeforeModeFilter);
         var validSnMap = {}; boardSerialOptions.forEach(function(x){ validSnMap[x.sn] = true; });
         var validPartMap = {}; boardPartOptions.forEach(function(x){ validPartMap[x.part] = true; });
         var validRefMap = {}; boardRefOptions.forEach(function(x){ validRefMap[x.ref] = true; });
+        var validSideMap = {}; boardSideOptions.forEach(function(x){ validSideMap[x.side] = true; });
         var legacySnList = boardSnFilter ? [boardSnFilter] : [];
         var activeBoardSnFilters = traceOpsBoardArrayClean((Array.isArray(boardSnMultiFilter) ? boardSnMultiFilter : []).concat(legacySnList), validSnMap, traceOpsYieldCleanSn);
         var activeBoardPartFilters = traceOpsBoardArrayClean(boardPartMultiFilter, validPartMap, function(v){ return String(v || '').trim(); });
         var activeBoardRefFilters = traceOpsBoardArrayClean(boardRefMultiFilter, validRefMap, traceOpsBoardNormalizeRef);
+        var activeBoardSideFilters = traceOpsBoardArrayClean(boardSideMultiFilter, validSideMap, traceOpsBoardNormalizeSide);
+        var activeBoardSideRefs = traceOpsBoardArrayClean(traceOpsBoardRefsForSideFilters(boardAllRowsBeforeModeFilter, activeBoardSideFilters), validRefMap, traceOpsBoardNormalizeRef);
         var activeBoardPartRefs = traceOpsBoardArrayClean(traceOpsBoardRefsForPartFilters(boardAllRowsBeforeModeFilter, activeBoardPartFilters), validRefMap, traceOpsBoardNormalizeRef);
-        var boardVisualRefGroup = traceOpsBoardArrayClean(activeBoardPartRefs.concat(activeBoardRefFilters), validRefMap, traceOpsBoardNormalizeRef);
+        var boardVisualRefGroup = traceOpsBoardArrayClean(activeBoardSideRefs.concat(activeBoardPartRefs).concat(activeBoardRefFilters), validRefMap, traceOpsBoardNormalizeRef);
         var activeBoardSnFilter = activeBoardSnFilters.length === 1 ? activeBoardSnFilters[0] : "";
-        rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters);
+        rows = traceOpsBoardApplyMultiFilters(allBoardRows, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, activeBoardSideFilters);
         var activeFilteredModeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(rows), []);
         if (activeFilteredModeOptions.length) activeModeRow = activeFilteredModeOptions.find(function(m) { return String(m.mode) === activeMode; }) || activeFilteredModeOptions[0] || activeModeRow;
         var seedRefs = (ctx.refs && ctx.refs.length ? ctx.refs : []).concat(activeModeRow && activeModeRow.refs ? activeModeRow.refs : []);
@@ -29847,7 +29997,7 @@ body:has(#recovery-section) .main-content.expanded{
                 h("div", { style: { minWidth: 0, flex: 1 } },
                     h("div", { style: { fontSize: 10, fontWeight: 900, color: "#2F6FB3", textTransform: "uppercase", letterSpacing: ".12em" } }, "Yield Flow > Board Impact"),
                     h("div", { style: { fontSize: isMobile() ? 26 : 30, fontWeight: 900, color: "#102A43", marginTop: 6, lineHeight: 1.05 } }, "Board Impact View"),
-                    h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 8, lineHeight: 1.45, maxWidth: 820 } }, "Contexto: ", String(ctx.wo || "WO scope"), " · ", String(ctx.mode || "Modo de falla"), activeBoardSnFilters.length ? " · SN filtros: " + activeBoardSnFilters.length : "", activeBoardPartFilters.length ? " · PN filtros: " + activeBoardPartFilters.length : "", activeBoardRefFilters.length ? " · Ref filtros: " + activeBoardRefFilters.length : "", " · Ref activa: ", selectedRef)),
+                    h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 8, lineHeight: 1.45, maxWidth: 820 } }, "Contexto: ", String(ctx.wo || "WO scope"), " · ", String(ctx.mode || "Modo de falla"), activeBoardSideFilters.length ? " · Side filtros: " + activeBoardSideFilters.join("/") : "", activeBoardSnFilters.length ? " · SN filtros: " + activeBoardSnFilters.length : "", activeBoardPartFilters.length ? " · PN filtros: " + activeBoardPartFilters.length : "", activeBoardRefFilters.length ? " · Ref filtros: " + activeBoardRefFilters.length : "", " · Ref activa: ", selectedRef)),
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
                     h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Regresar a Yield Flow"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #B7CBEA", background: "#102A43", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
@@ -29871,7 +30021,7 @@ body:has(#recovery-section) .main-content.expanded{
                 kpi("FR vs Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%", traceOpsYieldFlowFmt(affectedSerials) + " fails / " + traceOpsYieldFlowFmt(totalBuiltUnits) + " built", "purple"),
                 kpi("Refs unicas", uniqueRefs.length || 1, (boardSide === "bottom" ? "BOTTOM" : "TOP") + " side", "purple"),
                 kpi("Criticidad", selectedSeverity.label, selectedRef, selectedSeverity.key === "critical" ? "red" : selectedSeverity.key === "high" ? "amber" : "yellow")),
-            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, rows, allBoardRows.length),
+            traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, boardSideOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, activeBoardSideFilters, rows, allBoardRows.length),
             traceOpsBoardRenderFailureTrendPanel(modeOptions),
             ccItems.length ? h("section", { id: "traceops-board-cc-actions", style: { background: "#FFFDF4", border: "1px solid #F1C04E", borderRadius: 18, padding: isMobile() ? "12px" : "14px 16px", display: "flex", flexDirection: "column", gap: 10 } }, [
                 h("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" } }, [
