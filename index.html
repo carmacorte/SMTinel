@@ -57247,6 +57247,264 @@ html body [class*="version-badge"]{
   }
 }
 </style>
+<script id="smtinel-v13-15-zip-turbo-v6">
+(function(){
+  var VERSION_LABEL = 'SMTinel V13.15.0 - ZIP Turbo Import V6 - 2026-06-25';
+  window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
+  window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
+  window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
+
+  function safe(fn, fallback){ try { return fn(); } catch(_) { return fallback; } }
+  function norm(v){ return String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g,''); }
+  function progress(options, pct, phase, msg){
+    try { if (options && typeof options.onProgress === 'function') options.onProgress(pct, phase, msg); } catch(_) {}
+    try { if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(pct, phase, msg); } catch(_) {}
+  }
+  function yieldThread(){
+    if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
+    if (typeof window.traceOpsYieldYieldThread === 'function') return window.traceOpsYieldYieldThread();
+    return new Promise(function(resolve){ setTimeout(resolve, 0); });
+  }
+  function roleRank(role){
+    var order = { sfc:1, cesium:2, repair:3, wo:4, stations:5, dbmodel:6, bom:7, calendar:8 };
+    return order[String(role||'').toLowerCase()] || 99;
+  }
+  function detectRole(path){
+    var n = norm(path || '');
+    if (n.indexOf('stationonlinereport') >= 0 || n.indexOf('workorders') >= 0 || n.indexOf('workorder') >= 0 || n.indexOf('buildinfo') >= 0) return 'wo';
+    if (n === 'stationstxt' || n.indexOf('stationstxt') >= 0 || n.indexOf('stations') >= 0) return 'stations';
+    if (n.indexOf('ciscocalendary') >= 0 || n.indexOf('ciscocalendar') >= 0 || n.indexOf('calendario') >= 0 || n.indexOf('fiscalcalendar') >= 0) return 'calendar';
+    if (n.indexOf('dbmodel') >= 0 || n.indexOf('dbmodel') >= 0 || n.indexOf('modelmaster') >= 0) return 'dbmodel';
+    if (n === 'bomtxt' || n.indexOf('bom') >= 0 || n.indexOf('billofmaterial') >= 0 || n.indexOf('componentmaster') >= 0) return 'bom';
+    if (n.indexOf('cesium') >= 0 || n.indexOf('functionaltest') >= 0 || n.indexOf('teststation') >= 0 || n.indexOf('ftreport') >= 0) return 'cesium';
+    if (n.indexOf('sfc') >= 0 || n.indexOf('shopfloor') >= 0 || n.indexOf('currentevent') >= 0) return 'sfc';
+    if (n.indexOf('repair') >= 0 || n.indexOf('repar') >= 0 || n.indexOf('defect') >= 0) return 'repair';
+    try { return typeof window.traceOpsYieldDetectTextRole === 'function' ? (window.traceOpsYieldDetectTextRole(path) || '') : ''; } catch(_) { return ''; }
+  }
+  window.traceOpsYieldDetectTextRole = detectRole;
+  try { traceOpsYieldDetectTextRole = detectRole; } catch(_) {}
+
+  function splitCsv(line){
+    if (typeof window.traceOpsYieldCsvSplit === 'function') return window.traceOpsYieldCsvSplit(line);
+    var out=[], cur='', q=false, s=String(line||'');
+    for(var i=0;i<s.length;i++){
+      var ch=s[i];
+      if(ch === '"') { if(q && s[i+1] === '"') { cur+='"'; i++; } else q=!q; }
+      else if(ch === ',' && !q) { out.push(cur.trim()); cur=''; }
+      else cur += ch;
+    }
+    out.push(cur.trim()); return out;
+  }
+  function countDelim(line, ch){ var s=String(line||''), n=0; for(var i=0;i<s.length;i++) if(s[i]===ch) n++; return n; }
+  function splitLine(line, delimiter){
+    if (delimiter === ',' && String(line||'').indexOf('"') >= 0) return splitCsv(line);
+    return String(line == null ? '' : line).split(delimiter).map(function(v){ return String(v == null ? '' : v).trim(); });
+  }
+  function chooseDelimiter(lines, role){
+    var first='';
+    for(var i=0;i<Math.min(lines.length,80);i++){ if(lines[i] && String(lines[i]).trim()){ first=lines[i]; break; } }
+    var ranked=['\t','|',';',','].map(function(ch){ return {ch:ch,count:countDelim(first,ch)}; }).sort(function(a,b){ return b.count-a.count; });
+    if (!ranked.length || ranked[0].count < 2 || (role === 'repair' && ranked[0].ch === ',' && ranked[0].count < 8)) return null;
+    return ranked[0].ch || ',';
+  }
+  async function parseTextEntryOptimized(text, role, options, pctBase, pctSpan, name){
+    var raw = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    var large = raw.length > 4 * 1024 * 1024;
+    if (!large || role === 'repair' && raw.indexOf('\t') < 0 && raw.indexOf('|') < 0 && raw.indexOf(';') < 0) {
+      var rr = window.traceOpsYieldParseDelimitedText(raw, role);
+      await yieldThread();
+      var obj = window.traceOpsYieldObjectsFromRawRows(rr, role);
+      rr = null;
+      return obj || [];
+    }
+    var lines = raw.split('\n');
+    var delimiter = chooseDelimiter(lines, role);
+    if (!delimiter) {
+      var rawRows = window.traceOpsYieldParseDelimitedText(raw, role);
+      await yieldThread();
+      var fallback = window.traceOpsYieldObjectsFromRawRows(rawRows, role);
+      rawRows = null;
+      return fallback || [];
+    }
+    var headerIdx = -1;
+    for (var h=0; h<Math.min(lines.length,120); h++) {
+      if (lines[h] && String(lines[h]).trim()) { headerIdx = h; break; }
+    }
+    if (headerIdx < 0) return [];
+    var header = splitLine(lines[headerIdx], delimiter);
+    var out = [];
+    var chunk = role === 'repair' ? 4500 : (role === 'cesium' ? 6500 : 8000);
+    var totalLines = Math.max(1, lines.length - headerIdx - 1);
+    for (var start = headerIdx + 1; start < lines.length; start += chunk) {
+      if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
+      var end = Math.min(lines.length, start + chunk);
+      var rawRowsChunk = [header];
+      for (var r=start; r<end; r++) {
+        var ln = lines[r];
+        if (!ln || !String(ln).trim()) continue;
+        rawRowsChunk.push(splitLine(ln, delimiter));
+      }
+      var objects = window.traceOpsYieldObjectsFromRawRows(rawRowsChunk, role);
+      if (objects && objects.length) Array.prototype.push.apply(out, objects);
+      rawRowsChunk = null; objects = null;
+      var done = Math.min(1, (end - headerIdx - 1) / totalLines);
+      progress(options, Math.min(74, pctBase + Math.round(done * pctSpan)), 'PARSING_' + String(role||'').toUpperCase(), 'Procesando ' + name + ' por bloques: ' + out.length.toLocaleString('en-US') + ' filas...');
+      await yieldThread();
+    }
+    lines = null;
+    return out;
+  }
+
+  function hasCommon(parsed){ return !!(parsed && ((parsed.wo||[]).length || (parsed.repair||[]).length || (parsed.calendar||[]).length || (parsed.dbmodel||[]).length || (parsed.bom||[]).length || (parsed.stations||[]).length)); }
+  function hasBu(parsed){ return !!(parsed && ((parsed.sfc||[]).length || (parsed.cesium||[]).length)); }
+  function rowCounts(x){ x=x||{}; return { workOrders:(x.wo||[]).length, sfc:(x.sfc||[]).length, repairs:(x.repair||[]).length, calendar:(x.calendar||[]).length, dbModel:(x.dbmodel||[]).length, bom:(x.bom||[]).length, stations:(x.stations||[]).length, cesium:(x.cesium||[]).length }; }
+
+  function openCommonDb(){
+    return new Promise(function(resolve){
+      try { if (!window.indexedDB) return resolve(null); var req = indexedDB.open('SMTinelCommonDB', 1); req.onupgradeneeded=function(e){ var db=e.target.result; if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv'); }; req.onsuccess=function(e){ resolve(e.target.result); }; req.onerror=function(){ resolve(null); }; } catch(_) { resolve(null); }
+    });
+  }
+  async function dbGet(key){
+    if (typeof window.traceOpsYieldCommonDbGet === 'function') { try { return await window.traceOpsYieldCommonDbGet(key); } catch(_) {} }
+    var db = await openCommonDb();
+    return new Promise(function(resolve){
+      if (!db) return resolve(null);
+      try { var tx=db.transaction('kv','readonly'); var req=tx.objectStore('kv').get(key); req.onsuccess=function(){ var v=req.result || null; try{db.close();}catch(_){} resolve(v); }; req.onerror=function(){ try{db.close();}catch(_){} resolve(null); }; } catch(_) { try{db.close();}catch(__){} resolve(null); }
+    });
+  }
+  async function dbPut(key, value){
+    if (typeof window.traceOpsYieldCommonDbPut === 'function') { try { return await window.traceOpsYieldCommonDbPut(key, value); } catch(_) {} }
+    var db = await openCommonDb();
+    return new Promise(function(resolve){
+      if (!db) return resolve(false);
+      try { var tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(value, key); tx.oncomplete=function(){ try{db.close();}catch(_){} resolve(true); }; tx.onerror=function(){ try{db.close();}catch(_){} resolve(false); }; } catch(_) { try{db.close();}catch(__){} resolve(false); }
+    });
+  }
+  async function saveCommon(parsed, sourceName){
+    var old = await dbGet('activeCommon');
+    var common = {
+      savedAt: new Date().toISOString(),
+      sourceName: sourceName || (old && old.sourceName) || '',
+      wo: (parsed.wo && parsed.wo.length) ? parsed.wo : ((old && old.wo) || []),
+      repair: (parsed.repair && parsed.repair.length) ? parsed.repair : ((old && old.repair) || []),
+      calendar: (parsed.calendar && parsed.calendar.length) ? parsed.calendar : ((old && old.calendar) || []),
+      dbmodel: (parsed.dbmodel && parsed.dbmodel.length) ? parsed.dbmodel : ((old && old.dbmodel) || []),
+      bom: (parsed.bom && parsed.bom.length) ? parsed.bom : ((old && old.bom) || []),
+      stations: (parsed.stations && parsed.stations.length) ? parsed.stations : ((old && old.stations) || [])
+    };
+    var ok = await dbPut('activeCommon', common);
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: ok, savedAt: common.savedAt, sourceName: common.sourceName, rows: rowCounts(common) }; } catch(_) {}
+    return { ok: ok, common: common };
+  }
+  async function mergeCommon(parsed){
+    if (!hasBu(parsed)) return null;
+    var common = await dbGet('activeCommon');
+    if (!common) return null;
+    if (!(parsed.wo||[]).length) parsed.wo = common.wo || [];
+    if (!(parsed.repair||[]).length) parsed.repair = common.repair || [];
+    if (!(parsed.calendar||[]).length) parsed.calendar = common.calendar || [];
+    if (!(parsed.dbmodel||[]).length) parsed.dbmodel = common.dbmodel || [];
+    if (!(parsed.bom||[]).length) parsed.bom = common.bom || [];
+    if (!(parsed.stations||[]).length) parsed.stations = common.stations || [];
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: rowCounts(common) }; } catch(_) {}
+    return common;
+  }
+
+  window.traceOpsYieldTryImportTextZip = async function(file, options){
+    if (!file || !/\.zip$/i.test(file.name || '')) return null;
+    await window.ensureZipTools();
+    if (window.smtinelImportAbortReset) window.smtinelImportAbortReset();
+    var started = Date.now();
+    progress(options, 12, 'ZIP_TURBO_SCAN', 'ZIP Turbo V6: leyendo manifiesto sin abrir Excel...');
+    var outer = await JSZip.loadAsync(file);
+    var entries = [];
+    outer.forEach(function(path, entry){
+      if (entry.dir || /^__MACOSX\//i.test(path)) return;
+      if (!/\.(txt|tsv|csv)$/i.test(path)) return;
+      var role = detectRole(path);
+      if (!role) return;
+      entries.push({ path:path, entry:entry, role:role, mb: safe(function(){ return ((entry._data && entry._data.uncompressedSize) || entry._data.uncompressedSize || 0) / 1048576; }, 0) });
+    });
+    if (!entries.length) return null;
+    entries.sort(function(a,b){ return roleRank(a.role) - roleRank(b.role) || (b.mb||0) - (a.mb||0); });
+    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [], stations: [] };
+    var pulled = [];
+    var total = entries.length;
+    for (var i=0; i<entries.length; i++){
+      if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
+      var item = entries[i];
+      var name = item.path.split('/').pop();
+      var pctBase = 18 + Math.round((i / Math.max(1,total)) * 50);
+      var pctSpan = Math.max(5, Math.round(46 / Math.max(1,total)));
+      progress(options, pctBase, 'READING_' + String(item.role||'').toUpperCase(), 'Descomprimiendo ' + name + ' (' + ((item.mb||0) ? (item.mb.toFixed(1) + ' MB') : 'TXT') + ')...');
+      var text = await item.entry.async('string');
+      await yieldThread();
+      var objects = await parseTextEntryOptimized(text, item.role, options, pctBase + 1, pctSpan, name);
+      text = null;
+      if (objects && objects.length) {
+        parsed[item.role] = (parsed[item.role] || []).concat(objects);
+        pulled.push({ name:name, role:item.role, rows:objects.length });
+      }
+      await yieldThread();
+    }
+    if (hasCommon(parsed)) {
+      progress(options, 70, 'COMMON_CACHE_FAST', 'Guardando Common DB local. Se evita construir dashboard hasta cargar BU...');
+      await saveCommon(parsed, file.name);
+      await yieldThread();
+    }
+    var common = await mergeCommon(parsed);
+    if (common) {
+      progress(options, 76, 'COMMON_MERGED_FAST', 'Common DB conectado desde cache. Construyendo solo dataset activo BU...');
+      await yieldThread();
+    }
+    if (!hasBu(parsed) && hasCommon(parsed)) {
+      var counts = rowCounts({ wo: parsed.wo, repair: parsed.repair, calendar: parsed.calendar, dbmodel: parsed.dbmodel, bom: parsed.bom, stations: parsed.stations });
+      var summary = {
+        fileName:file.name,
+        source:'COMMON DB local',
+        mode:'common-cache-only-zip-turbo-v6',
+        importStartMs:(options && options.importStartMs) || started,
+        workbookName:'COMMON DB TXT package',
+        container:file.name,
+        sheets:pulled,
+        rows:{ workOrders:counts.workOrders, sfcWorkOrders:0, sfc:0, repairs:counts.repairs, validRepairSn:0, calendar:counts.calendar, dbModel:counts.dbModel, bom:counts.bom, stations:counts.stations, cesiumInScope:0 },
+        notes:'ZIP Turbo V6: Common DB cargado en IndexedDB sin construir el modelo Yield Flow pesado. Carga ALLBU despues para construir el dataset activo.'
+      };
+      progress(options, 100, 'COMMON_READY_FAST', 'Common DB listo en ' + ((Date.now()-started)/1000).toFixed(1) + 's. Ahora carga ALLBU/SFC.');
+      try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
+      return summary;
+    }
+    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) throw new Error('El ZIP TXT no contiene SFC, Cesium, Repair_Record o Station_on_line_report reconocibles.');
+    progress(options, 84, 'BUILDING_INDEX_FAST', 'Construyendo indices Yield Flow una sola vez...');
+    await yieldThread();
+    var meta = {
+      source:'ZIP TXT local + Common DB',
+      mode:'zip-turbo-v6-common-enriched',
+      fileName:file.name,
+      importStartMs:(options && options.importStartMs) || started,
+      workbookName:'TXT/TSV lightweight package',
+      container:file.name,
+      sheets:pulled,
+      notes:'ZIP Turbo V6: parsing por bloques para TXT >4 MB, Common DB cache-only, y construccion unica del dataset activo.'
+    };
+    var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom, parsed.stations);
+    progress(options, 100, 'READY_FAST', 'Import listo en ' + ((Date.now()-started)/1000).toFixed(1) + 's.');
+    try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
+    return built;
+  };
+  try { traceOpsYieldTryImportTextZip = window.traceOpsYieldTryImportTextZip; } catch(_) {}
+
+  function syncBadge(){
+    try{
+      var b = document.querySelector('.smtinel-common-bu-version-badge');
+      if(!b){ b=document.createElement('div'); b.className='smtinel-common-bu-version-badge'; document.body.appendChild(b); b.style.cssText='position:fixed;right:18px;bottom:74px;z-index:99999;background:#102A43;color:#fff;border-radius:18px;padding:10px 18px;font:800 12px Segoe UI,Arial;box-shadow:0 10px 28px rgba(16,42,67,.28);border:1px solid rgba(255,255,255,.24)'; }
+      b.textContent = VERSION_LABEL;
+    }catch(_){}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge); else syncBadge();
+})();
+</script>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
