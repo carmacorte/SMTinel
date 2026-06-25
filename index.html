@@ -26803,6 +26803,33 @@ body:has(#recovery-section) .main-content.expanded{
         function renderYieldGeneralWeeklyTrendChart(trendRows, activeWeek) {
             var rowsForChart = (trendRows || []).filter(function(w) { return w && w.week && String(w.week) !== "Imported" && Number(w.total || 0) > 0; }).slice().sort(function(a, b) { return traceOpsYieldWeekSortValue(a.week) - traceOpsYieldWeekSortValue(b.week) || String(a.week).localeCompare(String(b.week)); });
             if (rowsForChart.length > 24) rowsForChart = rowsForChart.slice(rowsForChart.length - 24);
+            // V5: align Dynamic Focus Range math with the same KPI engine used by the main Yield Flow cards.
+            // The weeklyTrend row can include WO-level repair alignment differently than the executive KPI.
+            // Rehydrate each plotted week through traceOpsBuildYieldFlowModelLocal so Clean/Risk/Total match the visible KPI rules.
+            rowsForChart = rowsForChart.map(function(w) {
+                var weekKey = String((w && w.week) || "").trim();
+                if (!weekKey) return w;
+                try {
+                    var weekModel = traceOpsBuildYieldFlowModelLocal(Object.assign({}, yieldFilters || {}, { week: weekKey }));
+                    var kpi = (weekModel && weekModel.kpi) || null;
+                    if (!kpi || !Number(kpi.units || 0)) return w;
+                    var total = Number(kpi.units || 0);
+                    var clean = Number(kpi.clean || 0);
+                    var risk = Number(kpi.risk || Math.max(0, total - clean));
+                    return Object.assign({}, w, {
+                        total: total,
+                        clean: clean,
+                        risk: risk,
+                        cleanPct: total ? (clean / total * 100) : 0,
+                        ojtPct: total ? (risk / total * 100) : Number(kpi.touch || 0),
+                        orders: Number(kpi.orders || w.orders || 0),
+                        kpiAligned: true
+                    });
+                } catch (err) {
+                    try { console.warn('[SMTinel] Weekly KPI alignment fallback:', weekKey, err); } catch (_) {}
+                    return w;
+                }
+            });
             var latest = rowsForChart.length ? rowsForChart[rowsForChart.length - 1] : null;
             var first = rowsForChart.length ? rowsForChart[0] : null;
             var best = rowsForChart.length ? rowsForChart.slice().sort(function(a, b) { return Number(b.cleanPct || 0) - Number(a.cleanPct || 0); })[0] : null;
