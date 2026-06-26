@@ -8978,7 +8978,7 @@ function traceOpsYieldApplyLocalCache(record) {
     TRACEOPS_YIELD_REPAIRS_BY_SN = x.repairsBySn || {};
     TRACEOPS_YIELD_SFC_EVENTS = x.sfcEvents || [];
     TRACEOPS_YIELD_FILTER_INDEX_CACHE = null;
-    TRACEOPS_YIELD_MODEL_CACHE = { key: null, value: null };
+    if (typeof traceOpsYieldClearModelCache === "function") traceOpsYieldClearModelCache(); else TRACEOPS_YIELD_MODEL_CACHE = { key: null, value: null };
     TRACEOPS_CRITICAL_MODEL_CACHE = { key: null, value: null };
     try { window.traceOpsState = window.traceOpsState || {}; window.traceOpsState.yieldFlowCache = record; } catch(_) {}
     return TRACEOPS_YIELD_IMPORT_META;
@@ -13365,22 +13365,58 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
     };
 }
 var TRACEOPS_YIELD_MODEL_CACHE = { key: null, value: null };
+var TRACEOPS_YIELD_MODEL_CACHE_MAP = new Map();
+var TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE = null;
 function traceOpsYieldModelCacheSignature() {
-    var sfcLen = TRACEOPS_YIELD_SN_TO_SFC ? Object.keys(TRACEOPS_YIELD_SN_TO_SFC).length : 0;
-    return [
+    var raw = [
         TRACEOPS_YIELD_BY_WO_ROWS ? TRACEOPS_YIELD_BY_WO_ROWS.length : 0,
         TRACEOPS_YIELD_FLOW_TRACKER ? TRACEOPS_YIELD_FLOW_TRACKER.length : 0,
         TRACEOPS_RISK_SUMMARY_ROWS ? TRACEOPS_RISK_SUMMARY_ROWS.length : 0,
         TRACEOPS_YIELD_FT_ROWS ? TRACEOPS_YIELD_FT_ROWS.length : 0,
-        sfcLen
+        TRACEOPS_YIELD_SN_TO_SFC ? (TRACEOPS_YIELD_SN_TO_SFC.__traceopsCountHint || 0) : 0
     ].join('|');
+    if (!TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE || TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE.raw !== raw) {
+        var sfcLen = 0;
+        try {
+            sfcLen = TRACEOPS_YIELD_SN_TO_SFC ? Object.keys(TRACEOPS_YIELD_SN_TO_SFC).length : 0;
+            if (TRACEOPS_YIELD_SN_TO_SFC) TRACEOPS_YIELD_SN_TO_SFC.__traceopsCountHint = sfcLen;
+        } catch (_) { sfcLen = 0; }
+        TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE = { raw: raw, sig: [
+            TRACEOPS_YIELD_BY_WO_ROWS ? TRACEOPS_YIELD_BY_WO_ROWS.length : 0,
+            TRACEOPS_YIELD_FLOW_TRACKER ? TRACEOPS_YIELD_FLOW_TRACKER.length : 0,
+            TRACEOPS_RISK_SUMMARY_ROWS ? TRACEOPS_RISK_SUMMARY_ROWS.length : 0,
+            TRACEOPS_YIELD_FT_ROWS ? TRACEOPS_YIELD_FT_ROWS.length : 0,
+            sfcLen,
+            window.__TRACEOPS_YIELD_DATA_REV || 0
+        ].join('|') };
+    }
+    return TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE.sig;
 }
+function traceOpsYieldClearModelCache() {
+    try { if (TRACEOPS_YIELD_MODEL_CACHE_MAP && TRACEOPS_YIELD_MODEL_CACHE_MAP.clear) TRACEOPS_YIELD_MODEL_CACHE_MAP.clear(); } catch (_) {}
+    TRACEOPS_YIELD_MODEL_CACHE = { key: null, value: null };
+    TRACEOPS_YIELD_MODEL_CACHE_SIG_STATE = null;
+    window.__TRACEOPS_YIELD_DATA_REV = (Number(window.__TRACEOPS_YIELD_DATA_REV || 0) + 1);
+}
+window.traceOpsYieldClearModelCache = traceOpsYieldClearModelCache;
 function traceOpsBuildYieldFlowModelLocal(filters) {
     filters = filters || {};
     var key = traceOpsYieldModelCacheSignature() + '::' + JSON.stringify(filters || {});
     if (TRACEOPS_YIELD_MODEL_CACHE && TRACEOPS_YIELD_MODEL_CACHE.key === key) return TRACEOPS_YIELD_MODEL_CACHE.value;
+    if (TRACEOPS_YIELD_MODEL_CACHE_MAP && TRACEOPS_YIELD_MODEL_CACHE_MAP.has(key)) {
+        var cached = TRACEOPS_YIELD_MODEL_CACHE_MAP.get(key);
+        TRACEOPS_YIELD_MODEL_CACHE = { key: key, value: cached };
+        return cached;
+    }
     var model = traceOpsBuildYieldFlowModelLocalRaw(filters);
     TRACEOPS_YIELD_MODEL_CACHE = { key: key, value: model };
+    try {
+        TRACEOPS_YIELD_MODEL_CACHE_MAP.set(key, model);
+        if (TRACEOPS_YIELD_MODEL_CACHE_MAP.size > 48) {
+            var firstKey = TRACEOPS_YIELD_MODEL_CACHE_MAP.keys().next().value;
+            TRACEOPS_YIELD_MODEL_CACHE_MAP.delete(firstKey);
+        }
+    } catch (_) {}
     return model;
 }
 
@@ -26815,32 +26851,21 @@ body:has(#recovery-section) .main-content.expanded{
         function renderYieldGeneralWeeklyTrendChart(trendRows, activeWeek) {
             var rowsForChart = (trendRows || []).filter(function(w) { return w && w.week && String(w.week) !== "Imported" && Number(w.total || 0) > 0; }).slice().sort(function(a, b) { return traceOpsYieldWeekSortValue(a.week) - traceOpsYieldWeekSortValue(b.week) || String(a.week).localeCompare(String(b.week)); });
             if (rowsForChart.length > 24) rowsForChart = rowsForChart.slice(rowsForChart.length - 24);
-            // V5: align Dynamic Focus Range math with the same KPI engine used by the main Yield Flow cards.
-            // The weeklyTrend row can include WO-level repair alignment differently than the executive KPI.
-            // Rehydrate each plotted week through traceOpsBuildYieldFlowModelLocal so Clean/Risk/Total match the visible KPI rules.
+            // V7 PERF: do not rebuild the full Yield Flow model once per plotted week during render.
+            // That synchronous loop freezes Chromium with large ZIPs. The chart uses the existing weeklyTrend
+            // rows; only the selected week and the focus range are KPI-aligned through the full engine below.
             rowsForChart = rowsForChart.map(function(w) {
-                var weekKey = String((w && w.week) || "").trim();
-                if (!weekKey) return w;
-                try {
-                    var weekModel = traceOpsBuildYieldFlowModelLocal(Object.assign({}, yieldFilters || {}, { week: weekKey }));
-                    var kpi = (weekModel && weekModel.kpi) || null;
-                    if (!kpi || !Number(kpi.units || 0)) return w;
-                    var total = Number(kpi.units || 0);
-                    var clean = Number(kpi.clean || 0);
-                    var risk = Number(kpi.risk || Math.max(0, total - clean));
-                    return Object.assign({}, w, {
-                        total: total,
-                        clean: clean,
-                        risk: risk,
-                        cleanPct: total ? (clean / total * 100) : 0,
-                        ojtPct: total ? (risk / total * 100) : Number(kpi.touch || 0),
-                        orders: Number(kpi.orders || w.orders || 0),
-                        kpiAligned: true
-                    });
-                } catch (err) {
-                    try { console.warn('[SMTinel] Weekly KPI alignment fallback:', weekKey, err); } catch (_) {}
-                    return w;
-                }
+                var total = Number((w && w.total) || 0);
+                var clean = Number((w && w.clean) || 0);
+                var risk = Number((w && w.risk) || Math.max(0, total - clean));
+                return Object.assign({}, w, {
+                    total: total,
+                    clean: clean,
+                    risk: risk,
+                    cleanPct: total ? (clean / total * 100) : Number((w && w.cleanPct) || 0),
+                    ojtPct: total ? (risk / total * 100) : Number((w && w.ojtPct) || 0),
+                    kpiAligned: false
+                });
             });
             var latest = rowsForChart.length ? rowsForChart[rowsForChart.length - 1] : null;
             var first = rowsForChart.length ? rowsForChart[0] : null;
@@ -26873,6 +26898,28 @@ body:has(#recovery-section) .main-content.expanded{
             var selectedWeek = (yieldFocusRange && yieldFocusRange.selected) || (activeTrendRow && activeTrendRow.week) || (latest && latest.week) || "";
             var selectedRow = selectedWeek ? rowsForChart.filter(function(w) { return String(w.week || "") === String(selectedWeek); })[0] : latest;
             var selectedIndex = selectedRow ? rowsForChart.findIndex(function(w) { return String(w.week || "") === String(selectedRow.week || ""); }) : -1;
+            if (selectedRow && selectedRow.week) {
+                try {
+                    var selectedModel = traceOpsBuildYieldFlowModelLocal(Object.assign({}, yieldFilters || {}, { week: String(selectedRow.week || "") }));
+                    var selectedKpi = (selectedModel && selectedModel.kpi) || null;
+                    if (selectedKpi && Number(selectedKpi.units || 0)) {
+                        var stotal = Number(selectedKpi.units || 0);
+                        var sclean = Number(selectedKpi.clean || 0);
+                        var srisk = Number(selectedKpi.risk || Math.max(0, stotal - sclean));
+                        selectedRow = Object.assign({}, selectedRow, {
+                            total: stotal,
+                            clean: sclean,
+                            risk: srisk,
+                            cleanPct: stotal ? (sclean / stotal * 100) : 0,
+                            ojtPct: stotal ? (srisk / stotal * 100) : Number(selectedKpi.touch || 0),
+                            orders: Number(selectedKpi.orders || selectedRow.orders || 0),
+                            kpiAligned: true
+                        });
+                    }
+                } catch (err) {
+                    try { console.warn('[SMTinel] Selected week KPI alignment fallback:', selectedRow.week, err); } catch (_) {}
+                }
+            }
             var previousTrendRow = selectedIndex > 0 ? rowsForChart[selectedIndex - 1] : null;
             var activeDelta = selectedRow && previousTrendRow ? Number(selectedRow.cleanPct || 0) - Number(previousTrendRow.cleanPct || 0) : 0;
             var manualStart = yieldFocusRange && yieldFocusRange.start ? String(yieldFocusRange.start) : "";
