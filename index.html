@@ -12628,6 +12628,7 @@ function traceOpsYieldSerialModalExtractRefs(row) {
         matches.forEach(function(ref) {
             ref = String(ref || "").trim().replace(/[.,;:]+$/g, "");
             if (!ref || /^(WO|SN|PN|SKU|BU|LINE|FY|Q|W|N|D)$/i.test(ref)) return;
+            if (typeof traceOpsBoardIsValidRefDes === "function" && !traceOpsBoardIsValidRefDes(ref)) return;
             if (refs.indexOf(ref) < 0) refs.push(ref);
         });
     }
@@ -26177,8 +26178,14 @@ body:has(#recovery-section) .main-content.expanded{
         var rows = (seed && seed.rows) || (seed && seed.action && seed.action.rows) || (pattern && pattern.serials) || [];
         var first = rows && rows.length ? rows[0] : {};
         var rowRefs = traceOpsBoardRefsFromRows(rows);
-        var rawRef = (seed && (seed.ref || seed.refdes)) || (pattern && pattern.refs && pattern.refs[0]) || rowRefs[0] || first.location || first.ref || first.refdes || traceOpsBoardPickFirstRefFromText(first.symptom || first.mode || first.failureMode || "") || "R209";
-        var ref = traceOpsBoardNormalizeRef(String(rawRef || "R209").split(/[;, ]/)[0]);
+        var candidateRefs = []
+            .concat(rowRefs || [])
+            .concat((pattern && pattern.refs) || [])
+            .concat(seed && (seed.ref || seed.refdes) ? [seed.ref || seed.refdes] : [])
+            .concat(traceOpsBoardSplitRefs(first.ref || first.refdes || first.failLocation || first.failureLocation || first.repairLocation || ""))
+            .concat(traceOpsBoardSplitRefs(first.symptom || first.mode || first.failureMode || ""));
+        candidateRefs = Array.from(new Set(candidateRefs.map(function(x){ return traceOpsBoardNormalizeRef(x); }).filter(traceOpsBoardIsValidRefDes)));
+        var ref = candidateRefs[0] || "";
         var ctx = {
             source: "Yield Flow",
             mode: (seed && (seed.mode || seed.failureMode || seed.title || seed.type)) || (pattern && pattern.pattern) || "Component issue",
@@ -26188,10 +26195,10 @@ body:has(#recovery-section) .main-content.expanded{
             family: first.family || (yieldFilters && yieldFilters.family && yieldFilters.family !== "ALL" ? yieldFilters.family : "Current model"),
             station: first.station || "AOI / Repair",
             rows: rows || [],
-            refs: rowRefs.length ? rowRefs : ((pattern && pattern.refs) || (ref ? [ref] : []))
+            refs: candidateRefs.length ? candidateRefs : []
         };
         setBoardImpactContext(ctx);
-        setBoardSelectedRef(ref || "R209");
+        setBoardSelectedRef(ref || "");
         setActiveModule("boardimpact");
         if (isMobile()) setSidebarOpen(false);
         setTimeout(function () { if (!scrollToSection("boardimpact-section")) scrollToSection("module-workspace"); }, 80);
@@ -27885,9 +27892,20 @@ body:has(#recovery-section) .main-content.expanded{
                         }));
                     })() : React.createElement("div", { style: { fontSize: 12, color: "#8A8580", padding: "4px 0" } }, "Ingresa uno o varios números de serie para consultar su estado: proceso actual (SFC), historial de reparación y resultados Cesium. Puedes separar los SN por coma, espacio o salto de línea.")))));
     }
+    function traceOpsBoardIsProductLikeNotRef(value) {
+        var v = traceOpsBoardNormalizeRef(value);
+        if (!v) return false;
+        // Product / platform names from Repair Record or model fields are not board RefDes.
+        // Example: FPR4215 is a product name, not a reference designator.
+        if (/^(FPR|ASA|ASR|ISR|NCS|N9K|C9K|CATALYST|FIREPOWER|MERAKI|UCS|NEXUS)\d*[A-Z0-9_]*$/.test(v)) return true;
+        if (/^(TYNE|WARWICK|MILLENNIUM|MILLENIUM|MARYLAND|BRENTWOOD|LANCER|VANGUARD|LODESTAR|TITAN|WESTMINSTER|VICTORIA|QUAKE|SMIRNOFF|PORTER|NYQUIST|BLACKBOLT|CODEC|FPR4215)$/.test(v)) return true;
+        if (/^(NGFWBU|CRBU|CVEBU|FIELDWORKS|IOTBU|SRGBU|UABU|ECBU|ERBU|INSBU|JUNIPER|LONGBALL|MB1K|MBC1K)$/.test(v)) return true;
+        return false;
+    }
     function traceOpsBoardIsValidRefDes(value) {
         var v = traceOpsBoardNormalizeRef(value);
         if (!v) return false;
+        if (traceOpsBoardIsProductLikeNotRef(v)) return false;
         if (/^(ND|NA|NULL|NONE|SINREFERENCIA|NOREFDES|NOLOCATION|NOBOMREFERENCE)$/.test(v)) return false;
         if (/^(AOI|AOI2|AOI4|SMT|PTH|ICT|FT|VI|VI1|VI2|ROUTER|STOCKIN|PCBA|PROCESS|TEST|TOP|BOTTOM)$/.test(v)) return false;
         if (/^(NGFWBU|CVE\w*|OCTAVIO|VICTORIA|WARWICK|MILLENNIUM|LANCER|LC\d+|LC\d+[A-Z0-9_]*|CSF\d+[A-Z0-9_]*|CASE\d+[A-Z0-9_]*|COMP\d+[A-Z0-9_]*)$/.test(v)) return false;
@@ -29049,6 +29067,8 @@ body:has(#recovery-section) .main-content.expanded{
       function isRealRefDes(v){
         v = norm(v).replace(/\s+/g,'');
         if (!v || /^(N\/D|NA|N\/A|NONE|MULTIPLE|VARIOUS)$/i.test(v)) return false;
+        if (/^(FPR|ASA|ASR|ISR|NCS|N9K|C9K|CATALYST|FIREPOWER|MERAKI|UCS)\d*[A-Z0-9_]*$/i.test(v)) return false;
+        if (/^(TYNE|WARWICK|MILLENNIUM|MILLENIUM|MARYLAND|BRENTWOOD|LANCER|VANGUARD|LODESTAR|TITAN|WESTMINSTER|VICTORIA|QUAKE|SMIRNOFF|PORTER|NYQUIST|BLACKBOLT|CODEC)$/i.test(v)) return false;
         if (/^A\d+[A-Z]*$/i.test(v)) return false;
         if (/^PCBPM\d*$/i.test(v)) return false;
         if (/^(SMT|PTH|ICT|AOI|5DX|VI|WAVE|RETEST|REPAIR|STOCKIN|STOCKIN\/FT|PROCESS|PRODUCTION|BOTTOM|TOP|BOTH)$/i.test(v)) return false;
@@ -30231,11 +30251,40 @@ body:has(#recovery-section) .main-content.expanded{
     function renderBoardImpactSection() {
         var ctx = boardImpactContext || {};
         var modeOptions = traceOpsBoardBuildModeOptions(yieldFlowModel);
+        // Board Impact has two scopes now:
+        // 1) Detail scope: follows selected failure mode/ref/SN for heatmap drill-down.
+        // 2) RefDes offender scope: fixed consolidated view across all failure modes in the current product/WO scope.
+        //    Only TOP/BOTTOM side filters are allowed to reduce this matrix, so floor prioritization does not jump
+        //    every time the user clicks Solder Bridge, Open Solder, RefDes, SN, or PN filters.
+        function traceOpsBoardCollectAllModeRows(options, seedRows) {
+            var out = [], seen = {};
+            function key(row, idx) {
+                var sn = traceOpsYieldCleanSn((row && (row.sn || row.SN || row.serial || row.serialNumber)) || "") || ("row" + idx);
+                var wo = String((row && (row.wo || row.workorderno || row.workOrder || row.woNumber)) || "").trim();
+                var mode = String((row && (row.failureMode || row.mode || row.symptom || row.repairSymptom)) || "").trim();
+                var refs = traceOpsBoardRefsFromRows([row]).join(",");
+                return [sn, wo, mode, refs, row && (row.componentCode || row.componentPn || row.partNumber || "")].join("|");
+            }
+            function addRows(rows) {
+                (Array.isArray(rows) ? rows : []).forEach(function(row, idx) {
+                    if (!row) return;
+                    var k = key(row, idx);
+                    if (seen[k]) return;
+                    seen[k] = true;
+                    out.push(row);
+                });
+            }
+            addRows(seedRows);
+            (Array.isArray(options) ? options : []).forEach(function(m) { addRows(m && m.serials); });
+            return out;
+        }
+        var boardConsolidatedSeedRows = traceOpsBoardCollectAllModeRows(modeOptions, ctx.rows || []);
         var activeMode = String(ctx.mode || (modeOptions[0] && modeOptions[0].mode) || "Component issue");
         var activeModeRow = modeOptions.find(function(m) { return String(m.mode) === activeMode; }) || modeOptions[0] || null;
         var rows = (ctx.rows && ctx.rows.length ? ctx.rows : (activeModeRow && activeModeRow.serials) || []);
         var allBoardRows = traceOpsBoardExpandRowsWithRepairScope(ctx, rows);
         var boardAllRowsBeforeModeFilter = allBoardRows.slice ? allBoardRows.slice() : allBoardRows;
+        var boardConsolidatedRowsBeforeModeFilter = traceOpsBoardExpandRowsWithRepairScope(ctx, boardConsolidatedSeedRows.length ? boardConsolidatedSeedRows : boardAllRowsBeforeModeFilter);
         modeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(boardAllRowsBeforeModeFilter), modeOptions);
         activeModeRow = modeOptions.find(function(m) { return String(m.mode) === activeMode; }) || modeOptions[0] || activeModeRow;
         function traceOpsBoardModeEquals(row, mode) {
@@ -30267,11 +30316,10 @@ body:has(#recovery-section) .main-content.expanded{
         var activeFilteredModeOptions = traceOpsBoardMergeModeOptions(traceOpsBoardBuildModeOptionsFromRows(rows), []);
         if (activeFilteredModeOptions.length) activeModeRow = activeFilteredModeOptions.find(function(m) { return String(m.mode) === activeMode; }) || activeFilteredModeOptions[0] || activeModeRow;
         var seedRefs = (ctx.refs && ctx.refs.length ? ctx.refs : []).concat(activeModeRow && activeModeRow.refs ? activeModeRow.refs : []);
-        var refs = traceOpsBoardRefsFromRows(rows).concat(seedRefs).filter(Boolean).slice(0, 80);
-        if (!refs.length) refs = [boardSelectedRef || ctx.refdes || "R209"];
-        var selectedRef = boardSelectedRef || ctx.refdes || refs[0] || "R209";
+        var refs = traceOpsBoardRefsFromRows(rows).concat(seedRefs).map(function (x) { return traceOpsBoardNormalizeRef(x); }).filter(traceOpsBoardIsValidRefDes).slice(0, 80);
+        var selectedRef = traceOpsBoardIsValidRefDes(boardSelectedRef) ? traceOpsBoardNormalizeRef(boardSelectedRef) : (traceOpsBoardIsValidRefDes(ctx.refdes) ? traceOpsBoardNormalizeRef(ctx.refdes) : (refs[0] || ""));
         if (boardVisualRefGroup.length && boardVisualRefGroup.indexOf(traceOpsBoardNormalizeRef(selectedRef)) < 0) selectedRef = boardVisualRefGroup[0];
-        var uniqueRefs = Array.from(new Set(refs.concat(boardVisualRefGroup || []).concat(selectedRef ? [selectedRef] : []).map(function (x) { return traceOpsBoardNormalizeRef(x); }).filter(Boolean)));
+        var uniqueRefs = Array.from(new Set(refs.concat(boardVisualRefGroup || []).concat(selectedRef ? [selectedRef] : []).map(function (x) { return traceOpsBoardNormalizeRef(x); }).filter(traceOpsBoardIsValidRefDes)));
         var selectedRowsRaw = traceOpsBoardRowsForRef(rows, selectedRef);
         var selectedSnRows = traceOpsBoardUniqueSerialRows(selectedRowsRaw);
         var affectedSerials = traceOpsBoardUniqueSerialRows(rows).length || selectedSnRows.length || rows.length || (ctx.serials ? ctx.serials.length : 0) || (ctx.refdes ? 1 : 0);
@@ -30296,7 +30344,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, meta || "")));
         }
         var refStats = traceOpsBoardBuildRefStats(rows, uniqueRefs);
-        if (!refStats.length) refStats = (uniqueRefs.length ? uniqueRefs : ["R209", "U55_NTX0", "J4500", "C71", "TP2103", "L0802"]).map(function(ref, i) {
+        if (!refStats.length && !rows.length) refStats = (uniqueRefs.length ? uniqueRefs : []).map(function(ref, i) {
             var qty = i === 0 ? affectedSerials : Math.max(1, Math.round(affectedSerials / (i + 1)));
             var pct = Number((qty / Math.max(1, affectedSerials) * 100).toFixed(1));
             var rr = traceOpsBoardRowsForRef(rows, ref); var cd = traceOpsBoardPrimaryComponentDetailForRef(rr, ref); var md = traceOpsBoardFailureModesForRows(rr, ctx.mode || 'N/D'); return { ref: ref, rows: rr, allRows: rr, qty: qty, pct: pct, description: md, failureMode: md, componentCode: cd.code, componentType: cd.componentType, componentDescription: cd.componentDescription, componentCodes: traceOpsBoardComponentCodesFromRows(rr), severity: traceOpsBoardSeverityForCount(qty, pct, i) };
@@ -30441,9 +30489,15 @@ body:has(#recovery-section) .main-content.expanded{
                 var activeWeeks = weekCounts.filter(function(v){ return v > 0; }).length;
                 var score = serialCount * 100 + peak * 18 + activeWeeks * 12 + modes.length * 7 + Math.max(0, last - first) * 10;
                 var sev = traceOpsBoardSeverityForCount(serialCount, totalManufacturedUnits ? serialCount / totalManufacturedUnits * 100 : 0, 0);
+                var comp = traceOpsBoardPrimaryComponentDetailForRef(st.rows, ref) || {};
+                var componentPackage = traceOpsResolveBomPackage(comp.componentDescription || '', comp.componentType || '');
                 return {
                     ref: ref,
                     serialCount: serialCount,
+                    componentCode: comp.code || 'N/D',
+                    componentType: comp.componentType || 'N/D',
+                    componentDescription: comp.componentDescription || 'N/D',
+                    componentPackage: componentPackage || 'COMPONENT_DEFAULT',
                     events: st.events,
                     modes: modes,
                     modeCount: modes.length,
@@ -30488,11 +30542,28 @@ body:has(#recovery-section) .main-content.expanded{
                     return h('span', { key: stat.ref + m.mode, title: m.mode, style: { display: 'inline-flex', borderRadius: 999, padding: '3px 7px', background: '#F7FAFF', border: '1px solid #D9E6F7', color: '#1F3A5F', fontSize: 9.5, fontWeight: 800, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, m.mode + ' · ' + m.snCount);
                 }));
             }
+            function componentTypeCell(stat) {
+                var type = String((stat && stat.componentType) || 'N/D');
+                var desc = String((stat && stat.componentDescription) || '');
+                var code = String((stat && stat.componentCode) || 'N/D');
+                var pkg = traceOpsResolveBomPackage(desc, type);
+                var label = pkg === 'COMPONENT_DEFAULT' && (!type || type === 'N/D') ? 'N/D' : pkg.replace(/_/g, ' ');
+                var icon = traceOpsGetBomIconPath(desc, type);
+                return h('div', { title: [label, type, code, desc].filter(Boolean).join(' · '), style: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 150, maxWidth: 230 } }, [
+                    h('span', { key: 'icoBox', style: { width: 34, height: 34, borderRadius: 12, background: '#F7FAFF', border: '1px solid #D9E6F7', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' } },
+                        h('img', { src: icon, alt: label, style: { width: 24, height: 24, objectFit: 'contain' } })
+                    ),
+                    h('span', { key: 'txt', style: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 } }, [
+                        h('span', { key: 'pkg', style: { fontSize: 10, fontWeight: 950, color: '#102A43', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, label),
+                        h('span', { key: 'code', style: { fontSize: 9.5, color: '#5F766C', fontWeight: 800, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, code)
+                    ])
+                ]);
+            }
             return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, overflow: 'hidden' } }, [
                 h('div', { key: 'hdr', style: { padding: '14px 18px', background: 'linear-gradient(135deg,#F8FBFF,#EEF6FF)', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' } }, [
                     h('div', { key: 'copy' }, [
                         h('div', { key: 'title', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Top offenders por RefDes'),
-                        h('div', { key: 'sub', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Vista consolidada: agrupa todos los modos de falla por referencia y muestra evolución por Cisco Week. Click en una referencia alimenta el heatmap.')
+                        h('div', { key: 'sub', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Vista consolidada fija: agrupa todos los modos de falla por referencia y muestra evolución por Cisco Week. No cambia al seleccionar modo de falla, SN, PN o RefDes; sólo se reduce con filtro TOP/BOTTOM. Click en una referencia alimenta el heatmap. El icono usa la descripción/BOM cuando está disponible.')
                     ]),
                     h('div', { key: 'meta', style: { display: 'flex', gap: 8, flexWrap: 'wrap' } }, [
                         h('span', { key: 'a', style: { border: '1px solid #BFE6DA', background: '#EAFBF7', color: '#007A63', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900 } }, refs.length + ' refs prioritarias'),
@@ -30500,10 +30571,11 @@ body:has(#recovery-section) .main-content.expanded{
                     ])
                 ]),
                 refs.length ? h('div', { key: 'table', className: 'tscroll' },
-                    h('table', { style: { minWidth: Math.max(1180, 790 + weeks.length * 74) } }, [
+                    h('table', { style: { minWidth: Math.max(1320, 940 + weeks.length * 74) } }, [
                         h('thead', { key: 'th' }, h('tr', null, [
                             h('th', { key: 'p' }, 'Prioridad'),
                             h('th', { key: 'r' }, 'RefDes'),
+                            h('th', { key: 'ct' }, 'Tipo comp.'),
                             h('th', { key: 'sn' }, 'SN fails'),
                             h('th', { key: 'm' }, 'Modos de falla'),
                             h('th', { key: 'spark' }, 'Mini trend'),
@@ -30515,6 +30587,7 @@ body:has(#recovery-section) .main-content.expanded{
                             return h('tr', { key: stat.ref + idx, onClick: function(){ setBoardSelectedRef(stat.ref); setBoardRefMultiFilter([stat.ref]); setBoardDetailZoom(true); setTimeout(function(){ try { document.getElementById('traceops-board-pdf-stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(_){} }, 80); }, title: 'Abrir heatmap para ' + stat.ref, style: { cursor: 'pointer', borderLeft: '5px solid ' + sev.color } }, [
                                 h('td', { key: 'p' }, priorityChip(stat)),
                                 h('td', { key: 'r', style: { fontWeight: 950, color: '#102A43', fontSize: 12.5 } }, stat.ref),
+                                h('td', { key: 'ct' }, componentTypeCell(stat)),
                                 h('td', { key: 'sn', style: { fontWeight: 950, color: sev.color } }, stat.serialCount + ' SN'),
                                 h('td', { key: 'm' }, modeChips(stat)),
                                 h('td', { key: 'spark' }, traceOpsBoardSparkBars(h, stat.weekCounts, '#2CBFAE', activeIdx)),
@@ -30529,7 +30602,10 @@ body:has(#recovery-section) .main-content.expanded{
                     ])) : h('div', { key: 'empty', style: { padding: 16, color: '#5F766C', fontSize: 12 } }, 'No hay RefDes suficientes para generar matriz de ofensores en el scope actual.')
             ]);
         }
-        var boardRefOffenderMatrix = traceOpsBoardBuildRefOffenderMatrix(boardAllRowsBeforeModeFilter, isMobile() ? 10 : 18, isMobile() ? 5 : 8);
+        var boardRefOffenderSourceRows = activeBoardSideFilters.length
+            ? traceOpsBoardApplyMultiFilters(boardConsolidatedRowsBeforeModeFilter, [], [], [], activeBoardSideFilters)
+            : boardConsolidatedRowsBeforeModeFilter;
+        var boardRefOffenderMatrix = traceOpsBoardBuildRefOffenderMatrix(boardRefOffenderSourceRows, isMobile() ? 10 : 18, isMobile() ? 5 : 8);
 
         var selectedStat = refStats.find(function (x) { return traceOpsBoardNormalizeRef(x.ref) === traceOpsBoardNormalizeRef(selectedRef); }) || refStats[0] || { rows: selectedSnRows, qty: affectedSerials, pct: 0, severity: traceOpsBoardSeverityForCount(affectedSerials, 0, 0) };
         var selectedSeverity = selectedStat.severity || traceOpsBoardSeverityForCount(affectedSerials, 0, 0);
