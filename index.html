@@ -2827,6 +2827,20 @@ window.TRACEOPS_SUPABASE = window.TRACEOPS_SUPABASE || {
   enabled: false
 };
 
+/* SMTinel Cloud Performance Guard
+   Local-first mode avoids blocking ZIP parsing / Yield Flow render while Supabase
+   performs auth/session/realtime checks. Cloud sync remains available by explicit action. */
+window.TRACEOPS_CLOUD_PERF = Object.assign({
+  localFirst: true,
+  autoBootstrap: false,
+  autoRealtime: false,
+  autoSyncOnLogin: false,
+  requestTimeoutMs: 3500,
+  listLimit: 200,
+  sessionPollMs: 60000,
+  sessionPollWhenHidden: false
+}, window.TRACEOPS_CLOUD_PERF || {});
+
 if (typeof window !== "undefined" && !window.global) { window.global = window; }
 
 function traceOpsNormalizeCloudError(err) {
@@ -2879,13 +2893,24 @@ window.SMTinelCloud = (function(){
         window.__traceopsSupabaseClient = window.supabase.createClient(c.url, c.anonKey, {
           auth: {
             persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
+            autoRefreshToken: !(window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.localFirst),
+            detectSessionInUrl: !(window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.localFirst)
           },
           global: {
             fetch: function(url, options) {
-              return fetch(url, options).catch(function(err){
+              var perf = window.TRACEOPS_CLOUD_PERF || {};
+              var timeoutMs = Math.max(1500, Number(perf.requestTimeoutMs || 3500));
+              var controller = (typeof AbortController !== "undefined") ? new AbortController() : null;
+              var timer = null;
+              var finalOptions = Object.assign({}, options || {});
+              if (controller && !finalOptions.signal) {
+                finalOptions.signal = controller.signal;
+                timer = setTimeout(function(){ try { controller.abort(); } catch(_) {} }, timeoutMs);
+              }
+              return fetch(url, finalOptions).catch(function(err){
                 throw traceOpsNormalizeCloudError(err);
+              }).finally(function(){
+                try { if (timer) clearTimeout(timer); } catch(_) {}
               });
             }
           }
@@ -2942,7 +2967,8 @@ async function loadRccasFromCloud(){
     .from('traceops_rcca_cases')
     .select('rcca_id,payload,updated_at')
     .eq('user_id', user.id)
-    .order('updated_at', { ascending: false });
+    .order('updated_at', { ascending: false })
+    .limit(Math.max(25, Number((window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.listLimit) || 200)));
 
   if (error) {
     console.error("Error cargando RCCA:", error);
@@ -3070,7 +3096,8 @@ async function signUp(email, password){
       .from("traceops_rcca_cases")
       .select("rcca_id,payload,updated_at")
       .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .limit(Math.max(25, Number((window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.listLimit) || 200)));
     if (q.error) throw traceOpsNormalizeCloudError(q.error);
     return (q.data || []).map(function(row){
       var payload = row.payload || {};
@@ -15086,7 +15113,7 @@ function App() {
         }
         try {
             setSyncBusy(true);
-            var remoteItems = await window.SMTinelCloud.listRcca();
+            var remoteItems = await traceOpsSafeCloudCall(function(){ return window.SMTinelCloud.listRcca(); }, (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.requestTimeoutMs) || 3500);
             var merged = mergeRccaRecords(opts.baseList || rccaList, remoteItems);
             await persistRccaLocal(merged);
             setCloudStatus(remoteItems.length ? ("Sincronizado · " + remoteItems.length + " RCCA") : "Sesion activa · nube vacia");
@@ -15180,14 +15207,19 @@ function App() {
             setAuthUser(currentUser || null);
             setCloudStatus("Sesion activa");
             setRealtimeStatus(currentUser && currentUser.id ? "DISCONNECTED" : "LOCAL_ONLY");
-            try {
-                await syncAllLocalToCloud(rccaList);
+            if (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.autoSyncOnLogin === false) {
+                setCloudStatus("Sesion activa · sync manual");
             }
-            catch (_) { }
-            try {
-                await refreshCloudRcca({ baseList: rccaList });
+            else {
+                try {
+                    await syncAllLocalToCloud(rccaList);
+                }
+                catch (_) { }
+                try {
+                    await refreshCloudRcca({ baseList: rccaList });
+                }
+                catch (_) { }
             }
-            catch (_) { }
             setAuthPassword("");
         }
         catch (err) {
@@ -15264,6 +15296,23 @@ function App() {
             setRealtimeStatus("LOCAL_ONLY");
             return;
         }
+        if (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.autoBootstrap === false) {
+            setAuthReady(true);
+            setCloudStatus("Nube disponible · sync manual");
+            setRealtimeStatus("LOCAL_ONLY");
+            cloudRetryHookRef.current = async function () {
+                try {
+                    setCloudStatus("Sincronizando nube...");
+                    await refreshCloudRcca();
+                    setCloudStatus("Sincronizado");
+                    setAuthErrMsg("");
+                }
+                catch (e) {
+                    traceOpsTriggerCloudCooldown("Nube lenta · modo local");
+                }
+            };
+            return function () { cloudRetryHookRef.current = null; };
+        }
         var realtimeSub = null;
         function stopRealtime() {
             try {
@@ -15277,6 +15326,10 @@ function App() {
         var authFlowPromise = Promise.resolve();
         function startRealtime(user) {
             stopRealtime();
+            if (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.autoRealtime === false) {
+                setRealtimeStatus("LOCAL_ONLY");
+                return;
+            }
             if (cloudCooldownRef.current) {
                 setRealtimeStatus("LOCAL_ONLY");
                 return;
@@ -30332,6 +30385,152 @@ body:has(#recovery-section) .main-content.expanded{
             }
             return refSortDir === "asc" ? cmp : -cmp;
         });
+
+        function traceOpsBoardShortWeekLabel(week) {
+            var raw = String(week || 'N/D');
+            var q = raw.match(/Q(\d)/i);
+            var w = raw.match(/W[- ]?(\d{1,3})/i);
+            if (q && w) return 'Q' + q[1] + ' W' + String(w[1]).padStart(2, '0');
+            return raw.length > 10 ? raw.replace(/^FY\d{4}\s*/i, '').replace(/\s+/g, ' ') : raw;
+        }
+        function traceOpsBoardRowWeek(row) {
+            return String((row && (row.week || row.ciscoWeek || row.fiscalWeek || row['Cisco Week'] || row['Fiscal Week'] || row.WFCSY)) || 'No Week').trim() || 'No Week';
+        }
+        function traceOpsBoardRefOffenderMode(row) {
+            var mode = traceOpsBoardFailureModeLabel(row || {});
+            if (mode && mode !== 'N/D') return mode;
+            mode = String((row && (row.failureMode || row.mode || row.symptom || row.rootCause || row.cause || row.defect || row.defecto || row.failingTestName)) || '').trim();
+            return mode || 'N/D';
+        }
+        function traceOpsBoardBuildRefOffenderMatrix(baseRows, maxRefs, maxWeeks) {
+            baseRows = Array.isArray(baseRows) ? baseRows : [];
+            maxRefs = maxRefs || 18;
+            maxWeeks = maxWeeks || 8;
+            var weekMap = {}, refMap = {};
+            baseRows.forEach(function(row, idx) {
+                var week = traceOpsBoardRowWeek(row);
+                weekMap[week] = true;
+                var refsForRow = traceOpsBoardExtractRefsFromRow(row || {}).map(traceOpsBoardNormalizeRef).filter(Boolean);
+                if (!refsForRow.length) return;
+                var sn = traceOpsBoardSnKey(row, idx) || ('ROW-' + idx);
+                var mode = traceOpsBoardRefOffenderMode(row);
+                refsForRow.forEach(function(ref) {
+                    if (!refMap[ref]) refMap[ref] = { ref: ref, events: 0, snMap: {}, modes: {}, weekSn: {}, weekEvents: {}, rows: [] };
+                    var stat = refMap[ref];
+                    stat.events += 1;
+                    stat.rows.push(row);
+                    stat.snMap[sn] = true;
+                    if (!stat.modes[mode]) stat.modes[mode] = { mode: mode, count: 0, snMap: {} };
+                    stat.modes[mode].count += 1;
+                    stat.modes[mode].snMap[sn] = true;
+                    if (!stat.weekSn[week]) stat.weekSn[week] = {};
+                    stat.weekSn[week][sn] = true;
+                    stat.weekEvents[week] = (stat.weekEvents[week] || 0) + 1;
+                });
+            });
+            var weeks = Object.keys(weekMap).sort(function(a,b){ return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); });
+            if (weeks.length > maxWeeks) weeks = weeks.slice(weeks.length - maxWeeks);
+            var out = Object.keys(refMap).map(function(ref) {
+                var st = refMap[ref];
+                var serialCount = Object.keys(st.snMap).length;
+                var modes = Object.keys(st.modes).map(function(k){ var m = st.modes[k]; return { mode: m.mode, count: m.count, snCount: Object.keys(m.snMap).length }; }).sort(function(a,b){ return b.snCount - a.snCount || b.count - a.count || String(a.mode).localeCompare(String(b.mode)); });
+                var weekCounts = weeks.map(function(w){ return Object.keys(st.weekSn[w] || {}).length; });
+                var peak = Math.max.apply(null, weekCounts.concat([0]));
+                var first = weekCounts.length ? weekCounts[0] : 0;
+                var last = weekCounts.length ? weekCounts[weekCounts.length - 1] : 0;
+                var activeWeeks = weekCounts.filter(function(v){ return v > 0; }).length;
+                var score = serialCount * 100 + peak * 18 + activeWeeks * 12 + modes.length * 7 + Math.max(0, last - first) * 10;
+                var sev = traceOpsBoardSeverityForCount(serialCount, totalManufacturedUnits ? serialCount / totalManufacturedUnits * 100 : 0, 0);
+                return {
+                    ref: ref,
+                    serialCount: serialCount,
+                    events: st.events,
+                    modes: modes,
+                    modeCount: modes.length,
+                    topMode: modes[0] ? modes[0].mode : 'N/D',
+                    topModeSn: modes[0] ? modes[0].snCount : 0,
+                    weekCounts: weekCounts,
+                    peakWeek: weeks[weekCounts.indexOf(peak)] || 'N/D',
+                    peak: peak,
+                    activeWeeks: activeWeeks,
+                    delta: last - first,
+                    score: score,
+                    severity: sev,
+                    rows: st.rows
+                };
+            }).filter(function(x){ return x.serialCount > 0; }).sort(function(a,b){ return b.score - a.score || b.serialCount - a.serialCount || String(a.ref).localeCompare(String(b.ref)); });
+            return { weeks: weeks, refs: out.slice(0, maxRefs), totalRefs: out.length };
+        }
+        function traceOpsBoardSparkBars(h, values, color, activeIdx) {
+            values = values || [];
+            var max = Math.max.apply(null, values.concat([1]));
+            var w = 136, base = 30, barW = values.length ? Math.max(6, Math.min(14, Math.floor((w - 8) / values.length) - 3)) : 8;
+            return h('svg', { viewBox: '0 0 140 34', width: 140, height: 34, style: { display: 'block' } }, [
+                h('line', { key: 'axis', x1: 2, y1: base, x2: 138, y2: base, stroke: '#E6EEF8', strokeWidth: 1 }),
+                values.map(function(v, i) {
+                    var bh = Math.max(v > 0 ? 5 : 2, Math.round((v / max) * 25));
+                    var x = 4 + i * ((w - 8) / Math.max(1, values.length));
+                    var fill = i === activeIdx ? '#C47A16' : (v ? color : '#DDE8F6');
+                    return h('rect', { key: 'b' + i, x: x, y: base - bh, width: barW, height: bh, rx: 4, fill: fill, opacity: v ? .95 : .6 });
+                })
+            ]);
+        }
+        function traceOpsBoardTopOffenderMatrixSection(h, matrix) {
+            matrix = matrix || { weeks: [], refs: [] };
+            var weeks = matrix.weeks || [];
+            var refs = matrix.refs || [];
+            function priorityChip(stat) {
+                var sev = stat.severity || traceOpsBoardSeverityForCount(stat.serialCount, 0, 0);
+                return h('span', { style: { display: 'inline-flex', borderRadius: 999, padding: '4px 8px', border: '1px solid ' + sev.border, background: sev.bg, color: sev.color, fontSize: 9.5, fontWeight: 900, whiteSpace: 'nowrap' } }, sev.label);
+            }
+            function modeChips(stat) {
+                return h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 5, maxWidth: 360 } }, (stat.modes || []).slice(0, 3).map(function(m) {
+                    return h('span', { key: stat.ref + m.mode, title: m.mode, style: { display: 'inline-flex', borderRadius: 999, padding: '3px 7px', background: '#F7FAFF', border: '1px solid #D9E6F7', color: '#1F3A5F', fontSize: 9.5, fontWeight: 800, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, m.mode + ' · ' + m.snCount);
+                }));
+            }
+            return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, overflow: 'hidden' } }, [
+                h('div', { key: 'hdr', style: { padding: '14px 18px', background: 'linear-gradient(135deg,#F8FBFF,#EEF6FF)', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' } }, [
+                    h('div', { key: 'copy' }, [
+                        h('div', { key: 'title', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Top offenders por RefDes'),
+                        h('div', { key: 'sub', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Vista consolidada: agrupa todos los modos de falla por referencia y muestra evolución por Cisco Week. Click en una referencia alimenta el heatmap.')
+                    ]),
+                    h('div', { key: 'meta', style: { display: 'flex', gap: 8, flexWrap: 'wrap' } }, [
+                        h('span', { key: 'a', style: { border: '1px solid #BFE6DA', background: '#EAFBF7', color: '#007A63', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900 } }, refs.length + ' refs prioritarias'),
+                        h('span', { key: 'b', style: { border: '1px solid #C9DAF5', background: '#EEF5FF', color: '#1F3A5F', borderRadius: 999, padding: '7px 10px', fontSize: 10.5, fontWeight: 900 } }, weeks.length + ' semanas')
+                    ])
+                ]),
+                refs.length ? h('div', { key: 'table', className: 'tscroll' },
+                    h('table', { style: { minWidth: Math.max(1180, 790 + weeks.length * 74) } }, [
+                        h('thead', { key: 'th' }, h('tr', null, [
+                            h('th', { key: 'p' }, 'Prioridad'),
+                            h('th', { key: 'r' }, 'RefDes'),
+                            h('th', { key: 'sn' }, 'SN fails'),
+                            h('th', { key: 'm' }, 'Modos de falla'),
+                            h('th', { key: 'spark' }, 'Mini trend'),
+                            h('th', { key: 'peak' }, 'Peak week')
+                        ].concat(weeks.map(function(w){ return h('th', { key: 'w' + w, style: { textAlign: 'center' } }, traceOpsBoardShortWeekLabel(w)); })))) ,
+                        h('tbody', { key: 'tb' }, refs.map(function(stat, idx) {
+                            var sev = stat.severity || traceOpsBoardSeverityForCount(stat.serialCount, 0, idx);
+                            var activeIdx = weeks.indexOf(stat.peakWeek);
+                            return h('tr', { key: stat.ref + idx, onClick: function(){ setBoardSelectedRef(stat.ref); setBoardRefMultiFilter([stat.ref]); setBoardDetailZoom(true); setTimeout(function(){ try { document.getElementById('traceops-board-pdf-stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(_){} }, 80); }, title: 'Abrir heatmap para ' + stat.ref, style: { cursor: 'pointer', borderLeft: '5px solid ' + sev.color } }, [
+                                h('td', { key: 'p' }, priorityChip(stat)),
+                                h('td', { key: 'r', style: { fontWeight: 950, color: '#102A43', fontSize: 12.5 } }, stat.ref),
+                                h('td', { key: 'sn', style: { fontWeight: 950, color: sev.color } }, stat.serialCount + ' SN'),
+                                h('td', { key: 'm' }, modeChips(stat)),
+                                h('td', { key: 'spark' }, traceOpsBoardSparkBars(h, stat.weekCounts, '#2CBFAE', activeIdx)),
+                                h('td', { key: 'peak', style: { fontWeight: 900, color: '#1F3A5F' } }, traceOpsBoardShortWeekLabel(stat.peakWeek) + ' · ' + stat.peak)
+                            ].concat(weeks.map(function(w, wi) {
+                                var v = stat.weekCounts[wi] || 0;
+                                var bg = v ? (wi === activeIdx ? '#FFF7E8' : '#F0FBF8') : '#FAFCFF';
+                                var color = v ? (wi === activeIdx ? '#A86000' : '#007A63') : '#9AA9BA';
+                                return h('td', { key: 'wk' + w, style: { textAlign: 'center', background: bg, color: color, fontWeight: 900 } }, v || '');
+                            })));
+                        }))
+                    ])) : h('div', { key: 'empty', style: { padding: 16, color: '#5F766C', fontSize: 12 } }, 'No hay RefDes suficientes para generar matriz de ofensores en el scope actual.')
+            ]);
+        }
+        var boardRefOffenderMatrix = traceOpsBoardBuildRefOffenderMatrix(boardAllRowsBeforeModeFilter, isMobile() ? 10 : 18, isMobile() ? 5 : 8);
+
         var selectedStat = refStats.find(function (x) { return traceOpsBoardNormalizeRef(x.ref) === traceOpsBoardNormalizeRef(selectedRef); }) || refStats[0] || { rows: selectedSnRows, qty: affectedSerials, pct: 0, severity: traceOpsBoardSeverityForCount(affectedSerials, 0, 0) };
         var selectedSeverity = selectedStat.severity || traceOpsBoardSeverityForCount(affectedSerials, 0, 0);
         var snList = traceOpsBoardUniqueSerialRows((selectedStat.rows && selectedStat.rows.length ? selectedStat.rows : selectedSnRows)).slice(0, 80);
@@ -30451,6 +30650,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 h("button", { type: "button", onClick: function () { setBoardSide("bottom"); }, style: { width: 42, height: 42, borderRadius: 999, border: 0, background: boardSide === "bottom" ? "#E9E9EE" : "#fff", color: "#6B6B70", fontSize: 18, fontWeight: 900, cursor: "pointer" } }, "⌄")))),
                     h("div", { style: { fontSize: 11.5, color: boardPdfState.status === "error" ? "#A43B2E" : "#5F766C", marginTop: 10, lineHeight: 1.45 } }, boardPdfState.message || "PDF listo"),
                     h("div", { style: { fontSize: 10, fontWeight: 900, color: "#8B98B8", marginTop: 10, letterSpacing: ".12em", textTransform: "uppercase" } }, "Fuente: " + traceOpsBoardGetPdfFilename(yieldFilters.family)))),
+            traceOpsBoardTopOffenderMatrixSection(h, boardRefOffenderMatrix),
             h("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 18, overflow: "hidden" } },
                 h("div", { style: { padding: "14px 18px", background: "#F7FAFF", borderBottom: "1px solid #ECF3FF", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" } },
                     h("div", null,
@@ -40457,6 +40657,7 @@ body.traceops-premium-shell .app-logo-img,
   'use strict';
 
   var config = window.TRACEOPS_SUPABASE || {};
+  var perf = window.TRACEOPS_CLOUD_PERF || {};
   var supabaseClient = null;
   var currentSession = null;
 
@@ -40468,7 +40669,7 @@ body.traceops-premium-shell .app-logo-img,
 
     try {
       supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
-        auth: { persistSession: true, autoRefreshToken: true }
+        auth: { persistSession: true, autoRefreshToken: !(perf && perf.localFirst), detectSessionInUrl: !(perf && perf.localFirst) }
       });
       window.__traceopsSupabaseClient = supabaseClient;
       return supabaseClient;
@@ -40567,7 +40768,9 @@ body.traceops-premium-shell .app-logo-img,
       if (result.error) {
         showMessage('Error: ' + result.error.message, 'error');
       } else {
-        showMessage('Sesión iniciada como ' + email, 'success');
+        currentSession = result && result.data ? (result.data.session || null) : null;
+        updateUI(currentSession);
+        showMessage('Sesión iniciada como ' + email + '. Sync manual disponible.', 'success');
         document.getElementById('smt-login-email').value = '';
         document.getElementById('smt-login-password').value = '';
         setTimeout(function() {
@@ -40619,18 +40822,25 @@ body.traceops-premium-shell .app-logo-img,
   window.addEventListener('load', function() {
     setTimeout(async function() {
       supabaseClient = initSupabaseClient();
+      if (perf && perf.autoBootstrap === false) {
+        updateUI(null);
+        return;
+      }
       var session = await checkSession();
       updateUI(session);
-    }, 100);
+    }, 250);
   });
 
-  // Check session periodically
-  setInterval(async function() {
-    var session = await checkSession();
-    if ((session && !currentSession) || (!session && currentSession)) {
-      updateUI(session);
-    }
-  }, 5000);
+  // Check session lightly only when cloud auto-bootstrap is enabled.
+  if (!(perf && perf.autoBootstrap === false)) {
+    setInterval(async function() {
+      if (document.hidden && !(perf && perf.sessionPollWhenHidden)) return;
+      var session = await checkSession();
+      if ((session && !currentSession) || (!session && currentSession)) {
+        updateUI(session);
+      }
+    }, Math.max(30000, Number((perf && perf.sessionPollMs) || 60000)));
+  }
 })();
 </script>
 
