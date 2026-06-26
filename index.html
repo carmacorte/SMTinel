@@ -30476,17 +30476,21 @@ body:has(#recovery-section) .main-content.expanded{
                     stat.weekEvents[week] = (stat.weekEvents[week] || 0) + 1;
                 });
             });
-            var weeks = Object.keys(weekMap).sort(function(a,b){ return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); });
-            if (weeks.length > maxWeeks) weeks = weeks.slice(weeks.length - maxWeeks);
+
+            var allWeeks = Object.keys(weekMap).sort(function(a,b){ return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); });
             var out = Object.keys(refMap).map(function(ref) {
                 var st = refMap[ref];
                 var serialCount = Object.keys(st.snMap).length;
+                var allWeekCounts = {};
+                allWeeks.forEach(function(w) { allWeekCounts[w] = Object.keys(st.weekSn[w] || {}).length; });
                 var modes = Object.keys(st.modes).map(function(k){ var m = st.modes[k]; return { mode: m.mode, count: m.count, snCount: Object.keys(m.snMap).length }; }).sort(function(a,b){ return b.snCount - a.snCount || b.count - a.count || String(a.mode).localeCompare(String(b.mode)); });
-                var weekCounts = weeks.map(function(w){ return Object.keys(st.weekSn[w] || {}).length; });
-                var peak = Math.max.apply(null, weekCounts.concat([0]));
-                var first = weekCounts.length ? weekCounts[0] : 0;
-                var last = weekCounts.length ? weekCounts[weekCounts.length - 1] : 0;
-                var activeWeeks = weekCounts.filter(function(v){ return v > 0; }).length;
+                var peakWeek = allWeeks.slice().sort(function(a,b) {
+                    return (allWeekCounts[b] || 0) - (allWeekCounts[a] || 0) || traceOpsYieldWeekSortValue(b) - traceOpsYieldWeekSortValue(a);
+                })[0] || 'N/D';
+                var peak = allWeekCounts[peakWeek] || 0;
+                var first = allWeeks.length ? (allWeekCounts[allWeeks[0]] || 0) : 0;
+                var last = allWeeks.length ? (allWeekCounts[allWeeks[allWeeks.length - 1]] || 0) : 0;
+                var activeWeeks = allWeeks.filter(function(v){ return (allWeekCounts[v] || 0) > 0; }).length;
                 var score = serialCount * 100 + peak * 18 + activeWeeks * 12 + modes.length * 7 + Math.max(0, last - first) * 10;
                 var sev = traceOpsBoardSeverityForCount(serialCount, totalManufacturedUnits ? serialCount / totalManufacturedUnits * 100 : 0, 0);
                 var comp = traceOpsBoardPrimaryComponentDetailForRef(st.rows, ref) || {};
@@ -30503,8 +30507,9 @@ body:has(#recovery-section) .main-content.expanded{
                     modeCount: modes.length,
                     topMode: modes[0] ? modes[0].mode : 'N/D',
                     topModeSn: modes[0] ? modes[0].snCount : 0,
-                    weekCounts: weekCounts,
-                    peakWeek: weeks[weekCounts.indexOf(peak)] || 'N/D',
+                    allWeekCounts: allWeekCounts,
+                    allWeeks: allWeeks,
+                    peakWeek: peakWeek,
                     peak: peak,
                     activeWeeks: activeWeeks,
                     delta: last - first,
@@ -30513,8 +30518,51 @@ body:has(#recovery-section) .main-content.expanded{
                     rows: st.rows
                 };
             }).filter(function(x){ return x.serialCount > 0; }).sort(function(a,b){ return b.score - a.score || b.serialCount - a.serialCount || String(a.ref).localeCompare(String(b.ref)); });
-            return { weeks: weeks, refs: out.slice(0, maxRefs), totalRefs: out.length };
+
+            var topOut = out.slice(0, maxRefs);
+
+            // Do not blindly slice the latest weeks. That hid older high-impact weeks, making rows like
+            // U1_P18Z show 31 SN while visible week columns summed to 2. Lovely little mathematical prank.
+            // Pick the most relevant weeks across the current top refs, then keep them chronological.
+            var weekScore = {};
+            allWeeks.forEach(function(w) { weekScore[w] = 0; });
+            topOut.forEach(function(stat) {
+                allWeeks.forEach(function(w) {
+                    var v = (stat.allWeekCounts && stat.allWeekCounts[w]) || 0;
+                    if (v > 0) weekScore[w] += v;
+                });
+                if (stat.peakWeek && stat.peakWeek !== 'N/D') weekScore[stat.peakWeek] = (weekScore[stat.peakWeek] || 0) + Math.max(0, stat.peak || 0) + 999;
+            });
+            var selectedWeeks = allWeeks.slice();
+            if (selectedWeeks.length > maxWeeks) {
+                selectedWeeks = selectedWeeks
+                    .sort(function(a,b) {
+                        return (weekScore[b] || 0) - (weekScore[a] || 0) || traceOpsYieldWeekSortValue(b) - traceOpsYieldWeekSortValue(a);
+                    })
+                    .slice(0, maxWeeks)
+                    .sort(function(a,b) { return traceOpsYieldWeekSortValue(a) - traceOpsYieldWeekSortValue(b) || String(a).localeCompare(String(b)); });
+            }
+            var selectedWeekMap = {};
+            selectedWeeks.forEach(function(w) { selectedWeekMap[w] = true; });
+
+            var anyHidden = false;
+            topOut.forEach(function(stat) {
+                stat.weekCounts = selectedWeeks.map(function(w) { return (stat.allWeekCounts && stat.allWeekCounts[w]) || 0; });
+                var hiddenSn = {};
+                (stat.rows || []).forEach(function(row, idx) {
+                    var w = traceOpsBoardRowWeek(row);
+                    if (selectedWeekMap[w]) return;
+                    var sn = traceOpsBoardSnKey(row, idx) || ('ROW-' + idx);
+                    hiddenSn[sn] = true;
+                });
+                stat.hiddenSnCount = Object.keys(hiddenSn).length;
+                stat.hiddenWeekCount = allWeeks.filter(function(w) { return !selectedWeekMap[w] && ((stat.allWeekCounts && stat.allWeekCounts[w]) || 0) > 0; }).length;
+                if (stat.hiddenSnCount > 0) anyHidden = true;
+            });
+
+            return { weeks: selectedWeeks, refs: topOut, totalRefs: out.length, allWeeks: allWeeks, hasHiddenWeeks: anyHidden };
         }
+
         function traceOpsBoardSparkBars(h, values, color, activeIdx) {
             values = values || [];
             var max = Math.max.apply(null, values.concat([1]));
@@ -30533,6 +30581,7 @@ body:has(#recovery-section) .main-content.expanded{
             matrix = matrix || { weeks: [], refs: [] };
             var weeks = matrix.weeks || [];
             var refs = matrix.refs || [];
+            var hasHiddenWeeks = !!matrix.hasHiddenWeeks;
             function priorityChip(stat) {
                 var sev = stat.severity || traceOpsBoardSeverityForCount(stat.serialCount, 0, 0);
                 return h('span', { style: { display: 'inline-flex', borderRadius: 999, padding: '4px 8px', border: '1px solid ' + sev.border, background: sev.bg, color: sev.color, fontSize: 9.5, fontWeight: 900, whiteSpace: 'nowrap' } }, sev.label);
@@ -30571,7 +30620,7 @@ body:has(#recovery-section) .main-content.expanded{
                     ])
                 ]),
                 refs.length ? h('div', { key: 'table', className: 'tscroll' },
-                    h('table', { style: { minWidth: Math.max(1320, 940 + weeks.length * 74) } }, [
+                    h('table', { style: { minWidth: Math.max(1380, 980 + (hasHiddenWeeks ? 90 : 0) + weeks.length * 74) } }, [
                         h('thead', { key: 'th' }, h('tr', null, [
                             h('th', { key: 'p' }, 'Prioridad'),
                             h('th', { key: 'r' }, 'RefDes'),
@@ -30580,7 +30629,7 @@ body:has(#recovery-section) .main-content.expanded{
                             h('th', { key: 'm' }, 'Modos de falla'),
                             h('th', { key: 'spark' }, 'Mini trend'),
                             h('th', { key: 'peak' }, 'Peak week')
-                        ].concat(weeks.map(function(w){ return h('th', { key: 'w' + w, style: { textAlign: 'center' } }, traceOpsBoardShortWeekLabel(w)); })))) ,
+                        ].concat(hasHiddenWeeks ? [h('th', { key: 'hidden', style: { textAlign: 'center' }, title: 'SN con semana real fuera de las columnas visibles' }, 'Otras sem.')] : []).concat(weeks.map(function(w){ return h('th', { key: 'w' + w, style: { textAlign: 'center' } }, traceOpsBoardShortWeekLabel(w)); })))) ,
                         h('tbody', { key: 'tb' }, refs.map(function(stat, idx) {
                             var sev = stat.severity || traceOpsBoardSeverityForCount(stat.serialCount, 0, idx);
                             var activeIdx = weeks.indexOf(stat.peakWeek);
@@ -30592,7 +30641,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 h('td', { key: 'm' }, modeChips(stat)),
                                 h('td', { key: 'spark' }, traceOpsBoardSparkBars(h, stat.weekCounts, '#2CBFAE', activeIdx)),
                                 h('td', { key: 'peak', style: { fontWeight: 900, color: '#1F3A5F' } }, traceOpsBoardShortWeekLabel(stat.peakWeek) + ' · ' + stat.peak)
-                            ].concat(weeks.map(function(w, wi) {
+                            ].concat(hasHiddenWeeks ? [h('td', { key: 'hidden', title: stat.hiddenWeekCount ? (stat.hiddenSnCount + ' SN en ' + stat.hiddenWeekCount + ' semana(s) no visibles') : '', style: { textAlign: 'center', background: stat.hiddenSnCount ? '#FFF7E8' : '#FAFCFF', color: stat.hiddenSnCount ? '#A86000' : '#9AA9BA', fontWeight: 950 } }, stat.hiddenSnCount || '')] : []).concat(weeks.map(function(w, wi) {
                                 var v = stat.weekCounts[wi] || 0;
                                 var bg = v ? (wi === activeIdx ? '#FFF7E8' : '#F0FBF8') : '#FAFCFF';
                                 var color = v ? (wi === activeIdx ? '#A86000' : '#007A63') : '#9AA9BA';
