@@ -19,12 +19,19 @@ examples/       Component usage examples
 export/         JSON export and optional sync adapters
 frontend/       Static frontend reference build
 main/icons/     Desktop/app icon assets
+modules/        Standalone local-first operational modules
 parser/         Manufacturing message parser
 schemas/        Pydantic event and alert schemas
 sentinel/       Severity and alert scoring
 storage/        SQLite ingestion and incident memory
 tests/          Parser tests
 ```
+
+## Local Modules
+
+| Module | Path | Purpose |
+| --- | --- | --- |
+| Scheduling Optimizer | `modules/scheduling-optimizer.html` | Sequencing simulator for SMT orders using SPT, EDD, CR, WSPT, family batching, and hybrid priority logic. Includes Gantt view, KPI comparison, tardiness, setup, utilization, and CSV export. |
 
 ## Quick Start
 
