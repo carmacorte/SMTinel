@@ -1,0 +1,59 @@
+--- index.html
++++ index.html
+@@ -34875,6 +34875,17 @@
+         return h(IssueImpactCesiumTynePanel, { model: modelRef });
+     }
+ 
++    function renderSchedulingOptimizerSection() {
++        return React.createElement("section", { id: "scheduling-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
++            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },
++                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Scheduling Optimizer"),
++                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "SMT production sequencing and cost impact"),
++                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Modulo standalone para simular secuencias SMT con SPT, EDD, CR, WSPT, agrupacion por familia e impacto economico por modelo desde Station_on_line_report / SKU Cost.")),
++            React.createElement("iframe", { title: "SMTinel Scheduling Optimizer", src: "modules/scheduling-optimizer.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })
++        );
++    }
++
+     var moduleNavItems = [
+@@ -34915,6 +34926,14 @@
+             count: yieldFlowModel.kpi.orders,
+             anchorId: "yieldflow-section",
+             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
++        },
++        {
++            key: "scheduling",
++            label: "Scheduling",
++            shortLabel: "Secuencia SMT, capacidad, setup, tardanza e impacto economico por modelo",
++            count: "SCH",
++            anchorId: "scheduling-section",
++            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
+         },
+@@ -36918,6 +36937,7 @@
+                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
+                         activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
+                         activeModule === "yieldflow" && renderYieldFlowSection(),
++                        activeModule === "scheduling" && renderSchedulingOptimizerSection(),
+                         activeModule === "planagent" && renderPlanAgentSection(),
+@@ -36991,7 +37011,7 @@
+-                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "planagent"
++                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent"
+@@ -37085,7 +37105,7 @@
+-                activeModule !== "yieldflow" && activeModule !== "planagent"
++                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent"
+@@ -40318,6 +40318,7 @@
+     yield:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/><path d="M18 6h2v2"/></svg>',
++    scheduling:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="M17 10v8"/><path d="m14 15 3 3 4-6"/></svg>',
+@@ -40329,6 +40330,7 @@
+     {key:"8d",label:"8D Analyzer",icon:icons.eightd,aliases:["8D Analyzer","8D","EightD Analyzer","Quality Gate 8D"]},
+     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
++    {key:"scheduling",label:"Scheduling",icon:icons.scheduling,aliases:["Scheduling","Scheduling Optimizer","Secuencia SMT","Programacion de operaciones"]},
+     {key:"yieldweek",label:"Yield by Week",icon:icons.yield,aliases:["Yield by Week","Yield Week","YBW"]},
+@@ -40359,6 +40361,7 @@
+   window.openEightDAnalyzer=function(){navTo("8d");};
+   window.openYieldFlow=function(){navTo("yieldflow");};
++  window.openScheduling=function(){navTo("scheduling");};
+   window.openBoardImpact=function(){navTo("boardimpact");};
+
+Additional runtime helper:
+
+Add `smtinel-yield-cost-impact-runtime-v1` before `</body>` to compute visible Cost Impact from Station_on_line_report / SKU Cost columns and render a Business Impact card at the top of Yield Flow. It indexes Cost by `BU + Product Family + Version`, `Product Family + Version`, and `Product Family`, then estimates exposed cost as `risk/fail qty x unit cost` and flags missing cost rows.
