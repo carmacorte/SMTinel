@@ -34875,6 +34875,16 @@ body:has(#recovery-section) .main-content.expanded{
         return h(IssueImpactCesiumTynePanel, { model: modelRef });
     }
 
+    function renderSchedulingOptimizerSection() {
+        return React.createElement("section", { id: "scheduling-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
+            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },
+                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Scheduling Optimizer"),
+                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "SMT production sequencing and cost impact"),
+                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Modulo standalone para simular secuencias SMT con SPT, EDD, CR, WSPT, agrupacion por familia e impacto economico por modelo desde Station_on_line_report / SKU Cost.")),
+            React.createElement("iframe", { title: "SMTinel Scheduling Optimizer", src: "modules/scheduling-optimizer.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })
+        );
+    }
+
     var moduleNavItems = [
         {
             key: "sentinelux",
@@ -34915,6 +34925,14 @@ body:has(#recovery-section) .main-content.expanded{
             count: yieldFlowModel.kpi.orders,
             anchorId: "yieldflow-section",
             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
+        },
+        {
+            key: "scheduling",
+            label: "Scheduling",
+            shortLabel: "Secuencia SMT, capacidad, setup, tardanza e impacto economico por modelo",
+            count: "SCH",
+            anchorId: "scheduling-section",
+            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
         },
         {
             key: "planagent",
@@ -36918,6 +36936,7 @@ body:has(#recovery-section) .main-content.expanded{
                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
                         activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
+                        activeModule === "scheduling" && renderSchedulingOptimizerSection(),
                         activeModule === "planagent" && renderPlanAgentSection(),
                         activeModule === "yieldweek" && renderYieldByWeekSection(),
                         activeModule === "recovery" && renderRecoveryIntelligenceSection(),
@@ -36967,7 +36986,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, rccaList.filter(function (r) { if (!rccaFilter)
                                     return true; var q = rccaFilter.toLowerCase(); return (r.modelo || "").toLowerCase().indexOf(q) >= 0 || (r.linea || "").toLowerCase().indexOf(q) >= 0 || (r.problema || "").toLowerCase().indexOf(q) >= 0 || (r.rcca_id || "").toLowerCase().indexOf(q) >= 0; }).map(function (r) { return React.createElement(RccaCard, { key: r.rcca_id, r: r, score: 0 }); })))))),
                         activeModule === "8d" && renderEightdAnalyzerSection(),
-                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
+                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Bitacora de eventos (",
@@ -37061,15 +37080,15 @@ body:has(#recovery-section) .main-content.expanded{
                                         React.createElement(RccaCell, { evId: e.id, modelo: e.modelo, linea: e.linea_estacion, fecha: e.fecha, problema: e.evento_detectado })),
                                     imgNames.length > 0 && React.createElement(EvidenceCell, { e: e })));
                             }))))),
-                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
+                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Pendientes operativos (",
                             pend.length,
                             ")")),
                     React.createElement("div", { className: "plist" }, pend.map(function (e, i) { return React.createElement(PendItem, { key: i, e: e }); }))),
-                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
-                activeModule !== "yieldflow" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
+                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
+                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
                     React.createElement("div", { style: { padding: "0", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
                         React.createElement("div", { style: { margin: 16, borderRadius: 18, overflow: "hidden", background: "linear-gradient(135deg,#0B1F33 0%,#16324F 48%,#1F3A5F 100%)", border: "1px solid rgba(49,102,128,.35)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)" } },
                             React.createElement("div", { style: { padding: "18px 20px 16px", position: "relative" } },
@@ -40289,6 +40308,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     rcca:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a5 5 0 0 0-5 5"/><path d="m17 4 3 3-3 3"/><path d="M4 17h9a5 5 0 0 0 5-5"/><path d="m7 20-3-3 3-3"/></svg>',
     eightd:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h5"/><path d="M8 16h7"/><path d="M17 13l2 2 3-4"/></svg>',
     yield:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/><path d="M18 6h2v2"/></svg>',
+    scheduling:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="M17 10v8"/><path d="m14 15 3 3 4-6"/></svg>',
     storyline:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M6 16V8"/><path d="M12 16V5"/><path d="M18 16v-3"/><path d="M4 8c4 0 5 5 8 5s4-6 8-6"/></svg>',
     board:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"/><path d="M8 7V4"/><path d="M16 7V4"/><path d="M8 20v-3"/><path d="M16 20v-3"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/></svg>',
     recovery:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.5 5.8"/><path d="M4 12A8 8 0 0 1 17.5 6.2"/><path d="M7 18H4v3"/><path d="M17 6h3V3"/></svg>',
@@ -40306,6 +40326,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"storyline",label:"Storyline",icon:icons.storyline,aliases:["Storyline","Manufacturing Storyline","Weekly Build Timeline Intelligence"]},
     {key:"8d",label:"8D Analyzer",icon:icons.eightd,aliases:["8D Analyzer","8D","EightD Analyzer","Quality Gate 8D"]},
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
+    {key:"scheduling",label:"Scheduling",icon:icons.scheduling,aliases:["Scheduling","Scheduling Optimizer","Secuencia SMT","Programacion de operaciones"]},
     {key:"yieldweek",label:"Yield by Week",icon:icons.yield,aliases:["Yield by Week","Yield Week","YBW"]},
     {key:"planagent",label:"Plan Agent",icon:icons.plan,aliases:["Plan Agent","Plan Risk","Weekly Follow-up","PlanAgent"]},
     {key:"boardimpact",label:"Board Impact",icon:icons.board,aliases:["Board Impact"]},
@@ -40360,6 +40381,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
   window.openStoryline=function(){navTo("storyline");};
   window.openEightDAnalyzer=function(){navTo("8d");};
   window.openYieldFlow=function(){navTo("yieldflow");};
+  window.openScheduling=function(){navTo("scheduling");};
   window.openBoardImpact=function(){navTo("boardimpact");};
   window.openRecoveryIntelligence=function(){navTo("recovery");};
   window.openCriticalModelAnalysis=function(){navTo("criticalmodel");};
@@ -57652,6 +57674,23 @@ html body [class*="version-badge"]{
   }
 }
 </style>
+
+
+<script id="smtinel-yield-cost-impact-runtime-v2">
+(function(){
+  function pick(r,ks){for(var i=0;i<ks.length;i++){var k=ks[i]; if(r&&r[k]!=null&&String(r[k]).trim()!=='') return r[k];} return '';}
+  function norm(v){return String(v==null?'':v).trim().toUpperCase();}
+  function num(v){var n=Number(String(v==null?'':v).replace(/[$, ]/g,'')); return isFinite(n)?n:0;}
+  function money(v){return '$'+Math.round(v||0).toLocaleString('en-US');}
+  function allRows(){var out=[]; try{if(Array.isArray(window.TRACEOPS_YIELD_BY_WO_ROWS)) out=out.concat(window.TRACEOPS_YIELD_BY_WO_ROWS);}catch(_){} try{if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) out=out.concat(window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){} try{var s=window.traceOpsYieldCacheSnapshot&&window.traceOpsYieldCacheSnapshot(); if(s){['byWoRows','flowTracker','stationOnLineRows','workOrders','wo','sfcWorkOrders'].forEach(function(k){if(Array.isArray(s[k])) out=out.concat(s[k]);});}}catch(_){} return out.filter(function(r){return r&&typeof r==='object';});}
+  function buildCostIndex(rows){var idx={},costRows=0; rows.forEach(function(r){var cost=num(pick(r,['Cost','cost','COST','Unit Cost','unit_cost','SKU Cost','skuCost'])); if(!cost) return; costRows++; var bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); [bu+'|'+fam+'|'+ver,fam+'|'+ver,fam].forEach(function(k){if(k.replace(/\|/g,'')) idx[k]=cost;});}); return {idx:idx,costRows:costRows};}
+  function costFor(r,idx){var bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); return idx[bu+'|'+fam+'|'+ver]||idx[fam+'|'+ver]||idx[fam]||num(pick(r,['Cost','cost','COST','Unit Cost','unit_cost','SKU Cost','skuCost']));}
+  function render(){try{var rows=allRows(); if(!rows.length) return; var ci=buildCostIndex(rows); var famMap={},lineMap={},total=0,missing=0; rows.forEach(function(r){var qty=num(pick(r,['risk','Risk','fail','Fail','failureQty','Qty SN','Qty SN Impacted','totalRisk','Total Risk']))||0; if(!qty) return; var c=costFor(r,ci.idx); var fam=String(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model','sku','SKU'])||'N/D'); var line=String(pick(r,['Line','line','LINE'])||'N/D'); if(!c){missing++; return;} var impact=qty*c; total+=impact; famMap[fam]=(famMap[fam]||0)+impact; lineMap[line]=(lineMap[line]||0)+impact;}); var host=document.querySelector('#yieldflow-section')||document.querySelector('[id*=yieldflow]')||document.querySelector('#module-workspace'); if(!host) return; var old=document.getElementById('smtinel-yield-cost-impact-card'); if(old) old.remove(); var top=Object.keys(famMap).sort(function(a,b){return famMap[b]-famMap[a];}).slice(0,5); var card=document.createElement('section'); card.id='smtinel-yield-cost-impact-card'; card.style.cssText='margin:14px 0;padding:18px 20px;border:1px solid #F5D08A;border-radius:18px;background:#FFF9EC;color:#102A43;box-shadow:0 2px 12px rgba(20,32,51,.06)'; card.innerHTML='<div style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#9A6A16">Business Impact · SKU Cost</div><div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-top:8px"><div><div style="font-size:28px;font-weight:950;color:#C05A00">'+money(total)+'</div><div style="font-size:11px;color:#5F766C">Costo expuesto por unidades en riesgo</div></div><div style="font-size:12px;color:#5F766C">Cost rows detectadas: <b>'+ci.costRows+'</b> · Missing cost: <b>'+missing+'</b></div></div><div style="margin-top:12px;display:grid;gap:7px">'+(top.length?top.map(function(k){return '<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid #F5D08A;padding-top:7px"><b>'+k+'</b><span style="font-weight:900;color:#C05A00">'+money(famMap[k])+'</span></div>';}).join(''):'<div style="font-size:12px;color:#5F766C">No se detecto Cost asociado al scope actual. Verifica Station_on_line_report.</div>')+'</div>'; host.insertBefore(card, host.firstChild);}catch(e){}}
+  document.addEventListener('click',function(){setTimeout(render,300);});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(render,1000);}); else setTimeout(render,1000);
+  setInterval(render,4000);
+})();
+</script>
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
