@@ -1,0 +1,44 @@
+--- index.html
++++ index.html
+@@ -34875,6 +34875,17 @@
+         return h(IssueImpactCesiumTynePanel, { model: modelRef });
+     }
+ 
++
++    function renderSchedulingOptimizerSection() {
++        return React.createElement("section", { id: "scheduling-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
++            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },
++                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Scheduling Optimizer"),
++                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "SMT production sequencing and cost impact"),
++                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Modulo standalone para simular secuencias SMT con SPT, EDD, CR, WSPT, agrupacion por familia e impacto economico por modelo desde Station_on_line_report / SKU Cost.")),
++            React.createElement("iframe", { title: "SMTinel Scheduling Optimizer", src: "modules/scheduling-optimizer.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })
++        );
++    }
++
+     var moduleNavItems = [
+         {
+             key: "sentinelux",
+@@ -34915,6 +34926,15 @@
+             count: yieldFlowModel.kpi.orders,
+             anchorId: "yieldflow-section",
+             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
++        },
++
++        {
++            key: "scheduling",
++            label: "Scheduling",
++            shortLabel: "Secuencia SMT, capacidad, setup, tardanza e impacto economico por modelo",
++            count: "SCH",
++            anchorId: "scheduling-section",
++            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
+         },
+         {
+             key: "planagent",
+@@ -36918,6 +36938,7 @@
+                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
+                         activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
+                         activeModule === "yieldflow" && renderYieldFlowSection(),
++                        activeModule === "scheduling" && renderSchedulingOptimizerSection(),
+                         activeModule === "planagent" && renderPlanAgentSection(),
+                         activeModule === "yieldweek" && renderYieldByWeekSection(),
+                         activeModule === "recovery" && renderRecoveryIntelligenceSection(),
