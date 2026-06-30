@@ -2923,17 +2923,41 @@ window.SMTinelCloud = (function(){
     }
   }
 
-  async function getSession(){
-    var client = getClient();
-    if (!client) return null;
+  function isBrokenSessionError(err){
+    var raw = "";
     try {
-      var out = await client.auth.getSession();
-      var session = out && out.data ? (out.data.session || null) : null;
-      __traceops_user_cache = session && session.user ? session.user : (__traceops_user_cache || null);
-      return session;
-    } catch (err) {
-      return null;
-    }
+      raw = String((err && (err.message || err.error_description || err.msg || err.statusText)) || err || "").toLowerCase();
+    } catch (_) { raw = ""; }
+    return raw.indexOf("refresh token not found") >= 0 ||
+      raw.indexOf("invalid refresh token") >= 0 ||
+      raw.indexOf("session not found") >= 0 ||
+      raw.indexOf("auth session missing") >= 0 ||
+      raw.indexOf("jwt expired") >= 0 ||
+      raw.indexOf("invalid jwt") >= 0 ||
+      raw.indexOf("403") >= 0;
+  }
+
+  async function clearBrokenSession(){
+    try { __traceops_user_cache = null; __traceops_user_loading = null; } catch (_) {}
+    try {
+      [localStorage, sessionStorage].forEach(function(store){
+        try {
+          Object.keys(store || {}).forEach(function(k){
+            var key = String(k || "");
+            var low = key.toLowerCase();
+            if (low.indexOf("supabase") >= 0 || low.indexOf("sb-") === 0 || low.indexOf("traceops_supabase") >= 0) {
+              try { store.removeItem(key); } catch (_) {}
+            }
+          });
+        } catch (_) {}
+      });
+    } catch (_) {}
+    try {
+      var client = getClient();
+      if (client && client.auth && typeof client.auth.signOut === "function") {
+        await client.auth.signOut({ scope: "local" });
+      }
+    } catch (_) {}
   }
 
   async function getUser(){
@@ -2943,21 +2967,36 @@ window.SMTinelCloud = (function(){
     if (__traceops_user_loading) return __traceops_user_loading;
     __traceops_user_loading = (async function(){
       try {
-        var session = await getSession();
-        if (session && session.user) {
-          __traceops_user_cache = session.user;
-          return __traceops_user_cache;
+        var sessionOut = await client.auth.getSession();
+        if (sessionOut && sessionOut.error) {
+          if (isBrokenSessionError(sessionOut.error)) {
+            await clearBrokenSession();
+            return null;
+          }
+          throw traceOpsNormalizeCloudError(sessionOut.error);
         }
-        var out = await client.auth.getUser();
-        __traceops_user_cache = out && out.data ? (out.data.user || null) : null;
-        return __traceops_user_cache;
-      } catch (err) {
-        var msg = err && err.message ? String(err.message) : String(err || '');
-        if (msg.toLowerCase().indexOf('session not found') >= 0 || msg.indexOf('403') >= 0) {
+        var session = sessionOut && sessionOut.data ? sessionOut.data.session : null;
+        if (!session || !session.user) {
           __traceops_user_cache = null;
           return null;
         }
-        throw traceOpsNormalizeCloudError(err);
+        var out = await client.auth.getUser();
+        if (out && out.error) {
+          if (isBrokenSessionError(out.error)) {
+            await clearBrokenSession();
+            return null;
+          }
+          throw traceOpsNormalizeCloudError(out.error);
+        }
+        __traceops_user_cache = out && out.data ? (out.data.user || session.user || null) : (session.user || null);
+        return __traceops_user_cache;
+      } catch (err) {
+        var cloudErr = traceOpsNormalizeCloudError(err);
+        if (isBrokenSessionError(cloudErr)) {
+          await clearBrokenSession();
+          return null;
+        }
+        throw cloudErr;
       } finally {
         __traceops_user_loading = null;
       }
@@ -2968,14 +3007,26 @@ window.SMTinelCloud = (function(){
 async function initApp(){
   var client = getClient();
   if (!client) return;
-
-  const { data } = await client.auth.getSession();
-
-  if (data && data.session) {
-    if(window.__TRACEOPS_DEV__){console.log("[SMTinel] Sesión activa detectada");}
-
-    // 🔥 AUTO LOAD
-    await loadRccasFromCloud();
+  try {
+    const sessionOut = await client.auth.getSession();
+    if (sessionOut && sessionOut.error) {
+      if (isBrokenSessionError(sessionOut.error)) {
+        await clearBrokenSession();
+        return;
+      }
+      throw traceOpsNormalizeCloudError(sessionOut.error);
+    }
+    const data = sessionOut ? sessionOut.data : null;
+    if (data && data.session) {
+      if(window.__TRACEOPS_DEV__){console.log("[SMTinel] Sesión activa detectada");}
+      await loadRccasFromCloud();
+    }
+  } catch (err) {
+    if (isBrokenSessionError(err)) {
+      await clearBrokenSession();
+      return;
+    }
+    console.warn("[SMTinel] initApp cloud bootstrap skipped:", err);
   }
 }
 async function loadRccasFromCloud(){
@@ -3134,14 +3185,17 @@ async function signUp(email, password){
     var client = getClient();
     var user = await getUser();
     if (!client || !user) throw new Error("Sesion no disponible.");
+    var nowIso = new Date().toISOString();
     var row = {
       user_id: user.id,
       rcca_id: rcca.rcca_id,
       payload: Object.assign({}, rcca, {
-        updated_at: new Date().toISOString(),
+        updated_at: nowIso,
+        created_at: rcca.created_at || nowIso,
         source: rcca.source || "manual"
       }),
-      updated_at: new Date().toISOString()
+      updated_at: nowIso,
+      created_at: rcca.created_at || nowIso
     };
     var q = await client.from("traceops_rcca_cases").upsert(row, { onConflict: "user_id,rcca_id" }).select("updated_at").single();
     if (q.error) throw traceOpsNormalizeCloudError(q.error);
@@ -3160,8 +3214,9 @@ async function signUp(email, password){
     cfg: cfg,
     isConfigured: isConfigured,
     getClient: getClient,
-    getSession: getSession,
     getUser: getUser,
+    isBrokenSessionError: isBrokenSessionError,
+    clearBrokenSession: clearBrokenSession,
     signIn: signIn,
     signUp: signUp,
     signOut: signOut,
@@ -15184,36 +15239,17 @@ function App() {
         }
         try {
             setSyncBusy(true);
-            var user = opts.user || null;
-            if (!user && window.SMTinelCloud.getSession) {
-                try {
-                    var session = await window.SMTinelCloud.getSession();
-                    user = session && session.user ? session.user : null;
-                }
-                catch (_) { user = null; }
-            }
-            if (!user && window.SMTinelCloud.getUser) {
-                try { user = await window.SMTinelCloud.getUser(); } catch (_) { user = null; }
-            }
-            var extraLocal = [];
-            try { extraLocal = extraLocal.concat(JSON.parse(localStorage.getItem("traceops_rcca_cases") || "[]") || []); } catch (_) { }
-            try { if (Array.isArray(window.__traceops_cloud_rccas)) extraLocal = extraLocal.concat(window.__traceops_cloud_rccas); } catch (_) { }
-            if (!user || !user.id) {
-                var localMerged = mergeRccaRecords((opts.baseList || rccaListRef.current || rccaList || []).concat(extraLocal), []);
-                if (localMerged.length) {
-                    await persistRccaLocal(localMerged);
-                }
+            var cloudUser = null;
+            try { cloudUser = await window.SMTinelCloud.getUser(); } catch (_) { cloudUser = null; }
+            if (!cloudUser || !cloudUser.id) {
                 setCloudStatus("Supabase listo · sin sesion");
-                setRealtimeStatus("LOCAL_ONLY");
-                setAuthErrMsg("");
+                setAuthErrMsg("Inicia sesion Supabase para restaurar RCCA de nube. Puedes seguir trabajando localmente.");
                 return [];
             }
-            var remoteItems = await traceOpsSafeCloudCall(function(){ return window.SMTinelCloud.listRcca(); }, (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.requestTimeoutMs) || 7000);
-            var merged = mergeRccaRecords((opts.baseList || rccaListRef.current || rccaList || []).concat(extraLocal), remoteItems);
+            var remoteItems = await traceOpsSafeCloudCall(function(){ return window.SMTinelCloud.listRcca(); }, (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.requestTimeoutMs) || 3500);
+            var merged = mergeRccaRecords(opts.baseList || rccaListRef.current || rccaList, remoteItems);
             await persistRccaLocal(merged);
-            try { localStorage.setItem("traceops_rcca_cases", JSON.stringify(merged)); } catch (_) { }
-            try { window.__traceops_cloud_rccas = merged; } catch (_) { }
-            setCloudStatus(remoteItems.length ? ("RCCA nube conectado · " + remoteItems.length + " RCCA") : "Sesion activa · nube vacia");
+            setCloudStatus(remoteItems.length ? ("Sincronizado · " + remoteItems.length + " RCCA") : "Sesion activa · nube vacia");
             setAuthErrMsg("");
             return remoteItems;
         }
@@ -15439,7 +15475,7 @@ function App() {
             setRealtimeStatus("CONNECTING");
             realtimeSub = window.SMTinelCloud.subscribeRccaRealtime(realtimeUserId, function () {
                 setCloudStatus("RCCA en nube · actualización en tiempo real");
-                refreshCloudRcca({ user: authUser || window.authUser || null, force: true });
+                refreshCloudRcca();
             }, function (status) {
                 var next = String(status || "UNKNOWN").toUpperCase();
                 if (next === "SUBSCRIBED") {
@@ -15467,7 +15503,7 @@ function App() {
                     setCloudStatus("Sesion activa");
                     setRealtimeStatus("DISCONNECTED");
                     try {
-                        await traceOpsSafeCloudCall(function () { return refreshCloudRcca({ user: user, force: true }); }, 7000);
+                        await traceOpsSafeCloudCall(function () { return refreshCloudRcca(); }, 5000);
                     }
                     catch (_) { }
                     await new Promise(function (resolve) { setTimeout(resolve, 150); });
@@ -15545,7 +15581,7 @@ function App() {
                     setRealtimeStatus("LOCAL_ONLY");
                     return;
                 }
-                await refreshCloudRcca({ user: user, force: true });
+                await refreshCloudRcca();
                 try {
                     startRealtime(user);
                 }
@@ -40920,6 +40956,46 @@ body.traceops-premium-shell .app-logo-img,
     }
   }
 
+  function isBrokenAuthError(err) {
+    var raw = "";
+    try { raw = String((err && (err.message || err.error_description || err.msg || err.statusText)) || err || "").toLowerCase(); } catch (_) { raw = ""; }
+    return raw.indexOf("refresh token not found") >= 0 ||
+      raw.indexOf("invalid refresh token") >= 0 ||
+      raw.indexOf("session not found") >= 0 ||
+      raw.indexOf("auth session missing") >= 0 ||
+      raw.indexOf("jwt expired") >= 0 ||
+      raw.indexOf("invalid jwt") >= 0 ||
+      raw.indexOf("403") >= 0;
+  }
+
+  async function clearBrokenAuthSession() {
+    currentSession = null;
+    try {
+      [localStorage, sessionStorage].forEach(function(store){
+        try {
+          Object.keys(store || {}).forEach(function(k){
+            var key = String(k || "");
+            var low = key.toLowerCase();
+            if (low.indexOf("supabase") >= 0 || low.indexOf("sb-") === 0 || low.indexOf("traceops_supabase") >= 0) {
+              try { store.removeItem(key); } catch (_) {}
+            }
+          });
+        } catch (_) {}
+      });
+    } catch (_) {}
+    try {
+      var client = supabaseClient || initSupabaseClient();
+      if (client && client.auth && typeof client.auth.signOut === "function") {
+        await client.auth.signOut({ scope: "local" });
+      }
+    } catch (_) {}
+    try {
+      if (window.SMTinelCloud && typeof window.SMTinelCloud.clearBrokenSession === "function") {
+        await window.SMTinelCloud.clearBrokenSession();
+      }
+    } catch (_) {}
+  }
+
   // Check current session
   async function checkSession() {
     try {
@@ -40927,10 +41003,24 @@ body.traceops-premium-shell .app-logo-img,
       if (!client) return null;
 
       var data = await client.auth.getSession();
+      if (data && data.error) {
+        if (isBrokenAuthError(data.error)) {
+          await clearBrokenAuthSession();
+          return null;
+        }
+        throw data.error;
+      }
       currentSession = data && data.data ? data.data.session : null;
       return currentSession;
     } catch (err) {
+      if (isBrokenAuthError(err)) {
+        await clearBrokenAuthSession();
+        try { updateUI(null); } catch (_) {}
+        try { showMessage('Sesión Supabase expirada. Vuelve a iniciar sesión.', 'error'); } catch (_) {}
+        return null;
+      }
       console.warn('[SMTinel] Session check error:', err);
+      currentSession = null;
       return null;
     }
   }
@@ -40946,7 +41036,7 @@ body.traceops-premium-shell .app-logo-img,
       btn.classList.add('authenticated');
       var email = session.user.email || 'Usuario';
       var shortEmail = email.split('@')[0];
-      text.innerHTML = '<span class="smt-login-status"><span class="dot"></span>RCCA nube conectado</span>';
+      text.innerHTML = '<span class="smt-login-status"><span class="dot"></span>RCCA en nube</span>';
       btn.title = 'Sesión: ' + email;
       btn.onclick = function() { showLogoutConfirm(session); };
     } else {
