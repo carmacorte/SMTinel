@@ -2923,6 +2923,19 @@ window.SMTinelCloud = (function(){
     }
   }
 
+  async function getSession(){
+    var client = getClient();
+    if (!client) return null;
+    try {
+      var out = await client.auth.getSession();
+      var session = out && out.data ? (out.data.session || null) : null;
+      __traceops_user_cache = session && session.user ? session.user : (__traceops_user_cache || null);
+      return session;
+    } catch (err) {
+      return null;
+    }
+  }
+
   async function getUser(){
     var client = getClient();
     if (!client) return null;
@@ -2930,10 +2943,20 @@ window.SMTinelCloud = (function(){
     if (__traceops_user_loading) return __traceops_user_loading;
     __traceops_user_loading = (async function(){
       try {
+        var session = await getSession();
+        if (session && session.user) {
+          __traceops_user_cache = session.user;
+          return __traceops_user_cache;
+        }
         var out = await client.auth.getUser();
         __traceops_user_cache = out && out.data ? (out.data.user || null) : null;
         return __traceops_user_cache;
       } catch (err) {
+        var msg = err && err.message ? String(err.message) : String(err || '');
+        if (msg.toLowerCase().indexOf('session not found') >= 0 || msg.indexOf('403') >= 0) {
+          __traceops_user_cache = null;
+          return null;
+        }
         throw traceOpsNormalizeCloudError(err);
       } finally {
         __traceops_user_loading = null;
@@ -3137,6 +3160,7 @@ async function signUp(email, password){
     cfg: cfg,
     isConfigured: isConfigured,
     getClient: getClient,
+    getSession: getSession,
     getUser: getUser,
     signIn: signIn,
     signUp: signUp,
@@ -15160,10 +15184,36 @@ function App() {
         }
         try {
             setSyncBusy(true);
-            var remoteItems = await traceOpsSafeCloudCall(function(){ return window.SMTinelCloud.listRcca(); }, (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.requestTimeoutMs) || 3500);
-            var merged = mergeRccaRecords(opts.baseList || rccaListRef.current || rccaList, remoteItems);
+            var user = opts.user || null;
+            if (!user && window.SMTinelCloud.getSession) {
+                try {
+                    var session = await window.SMTinelCloud.getSession();
+                    user = session && session.user ? session.user : null;
+                }
+                catch (_) { user = null; }
+            }
+            if (!user && window.SMTinelCloud.getUser) {
+                try { user = await window.SMTinelCloud.getUser(); } catch (_) { user = null; }
+            }
+            var extraLocal = [];
+            try { extraLocal = extraLocal.concat(JSON.parse(localStorage.getItem("traceops_rcca_cases") || "[]") || []); } catch (_) { }
+            try { if (Array.isArray(window.__traceops_cloud_rccas)) extraLocal = extraLocal.concat(window.__traceops_cloud_rccas); } catch (_) { }
+            if (!user || !user.id) {
+                var localMerged = mergeRccaRecords((opts.baseList || rccaListRef.current || rccaList || []).concat(extraLocal), []);
+                if (localMerged.length) {
+                    await persistRccaLocal(localMerged);
+                }
+                setCloudStatus("Supabase listo · sin sesion");
+                setRealtimeStatus("LOCAL_ONLY");
+                setAuthErrMsg("");
+                return [];
+            }
+            var remoteItems = await traceOpsSafeCloudCall(function(){ return window.SMTinelCloud.listRcca(); }, (window.TRACEOPS_CLOUD_PERF && window.TRACEOPS_CLOUD_PERF.requestTimeoutMs) || 7000);
+            var merged = mergeRccaRecords((opts.baseList || rccaListRef.current || rccaList || []).concat(extraLocal), remoteItems);
             await persistRccaLocal(merged);
-            setCloudStatus(remoteItems.length ? ("Sincronizado · " + remoteItems.length + " RCCA") : "Sesion activa · nube vacia");
+            try { localStorage.setItem("traceops_rcca_cases", JSON.stringify(merged)); } catch (_) { }
+            try { window.__traceops_cloud_rccas = merged; } catch (_) { }
+            setCloudStatus(remoteItems.length ? ("RCCA nube conectado · " + remoteItems.length + " RCCA") : "Sesion activa · nube vacia");
             setAuthErrMsg("");
             return remoteItems;
         }
@@ -15389,7 +15439,7 @@ function App() {
             setRealtimeStatus("CONNECTING");
             realtimeSub = window.SMTinelCloud.subscribeRccaRealtime(realtimeUserId, function () {
                 setCloudStatus("RCCA en nube · actualización en tiempo real");
-                refreshCloudRcca();
+                refreshCloudRcca({ user: authUser || window.authUser || null, force: true });
             }, function (status) {
                 var next = String(status || "UNKNOWN").toUpperCase();
                 if (next === "SUBSCRIBED") {
@@ -15417,7 +15467,7 @@ function App() {
                     setCloudStatus("Sesion activa");
                     setRealtimeStatus("DISCONNECTED");
                     try {
-                        await traceOpsSafeCloudCall(function () { return refreshCloudRcca(); }, 5000);
+                        await traceOpsSafeCloudCall(function () { return refreshCloudRcca({ user: user, force: true }); }, 7000);
                     }
                     catch (_) { }
                     await new Promise(function (resolve) { setTimeout(resolve, 150); });
@@ -15495,7 +15545,7 @@ function App() {
                     setRealtimeStatus("LOCAL_ONLY");
                     return;
                 }
-                await refreshCloudRcca();
+                await refreshCloudRcca({ user: user, force: true });
                 try {
                     startRealtime(user);
                 }
@@ -40896,7 +40946,7 @@ body.traceops-premium-shell .app-logo-img,
       btn.classList.add('authenticated');
       var email = session.user.email || 'Usuario';
       var shortEmail = email.split('@')[0];
-      text.innerHTML = '<span class="smt-login-status"><span class="dot"></span>RCCA en nube</span>';
+      text.innerHTML = '<span class="smt-login-status"><span class="dot"></span>RCCA nube conectado</span>';
       btn.title = 'Sesión: ' + email;
       btn.onclick = function() { showLogoutConfirm(session); };
     } else {
