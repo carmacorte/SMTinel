@@ -1,0 +1,39 @@
+name: Build Windows Desktop
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - "index.html"
+      - "modules/**"
+      - "assets/**"
+      - "frontend/**"
+      - ".github/workflows/build-windows-desktop.yml"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r desktop\requirements.txt
+
+      - name: Build desktop package
+        run: pyinstaller desktop\SMTinel.spec --clean --noconfirm
+
+      - name: Upload SMTinel desktop artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SMTinel-Windows-Desktop
+          path: dist\SMTinel
