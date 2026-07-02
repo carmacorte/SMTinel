@@ -13,6 +13,7 @@ for name in [
     "modules",
     "assets",
     "frontend",
+    "main",
     "README.md",
 ]:
     source = ROOT / name
