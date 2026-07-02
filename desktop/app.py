@@ -79,6 +79,27 @@ class QuietHandler(SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
         super().end_headers()
 
+    def handle(self) -> None:
+        try:
+            super().handle()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # WebView2 may cancel asset requests during navigation, screenshots,
+            # refresh, or window close. That is harmless; printing a traceback
+            # just makes the console look like it witnessed a crime.
+            if os.environ.get("SMTINEL_DEBUG") == "1":
+                raise
+
+    def copyfile(self, source, outputfile) -> None:  # noqa: ANN001 - inherited signature.
+        try:
+            super().copyfile(source, outputfile)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            if os.environ.get("SMTINEL_DEBUG") == "1":
+                raise
+
+    def log_error(self, fmt: str, *args: object) -> None:
+        if os.environ.get("SMTINEL_DEBUG") == "1":
+            super().log_error(fmt, *args)
+
     def log_message(self, fmt: str, *args: object) -> None:
         # Keep the packaged app quiet unless launched from a console.
         if os.environ.get("SMTINEL_DEBUG") == "1":
