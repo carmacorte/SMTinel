@@ -20,11 +20,23 @@ for name, target in file_targets.items():
     if source.exists() and source.is_file():
         datas.append((str(source), target))
 
+# Board Impact can reference source PDFs from the app root, for example
+# /WARWICK.pdf. Include root-level visual evidence PDFs when present at build
+# time so the desktop bundle can render them offline.
+for pattern in ["*.pdf", "*.PDF"]:
+    for source in ROOT.glob(pattern):
+        if source.is_file():
+            datas.append((str(source), "."))
+
 folder_targets = [
     "modules",
     "assets",
     "frontend",
     "main",
+    "data",
+    "docs",
+    "examples",
+    "export",
 ]
 for name in folder_targets:
     source = ROOT / name
