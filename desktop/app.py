@@ -13,6 +13,7 @@ import socket
 import sys
 import threading
 import time
+import urllib.parse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -24,6 +25,11 @@ WINDOW_WIDTH = 1500
 WINDOW_HEIGHT = 950
 WINDOW_MIN_WIDTH = 1200
 WINDOW_MIN_HEIGHT = 760
+PDF_FALLBACK_DIRS = (
+    Path("docs") / "datasheets",
+    Path("docs"),
+    Path("data"),
+)
 
 
 def _runtime_root() -> Path:
@@ -73,6 +79,52 @@ def _pick_port(preferred: int = DEFAULT_PORT) -> int:
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
+    def _pdf_fallback_path(self, requested_path: str) -> str | None:
+        """Map /MODEL.pdf requests to docs/datasheets/MODEL.pdf when needed."""
+        parsed_path = urllib.parse.urlparse(requested_path).path
+        filename = Path(urllib.parse.unquote(parsed_path)).name
+        if not filename.lower().endswith(".pdf"):
+            return None
+        if "/" in filename or "\\" in filename:
+            return None
+
+        root = Path(self.directory)
+        direct = root / filename
+        if direct.exists():
+            return None
+
+        variants = {filename, filename.upper(), filename.lower()}
+        if filename.lower().endswith(".pdf"):
+            stem = filename[:-4]
+            variants.update({f"{stem}.PDF", f"{stem.upper()}.pdf", f"{stem.upper()}.PDF"})
+
+        for relative_dir in PDF_FALLBACK_DIRS:
+            folder = root / relative_dir
+            if not folder.exists():
+                continue
+            for variant in variants:
+                candidate = folder / variant
+                if candidate.exists() and candidate.is_file():
+                    return str(candidate)
+
+            requested_lower = filename.lower()
+            for candidate in folder.glob("*.pdf"):
+                if candidate.name.lower() == requested_lower:
+                    return str(candidate)
+            for candidate in folder.glob("*.PDF"):
+                if candidate.name.lower() == requested_lower:
+                    return str(candidate)
+
+        return None
+
+    def translate_path(self, path: str) -> str:
+        fallback = self._pdf_fallback_path(path)
+        if fallback:
+            if os.environ.get("SMTINEL_DEBUG") == "1":
+                print(f"PDF fallback: {path} -> {fallback}")
+            return fallback
+        return super().translate_path(path)
+
     def end_headers(self) -> None:
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         self.send_header("Pragma", "no-cache")
