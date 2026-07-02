@@ -7,21 +7,21 @@ echo ========================================
 echo Building SMTinel Windows Desktop package
 echo ========================================
 
-where python >nul 2>nul
+where py >nul 2>nul
 if errorlevel 1 (
-  echo Python was not found in PATH.
-  echo Install Python 3.11+ and enable Add Python to PATH.
+  echo Python launcher py was not found.
+  echo Install Python 3.11+ or edit this file and replace py with python.
   pause
   exit /b 1
 )
 
-python -m pip install --upgrade pip
-python -m pip install -r desktop\requirements.txt
+py -m pip install --upgrade pip
+py -m pip install -r desktop\requirements.txt
 
 if exist build rmdir /s /q build
 if exist dist\SMTinel rmdir /s /q dist\SMTinel
 
-pyinstaller desktop\SMTinel.spec --clean --noconfirm
+py -m PyInstaller desktop\SMTinel.spec --clean --noconfirm
 
 if errorlevel 1 (
   echo Build failed.
