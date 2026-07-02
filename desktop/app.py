@@ -87,7 +87,9 @@ def main() -> int:
         web_root = _find_web_root()
         port = _pick_port()
         server = serve(web_root, port)
-        url = f"http://{HOST}:{port}/index.html"
+        # Open the root instead of /index.html. Some browser/app flows append a
+        # trailing slash to /index.html, which breaks relative static assets.
+        url = f"http://{HOST}:{port}/"
         print(f"{APP_NAME} running at {url}")
         webbrowser.open(url)
 
