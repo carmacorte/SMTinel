@@ -2,6 +2,15 @@ name: Build Windows Desktop
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish/refresh the portable release asset"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
   pull_request:
     paths:
       - "desktop/**"
@@ -9,7 +18,26 @@ on:
       - "modules/**"
       - "assets/**"
       - "frontend/**"
+      - "main/**"
+      - "docs/**"
+      - "data/**"
       - ".github/workflows/build-windows-desktop.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "desktop/**"
+      - "index.html"
+      - "modules/**"
+      - "assets/**"
+      - "frontend/**"
+      - "main/**"
+      - "docs/**"
+      - "data/**"
+      - ".github/workflows/build-windows-desktop.yml"
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -32,8 +60,36 @@ jobs:
       - name: Build desktop package
         run: pyinstaller desktop\SMTinel.spec --clean --noconfirm
 
-      - name: Upload SMTinel desktop artifact
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $zip = "SMTinel-Windows-Portable.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "dist\SMTinel" -DestinationPath $zip -CompressionLevel Optimal
+          Get-FileHash $zip -Algorithm SHA256 | Format-List
+
+      - name: Upload SMTinel portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SMTinel-Windows-Desktop
-          path: dist\SMTinel
+          name: SMTinel-Windows-Portable
+          path: SMTinel-Windows-Portable.zip
+
+      - name: Publish portable release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: portable-latest
+          name: SMTinel Windows Portable
+          body: |
+            SMTinel Windows portable desktop package.
+
+            Download `SMTinel-Windows-Portable.zip`, extract the full folder, and run `SMTinel.exe`.
+
+            Notes:
+            - Do not run directly from the ZIP.
+            - Do not remove the `_internal` folder.
+            - Requires Windows 10/11 and Microsoft Edge WebView2 Runtime.
+            - If Windows blocks the executable, allow it from Windows Security > Protection history, or sign/allowlist the executable.
+          files: SMTinel-Windows-Portable.zip
+          make_latest: true
