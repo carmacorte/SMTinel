@@ -5,19 +5,30 @@ from pathlib import Path
 ROOT = Path.cwd()
 APP = ROOT / "desktop" / "app.py"
 
-# Bundle only the runtime files needed by the local web app. Add more folders here
-# if SMTinel starts depending on additional static assets.
+# Bundle only the runtime files needed by the local web app. For PyInstaller,
+# file data destinations are directories, not final file names. So index.html
+# must target "."; otherwise PyInstaller creates _internal/index.html/index.html
+# and the local server shows a directory listing. Humanity endures.
 datas = []
-for name in [
-    "index.html",
+
+file_targets = {
+    "index.html": ".",
+    "README.md": ".",
+}
+for name, target in file_targets.items():
+    source = ROOT / name
+    if source.exists() and source.is_file():
+        datas.append((str(source), target))
+
+folder_targets = [
     "modules",
     "assets",
     "frontend",
     "main",
-    "README.md",
-]:
+]
+for name in folder_targets:
     source = ROOT / name
-    if source.exists():
+    if source.exists() and source.is_dir():
         datas.append((str(source), name))
 
 
