@@ -1,0 +1,53 @@
+diff --git a/index.html b/index.html
+--- a/index.html
++++ b/index.html
+@@
++<!-- Desktop Portable module integration notes
++
++Goal:
++  Expose the Windows portable download inside SMTinel instead of sending users to
++  a separate portable.html landing page.
++
++Module file:
++  modules/desktop-portable.html
++
++Download target:
++  https://github.com/carmacorte/SMTinel/releases/latest/download/SMTinel-Windows-Portable.zip
++
++Recommended render function:
++
++  function renderDesktopPortableSection() {
++    return `
++      <section class="smtinel-module smtinel-desktop-portable-module">
++        <iframe
++          title="SMTinel Desktop Portable"
++          src="modules/desktop-portable.html"
++          style="width:100%;min-height:860px;border:0;border-radius:28px;background:transparent;"
++          loading="lazy"
++        ></iframe>
++      </section>
++    `;
++  }
++
++Recommended route id:
++  desktop-portable
++
++Recommended menu placement:
++  More -> Desktop Portable
++
++Recommended top quick action:
++  Download Desktop / Desktop Portable
++
++Important behavior:
++  - Do not route users to portable.html as the primary flow.
++  - Keep portable.html only as a fallback landing page.
++  - Do not store SMTinel-Windows-Portable.zip inside docs/ or the repository.
++  - Keep the ZIP in GitHub Releases and download it from the stable release URL.
++
++Validation:
++  1. Open SMTinel.
++  2. More -> Desktop Portable.
++  3. Confirm the module loads in-place.
++  4. Click Download Windows Portable.
++  5. Confirm the browser starts downloading the ZIP without opening GitHub.
++-->
