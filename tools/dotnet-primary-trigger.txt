@@ -1,0 +1,2 @@
+trigger desktop portable dotnet primary patch
+2026-07-09T02:02:00Z
