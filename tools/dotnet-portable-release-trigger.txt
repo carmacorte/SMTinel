@@ -1,0 +1,2 @@
+trigger dotnet portable release build
+2026-07-09T02:03:00Z
