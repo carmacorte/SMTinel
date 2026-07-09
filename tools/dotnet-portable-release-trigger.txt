@@ -1,2 +1,3 @@
 trigger dotnet portable release build
-2026-07-09T02:03:00Z
+2026-07-09T02:31:00Z
+static assets and mime fix
