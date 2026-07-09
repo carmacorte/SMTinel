@@ -1,0 +1,96 @@
+name: Build Windows Dotnet Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish/refresh the safer .NET desktop release asset"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+  pull_request:
+    paths:
+      - "desktop-dotnet/**"
+      - "index.html"
+      - "modules/**"
+      - "assets/**"
+      - "frontend/**"
+      - "main/**"
+      - "docs/**"
+      - "data/**"
+      - ".github/workflows/build-windows-dotnet-desktop.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-dotnet:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore desktop-dotnet\SMTinel.Desktop.csproj
+
+      - name: Publish launcher
+        run: dotnet publish desktop-dotnet\SMTinel.Desktop.csproj -c Release -r win-x64 --self-contained false -o publish\SMTinel
+
+      - name: Copy SMTinel web runtime files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $target = "publish\SMTinel"
+          $folders = @("modules", "assets", "frontend", "main", "data", "docs", "examples", "export")
+          Copy-Item "index.html" $target -Force
+          if (Test-Path "README.md") { Copy-Item "README.md" $target -Force }
+          foreach ($folder in $folders) {
+            if (Test-Path $folder) {
+              Copy-Item $folder $target -Recurse -Force
+            }
+          }
+          Get-ChildItem -Path . -Filter *.pdf -File | ForEach-Object { Copy-Item $_.FullName $target -Force }
+          Get-ChildItem -Path . -Filter *.PDF -File | ForEach-Object { Copy-Item $_.FullName $target -Force }
+
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $zip = "SMTinel-Windows-Dotnet-Portable.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "publish\SMTinel" -DestinationPath $zip -CompressionLevel Optimal
+          Get-FileHash $zip -Algorithm SHA256 | Format-List
+
+      - name: Upload SMTinel .NET portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SMTinel-Windows-Dotnet-Portable
+          path: SMTinel-Windows-Dotnet-Portable.zip
+
+      - name: Publish .NET portable release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: portable-dotnet-latest
+          name: SMTinel Windows Dotnet Portable
+          body: |
+            SMTinel Windows portable desktop package using a native .NET WebView2 launcher instead of PyInstaller.
+
+            Download `SMTinel-Windows-Dotnet-Portable.zip`, extract the full folder, and run `SMTinel.exe`.
+
+            Notes:
+            - Do not run directly from the ZIP.
+            - Keep the full folder together.
+            - Requires Windows 10/11, .NET Desktop Runtime 8, and Microsoft Edge WebView2 Runtime.
+            - This route avoids the PyInstaller bootloader that Defender can flag as unwanted software.
+          files: SMTinel-Windows-Dotnet-Portable.zip
+          make_latest: true
