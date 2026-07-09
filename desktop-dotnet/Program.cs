@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Web.WebView2.Core;
@@ -183,7 +182,7 @@ internal sealed class LocalStaticServer : IDisposable
 
             if (!File.Exists(fullPath))
             {
-                var fallback = ResolvePdfFallback(requestPath);
+                var fallback = ResolveAssetFallback(requestPath);
                 if (fallback is not null)
                 {
                     fullPath = fallback;
@@ -210,13 +209,24 @@ internal sealed class LocalStaticServer : IDisposable
         }
     }
 
-    private string? ResolvePdfFallback(string requestPath)
+    private string? ResolveAssetFallback(string requestPath)
     {
         var fileName = Path.GetFileName(requestPath);
-        if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)) return null;
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
+
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        var searchable = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif", ".svg", ".ico"
+        };
+        if (!searchable.Contains(extension)) return null;
 
         var folders = new[]
         {
+            _root,
+            Path.Combine(_root, "assets"),
+            Path.Combine(_root, "assets", "images"),
+            Path.Combine(_root, "assets", "icons"),
             Path.Combine(_root, "docs", "datasheets"),
             Path.Combine(_root, "docs"),
             Path.Combine(_root, "data")
@@ -225,8 +235,7 @@ internal sealed class LocalStaticServer : IDisposable
         foreach (var folder in folders)
         {
             if (!Directory.Exists(folder)) continue;
-            var match = Directory.EnumerateFiles(folder, "*.pdf", SearchOption.TopDirectoryOnly)
-                .Concat(Directory.EnumerateFiles(folder, "*.PDF", SearchOption.TopDirectoryOnly))
+            var match = Directory.EnumerateFiles(folder, "*" + extension, SearchOption.TopDirectoryOnly)
                 .FirstOrDefault(path => string.Equals(Path.GetFileName(path), fileName, StringComparison.OrdinalIgnoreCase));
             if (match is not null) return match;
         }
@@ -246,16 +255,27 @@ internal sealed class LocalStaticServer : IDisposable
         return Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".html" => "text/html; charset=utf-8",
+            ".htm" => "text/html; charset=utf-8",
             ".css" => "text/css; charset=utf-8",
             ".js" => "application/javascript; charset=utf-8",
+            ".mjs" => "application/javascript; charset=utf-8",
             ".json" => "application/json; charset=utf-8",
+            ".webmanifest" => "application/manifest+json; charset=utf-8",
             ".png" => "image/png",
             ".jpg" or ".jpeg" => "image/jpeg",
+            ".webp" => "image/webp",
+            ".avif" => "image/avif",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
             ".svg" => "image/svg+xml",
             ".pdf" => "application/pdf",
             ".ico" => "image/x-icon",
             ".woff" => "font/woff",
             ".woff2" => "font/woff2",
+            ".ttf" => "font/ttf",
+            ".otf" => "font/otf",
+            ".txt" => "text/plain; charset=utf-8",
+            ".csv" => "text/csv; charset=utf-8",
             _ => "application/octet-stream"
         };
     }
