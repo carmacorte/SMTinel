@@ -1,0 +1,2 @@
+trigger portable release build
+2026-07-08T00:00:00
