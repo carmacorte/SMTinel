@@ -8,11 +8,13 @@ SMTinel decides when to use cloud features from the web UI.
 
 from __future__ import annotations
 
+import io
 import os
 import socket
 import sys
 import threading
 import time
+import traceback
 import urllib.parse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -45,6 +47,33 @@ def _app_data_dir() -> Path:
     path = Path(base) / "SMTinel" / "WebView2"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def _safe_stdin() -> None:
+    """Provide stdin for windowed PyInstaller builds.
+
+    Windowed executables run with sys.stdin set to None. Some transitive desktop
+    GUI imports still call input() when probing runtimes. Without a harmless
+    stream, the packaged app fails with: input(): lost sys.stdin. Because yes,
+    even a desktop window can trip over a missing console like it is 1997.
+    """
+    if sys.stdin is None:
+        sys.stdin = io.StringIO("\n")
+
+
+def _show_error_dialog(title: str, message: str) -> None:
+    """Show a readable error dialog when the packaged app has no console."""
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror(title, message)
+        root.destroy()
+    except Exception:
+        # Last-resort fallback for console execution.
+        print(f"{title}: {message}")
 
 
 def _find_web_root() -> Path:
@@ -168,6 +197,7 @@ def serve(web_root: Path, port: int) -> ThreadingHTTPServer:
 
 def open_desktop_window(url: str) -> None:
     """Open SMTinel in a dedicated desktop window instead of an external browser."""
+    _safe_stdin()
     try:
         import webview
     except ImportError as exc:  # pragma: no cover - user-facing launcher guard.
@@ -192,6 +222,7 @@ def open_desktop_window(url: str) -> None:
 
 
 def main() -> int:
+    _safe_stdin()
     server: ThreadingHTTPServer | None = None
     try:
         web_root = _find_web_root()
@@ -204,8 +235,11 @@ def main() -> int:
         open_desktop_window(url)
         return 0
     except Exception as exc:  # noqa: BLE001 - user-facing launcher needs a readable failure.
-        print(f"SMTinel launcher error: {exc}")
-        input("Press Enter to close...")
+        details = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        _show_error_dialog(
+            "SMTinel launcher error",
+            f"SMTinel could not start.\n\n{exc}\n\nDetails:\n{details[-1800:]}",
+        )
         return 1
     finally:
         if server is not None:
