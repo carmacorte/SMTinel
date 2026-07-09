@@ -64,8 +64,20 @@ jobs:
               Copy-Item $folder $target -Recurse -Force
             }
           }
-          Get-ChildItem -Path . -Filter *.pdf -File | ForEach-Object { Copy-Item $_.FullName $target -Force }
-          Get-ChildItem -Path . -Filter *.PDF -File | ForEach-Object { Copy-Item $_.FullName $target -Force }
+
+          # Copy root-level static files used by index.html and the landing pages.
+          # The web version can resolve these from the repo root, but the portable
+          # package only sees what we explicitly bundle. Tiny detail, huge nuisance.
+          $rootPatterns = @(
+            "*.html", "*.css", "*.js", "*.json", "*.webmanifest", "*.txt",
+            "*.png", "*.jpg", "*.jpeg", "*.webp", "*.avif", "*.gif", "*.svg", "*.ico",
+            "*.pdf", "*.PDF", "*.csv", "*.xlsx", "*.xlsm", "CNAME"
+          )
+          foreach ($pattern in $rootPatterns) {
+            Get-ChildItem -Path . -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
+              Copy-Item $_.FullName $target -Force
+            }
+          }
 
       - name: Create portable ZIP
         shell: pwsh
