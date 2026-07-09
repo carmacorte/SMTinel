@@ -1,0 +1,41 @@
+name: Patch Index Desktop Portable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply Desktop Portable index integration
+        run: python tools/patch_index_desktop_portable.py
+
+      - name: Show diff summary
+        run: |
+          git status --short
+          git diff --stat
+
+      - name: Commit index integration
+        run: |
+          if git diff --quiet; then
+            echo "No index changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Integrate Desktop Portable module into index"
+          git push
