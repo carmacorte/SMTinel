@@ -26,14 +26,7 @@ on:
     branches:
       - main
     paths:
-      - "desktop/**"
-      - "index.html"
-      - "modules/**"
-      - "assets/**"
-      - "frontend/**"
-      - "main/**"
-      - "docs/**"
-      - "data/**"
+      - "tools/portable-release-trigger.txt"
       - ".github/workflows/build-windows-desktop.yml"
 
 permissions:
@@ -76,7 +69,7 @@ jobs:
           path: SMTinel-Windows-Portable.zip
 
       - name: Publish portable release
-        if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'true'
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_release == 'true') || github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: portable-latest
@@ -90,6 +83,5 @@ jobs:
             - Do not run directly from the ZIP.
             - Do not remove the `_internal` folder.
             - Requires Windows 10/11 and Microsoft Edge WebView2 Runtime.
-            - If Windows blocks the executable, allow it from Windows Security > Protection history, or sign/allowlist the executable.
           files: SMTinel-Windows-Portable.zip
           make_latest: true
