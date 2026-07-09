@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_submodules
+
 ROOT = Path.cwd()
 APP = ROOT / "desktop" / "app.py"
 
@@ -43,13 +45,26 @@ for name in folder_targets:
     if source.exists() and source.is_dir():
         datas.append((str(source), name))
 
+hiddenimports = []
+for package in ["webview", "clr_loader", "pythonnet"]:
+    try:
+        hiddenimports.extend(collect_submodules(package))
+    except Exception:
+        pass
+hiddenimports.extend([
+    "clr",
+    "webview.platforms.edgechromium",
+    "webview.platforms.winforms",
+])
+hiddenimports = sorted(set(hiddenimports))
+
 
 a = Analysis(
     [str(APP)],
     pathex=[str(ROOT)],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
