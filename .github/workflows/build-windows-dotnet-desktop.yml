@@ -79,6 +79,47 @@ jobs:
             }
           }
 
+      - name: Sign SMTinel executable if certificate secrets exist
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = "publish\SMTinel\SMTinel.exe"
+          if (-not (Test-Path $exe)) {
+            throw "SMTinel.exe was not found at $exe"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERT_PFX_BASE64) -or [string]::IsNullOrWhiteSpace($env:WINDOWS_CERT_PASSWORD)) {
+            Write-Host "Code signing secrets not configured. Build will continue unsigned. Windows will still say Unknown Publisher, because apparently trust must be purchased."
+            return
+          }
+
+          $certPath = Join-Path $env:RUNNER_TEMP "smtinel-signing.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX_BASE64))
+
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\x64\\signtool\.exe$" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (-not $signtool) {
+            throw "signtool.exe was not found on the Windows runner."
+          }
+
+          & $signtool.FullName sign `
+            /f $certPath `
+            /p $env:WINDOWS_CERT_PASSWORD `
+            /fd SHA256 `
+            /tr http://timestamp.digicert.com `
+            /td SHA256 `
+            /d "SMTinel - Trace Monitor Protect" `
+            $exe
+
+          & $signtool.FullName verify /pa /v $exe
+          Remove-Item $certPath -Force
+
       - name: Create portable ZIP
         shell: pwsh
         run: |
@@ -110,5 +151,6 @@ jobs:
             - Keep the full folder together.
             - Requires Windows 10/11, .NET Desktop Runtime 8, and Microsoft Edge WebView2 Runtime.
             - This route avoids the PyInstaller bootloader that Defender can flag as unwanted software.
+            - If repository secrets WINDOWS_CERT_PFX_BASE64 and WINDOWS_CERT_PASSWORD are configured, SMTinel.exe is signed before packaging.
           files: SMTinel-Windows-Dotnet-Portable.zip
           make_latest: true
