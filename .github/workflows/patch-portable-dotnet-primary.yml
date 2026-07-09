@@ -1,0 +1,48 @@
+name: Patch Portable Dotnet Primary
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/dotnet-primary-trigger.txt"
+      - "tools/patch_portable_dotnet_primary.py"
+      - ".github/workflows/patch-portable-dotnet-primary.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-portable-dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Switch Desktop Portable links to .NET package
+        run: python tools/patch_portable_dotnet_primary.py
+
+      - name: Show diff summary
+        run: |
+          git status --short
+          git diff --stat
+
+      - name: Commit .NET portable primary link changes
+        run: |
+          if git diff --quiet; then
+            echo "No portable link changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html modules/desktop-portable.html
+          git commit -m "Switch Desktop Portable download to .NET package"
+          git push
