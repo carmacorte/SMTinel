@@ -2,9 +2,9 @@
  * SMTinel Yield Flow bootstrap.
  *
  * The original worker integration is preserved in
- * yieldflow-main-thread-patch.original.js. The ownership fix is loaded directly
- * after it so Board Impact resolves model scope from the SKU owned by each SFC
- * serial, while parent/daughter relationships remain contextual metadata only.
+ * yieldflow-main-thread-patch.original.js. Runtime fixes load sequentially so
+ * model ownership is resolved first and Station_on_line_report can then enrich
+ * every serial with its physical production line.
  */
 (function () {
   'use strict';
@@ -18,26 +18,31 @@
     }
   }
 
-  var originalUrl = resolve('yieldflow-main-thread-patch.original.js');
-  var fixUrl = resolve('board-impact-model-fix.js');
+  var scripts = [
+    resolve('yieldflow-main-thread-patch.original.js'),
+    resolve('board-impact-model-fix.js'),
+    resolve('yieldflow-line-mapping.js')
+  ];
 
-  function appendSequentially() {
-    var original = document.createElement('script');
-    original.src = originalUrl;
-    original.async = false;
-    original.onload = function () {
-      var fix = document.createElement('script');
-      fix.src = fixUrl;
-      fix.async = false;
-      document.head.appendChild(fix);
+  function appendSequentially(index) {
+    index = index || 0;
+    if (index >= scripts.length) return;
+    var script = document.createElement('script');
+    script.src = scripts[index];
+    script.async = false;
+    script.onload = function () { appendSequentially(index + 1); };
+    script.onerror = function () {
+      try { console.error('[SMTinel Yield Flow] No se pudo cargar:', scripts[index]); } catch (_) {}
+      appendSequentially(index + 1);
     };
-    document.head.appendChild(original);
+    document.head.appendChild(script);
   }
 
   if (document.readyState === 'loading') {
-    document.write('<script src="' + originalUrl + '"><\/script>');
-    document.write('<script src="' + fixUrl + '"><\/script>');
+    scripts.forEach(function (src) {
+      document.write('<script src="' + src + '"><\/script>');
+    });
   } else {
-    appendSequentially();
+    appendSequentially(0);
   }
 }());
