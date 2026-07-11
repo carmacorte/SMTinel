@@ -1,0 +1,66 @@
+name: Inject Bonepile into deployed index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inject-bonepile-index.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inject external Bonepile integrations
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = 'modules/bonepile/bonepile-menu-integration.js?v=0.1.1'
+
+          if marker in text:
+              print('Bonepile integration already present in index.html')
+              raise SystemExit(0)
+
+          loader = '''\n<!-- SMTinel Bonepile Visual Tracker external integration -->\n<script src="modules/bonepile/bonepile-menu-integration.js?v=0.1.1"></script>\n'''
+
+          if '</body>' in text:
+              text = text.replace('</body>', loader + '</body>', 1)
+          elif '</html>' in text:
+              text = text.replace('</html>', loader + '</html>', 1)
+          else:
+              raise SystemExit('index.html has no closing body/html tag')
+
+          path.write_text(text, encoding='utf-8')
+          print('Injected Bonepile integration into index.html')
+
+      - name: Verify
+        shell: bash
+        run: |
+          grep -n "bonepile-menu-integration.js?v=0.1.1" index.html
+          test -f modules/bonepile/bonepile-menu-integration.js
+          test -f modules/bonepile/bonepile-loader.js
+          test -f modules/bonepile/bonepile-module.js
+
+      - name: Commit deployed index
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index change required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix(bonepile): load tracker from deployed index"
+          git push origin main
