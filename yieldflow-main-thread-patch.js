@@ -3,8 +3,9 @@
  *
  * The original worker integration is preserved in
  * yieldflow-main-thread-patch.original.js. Runtime fixes load sequentially so
- * model ownership is resolved first and Station_on_line_report can then enrich
- * every serial with its physical production line.
+ * model ownership is resolved first, Station_on_line_report enriches every
+ * serial with its physical production line, and external UI modules can attach
+ * safely after the core application is available.
  */
 (function () {
   'use strict';
@@ -21,7 +22,8 @@
   var scripts = [
     resolve('yieldflow-main-thread-patch.original.js'),
     resolve('board-impact-model-fix.js'),
-    resolve('yieldflow-line-mapping.js')
+    resolve('yieldflow-line-mapping.js'),
+    resolve('modules/bonepile/bonepile-menu-integration.js?v=0.1.0')
   ];
 
   function appendSequentially(index) {
