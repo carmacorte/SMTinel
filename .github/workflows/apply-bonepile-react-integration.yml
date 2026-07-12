@@ -1,6 +1,10 @@
 name: Apply Bonepile React integration
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-bonepile-react-integration.yml'
   workflow_dispatch:
 
 permissions:
@@ -10,10 +14,10 @@ jobs:
   patch-and-validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout feature branch
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: feature/bonepile-react-integration
+          ref: main
           fetch-depth: 0
 
       - name: Patch React module registry
@@ -30,14 +34,12 @@ jobs:
               print('Bonepile React integration already applied')
               raise SystemExit(0)
 
-          # 1. Render function: external module remains isolated in an iframe.
           anchor = '    var moduleNavItems = ['
           render_fn = '''    // SMTinel Bonepile React integration v1\n    function renderBonepileSection() {\n        return React.createElement("section", { id: "bonepile-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },\n            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },\n                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Bonepile Visual Tracker"),\n                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "Interactive WIP and bonepile location map"),\n                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Track serial numbers by production line, current station, aging and repair status using the Yield Flow data already loaded in SMTinel.")),\n            React.createElement("iframe", { title: "SMTinel Bonepile Visual Tracker", src: "modules/bonepile/demo.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })\n        );\n    }\n\n'''
           if anchor not in text:
               raise SystemExit('Required moduleNavItems anchor not found')
           text = text.replace(anchor, render_fn + anchor, 1)
 
-          # 2. Add module navigation entry immediately after Yield Flow.
           nav_anchor = '''        {\n            key: "yieldflow",\n            label: "Yield Flow",'''
           pos = text.find(nav_anchor)
           if pos < 0:
@@ -49,19 +51,16 @@ jobs:
           nav_item = '''\n        {\n            key: "bonepile",\n            label: "Bonepile Visual Tracker",\n            shortLabel: "Interactive WIP map by line, station, aging and repair",\n            count: "WIP",\n            anchorId: "bonepile-section",\n            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }\n        },'''
           text = text[:end] + nav_item + text[end:]
 
-          # 3. Render the section when selected.
           render_anchor = '                        activeModule === "yieldflow" && renderYieldFlowSection(),'
           if render_anchor not in text:
               raise SystemExit('Yield Flow render anchor not found')
           text = text.replace(render_anchor, render_anchor + '\n                        activeModule === "bonepile" && renderBonepileSection(),', 1)
 
-          # 4. Keep generic sections hidden while Bonepile owns the content area.
           text = text.replace('activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "planagent"',
                               'activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "planagent"')
           text = text.replace('activeModule !== "yieldflow" && activeModule !== "planagent"',
                               'activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "planagent"')
 
-          # 5. Add icon and More Modules registry entry.
           icon_anchor = "    yield:'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 19V5\"/><path d=\"M4 19h16\"/><path d=\"m7 15 3-4 3 2 5-7\"/><path d=\"M18 6h2v2\"/></svg>',"
           if icon_anchor not in text:
               raise SystemExit('Yield icon anchor not found')
@@ -121,7 +120,7 @@ jobs:
                   raise SystemExit(f'Inline script {idx} failed syntax validation:\n{result.stderr}')
           print(f'Validated {len(scripts)} inline scripts')
 
-      - name: Commit feature branch
+      - name: Commit patched main
         shell: bash
         run: |
           if git diff --quiet -- index.html; then
@@ -132,4 +131,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git commit -m "feat(bonepile): integrate tracker into React module registry"
-          git push origin feature/bonepile-react-integration
+          git push origin main
