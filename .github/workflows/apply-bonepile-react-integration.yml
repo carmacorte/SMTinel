@@ -1,0 +1,134 @@
+name: Apply Bonepile React integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-bonepile-react-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch React module registry
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          marker = 'SMTinel Bonepile React integration v1'
+          if marker in text:
+              print('Bonepile React integration already applied')
+              raise SystemExit(0)
+
+          anchor = '    var moduleNavItems = ['
+          render_fn = '''    // SMTinel Bonepile React integration v1\n    function renderBonepileSection() {\n        return React.createElement("section", { id: "bonepile-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },\n            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },\n                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Bonepile Visual Tracker"),\n                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "Interactive WIP and bonepile location map"),\n                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Track serial numbers by production line, current station, aging and repair status using the Yield Flow data already loaded in SMTinel.")),\n            React.createElement("iframe", { title: "SMTinel Bonepile Visual Tracker", src: "modules/bonepile/demo.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })\n        );\n    }\n\n'''
+          if anchor not in text:
+              raise SystemExit('Required moduleNavItems anchor not found')
+          text = text.replace(anchor, render_fn + anchor, 1)
+
+          nav_anchor = '''        {\n            key: "yieldflow",\n            label: "Yield Flow",'''
+          pos = text.find(nav_anchor)
+          if pos < 0:
+              raise SystemExit('Yield Flow navigation entry not found')
+          end = text.find('\n        },', pos)
+          if end < 0:
+              raise SystemExit('Yield Flow navigation entry terminator not found')
+          end += len('\n        },')
+          nav_item = '''\n        {\n            key: "bonepile",\n            label: "Bonepile Visual Tracker",\n            shortLabel: "Interactive WIP map by line, station, aging and repair",\n            count: "WIP",\n            anchorId: "bonepile-section",\n            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }\n        },'''
+          text = text[:end] + nav_item + text[end:]
+
+          render_anchor = '                        activeModule === "yieldflow" && renderYieldFlowSection(),'
+          if render_anchor not in text:
+              raise SystemExit('Yield Flow render anchor not found')
+          text = text.replace(render_anchor, render_anchor + '\n                        activeModule === "bonepile" && renderBonepileSection(),', 1)
+
+          text = text.replace('activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "planagent"',
+                              'activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "planagent"')
+          text = text.replace('activeModule !== "yieldflow" && activeModule !== "planagent"',
+                              'activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "planagent"')
+
+          icon_anchor = "    yield:'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 19V5\"/><path d=\"M4 19h16\"/><path d=\"m7 15 3-4 3 2 5-7\"/><path d=\"M18 6h2v2\"/></svg>',"
+          if icon_anchor not in text:
+              raise SystemExit('Yield icon anchor not found')
+          bone_icon = "\n    bonepile:'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 18h16\"/><path d=\"M6 18V9h12v9\"/><path d=\"M8 9V6h8v3\"/><path d=\"M9 13h6\"/><path d=\"M9 16h6\"/></svg>',"
+          text = text.replace(icon_anchor, icon_anchor + bone_icon, 1)
+
+          item_anchor = '    {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},'
+          if item_anchor not in text:
+              raise SystemExit('Yield Flow More Modules item not found')
+          bone_item = '\n    {key:"bonepile",label:"Bonepile Visual Tracker",icon:icons.bonepile,aliases:["Bonepile Visual Tracker","Bonepile","WIP Map","Layout Inventory"]},'
+          text = text.replace(item_anchor, item_anchor + bone_item, 1)
+
+          open_anchor = '  window.openYieldFlow=function(){navTo("yieldflow");};'
+          if open_anchor not in text:
+              raise SystemExit('openYieldFlow anchor not found')
+          text = text.replace(open_anchor, open_anchor + '\n  window.openBonepile=function(){navTo("bonepile");};', 1)
+
+          if text == original:
+              raise SystemExit('No changes produced')
+          path.write_text(text, encoding='utf-8')
+          print('Bonepile integrated into React module registry')
+
+      - name: Validate required integration markers
+        shell: bash
+        run: |
+          grep -n "SMTinel Bonepile React integration v1" index.html
+          grep -n 'key:"bonepile"' index.html
+          grep -n 'activeModule === "bonepile"' index.html
+          grep -n 'window.openBonepile' index.html
+          test -f modules/bonepile/demo.html
+
+      - name: Validate HTML and JavaScript structure
+        shell: python
+        run: |
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re, subprocess, tempfile
+
+          class Parser(HTMLParser):
+              pass
+          html = Path('index.html').read_text(encoding='utf-8')
+          Parser().feed(html)
+          if html.count('<script') != html.count('</script>'):
+              raise SystemExit('Unbalanced script tags')
+          if html.count('<html') != 1 or html.count('</html>') != 1:
+              raise SystemExit('Invalid html document boundaries')
+
+          scripts = re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          for idx, code in enumerate(scripts):
+              if not code.strip():
+                  continue
+              with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+                  f.write(code)
+                  name = f.name
+              result = subprocess.run(['node', '--check', name], capture_output=True, text=True)
+              if result.returncode:
+                  raise SystemExit(f'Inline script {idx} failed syntax validation:\n{result.stderr}')
+          print(f'Validated {len(scripts)} inline scripts')
+
+      - name: Commit patched main
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index change required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat(bonepile): integrate tracker into React module registry"
+          git push origin main
