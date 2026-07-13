@@ -1,15 +1,14 @@
 /*
  * SMTinel Board Impact ownership fix
  *
- * Keeps parent/daughter relationships as context, but resolves the effective
- * model used by Yield Flow and Board Impact from the board SKU owned by the
- * serial in SFC. This prevents daughter-board relationships from widening the
- * active model scope.
+ * Resolves the effective board model from the board serial and SKU owned by SFC.
+ * Parent/chassis serials and daughter-board relationships remain context only and
+ * never widen or replace the active Board Impact model scope.
  */
 (function () {
   'use strict';
 
-  var FIX_VERSION = 'board-owner-v1';
+  var FIX_VERSION = 'board-owner-v2';
   var CACHE_MARKER = 'smtinel:board-impact-model-fix';
 
   function norm(value) {
@@ -41,18 +40,39 @@
     return '';
   }
 
-  var SERIAL_KEYS = [
-    'SERIAL', 'SERIAL NUMBER', 'SERIALNUMBER', 'SYS SERIAL NO', 'SYSSERIALNO',
-    'BOXSN', 'SN', 'BARCODE'
+  /*
+   * Important: BOXSN is intentionally excluded from BOARD_SERIAL_KEYS.
+   * SFC exports contain both SN and boxsn. BOXSN identifies the parent/chassis
+   * and can be shared by several boards, so using it as the ownership key mixes
+   * mainboards and daughter boards.
+   */
+  var BOARD_SERIAL_KEYS = [
+    'SN', 'SYS SERIAL NO', 'SYSSERIALNO', 'SERIAL', 'SERIAL NUMBER',
+    'SERIALNUMBER', 'BARCODE'
   ];
-  var WO_KEYS = ['WO', 'WORK ORDER', 'WORKORDER', 'WORK_ORDER', 'JOB'];
-  var SKU_KEYS = [
-    'SKU', 'SKUNO', 'SKU NO', 'SKU_NUMBER', 'MODEL NUMBER', 'MODELNUMBER',
-    'ASSY PART NUMBER', 'ASSYPARTNUMBER', 'PART NUMBER', 'PARTNUMBER'
+  var PARENT_SERIAL_KEYS = [
+    'BOXSN', 'BOX SN', 'PARENT SERIAL NO', 'PARENT SERIAL NUMBER',
+    'PARENTSERIALNO', 'PARENTSERIALNUMBER'
+  ];
+  var WO_KEYS = ['WO', 'WORK ORDER', 'WORKORDER', 'WORK_ORDER', 'WORKORDERNO', 'JOB'];
+
+  var ROW_SKU_KEYS = [
+    'SKU', 'SKUNO', 'SKU NO', 'SKU_NUMBER', 'P_NO', 'P NO',
+    'MODEL NUMBER', 'MODELNUMBER', 'ASSY PART NUMBER', 'ASSYPARTNUMBER',
+    'PART NUMBER', 'PARTNUMBER'
+  ];
+  var DBMODEL_SKU_KEYS = [
+    'MODEL', 'SKU', 'SKUNO', 'SKU NO', 'P_NO', 'P NO',
+    'MODEL NUMBER', 'MODELNUMBER', 'PART NUMBER', 'PARTNUMBER'
   ];
   var FAMILY_KEYS = [
     'MODEL / PRODUCT FAMILY', 'MODEL PRODUCT FAMILY', 'PRODUCT FAMILY',
-    'PRODUCTFAMILY', 'FAMILY', 'CODENAME', 'MODEL NAME', 'MODELNAME', 'MODEL'
+    'PRODCUT FAMILY', 'PRODUCTFAMILY', 'PRODCUTFAMILY', 'FAMILY',
+    'CODENAME', 'MODEL NAME', 'MODELNAME'
+  ];
+  var DBMODEL_FAMILY_KEYS = [
+    'CODENAME', 'PRODUCT FAMILY', 'PRODCUT FAMILY', 'PRODUCTFAMILY',
+    'PRODCUTFAMILY', 'FAMILY', 'MODEL NAME', 'MODELNAME'
   ];
 
   function setExistingAliases(row, aliases, value) {
@@ -65,36 +85,39 @@
     });
   }
 
-  function findFamilyForSku(dbmodel, sku) {
-    var target = norm(sku);
-    if (!target) return '';
-    for (var i = 0; i < dbmodel.length; i++) {
-      var row = dbmodel[i] || {};
-      if (norm(pick(row, SKU_KEYS)) === target) return pick(row, FAMILY_KEYS);
-    }
-    return '';
+  function buildDbModelIndex(dbmodelRows) {
+    var bySku = Object.create(null);
+    (dbmodelRows || []).forEach(function (row) {
+      var sku = norm(pick(row, DBMODEL_SKU_KEYS));
+      var family = pick(row, DBMODEL_FAMILY_KEYS);
+      if (sku && family) bySku[sku] = family;
+    });
+    return bySku;
   }
 
   function buildOwnershipMaps(woRows, sfcRows, dbmodelRows) {
     var byWo = Object.create(null);
     var bySerial = Object.create(null);
+    var parentSerials = Object.create(null);
+    var familyBySku = buildDbModelIndex(dbmodelRows || []);
 
     (woRows || []).forEach(function (row) {
       var wo = norm(pick(row, WO_KEYS));
-      var sku = pick(row, SKU_KEYS);
-      var family = pick(row, FAMILY_KEYS) || findFamilyForSku(dbmodelRows || [], sku);
+      var sku = pick(row, ROW_SKU_KEYS);
+      var family = pick(row, FAMILY_KEYS) || familyBySku[norm(sku)] || '';
       if (wo && sku) byWo[wo] = { sku: sku, family: family, source: 'WO' };
     });
 
     (sfcRows || []).forEach(function (row) {
-      var serial = norm(pick(row, SERIAL_KEYS));
+      var serial = norm(pick(row, BOARD_SERIAL_KEYS));
+      var parentSerial = norm(pick(row, PARENT_SERIAL_KEYS));
       var wo = norm(pick(row, WO_KEYS));
-      var sku = pick(row, SKU_KEYS);
+      var sku = pick(row, ROW_SKU_KEYS);
       var family = pick(row, FAMILY_KEYS);
       var woOwner = wo ? byWo[wo] : null;
 
       if (!sku && woOwner) sku = woOwner.sku;
-      if (!family && sku) family = findFamilyForSku(dbmodelRows || [], sku);
+      if (!family && sku) family = familyBySku[norm(sku)] || '';
       if (!family && woOwner) family = woOwner.family;
 
       if (serial && sku) {
@@ -102,23 +125,35 @@
           sku: sku,
           family: family,
           wo: wo,
-          source: 'SFC'
+          parentSerial: parentSerial,
+          source: 'SFC_SN'
         };
+      }
+
+      if (parentSerial && serial) {
+        if (!parentSerials[parentSerial]) parentSerials[parentSerial] = [];
+        parentSerials[parentSerial].push(serial);
       }
     });
 
-    return { byWo: byWo, bySerial: bySerial };
+    return {
+      byWo: byWo,
+      bySerial: bySerial,
+      parentSerials: parentSerials,
+      familyBySku: familyBySku
+    };
   }
 
   function annotateOwner(row, owner) {
     if (!row || !owner || !owner.sku) return row;
 
-    var originalSku = pick(row, SKU_KEYS);
+    var originalSku = pick(row, ROW_SKU_KEYS);
     var originalFamily = pick(row, FAMILY_KEYS);
 
     row.__smtinelBoardSku = owner.sku;
     row.__smtinelBoardModel = owner.family || '';
-    row.__smtinelModelSource = owner.source || 'SFC';
+    row.__smtinelModelSource = owner.source || 'SFC_SN';
+    if (owner.parentSerial) row.__smtinelParentSerial = owner.parentSerial;
 
     if (originalSku && norm(originalSku) !== norm(owner.sku)) {
       row.__smtinelRelatedSku = originalSku;
@@ -128,12 +163,12 @@
       row.__smtinelRelationshipType = 'RELATED_BOARD';
     }
 
-    setExistingAliases(row, SKU_KEYS, owner.sku);
+    setExistingAliases(row, ROW_SKU_KEYS, owner.sku);
     if (owner.family) setExistingAliases(row, FAMILY_KEYS, owner.family);
 
     row['SMTinel Board SKU'] = owner.sku;
     row['SMTinel Board Model'] = owner.family || '';
-    row['SMTinel Model Source'] = owner.source || 'SFC';
+    row['SMTinel Model Source'] = owner.source || 'SFC_SN';
 
     return row;
   }
@@ -147,14 +182,14 @@
     var maps = buildOwnershipMaps(woRows, sfcRows, dbmodelRows);
 
     sfcRows.forEach(function (row) {
-      var serial = norm(pick(row, SERIAL_KEYS));
+      var serial = norm(pick(row, BOARD_SERIAL_KEYS));
       var wo = norm(pick(row, WO_KEYS));
       var owner = (serial && maps.bySerial[serial]) || (wo && maps.byWo[wo]);
       annotateOwner(row, owner);
     });
 
     repairRows.forEach(function (row) {
-      var serial = norm(pick(row, SERIAL_KEYS));
+      var serial = norm(pick(row, BOARD_SERIAL_KEYS));
       var wo = norm(pick(row, WO_KEYS));
       var owner = (serial && maps.bySerial[serial]) || (wo && maps.byWo[wo]);
       annotateOwner(row, owner);
@@ -189,7 +224,9 @@
       if (result && typeof result === 'object') {
         result.boardModelOwnership = {
           version: FIX_VERSION,
-          rule: 'SERIAL_SFC_SKU_FIRST',
+          rule: 'BOARD_SN_TO_SFC_SKU_THEN_DBMODEL',
+          boardSerialExcludesBoxSn: true,
+          dbModelSchema: 'MODEL_TO_CODENAME',
           relatedBoardsAreContextOnly: true
         };
       }
@@ -216,15 +253,29 @@
     } catch (_) {}
   }
 
-  invalidateOldYieldCacheOnce();
-
-  if (!installBuildWrapper()) {
+  function keepWrapperInstalled() {
+    installBuildWrapper();
     var attempts = 0;
     var timer = setInterval(function () {
       attempts += 1;
-      if (installBuildWrapper() || attempts >= 100) clearInterval(timer);
-    }, 50);
+      installBuildWrapper();
+      if (attempts >= 600) clearInterval(timer);
+    }, 250);
+
+    if (document && document.addEventListener) {
+      document.addEventListener('DOMContentLoaded', installBuildWrapper, { once: true });
+      window.addEventListener('load', installBuildWrapper, { once: true });
+    }
   }
 
+  invalidateOldYieldCacheOnce();
+  keepWrapperInstalled();
+
   window.traceOpsCanonicalizeBoardOwnership = canonicalize;
+  window.traceOpsBoardOwnershipDiagnostics = {
+    version: FIX_VERSION,
+    boardSerialRule: 'SN_FIRST_BOXSN_CONTEXT_ONLY',
+    dbModelSchema: 'MODEL_TO_CODENAME',
+    woSchema: 'WO_P_NO_PRODCUT_FAMILY_SUPPORTED'
+  };
 }());
