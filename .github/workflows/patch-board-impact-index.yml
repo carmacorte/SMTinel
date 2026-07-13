@@ -1,0 +1,25 @@
+name: Patch Board Impact index loader
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-board-impact-index.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inject Board Impact ownership fix loader
+        shell: bash
+        run: |
+          python
