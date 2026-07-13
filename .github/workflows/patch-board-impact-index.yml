@@ -22,4 +22,40 @@ jobs:
       - name: Inject Board Impact ownership fix loader
         shell: bash
         run: |
-          python
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = 'board-impact-model-fix.js?v=board-owner-v2'
+          script = '<script src="./board-impact-model-fix.js?v=board-owner-v2"></script>'
+
+          if marker in text:
+              print('Board Impact loader already present.')
+          else:
+              closing = text.rfind('</body>')
+              if closing < 0:
+                  raise SystemExit('index.html does not contain a closing </body> tag')
+              text = text[:closing] + script + '\n' + text[closing:]
+              path.write_text(text, encoding='utf-8')
+              print('Board Impact loader injected into index.html.')
+          PY
+
+      - name: Validate injection
+        shell: bash
+        run: |
+          grep -Fq 'board-impact-model-fix.js?v=board-owner-v2' index.html
+          test -s board-impact-model-fix.js
+
+      - name: Commit updated index
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'index.html already contains the loader; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'fix(index): load Board Impact ownership correction'
+          git push origin HEAD:main
