@@ -1,4 +1,4 @@
-name: Patch Board Impact index loader
+name: Patch Board Impact index loader and exports
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Inject Board Impact ownership fix loader
+      - name: Patch Board Impact runtime
         shell: bash
         run: |
           python3 - <<'PY'
@@ -27,35 +27,74 @@ jobs:
 
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
-          marker = 'board-impact-model-fix.js?v=board-owner-v2'
-          script = '<script src="./board-impact-model-fix.js?v=board-owner-v2"></script>'
+          original = text
 
-          if marker in text:
-              print('Board Impact loader already present.')
-          else:
+          # Keep the ownership correction loaded by the deployed entry point.
+          loader_marker = 'board-impact-model-fix.js?v=board-owner-v2'
+          loader_script = '<script src="./board-impact-model-fix.js?v=board-owner-v2"></script>'
+          if loader_marker not in text:
               closing = text.rfind('</body>')
               if closing < 0:
                   raise SystemExit('index.html does not contain a closing </body> tag')
-              text = text[:closing] + script + '\n' + text[closing:]
+              text = text[:closing] + loader_script + '\n' + text[closing:]
+              print('Board Impact ownership loader injected.')
+
+          # Legacy v76/v77/v80/v84 exporters repeatedly replace the React export
+          # center with innerHTML. Preserve the native React XLSX buttons instead.
+          inline_old = "var center=document.getElementById('board-impact-export-center'); if(!center){"
+          inline_new = "var center=document.getElementById('board-impact-export-center'); if(center && /Export Issue Tracker XLSX/i.test(center.textContent||'')) return; if(!center){"
+          multiline_old = "var center=document.getElementById('board-impact-export-center');\n    if(!center){"
+          multiline_new = "var center=document.getElementById('board-impact-export-center');\n    if(center && /Export Issue Tracker XLSX/i.test(center.textContent||'')) return;\n    if(!center){"
+
+          inline_before = text.count(inline_old)
+          multiline_before = text.count(multiline_old)
+          text = text.replace(inline_old, inline_new)
+          text = text.replace(multiline_old, multiline_new)
+          print(f'Protected legacy export centers: {inline_before + multiline_before}')
+
+          # The v94 document capture listener also catches the native React XLSX
+          # buttons and stops propagation. Let native XLSX buttons reach React;
+          # keep v94 handling only for legacy data-attribute buttons.
+          bind_old = "var inExportCenter=!!(b.closest&&b.closest('#board-impact-export-center,.traceops-board-export-center')); var isI=b.hasAttribute('data-board-export-issue')||(inExportCenter&&/EXPORT ISSUE TRACKER/.test(t));"
+          bind_new = "var inExportCenter=!!(b.closest&&b.closest('#board-impact-export-center,.traceops-board-export-center')); if(inExportCenter && /XLSX$/.test(t) && !b.hasAttribute('data-board-export-issue') && !b.hasAttribute('data-board-export-action')) return; var isI=b.hasAttribute('data-board-export-issue')||(inExportCenter&&/EXPORT ISSUE TRACKER/.test(t));"
+          if bind_old in text:
+              text = text.replace(bind_old, bind_new, 1)
+              print('v94 capture listener now passes native XLSX buttons to React.')
+          elif bind_new not in text:
+              raise SystemExit('Could not find the v94 Board Impact export listener')
+
+          marker = '<!-- SMTinel Board Impact Native XLSX Export Fix v95 -->'
+          if marker not in text:
+              closing = text.rfind('</body>')
+              if closing < 0:
+                  raise SystemExit('index.html does not contain a closing </body> tag')
+              text = text[:closing] + marker + '\n' + text[closing:]
+
+          if text != original:
               path.write_text(text, encoding='utf-8')
-              print('Board Impact loader injected into index.html.')
+              print('index.html updated.')
+          else:
+              print('index.html already contains all Board Impact patches.')
           PY
 
-      - name: Validate injection
+      - name: Validate Board Impact runtime patch
         shell: bash
         run: |
           grep -Fq 'board-impact-model-fix.js?v=board-owner-v2' index.html
+          grep -Fq 'SMTinel Board Impact Native XLSX Export Fix v95' index.html
+          grep -Fq "if(inExportCenter && /XLSX$/.test(t)" index.html
+          test "$(grep -Fc "Export Issue Tracker XLSX/i.test(center.textContent" index.html)" -ge 4
           test -s board-impact-model-fix.js
 
       - name: Commit updated index
         shell: bash
         run: |
           if git diff --quiet -- index.html; then
-            echo 'index.html already contains the loader; nothing to commit.'
+            echo 'index.html already contains the runtime patches; nothing to commit.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'fix(index): load Board Impact ownership correction'
+          git commit -m 'fix(index): restore native Board Impact XLSX exports'
           git push origin HEAD:main
