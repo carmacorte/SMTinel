@@ -6,6 +6,7 @@ on:
       - main
       - agent/product-improvement-export
       - agent/product-improvement-visible-module
+      - agent/product-improvement-menu-v3
     paths:
       - '.github/workflows/patch-product-improvement-export.yml'
       - 'product-improvement-export.js'
@@ -41,14 +42,15 @@ jobs:
           <script src="./product-improvement-context-adapter.js?v=1"></script>
           <script src="./product-improvement-export.js?v=1"></script>
           '''
-          module_marker = '<!-- SMTinel Product Improvement Module Entry v2 -->'
-          module_block = '''<!-- SMTinel Product Improvement Module Entry v2 -->
-          <script src="./product-improvement-module-entry.js?v=2"></script>
+          module_marker = '<!-- SMTinel Product Improvement Module Entry v3 -->'
+          module_block = '''<!-- SMTinel Product Improvement Module Entry v3 -->
+          <script src="./product-improvement-module-entry.js?v=3"></script>
           '''
 
-          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->\n          <script src="./product-improvement-module-entry.js?v=1"></script>\n', '')
-          text = text.replace('<script src="./product-improvement-module-entry.js?v=1"></script>', '<script src="./product-improvement-module-entry.js?v=2"></script>')
-          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->', '<!-- SMTinel Product Improvement Module Entry v2 -->')
+          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->', '')
+          text = text.replace('<!-- SMTinel Product Improvement Module Entry v2 -->', '')
+          text = text.replace('<script src="./product-improvement-module-entry.js?v=1"></script>', '')
+          text = text.replace('<script src="./product-improvement-module-entry.js?v=2"></script>', '')
 
           closing = text.rfind('</body>')
           if closing < 0:
@@ -76,8 +78,8 @@ jobs:
           grep -Fq 'SMTinel Product Improvement Export v1' index.html
           grep -Fq 'product-improvement-context-adapter.js?v=1' index.html
           grep -Fq 'product-improvement-export.js?v=1' index.html
-          grep -Fq 'SMTinel Product Improvement Module Entry v2' index.html
-          grep -Fq 'product-improvement-module-entry.js?v=2' index.html
+          grep -Fq 'SMTinel Product Improvement Module Entry v3' index.html
+          grep -Fq 'product-improvement-module-entry.js?v=3' index.html
           test -s product-improvement-context-adapter.js
           test -s product-improvement-export.js
           test -s product-improvement-module-entry.js
@@ -93,5 +95,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'hotfix(index): load Product Improvement module v2'
+          git commit -m 'hotfix(index): load Product Improvement module v3'
           git push origin HEAD:${GITHUB_REF_NAME}
