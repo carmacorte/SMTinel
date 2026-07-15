@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-      - agent/product-improvement-export
-      - agent/product-improvement-visible-module
-      - agent/product-improvement-menu-v3
+      - agent/product-improvement-inline-v4
     paths:
       - '.github/workflows/patch-product-improvement-export.yml'
       - 'product-improvement-export.js'
@@ -27,63 +25,87 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
 
-      - name: Inject Product Improvement scripts
+      - name: Validate source scripts
+        shell: bash
+        run: |
+          test -s product-improvement-context-adapter.js
+          test -s product-improvement-export.js
+          test -s product-improvement-module-entry.js
+          node --check product-improvement-context-adapter.js
+          node --check product-improvement-export.js
+          node --check product-improvement-module-entry.js
+
+      - name: Inline Product Improvement scripts into index
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          path = Path('index.html')
-          text = path.read_text(encoding='utf-8')
+          index_path = Path('index.html')
+          text = index_path.read_text(encoding='utf-8')
           original = text
 
-          export_marker = '<!-- SMTinel Product Improvement Export v1 -->'
-          export_block = '''<!-- SMTinel Product Improvement Export v1 -->
-          <script src="./product-improvement-context-adapter.js?v=1"></script>
-          <script src="./product-improvement-export.js?v=1"></script>
-          '''
-          module_marker = '<!-- SMTinel Product Improvement Module Entry v3 -->'
-          module_block = '''<!-- SMTinel Product Improvement Module Entry v3 -->
-          <script src="./product-improvement-module-entry.js?v=3"></script>
-          '''
+          sources = [
+              ('context', Path('product-improvement-context-adapter.js')),
+              ('export', Path('product-improvement-export.js')),
+              ('module', Path('product-improvement-module-entry.js')),
+          ]
 
-          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->', '')
-          text = text.replace('<!-- SMTinel Product Improvement Module Entry v2 -->', '')
-          text = text.replace('<script src="./product-improvement-module-entry.js?v=1"></script>', '')
-          text = text.replace('<script src="./product-improvement-module-entry.js?v=2"></script>', '')
+          # Remove every previous Product Improvement loader, whether external or inline.
+          text = re.sub(
+              r'\s*<!-- SMTinel Product Improvement (?:Export|Module Entry|Inline Bundle)[^>]*-->\s*',
+              '\n',
+              text,
+              flags=re.I,
+          )
+          text = re.sub(
+              r'\s*<script[^>]+src=["\']\.\/product-improvement-(?:context-adapter|export|module-entry)\.js(?:\?v=\d+)?["\'][^>]*>\s*</script>\s*',
+              '\n',
+              text,
+              flags=re.I,
+          )
+          text = re.sub(
+              r'\s*<script\s+data-smtinel-product-improvement=["\'][^"\']+["\'][^>]*>.*?</script>\s*',
+              '\n',
+              text,
+              flags=re.I | re.S,
+          )
+
+          blocks = ['<!-- SMTinel Product Improvement Inline Bundle v4 -->']
+          for name, path in sources:
+              js = path.read_text(encoding='utf-8').strip()
+              if '</script' in js.lower():
+                  raise SystemExit(f'{path} contains a closing script tag')
+              blocks.append(
+                  f'<script data-smtinel-product-improvement="{name}-v4">\n{js}\n</script>'
+              )
+          bundle = '\n'.join(blocks) + '\n'
 
           closing = text.rfind('</body>')
           if closing < 0:
               raise SystemExit('index.html does not contain </body>')
-
-          blocks = []
-          if export_marker not in text:
-              blocks.append(export_block)
-          if module_marker not in text:
-              blocks.append(module_block)
-
-          if blocks:
-              text = text[:closing] + ''.join(blocks) + '\n' + text[closing:]
+          text = text[:closing] + bundle + text[closing:]
 
           if text != original:
-              path.write_text(text, encoding='utf-8')
-              print('Product Improvement scripts refreshed in index.html.')
+              index_path.write_text(text, encoding='utf-8')
+              print('Product Improvement v4 inlined into index.html.')
           else:
-              print('Product Improvement loaders already current.')
+              print('index.html already current.')
           PY
 
-      - name: Validate integration
+      - name: Validate standalone integration
         shell: bash
         run: |
-          grep -Fq 'SMTinel Product Improvement Export v1' index.html
-          grep -Fq 'product-improvement-context-adapter.js?v=1' index.html
-          grep -Fq 'product-improvement-export.js?v=1' index.html
-          grep -Fq 'SMTinel Product Improvement Module Entry v3' index.html
-          grep -Fq 'product-improvement-module-entry.js?v=3' index.html
-          test -s product-improvement-context-adapter.js
-          test -s product-improvement-export.js
-          test -s product-improvement-module-entry.js
-          node --check product-improvement-module-entry.js
+          grep -Fq 'SMTinel Product Improvement Inline Bundle v4' index.html
+          grep -Fq 'data-smtinel-product-improvement="context-v4"' index.html
+          grep -Fq 'data-smtinel-product-improvement="export-v4"' index.html
+          grep -Fq 'data-smtinel-product-improvement="module-v4"' index.html
+          grep -Fq "Product Improvement" index.html
+          if grep -Eq 'src=["'"']\./product-improvement-(context-adapter|export|module-entry)\.js' index.html; then
+            echo 'External Product Improvement loader still present.'
+            exit 1
+          fi
 
       - name: Commit generated index
         shell: bash
@@ -95,5 +117,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'hotfix(index): load Product Improvement module v3'
+          git commit -m 'fix(index): inline Product Improvement module for standalone use'
           git push origin HEAD:${GITHUB_REF_NAME}
