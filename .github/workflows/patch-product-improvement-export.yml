@@ -1,0 +1,75 @@
+name: Patch Product Improvement export
+
+on:
+  push:
+    branches:
+      - main
+      - agent/product-improvement-export
+    paths:
+      - '.github/workflows/patch-product-improvement-export.yml'
+      - 'product-improvement-export.js'
+      - 'product-improvement-context-adapter.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Inject Product Improvement scripts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          original = text
+          marker = '<!-- SMTinel Product Improvement Export v1 -->'
+          block = '''<!-- SMTinel Product Improvement Export v1 -->
+          <script src="./product-improvement-context-adapter.js?v=1"></script>
+          <script src="./product-improvement-export.js?v=1"></script>
+          '''
+
+          if marker not in text:
+              closing = text.rfind('</body>')
+              if closing < 0:
+                  raise SystemExit('index.html does not contain </body>')
+              text = text[:closing] + block + '\n' + text[closing:]
+          else:
+              print('Product Improvement loader already present.')
+
+          if text != original:
+              path.write_text(text, encoding='utf-8')
+              print('Product Improvement export injected into index.html.')
+          PY
+
+      - name: Validate integration
+        shell: bash
+        run: |
+          grep -Fq 'SMTinel Product Improvement Export v1' index.html
+          grep -Fq 'product-improvement-context-adapter.js?v=1' index.html
+          grep -Fq 'product-improvement-export.js?v=1' index.html
+          test -s product-improvement-context-adapter.js
+          test -s product-improvement-export.js
+
+      - name: Commit generated index
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'No index update required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat(index): load Product Improvement XLSX export'
+          git push origin HEAD:${GITHUB_REF_NAME}
