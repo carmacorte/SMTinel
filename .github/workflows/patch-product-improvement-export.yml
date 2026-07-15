@@ -29,15 +29,15 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           o = s
-          s = re.sub(r'product-improvement-module-entry\.js\?v=\d+', 'product-improvement-module-entry.js?v=6', s)
-          if 'product-improvement-module-entry.js?v=6' not in s:
+          s = re.sub(r'product-improvement-module-entry\.js\?v=\d+', 'product-improvement-module-entry.js?v=7', s)
+          if 'product-improvement-module-entry.js?v=7' not in s:
               closing = s.rfind('</body>')
               if closing < 0:
                   raise SystemExit('missing </body>')
-              s = s[:closing] + '<script src="./product-improvement-module-entry.js?v=6"></script>\n' + s[closing:]
+              s = s[:closing] + '<script src="./product-improvement-module-entry.js?v=7"></script>\n' + s[closing:]
           if s != o:
               p.write_text(s, encoding='utf-8')
-              print('index.html now loads Product Improvement module v6')
+              print('index.html now loads Product Improvement module v7')
           else:
               print('index.html already current')
           PY
@@ -51,5 +51,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'fix(index): load Product Improvement module v6'
+          git commit -m 'fix(index): load Product Improvement module v7'
           git push origin HEAD:${GITHUB_REF_NAME}
