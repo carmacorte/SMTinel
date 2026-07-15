@@ -41,10 +41,14 @@ jobs:
           <script src="./product-improvement-context-adapter.js?v=1"></script>
           <script src="./product-improvement-export.js?v=1"></script>
           '''
-          module_marker = '<!-- SMTinel Product Improvement Module Entry v1 -->'
-          module_block = '''<!-- SMTinel Product Improvement Module Entry v1 -->
-          <script src="./product-improvement-module-entry.js?v=1"></script>
+          module_marker = '<!-- SMTinel Product Improvement Module Entry v2 -->'
+          module_block = '''<!-- SMTinel Product Improvement Module Entry v2 -->
+          <script src="./product-improvement-module-entry.js?v=2"></script>
           '''
+
+          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->\n          <script src="./product-improvement-module-entry.js?v=1"></script>\n', '')
+          text = text.replace('<script src="./product-improvement-module-entry.js?v=1"></script>', '<script src="./product-improvement-module-entry.js?v=2"></script>')
+          text = text.replace('<!-- SMTinel Product Improvement Module Entry v1 -->', '<!-- SMTinel Product Improvement Module Entry v2 -->')
 
           closing = text.rfind('</body>')
           if closing < 0:
@@ -58,12 +62,12 @@ jobs:
 
           if blocks:
               text = text[:closing] + ''.join(blocks) + '\n' + text[closing:]
-          else:
-              print('Product Improvement loaders already present.')
 
           if text != original:
               path.write_text(text, encoding='utf-8')
-              print('Product Improvement scripts injected into index.html.')
+              print('Product Improvement scripts refreshed in index.html.')
+          else:
+              print('Product Improvement loaders already current.')
           PY
 
       - name: Validate integration
@@ -72,11 +76,12 @@ jobs:
           grep -Fq 'SMTinel Product Improvement Export v1' index.html
           grep -Fq 'product-improvement-context-adapter.js?v=1' index.html
           grep -Fq 'product-improvement-export.js?v=1' index.html
-          grep -Fq 'SMTinel Product Improvement Module Entry v1' index.html
-          grep -Fq 'product-improvement-module-entry.js?v=1' index.html
+          grep -Fq 'SMTinel Product Improvement Module Entry v2' index.html
+          grep -Fq 'product-improvement-module-entry.js?v=2' index.html
           test -s product-improvement-context-adapter.js
           test -s product-improvement-export.js
           test -s product-improvement-module-entry.js
+          node --check product-improvement-module-entry.js
 
       - name: Commit generated index
         shell: bash
@@ -88,5 +93,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'feat(index): show Product Improvement module entry'
+          git commit -m 'hotfix(index): load Product Improvement module v2'
           git push origin HEAD:${GITHUB_REF_NAME}
