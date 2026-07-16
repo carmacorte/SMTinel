@@ -13358,6 +13358,15 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         filteredSnToSfcForStationBreakdown[sn] = sfc;
     });
     var stationSequenceBreakdown = traceOpsYieldBuildStationSequenceBreakdown(filteredSnToSfcForStationBreakdown, ftRows, { restrictToSfc: true });
+    try {
+        window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC = filteredSnToSfcForStationBreakdown;
+        window.TRACEOPS_YIELD_ACTIVE_FT_ROWS = ftRows;
+        window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN = stationSequenceBreakdown;
+        window.TRACEOPS_YIELD_ACTIVE_FILTERS = Object.assign({}, filters || {});
+        window.dispatchEvent(new CustomEvent('smtinel:yieldflow-breakdown-ready', {
+            detail: { totalUnits: Number(stationSequenceBreakdown && stationSequenceBreakdown.totalUnits || 0) }
+        }));
+    } catch (_) {}
     var cesiumCurrentBreakdown = traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown(filteredSnToSfcForStationBreakdown, TRACEOPS_YIELD_FT_ROWS || ftRows || []);
     var bgaUnits = riskRows.filter(function (x) { return /BGA|REBALL|U8300|ASIC|CPU|FPGA|UNDERFILL/i.test([x.symptom, x.location, x.family, x.sku].join(' ')); }).reduce(function (a, b) { return a + Number(b.risk || 0); }, 0);
     var stockinUnits = trackerRows.reduce(function (a, t) { return a + Number((t.completedByStation && t.completedByStation.STOCKIN) || 0); }, 0);
@@ -35015,6 +35024,138 @@ body:has(#recovery-section) .main-content.expanded{
         );
     }
 
+    // SMTinel Bonepile native React integration v2 self-contained
+    // SMTinel Bonepile data bridge v2: uses the exact active Yield Flow breakdown.
+    function traceOpsBonepileNormWo(value) {
+        var v = String(value == null ? '' : value).trim().toUpperCase().replace(/\s+/g, '');
+        if (/\.0+$/.test(v)) v = v.replace(/\.0+$/, '');
+        if (/^\d{6,12}$/.test(v)) return v.padStart(12, '0');
+        return v;
+    }
+    function traceOpsBonepileNormLine(value) {
+        var v = String(value == null ? '' : value).trim().toUpperCase();
+        if (!v) return 'UNASSIGNED';
+        var m = v.match(/(?:LINE|L)?\s*#?\s*0*(\d{1,2})(?:\b|$)/);
+        return m ? ('L' + String(Number(m[1]))) : v;
+    }
+    function traceOpsBonepilePick(obj, keys) {
+        obj = obj || {};
+        for (var i = 0; i < keys.length; i++) {
+            var value = obj[keys[i]];
+            if (value != null && String(value).trim() !== '') return value;
+        }
+        return '';
+    }
+    function traceOpsBonepileBuildWoLineMap() {
+        var map = Object.create(null);
+        var sources = [];
+        try { if (Array.isArray(window.TRACEOPS_YIELD_BY_WO_ROWS)) sources = sources.concat(window.TRACEOPS_YIELD_BY_WO_ROWS); } catch (_) {}
+        try {
+            var snap = window.traceOpsYieldCacheSnapshot && window.traceOpsYieldCacheSnapshot();
+            if (snap) ['byWoRows','stationOnLineRows','workOrders','wo','sfcWorkOrders'].forEach(function(k) {
+                if (Array.isArray(snap[k])) sources = sources.concat(snap[k]);
+            });
+        } catch (_) {}
+        sources.forEach(function(row) {
+            row = row || {};
+            var wo = traceOpsBonepileNormWo(traceOpsBonepilePick(row, ['wo','workOrder','workorder','workorderno','work_order','WO','Work Order','Work Orde 00000']));
+            var line = traceOpsBonepilePick(row, ['line','Line','LINE','productionLine','production_line','smtLine','SMT Line']);
+            if (wo && line) map[wo] = traceOpsBonepileNormLine(line);
+        });
+        return map;
+    }
+    function traceOpsBonepileBuildPayload() {
+        var target = ['SMTLOADING','AOI2','AOI4'];
+        var activeSfc = window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC || window.TRACEOPS_YIELD_SN_TO_SFC || {};
+        var activeFt = window.TRACEOPS_YIELD_ACTIVE_FT_ROWS || window.TRACEOPS_YIELD_FT_ROWS || [];
+        var breakdown = window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN;
+        if (!breakdown && typeof window.traceOpsYieldBuildStationSequenceBreakdown === 'function') {
+            breakdown = window.traceOpsYieldBuildStationSequenceBreakdown(activeSfc, activeFt, { restrictToSfc: true });
+        }
+        breakdown = breakdown || { rows: [], allRows: [], totalUnits: 0 };
+        var stationRows = breakdown.allRows || breakdown.rows || [];
+        var woLine = traceOpsBonepileBuildWoLineMap();
+        var lineBySn = window.TRACEOPS_YIELD_LINE_BY_SN || {};
+        var rows = [];
+        var totals = { SMTLOADING: 0, AOI2: 0, AOI4: 0 };
+
+        stationRows.forEach(function(st) {
+            var station = String(st && st.station || '').trim().toUpperCase();
+            if (target.indexOf(station) < 0) return;
+            totals[station] = Number(st.qty || 0);
+            (st.serials || []).forEach(function(serialRow) {
+                serialRow = serialRow || {};
+                var sn = String(serialRow.sn || '').trim();
+                var sfc = activeSfc[sn] || activeSfc[String(sn).toUpperCase()] || {};
+                var directSnLine = lineBySn[sn] || lineBySn[String(sn).toUpperCase()] || '';
+                if (directSnLine && typeof directSnLine === 'object') directSnLine = directSnLine.line || directSnLine.Line || '';
+                var wo = String(serialRow.wo || sfc.wo || '').trim();
+                var line = traceOpsBonepileNormLine(serialRow.line || sfc.line || directSnLine || woLine[traceOpsBonepileNormWo(wo)] || '');
+                rows.push({
+                    sn: sn,
+                    wo: wo,
+                    sku: String(serialRow.sku || sfc.sku || '').trim(),
+                    line: line,
+                    station: station,
+                    location: line + '|' + station,
+                    ageBucket: String(serialRow.ageBucket || 'age0_30'),
+                    repair: !!serialRow.hasRepair,
+                    buildStart: String(serialRow.buildStartDate || sfc.buildStartDate || sfc.startSmt || ''),
+                    family: String(serialRow.family || sfc.family || ''),
+                    bu: String(serialRow.bu || sfc.bu || '')
+                });
+            });
+        });
+        return {
+            rows: rows,
+            totals: totals,
+            totalUnits: Number(breakdown.totalUnits || 0),
+            activeFilters: window.TRACEOPS_YIELD_ACTIVE_FILTERS || {},
+            generatedAt: new Date().toISOString(),
+            source: window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN ? 'ACTIVE_YIELD_FLOW_BREAKDOWN' : 'GLOBAL_YIELD_FLOW_BREAKDOWN'
+        };
+    }
+    if (!window.__SMTINEL_BONEPILE_BRIDGE_V2__) {
+        window.__SMTINEL_BONEPILE_BRIDGE_V2__ = true;
+        window.addEventListener('message', function(event) {
+            var data = event && event.data;
+            if (!data || data.type !== 'smtinel:bonepile:request') return;
+            try {
+                event.source.postMessage({
+                    type: 'smtinel:bonepile:data',
+                    requestId: data.requestId || '',
+                    payload: traceOpsBonepileBuildPayload()
+                }, '*');
+            } catch (error) {
+                try {
+                    event.source.postMessage({
+                        type: 'smtinel:bonepile:error',
+                        requestId: data.requestId || '',
+                        message: String(error && error.message || error)
+                    }, '*');
+                } catch (_) {}
+            }
+        });
+        window.addEventListener('smtinel:yieldflow-breakdown-ready', function() {
+            var frames = document.querySelectorAll('iframe[title="SMTinel Bonepile Visual Tracker"]');
+            Array.prototype.forEach.call(frames, function(frame) {
+                try { frame.contentWindow.postMessage({ type: 'smtinel:bonepile:parent-ready' }, '*'); } catch (_) {}
+            });
+        });
+    }
+
+    var SMTINEL_BONEPILE_SRCDOC = "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>SMTinel Bonepile Visual Tracker</title>\n<style>\n:root{--navy:#102a43;--blue:#2f6fb3;--line:#d9e6f7;--bg:#f5f7fa;--card:#fff;--muted:#627d98;--good:#1a7a3c;--warn:#b87820;--bad:#c0392b;--violet:#6b2da8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--navy)}.wrap{padding:18px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.head h1{margin:0;font-size:24px}.head p{margin:6px 0 0;color:var(--muted)}button,select,input{font:inherit}.btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer}.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}.kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}.kpi small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}.kpi strong{display:block;font-size:26px;margin-top:5px}.recon{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px;color:var(--muted);font-size:12px;min-height:38px;align-items:center}.recon b{color:var(--navy)}.ok{color:var(--good)!important}.warn{color:var(--warn)!important}.bad{color:var(--bad)!important}.layout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.line{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px}.line h3{margin:0 0 10px;font-size:15px}.stations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.station{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fbff;cursor:pointer;text-align:left;min-width:0}.station.active{outline:3px solid rgba(47,111,179,.25);border-color:var(--blue)}.station b{display:block;font-size:19px;margin:3px 0}.station span{display:block;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}.tools{display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);padding:12px;border-radius:16px;margin-bottom:12px}.tools input,.tools select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}.tablebox{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:520px}table{border-collapse:collapse;width:100%;font-size:12px}th{position:sticky;top:0;background:#eef5ff;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf2f7;white-space:nowrap}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-weight:800;font-size:10px}.repair{background:#fdf0ee;color:var(--bad)}.clean{background:#eaf7ef;color:var(--good)}.empty{padding:30px;text-align:center;color:var(--muted)}@media(max-width:1050px){.layout{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.layout,.kpis,.tools{grid-template-columns:1fr}.stations{grid-template-columns:1fr}.wrap{padding:10px}}\n</style>\n</head>\n<body>\n<div class=\"wrap\">\n  <div class=\"head\"><div><h1>Bonepile Visual Tracker</h1><p>Exact Yield Flow population for SMTLOADING, AOI2 and AOI4, separated by production line.</p></div><button class=\"btn\" id=\"refresh\">Refresh</button></div>\n  <div class=\"kpis\" id=\"kpis\"></div>\n  <div class=\"recon\" id=\"recon\"><span>Waiting for Yield Flow data…</span></div>\n  <div class=\"layout\" id=\"layout\"></div>\n  <div class=\"tools\">\n    <input id=\"q\" placeholder=\"Search SN, WO or SKU\">\n    <select id=\"line\"><option value=\"ALL\">All lines</option></select>\n    <select id=\"station\"><option value=\"ALL\">All stations</option></select>\n    <select id=\"age\"><option value=\"ALL\">All aging</option><option value=\"age0_30\">0-30D</option><option value=\"age31_60\">31-60D</option><option value=\"age61_90\">61-90D</option><option value=\"age91_365\">91-365D</option><option value=\"ageOver365\">&gt;1Y</option></select>\n    <select id=\"repair\"><option value=\"ALL\">Clean + Repair</option><option value=\"YES\">Repair</option><option value=\"NO\">Clean</option></select>\n    <button class=\"btn\" id=\"export\">Export TSV</button>\n  </div>\n  <div class=\"tablebox\"><table><thead><tr><th>SN</th><th>WO</th><th>SKU</th><th>Line</th><th>Current station</th><th>Location</th><th>Aging bucket</th><th>Repair</th><th>Build start</th></tr></thead><tbody id=\"tbody\"><tr><td colspan=\"9\" class=\"empty\">Waiting for Yield Flow data…</td></tr></tbody></table></div>\n</div>\n<script>\n(function(){\n'use strict';\nvar rows=[],filtered=[],selected='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},source='';\nvar TARGET=['SMTLOADING','AOI2','AOI4'];\nvar requestCounter=0,lastResponse=0;\nfunction esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]})}\nfunction requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow…</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}setTimeout(function(){if(Date.now()-lastResponse>2500)document.getElementById('recon').innerHTML='<span class=\"warn\"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}\nfunction showError(message){document.getElementById('recon').innerHTML='<span class=\"bad\"><b>Bonepile data error:</b> '+esc(message)+'</span>'}\nfunction apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){return(!q||(r.sn+' '+r.wo+' '+r.sku).toUpperCase().indexOf(q)>=0)&&(ln==='ALL'||r.line===ln)&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderLayout();renderRecon()}\nfunction count(st,ln){return rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}).length}\nfunction renderKpis(){var unassigned=rows.filter(function(r){return r.line==='UNASSIGNED'}).length;document.getElementById('kpis').innerHTML=[['In-scope WIP',rows.length],['SMTLOADING',count('SMTLOADING')],['AOI2',count('AOI2')],['AOI4',count('AOI4')],['Without line',unassigned]].map(function(x){return'<div class=\"kpi\"><small>'+x[0]+'</small><strong>'+Number(x[1]||0).toLocaleString()+'</strong></div>'}).join('')}\nfunction renderRecon(){var parts=TARGET.map(function(st){var located=count(st),expected=Number(stationTotals[st]||0),ok=located===expected;return'<span><b>'+st+':</b> <b class=\"'+(ok?'ok':'warn')+'\">'+located.toLocaleString()+' / '+expected.toLocaleString()+'</b></span>'});document.getElementById('recon').innerHTML='<span><b>Breakdown reconciliation</b></span>'+parts.join('<span>·</span>')+'<span>Source: '+esc(source||'N/D')+'</span>'}\nfunction renderLayout(){var lines=['L12','L13','L14','L15','L16','L17','L18'];document.getElementById('layout').innerHTML=lines.map(function(ln){var cards=TARGET.map(function(st){var n=count(st,ln),key=ln+'|'+st;return'<button class=\"station '+(selected===key?'active':'')+'\" data-key=\"'+key+'\"><span>'+st+'</span><b>'+n.toLocaleString()+'</b><span>serials</span></button>'}).join('');return'<div class=\"line\"><h3>SMT LINE '+ln.slice(1)+'</h3><div class=\"stations\">'+cards+'</div></div>'}).join('');[].slice.call(document.querySelectorAll('[data-key]')).forEach(function(b){b.onclick=function(){var x=this.getAttribute('data-key').split('|');selected=this.getAttribute('data-key');document.getElementById('line').value=x[0];document.getElementById('station').value=x[1];apply()}})}\nfunction renderTable(){var tb=document.getElementById('tbody');if(!filtered.length){tb.innerHTML='<tr><td colspan=\"9\" class=\"empty\">No serials match the current filters.</td></tr>';return}tb.innerHTML=filtered.slice(0,5000).map(function(r){return'<tr><td><b>'+esc(r.sn)+'</b></td><td>'+esc(r.wo)+'</td><td>'+esc(r.sku)+'</td><td>'+esc(r.line)+'</td><td>'+esc(r.station)+'</td><td>'+esc(r.location)+'</td><td>'+esc(String(r.ageBucket||'').replace('age','').replace('_','-').replace('Over365','>365D'))+'</td><td><span class=\"tag '+(r.repair?'repair':'clean')+'\">'+(r.repair?'REPAIR':'CLEAN')+'</span></td><td>'+esc(r.buildStart)+'</td></tr>'}).join('')}\nfunction options(){var lines=Array.from(new Set(rows.map(function(r){return r.line}))).sort();document.getElementById('line').innerHTML='<option value=\"ALL\">All lines</option>'+lines.map(function(x){return'<option>'+esc(x)+'</option>'}).join('');document.getElementById('station').innerHTML='<option value=\"ALL\">All stations</option>'+TARGET.map(function(x){return'<option>'+x+'</option>'}).join('')}\nfunction receive(payload){payload=payload||{};rows=Array.isArray(payload.rows)?payload.rows:[];stationTotals=payload.totals||{SMTLOADING:0,AOI2:0,AOI4:0};source=payload.source||'';lastResponse=Date.now();options();apply()}\nfunction exportTsv(){var h=['SN','WO','SKU','Line','CurrentStation','Location','AgingBucket','Repair','BuildStartDate'],body=[h.join('\\t')].concat(filtered.map(function(r){return[r.sn,r.wo,r.sku,r.line,r.station,r.location,r.ageBucket,r.repair?'YES':'NO',r.buildStart].join('\\t')})).join('\\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/tab-separated-values'}));a.download='SMTinel_Bonepile_SMT_Stations_'+new Date().toISOString().slice(0,10)+'.tsv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}\nwindow.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});\n['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';apply()})});document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;\nrenderKpis();renderLayout();requestData();setInterval(function(){if(document.visibilityState==='visible')requestData()},15000)\n})();\n<\/script>\n</body></html>";
+
+    function renderBonepileSection() {
+        return React.createElement("section", { id: "bonepile-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
+            React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },
+                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Bonepile Visual Tracker"),
+                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "Interactive WIP and bonepile location map"),
+                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Uses the exact Yield Flow station breakdown population and splits SMTLOADING, AOI2 and AOI4 by production line.")),
+            React.createElement("iframe", { title: "SMTinel Bonepile Visual Tracker", srcDoc: SMTINEL_BONEPILE_SRCDOC, style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F2" } })
+        );
+    }
+
     var moduleNavItems = [
         {
             key: "sentinelux",
@@ -35055,6 +35196,14 @@ body:has(#recovery-section) .main-content.expanded{
             count: yieldFlowModel.kpi.orders,
             anchorId: "yieldflow-section",
             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
+        },
+        {
+            key: "bonepile",
+            label: "Bonepile Visual Tracker",
+            shortLabel: "Interactive WIP map by line, station, aging and repair",
+            count: "WIP",
+            anchorId: "bonepile-section",
+            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
         },
         {
             key: "scheduling",
@@ -37066,6 +37215,7 @@ body:has(#recovery-section) .main-content.expanded{
                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
                         activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
+                        activeModule === "bonepile" && renderBonepileSection(),
                         activeModule === "scheduling" && renderSchedulingOptimizerSection(),
                         activeModule === "planagent" && renderPlanAgentSection(),
                         activeModule === "yieldweek" && renderYieldByWeekSection(),
@@ -37116,7 +37266,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, rccaList.filter(function (r) { if (!rccaFilter)
                                     return true; var q = rccaFilter.toLowerCase(); return (r.modelo || "").toLowerCase().indexOf(q) >= 0 || (r.linea || "").toLowerCase().indexOf(q) >= 0 || (r.problema || "").toLowerCase().indexOf(q) >= 0 || (r.rcca_id || "").toLowerCase().indexOf(q) >= 0; }).map(function (r) { return React.createElement(RccaCard, { key: r.rcca_id, r: r, score: 0 }); })))))),
                         activeModule === "8d" && renderEightdAnalyzerSection(),
-                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
+                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Bitacora de eventos (",
@@ -37210,15 +37360,15 @@ body:has(#recovery-section) .main-content.expanded{
                                         React.createElement(RccaCell, { evId: e.id, modelo: e.modelo, linea: e.linea_estacion, fecha: e.fecha, problema: e.evento_detectado })),
                                     imgNames.length > 0 && React.createElement(EvidenceCell, { e: e })));
                             }))))),
-                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
+                activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "8d" && pend.length > 0 && React.createElement("div", { className: "tcard", style: { marginTop: 14 } },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Pendientes operativos (",
                             pend.length,
                             ")")),
                     React.createElement("div", { className: "plist" }, pend.map(function (e, i) { return React.createElement(PendItem, { key: i, e: e }); }))),
-                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
-                activeModule !== "yieldflow" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
+                activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && rccaList.length > 0 && React.createElement(InvestigationCarousel, { cards: rccaList, allRcca: rccaList }),
+                activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && ev.length > 0 && (React.createElement("div", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, overflow: "hidden", marginTop: 14, marginBottom: 14, boxShadow: "0 2px 12px rgba(20,32,51,.04)" } },
                     React.createElement("div", { style: { padding: "0", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
                         React.createElement("div", { style: { margin: 16, borderRadius: 18, overflow: "hidden", background: "linear-gradient(135deg,#0B1F33 0%,#16324F 48%,#1F3A5F 100%)", border: "1px solid rgba(49,102,128,.35)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)" } },
                             React.createElement("div", { style: { padding: "18px 20px 16px", position: "relative" } },
@@ -40438,6 +40588,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     rcca:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a5 5 0 0 0-5 5"/><path d="m17 4 3 3-3 3"/><path d="M4 17h9a5 5 0 0 0 5-5"/><path d="m7 20-3-3 3-3"/></svg>',
     eightd:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h5"/><path d="M8 16h7"/><path d="M17 13l2 2 3-4"/></svg>',
     yield:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/><path d="M18 6h2v2"/></svg>',
+    bonepile:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16"/><path d="M6 18V9h12v9"/><path d="M8 9V6h8v3"/><path d="M9 13h6"/><path d="M9 16h6"/></svg>',
     scheduling:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="M17 10v8"/><path d="m14 15 3 3 4-6"/></svg>',
     storyline:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M6 16V8"/><path d="M12 16V5"/><path d="M18 16v-3"/><path d="M4 8c4 0 5 5 8 5s4-6 8-6"/></svg>',
     board:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"/><path d="M8 7V4"/><path d="M16 7V4"/><path d="M8 20v-3"/><path d="M16 20v-3"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/></svg>',
@@ -40456,6 +40607,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"storyline",label:"Storyline",icon:icons.storyline,aliases:["Storyline","Manufacturing Storyline","Weekly Build Timeline Intelligence"]},
     {key:"8d",label:"8D Analyzer",icon:icons.eightd,aliases:["8D Analyzer","8D","EightD Analyzer","Quality Gate 8D"]},
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
+    {key:"bonepile",label:"Bonepile Visual Tracker",icon:icons.bonepile,aliases:["Bonepile Visual Tracker","Bonepile","WIP Map","Layout Inventory"]},
     {key:"scheduling",label:"Scheduling",icon:icons.scheduling,aliases:["Scheduling","Scheduling Optimizer","Secuencia SMT","Programacion de operaciones"]},
     {key:"yieldweek",label:"Yield by Week",icon:icons.yield,aliases:["Yield by Week","Yield Week","YBW"]},
     {key:"planagent",label:"Plan Agent",icon:icons.plan,aliases:["Plan Agent","Plan Risk","Weekly Follow-up","PlanAgent"]},
@@ -40511,6 +40663,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
   window.openStoryline=function(){navTo("storyline");};
   window.openEightDAnalyzer=function(){navTo("8d");};
   window.openYieldFlow=function(){navTo("yieldflow");};
+  window.openBonepile=function(){navTo("bonepile");};
   window.openScheduling=function(){navTo("scheduling");};
   window.openBoardImpact=function(){navTo("boardimpact");};
   window.openRecoveryIntelligence=function(){navTo("recovery");};
@@ -58051,7 +58204,18 @@ html body [class*="version-badge"]{
 })();
 </script>
 
-<script src="./board-impact-model-fix.js?v=board-owner-v2"></script>
+<script>
+(function(){
+  if (location.protocol === 'file:') {
+    try { console.info('[SMTinel] Optional board-impact-model-fix.js skipped in local file mode.'); } catch (_) {}
+    return;
+  }
+  var s = document.createElement('script');
+  s.src = './board-impact-model-fix.js?v=board-owner-v2';
+  s.async = false;
+  document.head.appendChild(s);
+})();
+</script>
 <!-- SMTinel Board Impact Native XLSX Export Fix v95 -->
 
 
