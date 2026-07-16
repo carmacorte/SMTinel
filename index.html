@@ -58056,14 +58056,15 @@ html body [class*="version-badge"]{
 
 
 
-<!-- SMTinel Product Improvement Intelligence Export v15 FAST + SCOPE FIX -->
+<!-- SMTinel Product Improvement Intelligence Export v16 VALIDATED TREND -->
 <script>
 (function(){
 'use strict';
 var TILE_ID='smtinel-product-improvement-direct-v14';
 var BTN_ID='smtinel-product-improvement-yield-button-v14';
-var VERSION='product-improvement-intelligence-v15-fast-scope-fix';
-var MIN_VOLUME=20;
+var VERSION='product-improvement-intelligence-v16-validated-trend';
+var MIN_VOLUME=30;
+var MIN_CONFIRMED_WEEKS=3;
 function txt(v){return String(v==null?'':v).replace(/\s+/g,' ').trim();}
 function arr(x){return Array.prototype.slice.call(x||[]);}
 function round(n,d){var p=Math.pow(10,d==null?2:d);return Math.round((Number(n)||0)*p)/p;}
@@ -58176,6 +58177,8 @@ function readWoRows(){
 }
 function weekVal(w){var s=txt(w).toUpperCase();var m=s.match(/FY\s*(\d{4}).*?Q\s*(\d).*?W-?0*(\d+)/i);if(m)return +m[1]*1000+(+m[2])*100+(+m[3]);m=s.match(/Q\s*(\d).*?W-?0*(\d+)/i);if(m)return (+m[1])*100+(+m[2]);m=s.match(/W-?0*(\d+)/i);return m?+m[1]:0;}
 function validWeek(w){var s=txt(w).toUpperCase();return !!s&&s!=='N/D'&&s!=='IMPORTED'&&/W-?0*\d+/i.test(s);}
+function fiscalYear(w){var m=txt(w).toUpperCase().match(/FY\s*(\d{4})/i);return m?Number(m[1]):0;}
+function dominantFiscalYear(rows){var totals={};(rows||[]).forEach(function(r){var fy=fiscalYear(r.week);if(!fy)return;totals[fy]=(totals[fy]||0)+Math.max(1,Number(r.units)||0);});var years=Object.keys(totals).map(Number);if(!years.length)return 0;years.sort(function(a,b){return totals[b]-totals[a]||b-a;});return years[0];}
 function unique(a){var seen={};return a.filter(function(x){x=txt(x);if(!x||seen[x])return false;seen[x]=1;return true;});}
 function productKey(r){return (r.family||'N/D')+'||'+(r.sku||'N/D');}
 function mean(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;}
@@ -58183,18 +58186,167 @@ function stddev(a){if(a.length<2)return 0;var m=mean(a);return Math.sqrt(a.reduc
 function slope(a){var n=a.length;if(n<2)return 0;var sx=(n-1)*n/2,sy=a.reduce(function(s,v){return s+v;},0),sxx=(n-1)*n*(2*n-1)/6,sxy=a.reduce(function(s,v,i){return s+i*v;},0);var den=n*sxx-sx*sx;return den?(n*sxy-sx*sy)/den:0;}
 function rolling3(list,index){var start=Math.max(0,index-2),slice=list.slice(start,index+1);var units=slice.reduce(function(n,r){return n+r.units;},0);var clean=slice.reduce(function(n,r){return n+r.clean;},0);return units?clean/units*100:0;}
 function weeklyAggregate(rows){var map={};rows.forEach(function(r){if(!validWeek(r.week))return;var k=productKey(r)+'||'+r.week;if(!map[k])map[k]={family:r.family||'N/D',sku:r.sku||'N/D',week:r.week,units:0,risk:0,clean:0,wos:{},lines:{}};var g=map[k];g.units+=r.units;g.risk+=r.risk;g.clean+=r.clean;if(r.wo)g.wos[r.wo]=1;if(r.line)g.lines[r.line]=1;});return Object.keys(map).map(function(k){var g=map[k];g.yield=g.units?g.clean/g.units*100:0;g.ojt=g.units?g.risk/g.units*100:0;g.woCount=Object.keys(g.wos).length;g.lines=Object.keys(g.lines).join(', ');return g;}).sort(function(a,b){return a.family.localeCompare(b.family)||a.sku.localeCompare(b.sku)||weekVal(a.week)-weekVal(b.week);});}
-function classify(list,totalUnits,sl,vol){if(list.length<2)return 'Insufficient history';if(totalUnits<MIN_VOLUME)return 'Insufficient volume';var first=list[0].yield,last=list[list.length-1].yield,min=Math.min.apply(null,list.map(function(r){return r.yield;}));if(sl>=2)return vol<=8?'Stable Improvement':'Volatile Improvement';if(sl<=-2)return vol<=8?'Stable Deterioration':'Volatile Deterioration';if(last-first>=5&&last-min>=10)return 'Recovery';if(Math.abs(sl)<1.5&&vol<=4)return 'Plateau';return 'Volatile Process';}
+function preliminaryStatus(list,sl){var first=list[0],last=list[list.length-1],delta=last.yield-first.yield;if(delta>=5||sl>=2)return 'Preliminary Improvement';if(delta<=-5||sl<=-2)return 'Preliminary Deterioration';return 'Preliminary Stable';}
+function classify(list,totalUnits,sl,vol){if(list.length<2)return 'Insufficient history';if(list.length<MIN_CONFIRMED_WEEKS||totalUnits<MIN_VOLUME)return preliminaryStatus(list,sl);var first=list[0].yield,last=list[list.length-1].yield,min=Math.min.apply(null,list.map(function(r){return r.yield;}));if(sl>=2)return vol<=8?'Stable Improvement':'Volatile Improvement';if(sl<=-2)return vol<=8?'Stable Deterioration':'Volatile Deterioration';if(last-first>=5&&last-min>=10)return 'Recovery';if(Math.abs(sl)<1.5&&vol<=4)return 'Plateau';return 'Volatile Process';}
 function arrowFor(status){if(/Improvement|Recovery/i.test(status))return '↑';if(/Deterioration/i.test(status))return '↓';if(/Plateau|Stable/i.test(status))return '→';return '↕';}
-function buildData(){var rows=readWoRows();if(!rows.length)throw new Error('No encontre filas en Yield by Work Order.');var weekly=weeklyAggregate(rows);if(!weekly.length)throw new Error('No encontre semanas validas en Yield by Work Order.');var weeks=unique(weekly.map(function(r){return r.week;})).sort(function(a,b){return weekVal(a)-weekVal(b)||a.localeCompare(b);});var groups={};weekly.forEach(function(r){var k=r.family+'||'+r.sku;if(!groups[k])groups[k]=[];groups[k].push(r);});var summaries=[];Object.keys(groups).forEach(function(k){var list=groups[k].slice().sort(function(a,b){return weekVal(a.week)-weekVal(b.week);});var yields=list.map(function(r){return r.yield;});var totalUnits=list.reduce(function(n,r){return n+r.units;},0);var totalClean=list.reduce(function(n,r){return n+r.clean;},0);var totalRisk=list.reduce(function(n,r){return n+r.risk;},0);var sl=slope(yields),vol=stddev(yields),first=list[0],last=list[list.length-1],delta=last.yield-first.yield;var status=classify(list,totalUnits,sl,vol);var best=list.reduce(function(a,b){return b.yield>a.yield?b:a;},first);var worst=list.reduce(function(a,b){return b.yield<a.yield?b:a;},first);var score=sl*Math.sqrt(Math.max(totalUnits,1)/100)/(1+vol/10);var baselineRate=first.units?first.risk/first.units:0;list.forEach(function(r,i){r.wow=i?r.yield-list[i-1].yield:0;r.rolling3=rolling3(list,i);r.expectedRisk=round(r.units*baselineRate,0);r.riskReduction=round(Math.max(0,r.expectedRisk-r.risk),0);r.productSlope=sl;r.productStatus=status;});summaries.push({Arrow:arrowFor(status),Status:status,'Product Family':first.family,SKU:first.sku,'Weeks':list.length,'First Week':first.week,'First Yield %':round(first.yield),'Last Week':last.week,'Last Yield %':round(last.yield),'Overall Delta pts':round(delta),'Slope pts/week':round(sl),'Volatility StdDev':round(vol),'Trend Score':round(score),'Rolling 3W Yield %':round(last.rolling3),'Average Yield %':round(totalUnits?totalClean/totalUnits*100:0),'Total Units':totalUnits,'Total Risk':totalRisk,'Risk SN Avoided':list.reduce(function(n,r){return n+r.riskReduction;},0),'Best Week':best.week,'Best Yield %':round(best.yield),'Worst Week':worst.week,'Worst Yield %':round(worst.yield),'Lines':unique(list.map(function(r){return r.lines;})).join(', '),Confidence:(list.length>=4&&totalUnits>=200?'High':list.length>=3&&totalUnits>=60?'Medium':'Low'),points:list});});summaries.sort(function(a,b){return b['Trend Score']-a['Trend Score'];});return{rows:rows,weekly:weekly,weeks:weeks,summaries:summaries};}
+function buildData(){
+  var sourceRows=readWoRows();
+  if(!sourceRows.length)throw new Error('No encontre filas en Yield by Work Order.');
+  var invalidRows=sourceRows.filter(function(r){return !validWeek(r.week);});
+  var validRows=sourceRows.filter(function(r){return validWeek(r.week);});
+  if(!validRows.length)throw new Error('No encontre semanas validas en Yield by Work Order.');
+  var selectedFY=dominantFiscalYear(validRows);
+  var analysisRows=selectedFY?validRows.filter(function(r){return fiscalYear(r.week)===selectedFY;}):validRows.slice();
+  var excludedFiscalRows=validRows.length-analysisRows.length;
+  var excludedFiscalWeeks=unique(validRows.filter(function(r){return selectedFY&&fiscalYear(r.week)!==selectedFY;}).map(function(r){return r.week;}));
+  var weekly=weeklyAggregate(analysisRows);
+  if(!weekly.length)throw new Error('No encontre semanas validas para el ano fiscal seleccionado.');
+  var weeks=unique(weekly.map(function(r){return r.week;})).sort(function(a,b){return weekVal(a)-weekVal(b)||a.localeCompare(b);});
+  var groups={};
+  weekly.forEach(function(r){var k=r.family+'||'+r.sku;if(!groups[k])groups[k]=[];groups[k].push(r);});
+  var summaries=[];
+  Object.keys(groups).forEach(function(k){
+    var list=groups[k].slice().sort(function(a,b){return weekVal(a.week)-weekVal(b.week);});
+    var yields=list.map(function(r){return r.yield;});
+    var totalUnits=list.reduce(function(n,r){return n+r.units;},0);
+    var totalClean=list.reduce(function(n,r){return n+r.clean;},0);
+    var totalRisk=list.reduce(function(n,r){return n+r.risk;},0);
+    var sl=slope(yields),vol=stddev(yields),first=list[0],last=list[list.length-1],delta=last.yield-first.yield;
+    var confidence=(list.length>=4&&totalUnits>=200?'High':list.length>=3&&totalUnits>=60?'Medium':'Low');
+    var status=classify(list,totalUnits,sl,vol);
+    var best=list.reduce(function(a,b){return b.yield>a.yield?b:a;},first);
+    var worst=list.reduce(function(a,b){return b.yield<a.yield?b:a;},first);
+    var score=sl*Math.sqrt(Math.max(totalUnits,1)/100)/(1+vol/10);
+    var baselineRate=first.units?first.risk/first.units:0;
+    var riskAllowed=confidence!=='Low';
+    list.forEach(function(r,i){
+      r.wow=i?r.yield-list[i-1].yield:0;
+      r.rolling3=rolling3(list,i);
+      r.expectedRisk=riskAllowed?round(r.units*baselineRate,0):null;
+      r.riskReduction=riskAllowed?round(Math.max(0,r.expectedRisk-r.risk),0):null;
+      r.productSlope=sl;
+      r.productStatus=status;
+      r.productConfidence=confidence;
+    });
+    summaries.push({
+      Arrow:arrowFor(status),Status:status,'Product Family':first.family,SKU:first.sku,'Weeks':list.length,
+      'First Week':first.week,'First Yield %':round(first.yield),'Last Week':last.week,'Last Yield %':round(last.yield),
+      'Overall Delta pts':round(delta),'Slope pts/week':round(sl),'Volatility StdDev':round(vol),'Trend Score':round(score),
+      'Rolling 3W Yield %':round(last.rolling3),'Average Yield %':round(totalUnits?totalClean/totalUnits*100:0),
+      'Total Units':totalUnits,'Total Risk':totalRisk,
+      'Risk SN Avoided':riskAllowed?list.reduce(function(n,r){return n+(r.riskReduction||0);},0):null,
+      'Risk Estimate':riskAllowed?'Available':'Suppressed - Low confidence',
+      'Best Week':best.week,'Best Yield %':round(best.yield),'Worst Week':worst.week,'Worst Yield %':round(worst.yield),
+      'Lines':unique(list.map(function(r){return r.lines;})).join(', '),Confidence:confidence,points:list
+    });
+  });
+  summaries.sort(function(a,b){return b['Trend Score']-a['Trend Score'];});
+  return{sourceRows:sourceRows,rows:analysisRows,weekly:weekly,weeks:weeks,summaries:summaries,dominantFiscalYear:selectedFY,excludedFiscalRows:excludedFiscalRows,excludedFiscalWeeks:excludedFiscalWeeks,invalidRows:invalidRows};
+}
 function fillForYield(y){if(y>=95)return 'FF2E7D32';if(y>=90)return 'FF81C784';if(y>=80)return 'FFFFD54F';if(y>=70)return 'FFFFA726';return 'FFE53935';}
 function fontForYield(y){return y>=80?'FF102A43':'FFFFFFFF';}
 function styleHeader(row,color){row.font={name:'Segoe UI',bold:true,color:{argb:'FFFFFFFF'}};row.fill={type:'pattern',pattern:'solid',fgColor:{argb:color||'FF1F3A5F'}};row.alignment={vertical:'middle',horizontal:'center'};row.height=22;}
 function addTitle(ws,title,subtitle,width){ws.addRow([title]);ws.mergeCells(1,1,1,width);ws.getCell(1,1).font={name:'Segoe UI',size:16,bold:true,color:{argb:'FFFFFFFF'}};ws.getCell(1,1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF102A43'}};ws.getCell(1,1).alignment={vertical:'middle'};ws.getRow(1).height=30;ws.addRow([subtitle||'']);ws.mergeCells(2,1,2,width);ws.getCell(2,1).font={name:'Segoe UI',size:10,italic:true,color:{argb:'FF5F766C'}};}
-function addSimpleSheet(wb,name,headers,rows,title,subtitle){var ws=wb.addWorksheet(name);addTitle(ws,title||name,subtitle||'',headers.length);ws.addRow(headers);styleHeader(ws.getRow(3));rows.forEach(function(r){ws.addRow(headers.map(function(h){return r[h]==null?'':r[h];}));});ws.columns=headers.map(function(h){return{width:Math.max(12,Math.min(34,String(h).length+7))};});ws.views=[{state:'frozen',ySplit:3}];if(rows.length)ws.autoFilter={from:{row:3,column:1},to:{row:rows.length+3,column:headers.length}};for(var i=4;i<=ws.rowCount;i++){if(i%2===0)ws.getRow(i).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7FAFF'}};}return ws;}
-function addTrendMatrix(wb,data){var ws=wb.addWorksheet('Yield Trend Matrix');var fixed=8,totalCols=fixed+data.weeks.length*2;addTitle(ws,'Weekly Yield Trend Matrix','Weighted Yield and production volume by Product Family + SKU.',totalCols);var r3=ws.addRow(['Product Family','SKU','Trend','Slope','Volatility','Score','First → Last','Delta']);for(var i=0;i<data.weeks.length;i++){r3.getCell(fixed+i*2+1).value=data.weeks[i];ws.mergeCells(3,fixed+i*2+1,3,fixed+i*2+2);}styleHeader(r3);var r4=ws.addRow(['','','','','','','','']);for(var j=0;j<data.weeks.length;j++){r4.getCell(fixed+j*2+1).value='Yield %';r4.getCell(fixed+j*2+2).value='Units';}styleHeader(r4,'FF2F6FB3');data.summaries.forEach(function(s){var map={};s.points.forEach(function(p){map[p.week]=p;});var row=[s['Product Family'],s.SKU,s.Arrow+' '+s.Status,s['Slope pts/week'],s['Volatility StdDev'],s['Trend Score'],s['First Yield %']+'% → '+s['Last Yield %']+'%',s['Overall Delta pts']];data.weeks.forEach(function(w){var p=map[w];row.push(p?round(p.yield):'');row.push(p?p.units:'');});var rr=ws.addRow(row);for(var c=0;c<data.weeks.length;c++){var p2=map[data.weeks[c]],yc=rr.getCell(fixed+c*2+1),uc=rr.getCell(fixed+c*2+2);if(p2){yc.numFmt='0.00"%"';yc.fill={type:'pattern',pattern:'solid',fgColor:{argb:fillForYield(p2.yield)}};yc.font={bold:true,color:{argb:fontForYield(p2.yield)}};yc.alignment={horizontal:'center'};uc.numFmt='0';uc.alignment={horizontal:'center'};uc.font={color:{argb:'FF5F766C'}};}}});ws.columns=[{width:24},{width:17},{width:25},{width:12},{width:12},{width:12},{width:18},{width:12}].concat(data.weeks.reduce(function(a){a.push({width:11},{width:9});return a;},[]));ws.views=[{state:'frozen',xSplit:2,ySplit:4}];ws.autoFilter={from:{row:4,column:1},to:{row:ws.rowCount,column:totalCols}};return ws;}
-function createChartBase64(summary){var canvas=document.createElement('canvas');canvas.width=900;canvas.height=300;var ctx=canvas.getContext('2d');ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,900,300);ctx.fillStyle='#102A43';ctx.font='bold 22px Segoe UI';ctx.fillText(summary['Product Family']+' | '+summary.SKU,24,32);ctx.font='14px Segoe UI';ctx.fillStyle='#5F766C';ctx.fillText(summary.Arrow+' '+summary.Status+' | Slope '+summary['Slope pts/week']+' pts/wk | Volatility '+summary['Volatility StdDev'],24,55);var left=60,top=75,w=810,h=155;ctx.strokeStyle='#D9E2EC';ctx.lineWidth=1;for(var g=0;g<=4;g++){var y=top+h-g*h/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+w,y);ctx.stroke();ctx.fillStyle='#829AB1';ctx.font='11px Segoe UI';ctx.fillText((g*25)+'%',18,y+4);}var pts=summary.points,step=pts.length>1?w/(pts.length-1):0,maxUnits=Math.max.apply(null,pts.map(function(p){return p.units;}));pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2);var bh=maxUnits?35*p.units/maxUnits:0;ctx.fillStyle='rgba(47,111,179,.25)';ctx.fillRect(x-10,top+h+5-bh,20,bh);ctx.fillStyle='#5F766C';ctx.font='10px Segoe UI';ctx.fillText(txt(p.week).replace('FY2026 ','').replace('Q','Q'),x-22,260);ctx.fillText(String(p.units),x-8,276);});ctx.strokeStyle='#2F6FB3';ctx.lineWidth=4;ctx.beginPath();pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2),y=top+h-(Math.max(0,Math.min(100,p.yield))/100)*h;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2),y=top+h-(Math.max(0,Math.min(100,p.yield))/100)*h;ctx.fillStyle=fillForYield(p.yield).replace('FF','#');ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#102A43';ctx.font='bold 11px Segoe UI';ctx.fillText(round(p.yield,1)+'%',x-16,y-10);});ctx.fillStyle='#829AB1';ctx.font='10px Segoe UI';ctx.fillText('Bars = Units',760,278);return canvas.toDataURL('image/png');}
+function addSimpleSheet(wb,name,headers,rows,title,subtitle){var ws=wb.addWorksheet(name);addTitle(ws,title||name,subtitle||'',headers.length);ws.addRow(headers);styleHeader(ws.getRow(3));rows.forEach(function(r){ws.addRow(headers.map(function(h){return r[h]==null?null:r[h];}));});ws.columns=headers.map(function(h){return{width:Math.max(12,Math.min(34,String(h).length+7))};});ws.views=[{state:'frozen',ySplit:3}];if(rows.length)ws.autoFilter={from:{row:3,column:1},to:{row:rows.length+3,column:headers.length}};for(var i=4;i<=ws.rowCount;i++){if(i%2===0)ws.getRow(i).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7FAFF'}};}return ws;}
+function addTrendMatrix(wb,data){
+  var ws=wb.addWorksheet('Yield Trend Matrix');
+  var fixed=9,totalCols=fixed+data.weeks.length*2;
+  addTitle(ws,'Weekly Yield Trend Matrix','Weighted Yield and production volume by Product Family + SKU. Blank cells mean no production data.',totalCols);
+  var r3=ws.addRow(['Product Family','SKU','Trend','Confidence','Slope','Volatility','Score','First → Last','Delta']);
+  for(var i=0;i<data.weeks.length;i++){r3.getCell(fixed+i*2+1).value=data.weeks[i];ws.mergeCells(3,fixed+i*2+1,3,fixed+i*2+2);}
+  styleHeader(r3);
+  var r4=ws.addRow([null,null,null,null,null,null,null,null,null]);
+  for(var j=0;j<data.weeks.length;j++){r4.getCell(fixed+j*2+1).value='Yield %';r4.getCell(fixed+j*2+2).value='Units';}
+  styleHeader(r4,'FF2F6FB3');
+  data.summaries.forEach(function(s){
+    var map={};s.points.forEach(function(p){map[p.week]=p;});
+    var row=[s['Product Family'],s.SKU,s.Arrow+' '+s.Status,s.Confidence,s['Slope pts/week'],s['Volatility StdDev'],s['Trend Score'],s['First Yield %']+'% → '+s['Last Yield %']+'%',s['Overall Delta pts']];
+    data.weeks.forEach(function(w){var p=map[w];row.push(p?round(p.yield):null);row.push(p?p.units:null);});
+    var rr=ws.addRow(row);
+    for(var c=0;c<data.weeks.length;c++){
+      var p2=map[data.weeks[c]],yc=rr.getCell(fixed+c*2+1),uc=rr.getCell(fixed+c*2+2);
+      if(p2){
+        yc.numFmt='0.00"%"';yc.fill={type:'pattern',pattern:'solid',fgColor:{argb:fillForYield(p2.yield)}};
+        yc.font={bold:true,color:{argb:fontForYield(p2.yield)}};yc.alignment={horizontal:'center'};
+        uc.numFmt='0';uc.alignment={horizontal:'center'};uc.font={color:{argb:'FF5F766C'}};
+      }
+    }
+  });
+  ws.columns=[{width:24},{width:17},{width:27},{width:12},{width:12},{width:12},{width:12},{width:18},{width:12}].concat(data.weeks.reduce(function(a){a.push({width:11},{width:9});return a;},[]));
+  ws.views=[{state:'frozen',xSplit:2,ySplit:4}];
+  ws.autoFilter={from:{row:4,column:1},to:{row:ws.rowCount,column:totalCols}};
+  return ws;
+}
+function createChartBase64(summary){var canvas=document.createElement('canvas');canvas.width=900;canvas.height=300;var ctx=canvas.getContext('2d');ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,900,300);ctx.fillStyle='#102A43';ctx.font='bold 22px Segoe UI';ctx.fillText(summary['Product Family']+' | '+summary.SKU,24,32);ctx.font='14px Segoe UI';ctx.fillStyle='#5F766C';ctx.fillText(summary.Arrow+' '+summary.Status+' | Slope '+summary['Slope pts/week']+' pts/wk | Volatility '+summary['Volatility StdDev'],24,55);var left=60,top=75,w=810,h=155;ctx.strokeStyle='#D9E2EC';ctx.lineWidth=1;for(var g=0;g<=4;g++){var y=top+h-g*h/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+w,y);ctx.stroke();ctx.fillStyle='#829AB1';ctx.font='11px Segoe UI';ctx.fillText((g*25)+'%',18,y+4);}var pts=summary.points,step=pts.length>1?w/(pts.length-1):0,maxUnits=Math.max.apply(null,pts.map(function(p){return p.units;}));pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2);var bh=maxUnits?35*p.units/maxUnits:0;ctx.fillStyle='rgba(47,111,179,.25)';ctx.fillRect(x-10,top+h+5-bh,20,bh);ctx.fillStyle='#5F766C';ctx.font='10px Segoe UI';ctx.fillText(txt(p.week).replace(/^FY\d{4}\s*/i,''),x-22,260);ctx.fillText(String(p.units),x-8,276);});ctx.strokeStyle='#2F6FB3';ctx.lineWidth=4;ctx.beginPath();pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2),y=top+h-(Math.max(0,Math.min(100,p.yield))/100)*h;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();pts.forEach(function(p,i){var x=left+(pts.length>1?i*step:w/2),y=top+h-(Math.max(0,Math.min(100,p.yield))/100)*h;ctx.fillStyle=fillForYield(p.yield).replace('FF','#');ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#102A43';ctx.font='bold 11px Segoe UI';ctx.fillText(round(p.yield,1)+'%',x-16,y-10);});ctx.fillStyle='#829AB1';ctx.font='10px Segoe UI';ctx.fillText('Bars = Units',760,278);return canvas.toDataURL('image/png');}
 function addCharts(wb,data){var ws=wb.addWorksheet('Trend Charts');addTitle(ws,'Product Yield Trend Charts','Line = weighted Yield; bars = weekly volume. Top 12 products by absolute Trend Score.',10);ws.columns=[{width:3},{width:14},{width:14},{width:14},{width:14},{width:14},{width:14},{width:14},{width:14},{width:3}];var ranked=data.summaries.slice().sort(function(a,b){return Math.abs(b['Trend Score'])-Math.abs(a['Trend Score']);}).slice(0,12);var row=4;ranked.forEach(function(s){var img=wb.addImage({base64:createChartBase64(s),extension:'png'});ws.addImage(img,{tl:{col:1,row:row-1},ext:{width:900,height:300}});for(var k=row;k<row+16;k++)ws.getRow(k).height=18;row+=17;});return ws;}
-async function exportProductImprovement(){var button=document.getElementById(BTN_ID);if(button){button.disabled=true;button.dataset.old=button.textContent;button.textContent='Building intelligence report...';}try{var data=buildData();if(window.ensureExcelTools)await window.ensureExcelTools();if(!window.ExcelJS)throw new Error('ExcelJS no esta disponible.');var wb=new ExcelJS.Workbook();wb.creator='SMTinel Product Improvement';wb.created=new Date();var improving=data.summaries.filter(function(s){return /Improvement|Recovery/i.test(s.Status);});var deteriorating=data.summaries.filter(function(s){return /Deterioration/i.test(s.Status);});var sourceMeta=window.__SMTINEL_PRODUCT_IMPROVEMENT_LAST_SOURCE||{};var activeScope=activeYieldFilters();var scopeText=Object.keys(activeScope).filter(function(k){var v=activeScope[k];return v!=null&&v!==''&&String(v).toUpperCase()!=='ALL';}).map(function(k){return k+'='+activeScope[k];}).join(' | ')||'ALL';var summaryRows=[{Metric:'Report Version',Value:VERSION},{Metric:'Data Source',Value:sourceMeta.source||'Yield Flow model'},{Metric:'Rows in Active Scope',Value:sourceMeta.rowCount||data.rows.length},{Metric:'Active Scope',Value:scopeText},{Metric:'Valid Weeks',Value:data.weeks.length},{Metric:'Products Evaluated',Value:data.summaries.length},{Metric:'Improving / Recovery',Value:improving.length},{Metric:'Deteriorating',Value:deteriorating.length},{Metric:'Stable / Other',Value:data.summaries.length-improving.length-deteriorating.length},{Metric:'Total Units',Value:data.summaries.reduce(function(n,s){return n+s['Total Units'];},0)},{Metric:'Estimated Risk SN Avoided',Value:data.summaries.reduce(function(n,s){return n+s['Risk SN Avoided'];},0)},{Metric:'Generated',Value:new Date().toLocaleString()}];addSimpleSheet(wb,'Executive Summary',['Metric','Value'],summaryRows,'SMTinel Weekly Yield Intelligence','Weekly direction, stability, volume and risk reduction.');addTrendMatrix(wb,data);var summaryHeaders=['Arrow','Status','Product Family','SKU','Weeks','First Week','First Yield %','Last Week','Last Yield %','Overall Delta pts','Slope pts/week','Volatility StdDev','Trend Score','Rolling 3W Yield %','Average Yield %','Total Units','Total Risk','Risk SN Avoided','Best Week','Best Yield %','Worst Week','Worst Yield %','Lines','Confidence'];addSimpleSheet(wb,'Product Trend Summary',summaryHeaders,data.summaries,'Product Trend Summary','Classification uses complete weekly history, linear slope, volatility and volume.');var weeklyRows=[];data.summaries.forEach(function(s){s.points.forEach(function(p,i){weeklyRows.push({'Product Family':s['Product Family'],SKU:s.SKU,Week:p.week,'Yield %':round(p.yield),'WoW Delta pts':round(p.wow),'Rolling 3W Yield %':round(p.rolling3),Units:p.units,Risk:p.risk,'Expected Risk at First-Week Rate':p.expectedRisk,'Risk Reduction SN':p.riskReduction,'OJT %':round(p.ojt),'WO Count':p.woCount,Lines:p.lines,'Slope pts/week':round(p.productSlope),Classification:p.productStatus});});});addSimpleSheet(wb,'Weekly Yield Trend',['Product Family','SKU','Week','Yield %','WoW Delta pts','Rolling 3W Yield %','Units','Risk','Expected Risk at First-Week Rate','Risk Reduction SN','OJT %','WO Count','Lines','Slope pts/week','Classification'],weeklyRows,'Weekly Yield Trend','Weighted Yield, rolling average, volume and weekly risk reduction.');addCharts(wb,data);addSimpleSheet(wb,'Top Improvements',summaryHeaders,improving.slice().sort(function(a,b){return b['Trend Score']-a['Trend Score'];}),'Top Improvements','Ranked by Trend Score, which rewards slope and volume while penalizing volatility.');addSimpleSheet(wb,'Top Deterioration',summaryHeaders,deteriorating.slice().sort(function(a,b){return a['Trend Score']-b['Trend Score'];}),'Top Deterioration','Products requiring immediate review.');var woRows=data.rows.map(function(r){return{Week:r.week,Line:r.line,'Product Family':r.family,SKU:r.sku,WO:r.wo,'Yield %':round(r.yield),'OJT %':round(r.ojt),Units:r.units,Risk:r.risk,Severity:r.sev};});addSimpleSheet(wb,'WO Detail',['Week','Line','Product Family','SKU','WO','Yield %','OJT %','Units','Risk','Severity'],woRows,'Work Order Detail','Source rows used to build the weekly trend.');var invalid=data.rows.filter(function(r){return !validWeek(r.week);});addSimpleSheet(wb,'Data Quality',['Check','Value','Status'],[{Check:'Rows read',Value:data.rows.length,Status:'INFO'},{Check:'Valid weekly rows',Value:data.weekly.length,Status:data.weekly.length?'OK':'FAIL'},{Check:'Invalid or Imported week rows',Value:invalid.length,Status:invalid.length?'REVIEW':'OK'},{Check:'Products with insufficient history',Value:data.summaries.filter(function(s){return s.Status==='Insufficient history';}).length,Status:'INFO'},{Check:'Products with low confidence',Value:data.summaries.filter(function(s){return s.Confidence==='Low';}).length,Status:'INFO'},{Check:'Method',Value:'Weighted Yield; linear slope; standard deviation; rolling 3-week Yield; first-week risk baseline',Status:VERSION}],'Data Quality','Validation and calculation methodology.');var buf=await wb.xlsx.writeBuffer();var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SMTinel_Weekly_Yield_Intelligence_'+new Date().toISOString().slice(0,10)+'.xlsx';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}catch(e){console.error('[Product Improvement Export]',e);alert('Product Improvement: '+(e&&e.message?e.message:e));}finally{if(button){button.disabled=false;button.textContent=button.dataset.old||'Export Weekly Yield Intelligence XLSX';}}}
+async function exportProductImprovement(){
+  var button=document.getElementById(BTN_ID);
+  if(button){button.disabled=true;button.dataset.old=button.textContent;button.textContent='Building validated trend report...';}
+  try{
+    var data=buildData();
+    if(window.ensureExcelTools)await window.ensureExcelTools();
+    if(!window.ExcelJS)throw new Error('ExcelJS no esta disponible.');
+    var wb=new ExcelJS.Workbook();wb.creator='SMTinel Product Improvement';wb.created=new Date();
+    var confirmedImproving=data.summaries.filter(function(s){return /^(Stable Improvement|Volatile Improvement|Recovery)$/i.test(s.Status);});
+    var confirmedDeteriorating=data.summaries.filter(function(s){return /^(Stable Deterioration|Volatile Deterioration)$/i.test(s.Status);});
+    var preliminary=data.summaries.filter(function(s){return /^Preliminary/i.test(s.Status);});
+    var sourceMeta=window.__SMTINEL_PRODUCT_IMPROVEMENT_LAST_SOURCE||{};
+    var activeScope=activeYieldFilters();
+    var scopeText=Object.keys(activeScope).filter(function(k){var v=activeScope[k];return v!=null&&v!==''&&String(v).toUpperCase()!=='ALL';}).map(function(k){return k+'='+activeScope[k];}).join(' | ')||'ALL';
+    var estimatedAvoided=data.summaries.reduce(function(n,s){return n+(Number(s['Risk SN Avoided'])||0);},0);
+    var summaryRows=[
+      {Metric:'Report Version',Value:VERSION},
+      {Metric:'Data Source',Value:sourceMeta.source||'Yield Flow model'},
+      {Metric:'Rows in Active Scope',Value:sourceMeta.rowCount||data.sourceRows.length},
+      {Metric:'Rows Used for Trend',Value:data.rows.length},
+      {Metric:'Active Scope',Value:scopeText},
+      {Metric:'Fiscal Year Scope',Value:data.dominantFiscalYear?'FY'+data.dominantFiscalYear:'All valid weeks'},
+      {Metric:'Excluded Other FY Rows',Value:data.excludedFiscalRows},
+      {Metric:'Excluded Invalid/Imported Rows',Value:data.invalidRows.length},
+      {Metric:'Valid Weeks',Value:data.weeks.length},
+      {Metric:'Products Evaluated',Value:data.summaries.length},
+      {Metric:'Confirmed Improving / Recovery',Value:confirmedImproving.length},
+      {Metric:'Preliminary Trends',Value:preliminary.length},
+      {Metric:'Confirmed Deteriorating',Value:confirmedDeteriorating.length},
+      {Metric:'Stable / Other',Value:data.summaries.length-confirmedImproving.length-preliminary.length-confirmedDeteriorating.length},
+      {Metric:'Total Units',Value:data.summaries.reduce(function(n,s){return n+s['Total Units'];},0)},
+      {Metric:'Estimated Risk SN Avoided',Value:estimatedAvoided},
+      {Metric:'Generated',Value:new Date().toLocaleString()}
+    ];
+    addSimpleSheet(wb,'Executive Summary',['Metric','Value'],summaryRows,'SMTinel Weekly Yield Intelligence','Validated weekly trend, current fiscal-year scope, confidence controls and risk reduction.');
+    addTrendMatrix(wb,data);
+    var summaryHeaders=['Arrow','Status','Product Family','SKU','Weeks','First Week','First Yield %','Last Week','Last Yield %','Overall Delta pts','Slope pts/week','Volatility StdDev','Trend Score','Rolling 3W Yield %','Average Yield %','Total Units','Total Risk','Risk SN Avoided','Risk Estimate','Best Week','Best Yield %','Worst Week','Worst Yield %','Lines','Confidence'];
+    addSimpleSheet(wb,'Product Trend Summary',summaryHeaders,data.summaries,'Product Trend Summary','Confirmed trends require at least 3 weeks and 30 units. Lower evidence is labeled Preliminary.');
+    var weeklyRows=[];
+    data.summaries.forEach(function(s){s.points.forEach(function(p){weeklyRows.push({'Product Family':s['Product Family'],SKU:s.SKU,Week:p.week,'Yield %':round(p.yield),'WoW Delta pts':round(p.wow),'Rolling 3W Yield %':round(p.rolling3),Units:p.units,Risk:p.risk,'Expected Risk at First-Week Rate':p.expectedRisk,'Risk Reduction SN':p.riskReduction,'OJT %':round(p.ojt),'WO Count':p.woCount,Lines:p.lines,'Slope pts/week':round(p.productSlope),Classification:p.productStatus,Confidence:p.productConfidence});});});
+    addSimpleSheet(wb,'Weekly Yield Trend',['Product Family','SKU','Week','Yield %','WoW Delta pts','Rolling 3W Yield %','Units','Risk','Expected Risk at First-Week Rate','Risk Reduction SN','OJT %','WO Count','Lines','Slope pts/week','Classification','Confidence'],weeklyRows,'Weekly Yield Trend','Weighted Yield, rolling average, volume and risk reduction. Low-confidence risk estimates remain blank.');
+    addCharts(wb,data);
+    addSimpleSheet(wb,'Top Improvements',summaryHeaders,confirmedImproving.slice().sort(function(a,b){return b['Trend Score']-a['Trend Score'];}),'Top Confirmed Improvements','Only Medium/High-evidence improvement or recovery trends.');
+    addSimpleSheet(wb,'Top Deterioration',summaryHeaders,confirmedDeteriorating.slice().sort(function(a,b){return a['Trend Score']-b['Trend Score'];}),'Top Confirmed Deterioration','Only confirmed deterioration trends requiring review.');
+    addSimpleSheet(wb,'Preliminary Trends',summaryHeaders,preliminary,'Preliminary Trends','Two-week or low-volume behavior. Direction is shown, but it is not yet a confirmed trend.');
+    var woRows=data.rows.map(function(r){return{Week:r.week,Line:r.line,'Product Family':r.family,SKU:r.sku,WO:r.wo,'Yield %':round(r.yield),'OJT %':round(r.ojt),Units:r.units,Risk:r.risk,Severity:r.sev};});
+    addSimpleSheet(wb,'WO Detail',['Week','Line','Product Family','SKU','WO','Yield %','OJT %','Units','Risk','Severity'],woRows,'Work Order Detail','Rows used for the selected fiscal-year trend.');
+    addSimpleSheet(wb,'Data Quality',['Check','Value','Status'],[
+      {Check:'Source rows read',Value:data.sourceRows.length,Status:'INFO'},
+      {Check:'Rows used for selected fiscal year',Value:data.rows.length,Status:data.rows.length?'OK':'FAIL'},
+      {Check:'Selected fiscal year',Value:data.dominantFiscalYear?'FY'+data.dominantFiscalYear:'N/D',Status:data.dominantFiscalYear?'OK':'REVIEW'},
+      {Check:'Excluded rows from other fiscal years',Value:data.excludedFiscalRows,Status:data.excludedFiscalRows?'INFO':'OK'},
+      {Check:'Excluded fiscal weeks',Value:data.excludedFiscalWeeks.join(', ')||'None',Status:data.excludedFiscalWeeks.length?'INFO':'OK'},
+      {Check:'Invalid or Imported week rows',Value:data.invalidRows.length,Status:data.invalidRows.length?'REVIEW':'OK'},
+      {Check:'Valid weekly aggregates',Value:data.weekly.length,Status:data.weekly.length?'OK':'FAIL'},
+      {Check:'Preliminary products',Value:preliminary.length,Status:preliminary.length?'REVIEW':'OK'},
+      {Check:'Low-confidence products',Value:data.summaries.filter(function(s){return s.Confidence==='Low';}).length,Status:'INFO'},
+      {Check:'Suppressed low-confidence risk estimates',Value:data.summaries.filter(function(s){return s['Risk Estimate']!=='Available';}).length,Status:'INFO'},
+      {Check:'Missing week cells in matrix',Value:'True blank cells',Status:'OK'},
+      {Check:'Method',Value:'Weighted Yield; dominant fiscal-year scope; linear slope; standard deviation; rolling 3-week Yield; confidence-gated risk estimate',Status:VERSION}
+    ],'Data Quality','Validation, exclusions and calculation methodology.');
+    var buf=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SMTinel_Weekly_Yield_Intelligence_'+new Date().toISOString().slice(0,10)+'.xlsx';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  }catch(e){console.error('[Product Improvement Export]',e);alert('Product Improvement: '+(e&&e.message?e.message:e));}
+  finally{if(button){button.disabled=false;button.textContent=button.dataset.old||'Export Weekly Yield Intelligence XLSX';}}
+}
 var mountTimers=[];
 function clearMountTimers(){mountTimers.forEach(function(id){clearTimeout(id);});mountTimers=[];}
 function scheduleMounts(){
