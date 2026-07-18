@@ -30958,8 +30958,8 @@ body:has(#recovery-section) .main-content.expanded{
                     h("div", { style: { fontSize: 15, fontWeight: 950, color: "#102A43" } }, "Board Impact Export Center"),
                     h("div", { style: { fontSize: 11, color: "#5F766C", marginTop: 4 } }, "Exports usando el scope activo de Board Impact.")),
                 h("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
-                    h("button", { id: "board-export-issue-xlsx", key: "board-export-issue-xlsx", "data-board-export-issue": "1", "data-smtinel-board-native-export": "react", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
-                    h("button", { id: "board-export-action-xlsx", key: "board-export-action-xlsx", "data-board-export-action": "1", "data-smtinel-board-native-export": "react", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
+                    h("button", { key: "board-export-issue-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
+                    h("button", { key: "board-export-action-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } },
                 kpi("WOs impactadas", affectedWos, "scope filtrado", "blue"),
                 kpi("Seriales afectados", affectedSerials, ctx.station || "Repair / SFC", "amber"),
@@ -44895,15 +44895,6 @@ body.traceops-premium-shell [class*="impact"]{
     try{
       var nodes=[].slice.call(document.querySelectorAll('button,a'));
       nodes.forEach(function(n){
-        var isBoardTrackerExport = n.hasAttribute('data-board-export-issue') ||
-          n.hasAttribute('data-board-export-action') ||
-          (n.closest && !!n.closest('#board-impact-export-center'));
-        if(isBoardTrackerExport){
-          n.style.removeProperty('display');
-          n.style.removeProperty('visibility');
-          n.style.removeProperty('opacity');
-          return;
-        }
         var t=(n.textContent||'').trim();
         var label=(t+' '+(n.getAttribute('aria-label')||'')+' '+(n.getAttribute('title')||'')).toLowerCase();
         var isExport=(/export|download|descargar/.test(label));
@@ -49658,8 +49649,7 @@ document.addEventListener("DOMContentLoaded",sched);document.addEventListener("c
   function ensureCenter(){ var root=document.getElementById('boardimpact-section'); if(!root) return; var center=document.getElementById('board-impact-export-center'); if(center && /Export Issue Tracker XLSX/i.test(center.textContent||'')) return; if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); } center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1'; center.innerHTML='<div style="min-width:300px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Issue export y Action/RCCA export separados. No clones.</div></div><button data-smtinel-board-native-export="v80" data-board-export-issue="1" class="traceops-board-export-btn" type="button">Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v80" data-board-export-action="1" class="traceops-board-export-btn" type="button">Export Action / RCCA XLS</button>'; Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); }); }
   function run(){ try{ ensureCenter(); }catch(e){ console.warn('[SMTinel] Board Impact v79 export guard:',e); } }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  // Legacy v80 DOM polling disabled. The native React Export Center is authoritative.
-  window.__SMTINEL_BOARD_EXPORT_V80_DOM_POLLING_DISABLED__=true;
+  setInterval(run,700);
   window.SMTINEL_BOARD_IMPACT_EXPORT_V80={version:VERSION,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
@@ -56863,8 +56853,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ ensureCenter(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  // Legacy v76 DOM polling disabled. The native React Export Center is authoritative.
-  window.__SMTINEL_BOARD_EXPORT_V76_DOM_POLLING_DISABLED__=true;
+  setInterval(run,450);
   window.SMTINEL_BOARD_IMPACT_EXPORT_V76={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, model:buildModel};
 })();
 </script>
@@ -57026,8 +57015,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ try{ ensureCenter(); }catch(e){} }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  // Legacy v77 DOM polling disabled. The native React Export Center is authoritative.
-  window.__SMTINEL_BOARD_EXPORT_V77_DOM_POLLING_DISABLED__=true;
+  setInterval(run,700);
   window.SMTINEL_BOARD_IMPACT_EXPORT_V77={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, buildBook:buildBook};
 })();
 </script>
@@ -57283,8 +57271,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ try{ ensureCenter(); bindGlobalExportHijack(); }catch(e){ console.warn('[SMTinel] Board Impact v84 export guard:', e); } }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  // Legacy v84 DOM polling disabled. The native React Export Center is authoritative.
-  window.__SMTINEL_BOARD_EXPORT_V84_DOM_POLLING_DISABLED__=true;
+  setInterval(run,700);
   window.SMTINEL_BOARD_IMPACT_EXPORT_V84={version:VERSION,model:buildModel,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
@@ -59239,7 +59226,7 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   function bind(){document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('button,a,[role="button"]'):null; if(!b)return; var t=u(b.textContent||b.getAttribute('aria-label')||''); var inExportCenter=!!(b.closest&&b.closest('#board-impact-export-center,.traceops-board-export-center')); if(inExportCenter && /XLSX$/.test(t) && !b.hasAttribute('data-board-export-issue') && !b.hasAttribute('data-board-export-action')) return; var isI=b.hasAttribute('data-board-export-issue')||(inExportCenter&&/EXPORT ISSUE TRACKER/.test(t)); var isA=b.hasAttribute('data-board-export-action')||(inExportCenter&&/EXPORT ACTION|ACTION\s*\/\s*RCCA|RCCA XLS|RCCA TRACKER/.test(t)); if(!isI&&!isA)return; e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation)e.stopImmediatePropagation(); save(isA?'Action':'Issue'); return false;},true);}
   function retag(){var c=document.getElementById('board-impact-export-center'); if(!c)return; var note=c.querySelector('div div + div'); if(note) note.textContent='v94: export filtrado por filtros activos de Yield Flow. Paretos incluidos.';}
   window.SMTINEL_BOARD_IMPACT_EXPORT_V94={version:VERSION,exportIssue:function(){save('Issue');},exportAction:function(){save('Action');},model:buildModel};
-  bind(); retag();
+  bind(); setInterval(retag,1500); retag();
 })();
 </script>
 
