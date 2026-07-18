@@ -9431,100 +9431,209 @@ function traceOpsYieldSetSerialSearch(rawValue, setter) {
 }
 
 function traceOpsYieldExportSerialTrace(rawValue) {
-    try {
-        var serials = traceOpsYieldParseSerialInput(rawValue);
-        if (!serials.length) {
-            alert("No hay números de serie para exportar.");
-            return;
-        }
-        function safe(v) {
-            return String(v == null ? "" : v).replace(/\t/g, " ").replace(/\r?\n/g, " ").trim();
-        }
-        var headers = ["SN", "Source", "Event/Process", "WO", "SKU", "Family", "BU", "Line", "Cisco Week", "Station", "Fail/Root Cause", "FailLocation", "Component", "RepairTime", "Tester", "Result/Status", "Extra"];
-        var rows = [headers];
-        serials.forEach(function(sn) {
-            var sfc = (TRACEOPS_YIELD_SN_TO_SFC && TRACEOPS_YIELD_SN_TO_SFC[sn]) || null;
-            var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[sn]) || [];
-            var cesium = (TRACEOPS_YIELD_FT_ROWS || []).filter(function(r) { return String((r && r.sn) || "").toUpperCase() === sn; });
-            if (sfc) {
-                rows.push([
-                    sn,
-                    "SFC",
-                    sfc.event || sfc.process || sfc.station || "",
-                    sfc.wo || "",
-                    sfc.sku || "",
-                    sfc.family || sfc.model || "",
-                    sfc.bu || "",
-                    sfc.line || "",
-                    sfc.week || "",
-                    sfc.station || "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    sfc.status || "",
-                    sfc.eventTime || ""
-                ]);
+    var serials = traceOpsYieldParseSerialInput(rawValue);
+    if (!serials.length) {
+        alert("No hay números de serie para exportar.");
+        return Promise.resolve();
+    }
+
+    function cell(v) {
+        return String(v == null ? "" : v).replace(/\r?\n/g, " ").trim();
+    }
+    function cesiumResult(row) {
+        var direct = cell(row && (row.result || row.status));
+        if (direct) return direct.toUpperCase();
+        var kind = cell(row && row.kind).toLowerCase();
+        if (kind === "pass") return "PASS";
+        if (kind === "fail") return "FAIL";
+        return kind.toUpperCase();
+    }
+    function latestBy(rows, dateFields) {
+        var list = Array.isArray(rows) ? rows : [];
+        var best = null;
+        var bestTime = -1;
+        list.forEach(function(row, index) {
+            var raw = "";
+            for (var i = 0; i < dateFields.length; i++) {
+                raw = row && row[dateFields[i]];
+                if (raw) break;
             }
-            repairs.forEach(function(r) {
-                rows.push([
-                    sn,
-                    "Repair_Record",
-                    r.action || r.type || "",
-                    r.wo || r.workOrder || "",
-                    r.sku || r.skuNo || r.product || "",
-                    r.family || r.modelName || r.model || "",
-                    r.bu || "",
-                    r.line || "",
-                    r.week || "",
-                    r.station || r.testStation || "",
-                    r.rootCauseEsp || r.rootcauseEsp || r.rootCause || r.failMode || r.failureMode || "",
-                    r.failLocation || r.ref || r.refdes || "",
-                    r.component || r.componentPn || "",
-                    r.repairTime || r.failTime || r.time || "",
-                    r.tester || "",
-                    r.result || r.status || "",
-                    r.remark || r.actiondesc || ""
-                ]);
-            });
-            cesium.forEach(function(c) {
-                rows.push([
-                    sn,
-                    "Cesium_FT",
-                    c.testArea || c.area || "",
-                    c.wo || c.workOrder || "",
-                    c.sku || c.product || "",
-                    c.family || c.model || "",
-                    c.bu || "",
-                    c.line || "",
-                    c.week || "",
-                    c.station || "",
-                    c.failure || c.errorCode || "",
-                    c.failLocation || "",
-                    c.component || "",
-                    c.time || c.testTime || "",
-                    c.tester || "",
-                    c.result || c.status || "",
-                    c.errorMessage || c.remark || ""
-                ]);
-            });
-            if (!sfc && !repairs.length && !cesium.length) {
-                rows.push([sn, "NOT_FOUND", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "SN no encontrado en datos importados"]);
+            var parsed = raw ? new Date(raw).getTime() : NaN;
+            var rank = isFinite(parsed) ? parsed : index;
+            if (best == null || rank >= bestTime) {
+                best = row || {};
+                bestTime = rank;
             }
         });
-        var tsv = rows.map(function(row) { return row.map(safe).join("\t"); }).join("\n");
-        var blob = new Blob([tsv], { type: "text/tab-separated-values;charset=utf-8" });
+        return best || {};
+    }
+    function sfcContext(sfc) {
+        sfc = sfc || {};
+        return [
+            cell(sfc.event || sfc.process || sfc.station),
+            cell(sfc.wo || sfc.workOrder),
+            cell(sfc.sku || sfc.product),
+            cell(sfc.family || sfc.model),
+            cell(sfc.bu),
+            cell(sfc.line),
+            cell(sfc.week),
+            cell(sfc.eventTime || sfc.time)
+        ];
+    }
+
+    var summaryHeaders = [
+        "SN", "Estado de búsqueda", "Fuentes encontradas", "Proceso actual", "WO", "SKU", "Familia", "BU", "Línea", "Cisco Week", "Fecha evento SFC",
+        "Cantidad reparaciones", "Última estación reparación", "Último síntoma", "Última referencia", "Último núm. de parte", "Última fecha reparación",
+        "Cantidad registros Cesium", "Última área de test", "Último resultado", "Último test fallido", "Última máquina", "Última fecha Cesium",
+        "Historial completo de reparación", "Historial completo de Cesium"
+    ];
+    var historyHeaders = [
+        "SN", "Tipo de registro", "Núm. de registro", "Proceso actual SFC", "WO", "SKU", "Familia", "BU", "Línea", "Cisco Week", "Fecha evento SFC",
+        "Estación reparación", "Síntoma", "Referencia", "Núm. de parte", "Fecha reparación",
+        "Área de test Cesium", "Resultado Cesium", "Test fallido", "Máquina", "Fecha registro Cesium", "Estatus / notas"
+    ];
+    var summaryRows = [];
+    var historyRows = [];
+
+    serials.forEach(function(sn) {
+        var sfc = (TRACEOPS_YIELD_SN_TO_SFC && TRACEOPS_YIELD_SN_TO_SFC[sn]) || null;
+        var repairs = (TRACEOPS_YIELD_REPAIRS_BY_SN && TRACEOPS_YIELD_REPAIRS_BY_SN[sn]) || [];
+        var cesium = (TRACEOPS_YIELD_FT_ROWS || []).filter(function(r) {
+            return traceOpsYieldCleanSn(r && r.sn) === sn;
+        });
+        var found = !!sfc || repairs.length > 0 || cesium.length > 0;
+        var sources = [];
+        if (sfc) sources.push("SFC");
+        if (repairs.length) sources.push("Repair Record");
+        if (cesium.length) sources.push("Cesium FT");
+
+        var context = sfcContext(sfc);
+        var lastRepair = latestBy(repairs, ["repairTime", "failTime", "time"]);
+        var lastCesium = latestBy(cesium, ["recordTime", "time", "testTime"]);
+        var repairHistory = repairs.map(function(r, index) {
+            return (index + 1) + ") " + [
+                cell(r.station || r.testStation),
+                cell(r.symptom || r.failSymptom || r.failureMode || r.failMode || r.rootCauseEsp || r.rootCause),
+                cell(r.location || r.failLocation || r.ref || r.refdes),
+                cell(r.partNumber || r.component || r.componentPn),
+                cell(r.repairTime || r.failTime || r.time)
+            ].filter(Boolean).join(" | ");
+        }).join(" || ");
+        var cesiumHistory = cesium.map(function(c, index) {
+            return (index + 1) + ") " + [
+                cell(c.testArea || c.area || c.station),
+                cesiumResult(c),
+                cell(c.failingTestName || c.failure || c.errorCode),
+                cell(c.machine || c.tester),
+                cell(c.recordTime || c.time || c.testTime)
+            ].filter(Boolean).join(" | ");
+        }).join(" || ");
+        summaryRows.push([
+            sn, found ? "ENCONTRADO" : "NO ENCONTRADO", sources.join(" + "),
+            context[0], context[1], context[2], context[3], context[4], context[5], context[6], context[7],
+            repairs.length,
+            cell(lastRepair.station || lastRepair.testStation),
+            cell(lastRepair.symptom || lastRepair.failSymptom || lastRepair.failureMode || lastRepair.failMode),
+            cell(lastRepair.location || lastRepair.failLocation || lastRepair.ref || lastRepair.refdes),
+            cell(lastRepair.partNumber || lastRepair.component || lastRepair.componentPn),
+            cell(lastRepair.repairTime || lastRepair.failTime || lastRepair.time),
+            cesium.length,
+            cell(lastCesium.testArea || lastCesium.area || lastCesium.station),
+            cesiumResult(lastCesium),
+            cell(lastCesium.failingTestName || lastCesium.failure || lastCesium.errorCode),
+            cell(lastCesium.machine || lastCesium.tester),
+            cell(lastCesium.recordTime || lastCesium.time || lastCesium.testTime),
+            repairHistory,
+            cesiumHistory
+        ]);
+
+        repairs.forEach(function(r, index) {
+            historyRows.push([
+                sn, "REPAIR RECORD", index + 1,
+                context[0], context[1] || cell(r.wo || r.workOrder), context[2] || cell(r.sku || r.skuNo || r.product),
+                context[3] || cell(r.family || r.modelName || r.model), context[4] || cell(r.bu), context[5] || cell(r.line), context[6] || cell(r.week), context[7],
+                cell(r.station || r.testStation),
+                cell(r.symptom || r.failSymptom || r.failureMode || r.failMode || r.rootCauseEsp || r.rootCause),
+                cell(r.location || r.failLocation || r.ref || r.refdes),
+                cell(r.partNumber || r.component || r.componentPn),
+                cell(r.repairTime || r.failTime || r.time),
+                "", "", "", "", "",
+                cell(r.result || r.status || r.remark || r.actiondesc)
+            ]);
+        });
+        cesium.forEach(function(c, index) {
+            historyRows.push([
+                sn, "CESIUM FT", index + 1,
+                context[0], context[1] || cell(c.wo || c.workOrder), context[2] || cell(c.sku || c.product),
+                context[3] || cell(c.family || c.model), context[4] || cell(c.bu), context[5] || cell(c.line), context[6] || cell(c.week), context[7],
+                "", "", "", "", "",
+                cell(c.testArea || c.area || c.station),
+                cesiumResult(c),
+                cell(c.failingTestName || c.failure || c.errorCode),
+                cell(c.machine || c.tester),
+                cell(c.recordTime || c.time || c.testTime),
+                cell(c.errorMessage || c.remark)
+            ]);
+        });
+        if (!repairs.length && !cesium.length) {
+            historyRows.push([
+                sn, sfc ? "SFC ACTUAL" : "NO ENCONTRADO", 1,
+                context[0], context[1], context[2], context[3], context[4], context[5], context[6], context[7],
+                "", "", "", "", "", "", "", "", "", "",
+                sfc ? cell(sfc.status) : "SN no encontrado en los datos importados"
+            ]);
+        }
+    });
+
+    return window.ensureExcelTools().then(function() {
+        var wb = new ExcelJS.Workbook();
+        wb.creator = "SMTinel by SMTintel";
+        wb.created = new Date();
+
+        function addStructuredSheet(name, headers, rows, widths) {
+            var ws = wb.addWorksheet(name);
+            ws.addRow(headers);
+            rows.forEach(function(row) { ws.addRow(row); });
+            ws.columns = headers.map(function(header, index) {
+                return { header: header, key: "c" + index, width: widths[index] || 18 };
+            });
+            var headerRow = ws.getRow(1);
+            headerRow.height = 30;
+            headerRow.eachCell(function(cell) {
+                cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5F" } };
+                cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+                cell.border = { bottom: { style: "thin", color: { argb: "FF9FB7D7" } } };
+            });
+            ws.eachRow(function(row, rowNumber) {
+                if (rowNumber === 1) return;
+                row.alignment = { vertical: "top", wrapText: true };
+                row.font = { name: "Segoe UI", size: 10, color: { argb: "FF102A43" } };
+                if (rowNumber % 2 === 0) {
+                    row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF7FAFF" } };
+                }
+            });
+            ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
+            ws.views = [{ state: "frozen", xSplit: 1, ySplit: 1 }];
+            return ws;
+        }
+
+        addStructuredSheet("Resumen_SN", summaryHeaders, summaryRows, [18, 18, 25, 20, 16, 18, 24, 13, 10, 18, 21, 16, 22, 30, 18, 20, 21, 16, 22, 16, 30, 20, 21, 65, 65]);
+        addStructuredSheet("Historial", historyHeaders, historyRows, [18, 18, 14, 20, 16, 18, 24, 13, 10, 18, 21, 22, 32, 18, 20, 21, 22, 16, 32, 20, 21, 34]);
+
+        return wb.xlsx.writeBuffer();
+    }).then(function(buffer) {
+        var blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "smtinel_serial_trace_" + new Date().toISOString().slice(0, 10) + ".tsv";
+        a.download = "SMTinel_Trazabilidad_SN_" + new Date().toISOString().slice(0, 10) + ".xlsx";
         document.body.appendChild(a);
         a.click();
-        setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-    } catch (err) {
-        console.error("Serial trace TSV export failed", err);
-        alert("No se pudo exportar el TSV de trazabilidad: " + (err && err.message ? err.message : err));
-    }
+        setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }).catch(function(err) {
+        console.error("Serial trace XLSX export failed", err);
+        alert("No se pudo exportar el Excel de trazabilidad: " + (err && err.message ? err.message : err));
+    });
 }
 
 function traceOpsYieldWoKeyVariants(value) {
@@ -27965,7 +28074,7 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("input", { type: "text", value: snSearchInput, onChange: function(e) { setSnSearchInput(e.target.value); }, onKeyDown: function(e) { if (e.key === "Enter") traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, placeholder: "Ingresa uno o varios SN...", title: "Puedes pegar varios SN separados por coma, espacio o salto de línea", style: { border: "1px solid #C8D8F0", borderRadius: 999, padding: "7px 12px", fontSize: 11, width: 260, outline: "none", fontFamily: "monospace" } }),
                         React.createElement("button", { type: "button", onClick: function() { traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 999, padding: "7px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" } }, "Buscar"),
                         snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { setSnSearchQuery(""); setSnSearchInput(""); }, style: { background: "#F0EDE9", color: "#5F766C", border: "1px solid #DDD", borderRadius: 999, padding: "7px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "× Limpiar") : null,
-                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { traceOpsYieldExportSerialTrace(snSearchQuery); }, title: "Exporta en TSV la información desplegada para los SN consultados", style: { background: "#FFFFFF", color: "#1F3A5F", border: "1px solid #CFE0FB", borderRadius: 999, padding: "7px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16,42,67,.06)" } }, "Exportar TSV") : null)),
+                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { traceOpsYieldExportSerialTrace(snSearchQuery); }, title: "Descarga un Excel estructurado con resumen por SN e historial completo", style: { background: "#FFFFFF", color: "#1F3A5F", border: "1px solid #CFE0FB", borderRadius: 999, padding: "7px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16,42,67,.06)" } }, "Descargar XLSX") : null)),
                 React.createElement("div", { style: { padding: "14px 18px" } },
                     snSearchQuery ? (function() {
                         var snKeys = traceOpsYieldParseSerialInput(snSearchQuery);
