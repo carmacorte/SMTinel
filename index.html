@@ -3228,6 +3228,810 @@ async function signUp(email, password){
   };
 })();
 </script>
+<!-- SMTinel V13.14.5 - Board Impact export toolbar: React-owned + independent recovery guard -->
+<style id="smtinel-board-export-v96-style">
+#smtinel-board-export-toolbar-v96{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  z-index:30!important;
+  grid-template-columns:repeat(2,minmax(240px,1fr))!important;
+  gap:10px!important;
+  min-height:68px!important;
+  padding:12px 14px!important;
+  background:#fff!important;
+  border:1px solid #D9E6F7!important;
+  border-radius:18px!important;
+  box-shadow:0 6px 18px rgba(20,32,51,.045)!important;
+}
+#smtinel-board-export-toolbar-v96 [data-board-export-v96]{
+  display:inline-flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:42px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  pointer-events:auto!important;
+  border-radius:12px!important;
+  padding:10px 14px!important;
+  font:950 12px Inter,Segoe UI,Arial,sans-serif!important;
+  cursor:pointer!important;
+  white-space:nowrap!important;
+}
+#smtinel-board-export-toolbar-v96 [data-board-export-v96="issue"]{
+  border:1px solid #BFE7D1!important;
+  background:#EAF7EF!important;
+  color:#0F6B3F!important;
+}
+#smtinel-board-export-toolbar-v96 [data-board-export-v96="action"]{
+  border:1px solid #F1C04E!important;
+  background:#FFF7D8!important;
+  color:#8A5A00!important;
+}
+@media(max-width:860px){
+  #smtinel-board-export-toolbar-v96{grid-template-columns:1fr!important;}
+}
+</style>
+<script id="smtinel-board-export-v96-guard">
+(function(){
+  "use strict";
+  if(window.__SMTINEL_BOARD_EXPORT_V96__) return;
+  window.__SMTINEL_BOARD_EXPORT_V96__=true;
+  var BUILD_LABEL="SMTinel V13.14.6 - English UI - 2026-07-17";
+  var scheduled=false;
+  function setIfDifferent(node,name,value){
+    if(node.getAttribute(name)!==value) node.setAttribute(name,value);
+  }
+  function makeButton(toolbar,kind){
+    var button=toolbar.querySelector('[data-board-export-v96="'+kind+'"]');
+    if(!button){
+      button=document.createElement("button");
+      toolbar.appendChild(button);
+    }
+    button.type="button";
+    setIfDifferent(button,"data-board-export-v96",kind);
+    setIfDifferent(button,kind==="issue"?"data-board-export-issue":"data-board-export-action","1");
+    setIfDifferent(button,"data-smtinel-board-native-export","v96-guard");
+    setIfDifferent(button,"aria-label",kind==="issue"?"Export Issue Tracker":"Export Action Tracker");
+    var label=kind==="issue"?"Export Issue Tracker":"Export Action Tracker";
+    if(button.textContent!==label) button.textContent=label;
+    return button;
+  }
+  function updateBadge(){
+    window.SMTINEL_BUILD_VERSION=BUILD_LABEL;
+    window.SMTINEL_BUILD_BADGE=BUILD_LABEL;
+    window.TRACEOPS_RELEASE_BADGE=BUILD_LABEL;
+    var badges=document.querySelectorAll('.traceops-build-badge,.smtinel-version-badge,[data-build-badge]');
+    for(var i=0;i<badges.length;i++) if(badges[i].textContent!==BUILD_LABEL) badges[i].textContent=BUILD_LABEL;
+  }
+  function mount(){
+    scheduled=false;
+    var root=document.getElementById("boardimpact-section");
+    var center=document.getElementById("board-impact-export-center");
+    if(!root||!center){ updateBadge(); return; }
+    var toolbar=document.getElementById("smtinel-board-export-toolbar-v96");
+    if(!toolbar){
+      toolbar=document.createElement("section");
+      toolbar.id="smtinel-board-export-toolbar-v96";
+      toolbar.setAttribute("data-smtinel-board-export-toolbar","v96-guard");
+      center.insertAdjacentElement("afterend",toolbar);
+    }
+    makeButton(toolbar,"issue");
+    makeButton(toolbar,"action");
+    var stale=center.querySelectorAll('[data-board-export-issue],[data-board-export-action],[data-board-export-v95]');
+    for(var i=0;i<stale.length;i++) if(!stale[i].closest('#smtinel-board-export-toolbar-v96')) stale[i].remove();
+    var note=center.querySelector("div div + div");
+    var copy="Export filtrado por el scope activo de Yield Flow. Paretos incluidos.";
+    if(note&&note.textContent!==copy) note.textContent=copy;
+    updateBadge();
+  }
+  function schedule(){
+    if(scheduled) return;
+    scheduled=true;
+    (window.requestAnimationFrame||function(fn){return setTimeout(fn,0);})(mount);
+  }
+  window.addEventListener("click",function(event){
+    var button=event.target&&event.target.closest?event.target.closest("[data-board-export-v96]"):null;
+    if(!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.stopImmediatePropagation) event.stopImmediatePropagation();
+    var kind=button.getAttribute("data-board-export-v96");
+    var api=window.SMTINEL_BOARD_IMPACT_EXPORT_V94||window.SMTINEL_BOARD_IMPACT_EXPORT_V84||window.SMTINEL_BOARD_IMPACT_EXPORT_V80||window.SMTINEL_BOARD_IMPACT_EXPORT_V76;
+    if(!api){ alert("El exportador Board Impact todavía no está listo. Espera un momento e intenta nuevamente."); return false; }
+    if(kind==="action"&&typeof api.exportAction==="function") api.exportAction();
+    else if(typeof api.exportIssue==="function") api.exportIssue();
+    return false;
+  },true);
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",schedule); else schedule();
+  try{ new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true}); }catch(_){}
+  setTimeout(schedule,250);
+  setTimeout(schedule,1200);
+})();
+</script>
+<!-- SMTinel V13.14.6 - English-only interface integrity layer -->
+<script id="smtinel-english-ui-v13146">
+(function(){
+  "use strict";
+  if(window.__SMTINEL_ENGLISH_UI_V13146__) return;
+  window.__SMTINEL_ENGLISH_UI_V13146__=true;
+  try{ localStorage.setItem("traceops_lang","en"); }catch(_){}
+  document.documentElement.lang="en";
+
+  var exact={
+    "Abrir login Supabase":"Open Supabase sign-in",
+    "Entrar Supabase":"Sign in to Supabase",
+    "Modo local":"Local mode",
+    "Modo local activo":"Local mode active",
+    "Modo local · sin backend":"Local mode · no backend",
+    "Modo admin":"Admin mode",
+    "Modo admin activo":"Admin mode active",
+    "Nuevo":"New",
+    "Nuevo analisis":"New analysis",
+    "Ver análisis recientes":"View recent analyses",
+    "Comenzar con export de WhatsApp":"Start with your WhatsApp export",
+    "Exportar ZIP":"Export ZIP",
+    "Descargar bitácora XLSX":"Download XLSX log",
+    "Exportar PPTX Ejecutivo":"Export Executive PPTX",
+    "Exportar Action Tracker":"Export Action Tracker",
+    "Análisis Estadístico":"Statistical Analysis",
+    "RCCA en nube":"Cloud RCCA",
+    "RCCA local":"Local RCCA",
+    "Seleccionar archivo":"Select file",
+    "Seleccionar evidencia":"Select evidence",
+    "Cargar ZIP ahora":"Load ZIP now",
+    "Cargar ZIP/Excel":"Load ZIP/Excel",
+    "Importando…":"Importing…",
+    "Importando...":"Importing...",
+    "Estado de import":"Import status",
+    "Datos importados":"Imported data",
+    "Estado actual":"Current status",
+    "Estado actual por proceso":"Current status by process",
+    "Proceso actual":"Current process",
+    "Proceso Actual":"Current Process",
+    "Proceso actual SFC":"Current SFC process",
+    "Estacion actual":"Current station",
+    "Estación actual":"Current station",
+    "Estacion":"Station",
+    "Estación":"Station",
+    "ESTACION":"STATION",
+    "Línea":"Line",
+    "Linea":"Line",
+    "Familia":"Family",
+    "Fecha":"Date",
+    "Fecha evento SFC":"SFC event date",
+    "Fecha reparación":"Repair date",
+    "Cantidad":"Quantity",
+    "Estado":"Status",
+    "Responsable":"Owner",
+    "Evidencia":"Evidence",
+    "Impacto":"Impact",
+    "Riesgo":"Risk",
+    "Critica":"Critical",
+    "Crítico":"Critical",
+    "Críticos":"Critical",
+    "Alta":"High",
+    "Media":"Medium",
+    "Baja":"Low",
+    "Pendiente":"Pending",
+    "Pendientes":"Pending",
+    "En proceso":"In progress",
+    "Abierto":"Open",
+    "Cerrado":"Closed",
+    "Todos":"All",
+    "TODOS":"ALL",
+    "Todos los participantes":"All participants",
+    "Todas las semanas":"All weeks",
+    "Todos los prefijos":"All prefixes",
+    "Todo el dia":"All day",
+    "Desde":"From",
+    "Hasta":"To",
+    "Inicio":"Start",
+    "Fin":"End",
+    "Rango":"Range",
+    "Rango visible":"Visible range",
+    "Ventana visible actual":"Current visible window",
+    "Semana":"Week",
+    "Semanas":"Weeks",
+    "Dia":"Day",
+    "DIA":"DAY",
+    "Hora desde":"Time from",
+    "Hora hasta":"Time to",
+    "Última semana":"Latest week",
+    "Ultima semana":"Latest week",
+    "Última referencia":"Latest reference",
+    "Último síntoma":"Latest symptom",
+    "Último resultado":"Latest result",
+    "Última fecha reparación":"Latest repair date",
+    "Última estación reparación":"Latest repair station",
+    "Última área de test":"Latest test area",
+    "Última fecha Cesium":"Latest Cesium date",
+    "Último núm. de parte":"Latest part number",
+    "Último registro":"Latest record",
+    "Número de Serie":"Serial Number",
+    "Número de Parte":"Part Number",
+    "Núm. de parte":"Part Number",
+    "Núm. de registro":"Record Number",
+    "Síntoma":"Symptom",
+    "Descripción":"Description",
+    "Tipo de Componente":"Component Type",
+    "Área responsable":"Responsible Area",
+    "Estacion de deteccion":"Detection Station",
+    "Correlacion Test ↔ Reparacion":"Test ↔ Repair Correlation",
+    "Evidencia de trazabilidad":"Traceability Evidence",
+    "Copiar tabla":"Copy Table",
+    "Cerrar":"Close",
+    "Descargar":"Download",
+    "Descargar .xlsx":"Download .xlsx",
+    "Descargar Excel":"Download Excel",
+    "Descargar TSV":"Download TSV",
+    "Descargar XLSX":"Download XLSX",
+    "Exportar Excel":"Export Excel",
+    "Exportar JSON":"Export JSON",
+    "Exportar PPTX":"Export PPTX",
+    "Exportar TSV":"Export TSV",
+    "Buscar":"Search",
+    "Buscar RefDes":"Search RefDes",
+    "Limpiar":"Clear",
+    "Restablecer filtros":"Reset filters",
+    "Filtros ejecutivos Yield Flow":"Yield Flow Executive Filters",
+    "Foco actual para junta":"Current Meeting Focus",
+    "Management Control View":"Management Control View",
+    "Import ZIP / Excel":"ZIP / Excel Import",
+    "Weekly Factory Health":"Weekly Factory Health",
+    "Pareto 80/20 de modos de falla":"Failure Mode 80/20 Pareto",
+    "Breakdown de estaciones (flujo real)":"Station Breakdown (Real Flow)",
+    "Unidades esperadas":"Expected Units",
+    "Unidades actuales":"Current Units",
+    "WOs impactadas":"Impacted WOs",
+    "Seriales impactados":"Impacted Serials",
+    "Seriales afectados":"Affected Serials",
+    "Criticidad":"Criticality",
+    "Modo de falla":"Failure Mode",
+    "Modo / Ref":"Mode / Ref",
+    "Falla / Ref":"Failure / Ref",
+    "Por estatus":"By Status",
+    "Por linea":"By Line",
+    "Por modelo":"By Model",
+    "Por prioridad":"By Priority",
+    "Por semana":"By Week",
+    "Por tipo":"By Type",
+    "Filtro de analisis":"Analysis Filter",
+    "Filtro por persona":"Filter by Person",
+    "Selecciona una persona":"Select a person",
+    "Mapa termico por turno":"Heatmap by Shift",
+    "Performance hora por hora":"Hourly Performance",
+    "Eventos por hora":"Events by Hour",
+    "Timeline de comportamiento - Eventos por hora":"Behavior Timeline - Events by Hour",
+    "Intensidad por hora":"Hourly Intensity",
+    "Yield por estación":"Yield by Station",
+    "Flow funnel por estación":"Station Flow Funnel",
+    "Flujo acumulado por estación":"Cumulative Flow by Station",
+    "Resumen tipo WIP desde Cesium":"Cesium WIP Summary",
+    "Trazabilidad por Núm. de Serie":"Serial Number Traceability",
+    "Historial completo de reparación":"Complete Repair History",
+    "Tendencias por modo de falla":"Failure Mode Trends",
+    "Barras estándar":"Standard Bars",
+    "Tabla":"Table",
+    "Modo":"Failure Mode",
+    "SN acumulados":"Cumulative SN",
+    "Ultima semana":"Latest Week",
+    "Heatmap por modo de falla":"Failure Mode Heatmap",
+    "Mapa de impacto en tablilla":"Board Impact Map",
+    "Vista general":"Overview",
+    "Detalle":"Detail",
+    "Detalle de referencia":"Reference Detail",
+    "Regresar a Yield Flow":"Back to Yield Flow",
+    "← Regresar a Yield Flow":"← Back to Yield Flow",
+    "Generar Markdown":"Generate Markdown",
+    "Generar Knowledge Pack":"Generate Knowledge Pack",
+    "Foco por estacion":"Focus by Station",
+    "Lectura del avance":"Progress Summary",
+    "Plan de acciones":"Action Plan",
+    "Seguimiento activo":"Active Follow-up",
+    "Pendientes de evidencia D6":"Pending D6 Evidence",
+    "Presión de cierre":"Closure Pressure",
+    "Ciclo de vida de incidentes":"Incident Lifecycle",
+    "Gobernanza de calidad":"Quality Governance",
+    "Trazabilidad y evidencia":"Traceability and Evidence",
+    "Ejecucion de acciones":"Action Execution",
+    "Listo para 8D":"8D Ready",
+    "No hay datos para graficar.":"No data available to chart.",
+    "Sin datos para graficar.":"No data available to chart.",
+    "Sin breakdown para el filtro actual.":"No breakdown is available for the current filter.",
+    "Sin estado actual por proceso para el filtro actual.":"No current process status is available for the current filter.",
+    "Sin yield por estación para graficar.":"No station yield data is available to chart.",
+    "Sin acciones. Usa Crear casos sugeridos o agrega una accion manual.":"No actions. Use Create Suggested Cases or add a manual action.",
+    "No hay pendientes urgentes en el filtro activo.":"No urgent pending items in the active filter.",
+    "No hay soluciones replicables detectadas para los eventos visibles.":"No reusable solutions were detected for the visible events.",
+    "Todavía no hay lecciones registradas para la ventana activa.":"No lessons have been recorded for the active window yet.",
+    "No hay RCCA guardadas. Crea la primera desde un evento de la bitacora.":"No RCCAs have been saved. Create the first one from a log event.",
+    "PDF listo para busqueda":"PDF ready for search",
+    "No es integración de módulo · validación interna":"Not a module integration · internal validation"
+  };
+
+  Object.assign(exact,{
+    "Año":"Year",
+    "día":"day",
+    "días":"days",
+    "Ver":"View",
+    "más":"more",
+    "fecha":"date",
+    "estado":"status",
+    "responsable":"owner",
+    "Básico":"Basic",
+    "Módulo":"Module",
+    "4+ días":"4+ days",
+    "0-1 días":"0-1 days",
+    "2-3 días":"2-3 days",
+    "CERRADO":"CLOSED",
+    "Proceso":"Process",
+    "Atención":"Attention",
+    "Sesión:":"Session:",
+    "críticos":"critical",
+    "Con datos":"With data",
+    "Línea N/D":"Line N/D",
+    "Sin línea":"No line",
+    "Sin owner":"No owner",
+    "Contraseña":"Password",
+    "Causa raíz:":"Root Cause:",
+    "D5 Acciones":"D5 Actions",
+    "Fecha desde":"Date From",
+    "Fecha hasta":"Date To",
+    "Semana desc":"Week descending",
+    "causas raíz":"root causes",
+    "PoR Promedio":"Average PoR",
+    "D3 Contención":"D3 Containment",
+    "D4 Causa raíz":"D4 Root Cause",
+    "Open bitácora":"Open Log",
+    "Sin Test Info":"No Test Info",
+    "Yokoten débil":"Weak Yokoten",
+    "Lote pendiente":"Pending Lot",
+    "Rango amplio:":"Wide Range:",
+    "sesión ocupada":"session busy",
+    "fuera de rango":"out of range",
+    "Caso sin modelo":"Case with No Model",
+    "D6 Verificación":"D6 Verification",
+    "Pipeline actual":"Current Pipeline",
+    "Sin descripcion":"No description",
+    "Ver RCCA memory":"View RCCA Memory",
+    "fuera del rango":"outside the range",
+    "Acción requerida":"Required Action",
+    "Acciones rapidas":"Quick Actions",
+    "Area responsable":"Responsible Area",
+    "Evidencia ligada":"Linked Evidence",
+    "Falla confirmada":"Confirmed Failure",
+    "Rango delimitado":"Bounded Range",
+    "Teoría vs físico":"Theory vs Physical",
+    "con RCCA similar":"with similar RCCA",
+    "Cronómetro activo":"Timer Active",
+    "Estado realtime:":"Realtime Status:",
+    "Sin conexión real":"No Live Connection",
+    "imagenes en rango":"images in range",
+    "Base real de falla":"Actual Failure Basis",
+    "Correo electrónico":"Email",
+    "Evidencia faltante":"Missing Evidence",
+    "Generar desde RCCA":"Generate from RCCA",
+    "Realtime con error":"Realtime Error",
+    "Sin sesion en nube":"No Cloud Session",
+    "Sesion sin realtime":"Session without Realtime",
+    "horas con actividad":"active hours",
+    "reintentando conexión":"retrying connection",
+    "Abiertos / seguimiento":"Open / Follow-up",
+    "Aun sin ventana minima":"Minimum Window Not Reached",
+    "Dashboard de riesgo 8D":"8D Risk Dashboard",
+    "Donde es responsable (":"Where Responsible (",
+    "Exportar snapshot JSON":"Export JSON Snapshot",
+    "D7 Prevención / Yokoten":"D7 Prevention / Yokoten",
+    "Nube lenta · modo local":"Slow Cloud · Local Mode",
+    "Características Críticas":"Critical Characteristics",
+    "Eventos con finding útil":"Events with Useful Findings",
+    "Los 5 motores de SMTinel":"The 5 SMTinel Engines",
+    "mapa de calor por RefDes":"RefDes Heatmap",
+    "Sin bloqueadores mayores":"No Major Blockers",
+    "Sin evidencia suficiente":"Insufficient Evidence",
+    "Borrar todo el historial?":"Delete all history?",
+    "Detalle de no conformidad":"Nonconformance Detail",
+    "Sin patron fuerte visible":"No Strong Pattern Visible",
+    "alerta predictiva y riesgo":"predictive alert and risk",
+    "Crear primer 8D desde RCCA":"Create First 8D from RCCA",
+    "No hay Drafts 8D todavía.":"There are no 8D drafts yet.",
+    "RCCA / estandar disponible":"RCCA / Standard Available",
+    "No se pudo generar el PPT.":"The PPT could not be generated.",
+    "Pendiente de sincronizacion":"Pending Synchronization",
+    "recurrencia máquina / parte":"machine / part recurrence",
+    "Supabase listo · sin sesion":"Supabase Ready · No Session",
+    "Nube disponible · sync manual":"Cloud Available · Manual Sync",
+    "Sin eventos para esta persona":"No Events for This Person",
+    "Casos estructurados desde RCCA":"Cases Structured from RCCA",
+    "Escalacion por aging y bloqueo":"Escalation for Aging and Blockage",
+    "Filtrar SN / WO / SKU / falla…":"Filter SN / WO / SKU / failure…",
+    "salida, avance y riesgo por WO":"output, progress, and risk by WO",
+    "Sin bloqueador crítico visible":"No Visible Critical Blocker",
+    "Guardado local · nube pendiente":"Saved Locally · Cloud Pending",
+    "Serial history · rutas críticas":"Serial History · Critical Routes",
+    "Sin SN para el filtro aplicado.":"No SNs for the Applied Filter.",
+    "Correo pendiente de confirmacion":"Email Confirmation Pending",
+    "Eliminado local · nube pendiente":"Deleted Locally · Cloud Pending",
+    "Valida lógica D4 ↔ D5 ↔ D6 ↔ D7.":"Validate D4 ↔ D5 ↔ D6 ↔ D7 Logic.",
+    "Fuentes que alimentan la historia":"Sources Feeding the Story",
+    "No se pudo eliminar el Draft 8D.":"The 8D Draft could not be deleted.",
+    "Sesion activa · sin RCCA por subir":"Active Session · No RCCAs Pending Upload",
+    "Soluciones que podrían reaplicarse":"Solutions That Could Be Reused",
+    "Calculando análisis estadísticos...":"Calculating Statistical Analyses...",
+    "Cuenta creada · revisa confirmacion":"Account Created · Check Confirmation",
+    "Reconstrucción narrativa del evento":"Event Narrative Reconstruction",
+    "Requieren evidencia o cierre causal":"Require Evidence or Causal Closure",
+    "SN Bridge to Cesium · Avance actual":"SN Bridge to Cesium · Current Status",
+    "Buscar por modelo, linea, problema...":"Search by Model, Line, or Problem...",
+    "Resultado que debe entregar el módulo":"Expected Module Output",
+    "No se pudo generar el PPT 8D Foxconn.":"The Foxconn 8D PPT could not be generated.",
+    "Completar evidencia y narrativa técnica":"Complete Evidence and Technical Narrative",
+    "Buscar RCCA por modelo, línea o problema":"Search RCCA by Model, Line, or Problem",
+    "Construido desde adentro de la operación":"Built from Inside the Operation",
+    "incidentes visibles en la ventana activa":"incidents visible in the active window",
+    "Modo local · pendiente de sincronizacion":"Local Mode · Pending Synchronization",
+    "Top Offenders - Pareto por modo de falla":"Top Offenders - Pareto by Failure Mode",
+    "Calcula PoR: probabilidad de rechazo OEM.":"Calculates PoR: OEM Rejection Probability.",
+    "Sin datos suficientes en el rango actual.":"Insufficient Data in the Current Range.",
+    "Gobernanza para impedir cierres prematuros":"Governance to Prevent Premature Closure",
+    "Validación contra FAI y errores de escaneo":"Validation Against FAI and Scan Errors",
+    "Campos listos para poblar desde Excel / ZIP":"Fields Ready to Populate from Excel / ZIP",
+    "Carga completa. Preparando visualización...":"Load Complete. Preparing Visualization...",
+    "No se pudo guardar el Draft 8D localmente.":"The 8D Draft Could Not Be Saved Locally.",
+    "RCCA en nube · actualización en tiempo real":"Cloud RCCA · Realtime Update",
+    "Mide trazabilidad, anexos y soporte técnico.":"Measures Traceability, Attachments, and Technical Support.",
+    "Proteccion de cliente no requerida por ahora":"Customer Protection Not Required at This Time",
+    "Desliza horizontalmente para recorrer el mapa":"Swipe Horizontally to Navigate the Map",
+    "Genera estructura D1-D8 desde RCCA y eventos.":"Generates a D1-D8 Structure from RCCA and Events.",
+    "Inteligencia operativa con disciplina RCCA/8D":"Operational Intelligence with RCCA/8D Discipline",
+    "Backend no configurado. Se mantiene modo local.":"Backend Not Configured. Local Mode Remains Active.",
+    "Bloqueadores con mayor probabilidad de rechazo.":"Blockers with the Highest Rejection Probability.",
+    "Delimitación visual del inicio y cierre probable":"Visual Boundary of the Probable Start and End",
+    "Suelta aquí el ZIP o haz clic para seleccionarlo":"Drop the ZIP Here or Click to Select It",
+    "Yield by Week detail · filtros activos aplicados":"Yield by Week Detail · Active Filters Applied",
+    "Mapa visual de referencias usando PDF de tablilla":"Visual Reference Map Using the Board PDF",
+    "Enfoca correcciones quirúrgicas por sección débil.":"Focuses Targeted Corrections on Weak Sections.",
+    "Secuencia lógica para reconstruir el trigger event":"Logical Sequence to Reconstruct the Trigger Event",
+    "Torre de control de calidad SMTinel para manufactura":"SMTinel Manufacturing Quality Control Tower",
+    "Factores humano, material, método y delimitación final":"Human, Material, Method, and Final Boundary Factors",
+    "Seguimiento aging/bonepile por SN, re-entry y salida real":"Aging/Bonepile Follow-up by SN, Re-entry, and Actual Output",
+    "Yield por WO, avance por estacion y foco de riesgo para NGFW":"Yield by WO, Station Progress, and NGFW Risk Focus",
+    "No hay FAIL con Test Info / modo de falla en el scope actual.":"There are no FAIL records with Test Info / Failure Mode in the current scope.",
+    "No se pudo completar la importación. Revisa el archivo fuente.":"The Import Could Not Be Completed. Review the Source File.",
+    "Acota el dashboard por fecha y hora sobre el archivo ya cargado":"Narrow the Dashboard by Date and Time on the Loaded File",
+    "No se pudo actualizar el almacenamiento local al eliminar RCCA.":"Local Storage Could Not Be Updated When Deleting the RCCA.",
+    "Construyendo modelo Yield Flow, trazabilidad y análisis crítico...":"Building the Yield Flow Model, Traceability, and Critical Analysis...",
+    "Carga Yield Flow / Cesium para visualizar historial real por serial.":"Load Yield Flow / Cesium to View Actual Serial History.",
+    "Vista diaria para priorizar cartera NC/CAPA y riesgos de recurrencia":"Daily View to Prioritize the NC/CAPA Portfolio and Recurrence Risks",
+    "Acciones, owners, fecha compromiso, evidencia y matriz de efectividad":"Actions, Owners, Due Dates, Evidence, and Effectiveness Matrix",
+    "Leyendo paquete ZIP/XLSX y extrayendo datos válidos para Yield Flow...":"Reading the ZIP/XLSX Package and Extracting Valid Yield Flow Data...",
+    "Validando ZIP/Excel local y preparando extracción de hojas objetivo...":"Validating Local ZIP/Excel and Preparing Target Sheet Extraction...",
+    "Formulario CC de producto: restricciones, validaciones y reglas críticas":"Product CC Form: Restrictions, Validations, and Critical Rules",
+    "Secuencia SMT, capacidad, setup, tardanza e impacto economico por modelo":"SMT Sequence, Capacity, Setup, Tardiness, and Economic Impact by Model",
+    "Concentracion de lineas o estaciones mas afectadas dentro del filtro actual.":"Concentration of the Most Affected Lines or Stations within the Current Filter.",
+    "No hay eventos suficientes para construir el calendario en el rango cargado.":"There Are Not Enough Events to Build the Calendar in the Loaded Range.",
+    "Inicia sesion para ver en PC y celular las RCCA manuales con la misma cuenta.":"Sign In to View Manual RCCAs on PC and Mobile with the Same Account.",
+    "Lista operativa para abrir, refrescar, exportar y corregir drafts existentes.":"Operational List to Open, Refresh, Export, and Correct Existing Drafts.",
+    "Import local temporal: validando ZIP/Excel y extrayendo solo hojas objetivo...":"Temporary Local Import: Validating ZIP/Excel and Extracting Target Sheets Only...",
+    "Modo local activo. Agrega TRACEOPS_SUPABASE para sincronizar entre dispositivos.":"Local Mode Active. Add TRACEOPS_SUPABASE to Synchronize Across Devices.",
+    "Eventos que requieren owner, contención o cierre antes de que sigan envejeciendo.":"Events That Require an Owner, Containment, or Closure before They Age Further.",
+    "Todavía no hay drafts 8D. Crea una RCCA y usa el botón 8D para activar el analyzer.":"There Are No 8D Drafts Yet. Create an RCCA and Use the 8D Button to Activate the Analyzer.",
+    "Export, rango y estado de ejecucion consolidados aqui en lugar de un modulo separado.":"Export, Range, and Execution Status Are Consolidated Here Instead of in a Separate Module.",
+    "Si el proyecto requiere confirmacion por correo, valida tu email antes de sincronizar.":"If the Project Requires Email Confirmation, Validate Your Email before Synchronizing.",
+    "Respeta filtros Yield Flow + filtros locales. Agrupa FAIL por Test Info / Failure Mode.":"Respects Yield Flow and Local Filters. Groups FAIL by Test Info / Failure Mode.",
+    "Inicia sesion Supabase para restaurar RCCA de nube. Puedes seguir trabajando localmente.":"Sign In to Supabase to Restore Cloud RCCAs. You Can Continue Working Locally.",
+    "Opcional. Sin key se usa modo local; con key se intenta IA. Si IA falla, vuelve a local.":"Optional. Without a Key, Local Mode Is Used; with a Key, AI Is Attempted. If AI Fails, It Returns to Local Mode.",
+    "La carga de ZIP vive en el header principal para que nunca quede bloqueada por el drawer.":"ZIP Loading Is Located in the Main Header so It Is Never Blocked by the Drawer.",
+    "Score técnico por disciplina, calculado desde completitud, evidencia y coherencia causal.":"Technical Score by Discipline, Calculated from Completeness, Evidence, and Causal Coherence.",
+    "El sintoma funcional detectado en {station} correlaciona con reparacion fisica en {refdes}.":"The Functional Symptom Detected at {station} Correlates with Physical Repair at {refdes}.",
+    "Resume que duele en el scope activo y permite abrir el caso: modo de falla, SKU/modelo o WO.":"Summarizes the Active-scope Pain Point and Allows Opening a Case by Failure Mode, SKU/Model, or WO.",
+    "Cesium mide pass/fail por area de prueba, testinfo y unidades necesarias para recuperar meta.":"Cesium Measures Pass/Fail by Test Area, Test Info, and Units Required to Recover the Target.",
+    "Mide si el fix es local o transformacional. Este bloque convierte fallas en mejora sistémica.":"Measures Whether the Fix Is Local or Transformational. This Block Converts Failures into Systemic Improvement.",
+    "Tu operacion ya tiene las senales. El siguiente paso es cierre disciplinado con trazabilidad.":"Your Operation Already Has the Signals. The Next Step Is Disciplined Closure with Traceability.",
+    "Bitacora sugerida para asignar seguimiento, analisis, RCCA e ideas de mejora desde Yield Flow.":"Suggested Log to Assign Follow-up, Analysis, RCCA, and Improvement Ideas from Yield Flow.",
+    "Este rango incrementa consumo de tokens y ruido. Recomendado: 3 a 5 dias o separar por semana.":"This Range Increases Token Consumption and Noise. Recommended: 3 to 5 Days or Split by Week.",
+    "Se ignoran advertencias de rango y se usa techo alto de salida para pruebas en este dispositivo.":"Range Warnings Are Ignored and a High Output Limit Is Used for Testing on This Device.",
+    "No permitir cierre si falta lote afectado, evidencia de implementacion, validacion D6 o aprobacion QA.":"Do Not Allow Closure if the Affected Lot, Implementation Evidence, D6 Validation, or QA Approval Is Missing.",
+    "La lógica de análisis queda separada de la narrativa final del 8D para reducir rechazos y contradicciones.":"Analysis Logic Remains Separate from the Final 8D Narrative to Reduce Rejections and Contradictions.",
+    "Override local para este dispositivo. Omite advertencias de rango y sube el limite de salida para pruebas.":"Local Override for This Device. Skips Range Warnings and Raises the Output Limit for Testing."
+  });
+
+  Object.assign(exact,{
+    "sin":"without",
+    "dias":"days",
+    "registros":"records",
+    "D4 sin D5":"D4 without D5",
+    "D4 sin D7":"D4 without D7",
+    "D5 sin D4":"D5 without D4",
+    "D5 sin D6":"D5 without D6",
+    "Aceptación estimada":"Estimated Acceptance",
+    "evidencia(s) vinculada(s) ·":"linked evidence ·",
+    "Sesion guardada localmente; en refresh se restaura sin recargar ZIP.":"Session Saved Locally; Refresh Restores It without Reloading the ZIP.",
+    "Riesgo de recurrencia:":"Recurrence Risk:",
+    "Históricos similares por componente, proveedor y mecanismo físico":"Similar History by Component, Supplier, and Physical Mechanism",
+    "Validar SN y WO expuestas con SFC antes de liberar unidades.":"Validate Exposed SNs and WOs with SFC before Releasing Units.",
+    "Evento base detectado":"Baseline Event Detected",
+    "Extraído del quality alert / repair context":"Extracted from the Quality Alert / Repair Context",
+    "Línea / estación":"Line / Station",
+    "No hay eventos dentro del rango seleccionado. Ajusta las fechas u horas para volver a poblar KPIs, timeline y bitacora.":"There Are No Events within the Selected Range. Adjust the Dates or Times to Repopulate KPIs, the Timeline, and the Log.",
+    "Concentra ventana, motor, volumen de mensajes, evidencia y export en un solo panel maestro para evitar bloques repetidos.":"Consolidates the Window, Engine, Message Volume, Evidence, and Export in One Master Panel to Avoid Repeated Blocks.",
+    "Bloqueo material":"Material Block",
+    "Bloquear proveedor/PN si el score es alto y hay defecto confirmado.":"Block the Supplier/PN if the Score Is High and the Defect Is Confirmed.",
+    "Históricos a revisar":"History to Review",
+    "exacto, parcial, geometría, proceso":"exact, partial, geometry, process",
+    "Proveedor crítico":"Critical Supplier",
+    "Convierte incidentes, lecciones y soluciones replicables en memoria operativa reusable sin romper el lenguaje visual de SMTinel.":"Converts Incidents, Lessons, and Reusable Solutions into Reusable Operational Memory without Breaking SMTinel's Visual Language.",
+    "Coincidencias históricas y exposición potencial":"Historical Matches and Potential Exposure",
+    "grupos detectados":"groups detected",
+    "Lógica de búsqueda histórica":"Historical Search Logic",
+    "No se limita al nombre del defecto. Busca el mecanismo real.":"It Is Not Limited to the Defect Name. It Searches for the Actual Mechanism.",
+    "Sin coincidencias dinámicas. Carga Common DB ZIP con Repair_Record.txt y BOM.txt.":"No Dynamic Matches. Load the Common DB ZIP with Repair_Record.txt and BOM.txt.",
+    "Vista tipo breakdown: cubetas de aging, estaciones activas y match contra fresh para confirmar si el problema sigue vivo o ya fue contenido.":"Breakdown View: Aging Buckets, Active Stations, and Fresh-match Comparison to Confirm Whether the Problem Is Still Active or Has Been Contained.",
+    "SMTinel parte de la conversacion operativa real y la convierte en trazabilidad disciplinada, RCCA, preparacion 8D y seguimiento de efectividad.":"SMTinel Starts from Actual Operational Conversations and Converts Them into Disciplined Traceability, RCCA, 8D Readiness, and Effectiveness Follow-up.",
+    "Valida presencia de evidencia, trazabilidad, coherencia temporal, anexos y cobertura de despliegue. Penaliza D7 débil y acciones sin verificación.":"Validates Evidence, Traceability, Timeline Coherence, Attachments, and Deployment Coverage. Penalizes Weak D7 and Unverified Actions.",
+    "foco actual":"current focus",
+    "Se colocaron rollos equivocados de resistencia con valor incorrecto. La línea fue detenida y las tablillas sospechosas quedaron delimitadas para contención.":"Incorrect Resistor Reels with the Wrong Value Were Loaded. The Line Was Stopped and Suspect Boards Were Bounded for Containment.",
+    "No se pudo guardar el RCCA localmente. El caso parece exceder el limite de almacenamiento del navegador. Exporta/limpia datos o inicia sesion en nube. Detalle:":"The RCCA Could Not Be Saved Locally. The Case Appears to Exceed the Browser Storage Limit. Export/Clear Data or Sign In to the Cloud. Details:",
+    "Quality Gate inteligente para transformar RCCAs en 8Ds aceptables por OEM, detectar contradicciones causales y propagar Yokoten mediante firma de falla, evidencia y perfil de rechazo.":"Intelligent Quality Gate to Transform RCCAs into OEM-acceptable 8Ds, Detect Causal Contradictions, and Propagate Yokoten through Failure Signature, Evidence, and Rejection Profile.",
+    "Modelo":"Model",
+    "Proveedor":"Supplier",
+    "Defecto":"Defect",
+    "Eventos":"Events",
+    "Convierte archivos dispersos de SFC, All Parts, ICT, Cesium, escaneo, FAI y setup en una historia técnica: qué pasó, cuándo inició, qué unidades comparten riesgo y qué evidencia sostiene el RCCA.":"Converts Dispersed SFC, All Parts, ICT, Cesium, Scan, FAI, and Setup Files into a Technical Story: What Happened, When It Started, Which Units Share Risk, and What Evidence Supports the RCCA.",
+    "No habilitar aprobacion final si falta D6, evidencia de implementacion, owner responsable o monitoreo de recurrencia. Si aparece recurrencia post-cierre, el caso debe reabrirse o vincular una nueva NC.":"Do Not Enable Final Approval if D6, Implementation Evidence, a Responsible Owner, or Recurrence Monitoring Is Missing. If Post-closure Recurrence Appears, Reopen the Case or Link a New NC.",
+    "SN con evidencia de intervencion en Repair Record":"SN with Intervention Evidence in Repair Record",
+    "Mapea exposición horizontal por componente, proceso, línea, herramienta, programa, material e inspección. La primera versión usa campos 8D/RCCA; la siguiente puede conectarse al grafo de Yield Flow y Board Impact.":"Maps Horizontal Exposure by Component, Process, Line, Tool, Program, Material, and Inspection. The First Version Uses 8D/RCCA Fields; the Next Can Connect to the Yield Flow and Board Impact Graph.",
+    "SN sin evidencia de Repair Record en la estacion actual":"SN without Repair Record Evidence at the Current Station",
+    "Motor dinámico conectado al import de Yield Flow/Common DB. Cruza Repair Record, BOM, SFC y DB_Model para validar recurrencia real. Qué detalle tan moderno: ahora los datos sí hablan entre sí.":"Dynamic Engine Connected to the Yield Flow/Common DB Import. Cross-checks Repair Record, BOM, SFC, and DB_Model to Validate Actual Recurrence.",
+    "Carga una exportacion de WhatsApp, un hilo de correo o un historial de mensajes operativos. SMTinel convierte actualizaciones dispersas en incidentes estructurados con trazabilidad, memoria RCCA, preparacion 8D y control de cierre.":"Load a WhatsApp Export, Email Thread, or Operational Message History. SMTinel Converts Dispersed Updates into Structured Incidents with Traceability, RCCA Memory, 8D Readiness, and Closure Control.",
+    "La lectura operativa de SMTinel ahora aterriza en un modulo NC/CAPA con compuertas de contencion, analisis, accion, verificacion y cierre formal. La idea es no quedarse en incidentes visibles, sino empujar ownership, evidencia y efectividad por rol.":"SMTinel's Operational View Now Feeds an NC/CAPA Module with Gates for Containment, Analysis, Action, Verification, and Formal Closure. The Goal Is to Drive Ownership, Evidence, and Role-based Effectiveness beyond Merely Visible Incidents."
+  });
+
+  var phrases=[
+    [/Tendencia semanal por modo de falla usando SN únicos dentro del scope activo\. Vista ejecutiva con barras estándar y tabla de resumen\./gi,"Weekly trend by failure mode using unique SNs within the active scope. Executive view with standard bars and a summary table."],
+    [/Export filtrado por el scope activo de Yield Flow\. Paretos incluidos\./gi,"Export filtered by the active Yield Flow scope. Paretos included."],
+    [/v94: export filtrado por filtros activos de Yield Flow\. Paretos incluidos\./gi,"v94: export filtered by active Yield Flow filters. Paretos included."],
+    [/Consulta el estado y recorrido de un SN: SFC → Reparación → Cesium FT\./gi,"Review an SN's current status and route: SFC → Repair → Cesium FT."],
+    [/Ingresa uno o varios SN\.\.\./gi,"Enter one or more SNs..."],
+    [/Puedes pegar varios SN separados por coma, espacio o salto de línea/gi,"You can paste multiple SNs separated by commas, spaces, or line breaks"],
+    [/Descarga un Excel estructurado con resumen por SN e historial completo/gi,"Download a structured Excel file with an SN summary and complete history"],
+    [/No hay números de serie para exportar\./gi,"There are no serial numbers to export."],
+    [/No hay semanas Cisco suficientes con RefDes valido para graficar tendencias\./gi,"There are not enough Cisco weeks with valid RefDes data to chart trends."],
+    [/No hay filas para los filtros locales actuales\. Restablece filtros locales o cambia el scope de Yield Flow\./gi,"There are no rows for the current local filters. Reset local filters or change the Yield Flow scope."],
+    [/No hay issues reales en el scope activo de Yield Flow\. Revisa filtros o Repair Record\./gi,"There are no valid issues in the active Yield Flow scope. Review the filters or Repair Record."],
+    [/No hay seriales asociados en el scope actual\. Revisa que el Repair Record tenga SN y que el SN exista en SFC\./gi,"No serials are associated with the current scope. Verify that Repair Record has SN and that the SN exists in SFC."],
+    [/SN [“\"]([^”\"]+)[”\"] no encontrado en los datos importados\. Verifica que el SN esté en el archivo SFC, Repair Record o Cesium\./gi,"SN “$1” was not found in the imported data. Verify that the SN is present in SFC, Repair Record, or Cesium."],
+    [/No se pudo exportar Board Impact:/gi,"Board Impact could not be exported:"],
+    [/No se pudo exportar el Excel de trazabilidad:/gi,"The traceability Excel file could not be exported:"],
+    [/El exportador Board Impact todavía no está listo\. Espera un momento e intenta nuevamente\./gi,"The Board Impact exporter is not ready yet. Wait a moment and try again."],
+    [/Importación cancelada por el usuario\. No se actualizó el dataset\./gi,"Import canceled by the user. The dataset was not updated."],
+    [/No se selecciono archivo\./gi,"No file was selected."],
+    [/El archivo encontrado no parece ser un XLSX\/XLSM valido\./gi,"The selected file does not appear to be a valid XLSX/XLSM file."],
+    [/No se detectaron filas utiles\. Revisa encabezados:/gi,"No usable rows were detected. Review the headers:"],
+    [/No se detectaron hojas por nombre\. Esperado:/gi,"No sheets were detected by name. Expected:"],
+    [/Filtros generados solo desde WOs\/SN presentes en SFC\. DB Model solo enriquece modelo\/SKU; no agrega modelos fuera de SFC\./gi,"Filters are generated only from WOs/SNs present in SFC. DB Model only enriches model/SKU; it does not add models outside SFC."],
+    [/Valida SFC \+ Cesium y muestra cuantas unidades estan en cada estacion segun la secuencia station\.txt\./gi,"Validates SFC + Cesium and shows unit counts at each station according to the station.txt sequence."],
+    [/Usa SFC\.BOXSN como puente primario contra Cesium\.syserialno\.[^\n]*/gi,"Uses SFC.BOXSN as the primary bridge to Cesium.syserialno and retains legacy parent/part serials as fallback."],
+    [/Solo se muestran los modos dominantes que acumulan el 80% del riesgo y se excluyen registros menores de baja repeticion\./gi,"Only dominant modes that account for 80% of the risk are shown; low-recurrence minor records are excluded."],
+    [/Sin modos dominantes con volumen suficiente para construir el Pareto\./gi,"No dominant modes have enough volume to build the Pareto."],
+    [/Primero respeta los filtros de Yield Flow; estos filtros solo refinan el detalle del grafico\./gi,"Yield Flow filters are applied first; these filters only refine chart detail."],
+    [/PDF ([^·]+) como fuente visual · pagina/gi,"PDF $1 as visual source · page"],
+    [/zoom detalle activo/gi,"detail zoom active"],
+    [/La busqueda usa el texto vectorial del PDF\. Si el RefDes aparece en la pagina opuesta, SMTinel cambia automaticamente entre TOP\/BOTTOM\./gi,"The search uses vector text from the PDF. If the RefDes appears on the opposite page, SMTinel automatically switches between TOP and BOTTOM."],
+    [/No hay lista de SN especifica para esta referencia en el contexto actual\. SMTinel mostrara los seriales cuando el ZIP incluya SN \+ Fail Location\/RefDes\./gi,"There is no specific SN list for this reference in the current context. SMTinel will display serials when the ZIP includes SN + Fail Location/RefDes."],
+    [/\b(\d+)\s+modos\b/gi,"$1 modes"],
+    [/\b(\d+)\s+semanas\b/gi,"$1 weeks"],
+    [/\b(\d+)\s+registros\b/gi,"$1 records"],
+    [/\b(\d+)\s+unidades\b/gi,"$1 units"],
+    [/\b(\d+)\s+seriales\b/gi,"$1 serials"],
+    [/\b(\d+)\s+estaciones\b/gi,"$1 stations"],
+    [/\bSN-eventos acumulados\b/gi,"cumulative SN events"],
+    [/\bSN-eventos\b/gi,"SN events"],
+    [/\bRef activa\b/gi,"Active Ref"],
+    [/\bSide filtros\b/gi,"Side filters"],
+    [/\bSN filtros\b/gi,"SN filters"],
+    [/\bPN filtros\b/gi,"PN filters"],
+    [/\bRef filtros\b/gi,"Ref filters"],
+    [/\bContexto\b/gi,"Context"],
+    [/\bBuscar RefDes en PDF\b/gi,"Search RefDes in PDF"],
+    [/\bBuscar RefDes\b/gi,"Search RefDes"],
+    [/\bTodas las semanas\b/gi,"All weeks"],
+    [/\bsemanas adicionales en scope; usar filtro Cisco Week para detalle\b/gi,"additional weeks in scope; use the Cisco Week filter for detail"],
+    [/\bPagina PDF\b/gi,"PDF Page"],
+    [/\bSeriales\b/gi,"Serials"],
+    [/\bLado\b/gi,"Side"]
+  ];
+
+  function translate(value){
+    var raw=String(value==null?"":value);
+    var lead=(raw.match(/^\s*/)||[""])[0];
+    var tail=(raw.match(/\s*$/)||[""])[0];
+    var core=raw.slice(lead.length,raw.length-tail.length);
+    if(!core) return raw;
+    var out=Object.prototype.hasOwnProperty.call(exact,core)?exact[core]:core;
+    for(var i=0;i<phrases.length;i++) out=out.replace(phrases[i][0],phrases[i][1]);
+    return out===core?raw:lead+out+tail;
+  }
+  window.SMTINEL_TRANSLATE_TO_ENGLISH=translate;
+
+  function translateNode(root){
+    if(!root) return;
+    if(root.nodeType===3){
+      var parent=root.parentElement;
+      if(parent&&!/^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|CODE|PRE)$/i.test(parent.tagName)){
+        var next=translate(root.nodeValue);
+        if(next!==root.nodeValue) root.nodeValue=next;
+      }
+      return;
+    }
+    if(root.nodeType!==1&&root.nodeType!==9&&root.nodeType!==11) return;
+    if(root.nodeType===1){
+      var tag=root.tagName;
+      if(/^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|CODE|PRE)$/i.test(tag)) return;
+      ["placeholder","title","aria-label"].forEach(function(attr){
+        if(root.hasAttribute&&root.hasAttribute(attr)){
+          var value=root.getAttribute(attr), next=translate(value);
+          if(next!==value) root.setAttribute(attr,next);
+        }
+      });
+      if(tag==="INPUT"&&/^(button|submit|reset)$/i.test(root.type||"")&&root.value){
+        var translated=translate(root.value);
+        if(translated!==root.value) root.value=translated;
+      }
+    }
+    var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    var nodes=[],node;
+    while((node=walker.nextNode())) nodes.push(node);
+    for(var i=0;i<nodes.length;i++) translateNode(nodes[i]);
+    if(root.querySelectorAll){
+      var attrs=root.querySelectorAll("[placeholder],[title],[aria-label],input[type=button],input[type=submit],input[type=reset]");
+      for(var j=0;j<attrs.length;j++){
+        ["placeholder","title","aria-label"].forEach(function(attr){
+          if(attrs[j].hasAttribute(attr)){
+            var value=attrs[j].getAttribute(attr), next=translate(value);
+            if(next!==value) attrs[j].setAttribute(attr,next);
+          }
+        });
+      }
+    }
+  }
+
+  var originalAlert=window.alert, originalConfirm=window.confirm, originalPrompt=window.prompt;
+  window.alert=function(message){ return originalAlert.call(window,translate(message)); };
+  window.confirm=function(message){ return originalConfirm.call(window,translate(message)); };
+  window.prompt=function(message,value){ return originalPrompt.call(window,translate(message),value); };
+
+  var scheduled=false;
+  function run(){
+    scheduled=false;
+    try{ localStorage.setItem("traceops_lang","en"); }catch(_){}
+    document.documentElement.lang="en";
+    translateNode(document.body);
+  }
+  function schedule(){
+    if(scheduled) return;
+    scheduled=true;
+    (window.requestAnimationFrame||function(fn){return setTimeout(fn,0);})(run);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",schedule); else schedule();
+  try{ new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true,characterData:true}); }catch(_){}
+  setTimeout(schedule,300);
+  setTimeout(schedule,1200);
+})();
+</script>
+<!-- SMTinel Board Impact Export Center v95 - persistent native actions -->
+<style id="smtinel-board-export-v95-style">
+#board-impact-export-center{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+}
+#board-impact-export-center > [data-board-export-v95],
+#board-impact-export-center [data-board-export-v95]{
+  display:inline-flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  width:auto!important;
+  min-width:210px!important;
+  min-height:42px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 auto!important;
+  pointer-events:auto!important;
+  border-radius:999px!important;
+  padding:10px 16px!important;
+  font:950 12px Inter,Segoe UI,Arial,sans-serif!important;
+  cursor:pointer!important;
+  white-space:nowrap!important;
+}
+#board-impact-export-center [data-board-export-v95="issue"]{
+  margin-left:auto!important;
+  border:1px solid #BFE7D1!important;
+  background:#EAF7EF!important;
+  color:#0F6B3F!important;
+}
+#board-impact-export-center [data-board-export-v95="action"]{
+  border:1px solid #F1C04E!important;
+  background:#FFF7D8!important;
+  color:#8A5A00!important;
+}
+@media(max-width:860px){
+  #board-impact-export-center [data-board-export-v95]{width:100%!important;min-width:0!important;margin-left:0!important;}
+}
+</style>
+<script id="smtinel-board-export-v95-persistent">
+(function(){
+  "use strict";
+  if(window.__SMTINEL_BOARD_EXPORT_V95__) return;
+  window.__SMTINEL_BOARD_EXPORT_V95__=true;
+  var scheduled=false;
+  function styleButton(button,kind){
+    button.type="button";
+    button.classList.add("traceops-board-export-btn");
+    button.setAttribute("data-board-export-v95",kind);
+    button.setAttribute(kind==="issue"?"data-board-export-issue":"data-board-export-action","1");
+    button.setAttribute("aria-label",kind==="issue"?"Export Issue Tracker XLSX":"Export Action Tracker XLSX");
+    button.textContent=kind==="issue"?"Export Issue Tracker XLSX":"Export Action Tracker XLSX";
+    ["display","visibility","opacity","pointer-events"].forEach(function(prop){
+      var value=prop==="display"?"inline-flex":(prop==="visibility"?"visible":(prop==="opacity"?"1":"auto"));
+      button.style.setProperty(prop,value,"important");
+    });
+    return button;
+  }
+  function ensureButton(center,kind){
+    var selector=kind==="issue"?"[data-board-export-issue]":"[data-board-export-action]";
+    var button=center.querySelector("[data-board-export-v95=\""+kind+"\"]")||center.querySelector(selector);
+    if(!button){ button=document.createElement("button"); center.appendChild(button); }
+    return styleButton(button,kind);
+  }
+  function ensure(){
+    scheduled=false;
+    if(document.getElementById("smtinel-board-export-toolbar-v96")) return;
+    var center=document.getElementById("board-impact-export-center");
+    if(!center) return;
+    center.style.setProperty("display","flex","important");
+    center.style.setProperty("visibility","visible","important");
+    center.style.setProperty("opacity","1","important");
+    ensureButton(center,"issue");
+    ensureButton(center,"action");
+    var note=center.querySelector("div div + div");
+    if(note) note.textContent="Export filtrado por el scope activo de Yield Flow. Paretos incluidos.";
+  }
+  function schedule(){
+    if(scheduled) return;
+    scheduled=true;
+    (window.requestAnimationFrame||function(fn){return setTimeout(fn,0);})(ensure);
+  }
+  window.addEventListener("click",function(event){
+    var button=event.target&&event.target.closest?event.target.closest("[data-board-export-v95]"):null;
+    if(!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.stopImmediatePropagation) event.stopImmediatePropagation();
+    var kind=button.getAttribute("data-board-export-v95");
+    var api=window.SMTINEL_BOARD_IMPACT_EXPORT_V94||window.SMTINEL_BOARD_IMPACT_EXPORT_V84||window.SMTINEL_BOARD_IMPACT_EXPORT_V76;
+    if(!api){ alert("El exportador Board Impact todavía no está listo. Espera un momento e intenta nuevamente."); return false; }
+    if(kind==="action"&&typeof api.exportAction==="function") api.exportAction();
+    else if(typeof api.exportIssue==="function") api.exportIssue();
+    return false;
+  },true);
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",schedule); else schedule();
+  try{ new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true}); }catch(_){}
+  document.addEventListener("click",function(event){
+    var text=String(event.target&&event.target.textContent||"");
+    if(/Board Impact/i.test(text)) schedule();
+  },true);
+})();
+</script>
 
 <style id="traceops-recovery-v5-mobile-fix">
 @media (max-width:700px){
@@ -8977,7 +9781,7 @@ function traceOpsBuildAnalysisCacheKey(fileHash, filterMode, days, dateFrom, dat
 var TRACEOPS_LOCAL_CACHE_DB = "SMTinelLocalCache";
 var TRACEOPS_LOCAL_CACHE_STORE = "yieldFlowSessions";
 var TRACEOPS_LOCAL_CACHE_KEY = "latestYieldFlow";
-var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v11_2-import-performance-engine";
+var TRACEOPS_LOCAL_CACHE_VERSION = "yieldflow-cache-v13_14_3-cost-propagation";
 
 function traceOpsLocalCacheSupported() {
     return typeof indexedDB !== "undefined";
@@ -9040,7 +9844,7 @@ function traceOpsYieldFileFingerprint(file) {
 }
 function traceOpsYieldFastRoleRank(role) {
     var r = String(role || "").toLowerCase();
-    var rank = { sfc: 1, repair: 2, wo: 3, dbmodel: 4, bom: 5, calendar: 6, cesium: 7 };
+    var rank = { sfc: 1, repair: 2, wo: 3, dbmodel: 4, skucost: 5, bom: 6, calendar: 7, cesium: 8 };
     return rank[r] || 99;
 }
 function traceOpsYieldEstimateEntryMb(entry) {
@@ -10062,6 +10866,12 @@ function traceOpsYieldHeaderScore(headers, role) {
         if (hasAny(["product family", "prodcut family", "model name", "nombre del modelo", "family", "uuttype", "uut type", "description"]))
             score += 3;
     }
+    else if (role === "skucost") {
+        if (hasAny(["sku", "p_no", "part number", "product number"]))
+            score += 4;
+        if (hasAny(["cost", "costo", "unit cost", "sku cost"]))
+            score += 4;
+    }
     else if (role === "cesium") {
         if (hasAny(["serial number", "serial", "sn"]))
             score += 3;
@@ -10092,6 +10902,8 @@ function traceOpsYieldDetectTextRole(name) {
         return "calendar";
     if (n.indexOf("dbmodel") >= 0 || n.indexOf("db_model") >= 0 || n.indexOf("dmmodel") >= 0 || n.indexOf("dm_model") >= 0 || n.indexOf("modelmaster") >= 0 || n.indexOf("maestromodelo") >= 0)
         return "dbmodel";
+    if (n.indexOf("skucost") >= 0 || n.indexOf("costbysku") >= 0 || n.indexOf("costosku") >= 0)
+        return "skucost";
     if (n === "bomtxt" || n.indexOf("bom") >= 0 || n.indexOf("billofmaterial") >= 0 || n.indexOf("componentmaster") >= 0 || n.indexOf("componentlookup") >= 0)
         return "bom";
     if (n.indexOf("sfc") >= 0 || n.indexOf("shopfloor") >= 0 || n.indexOf("currentevent") >= 0)
@@ -10124,7 +10936,7 @@ function traceOpsYieldParseDelimitedText(text, role) {
     var ranked = candidates.map(function (ch) { return { ch: ch, count: countDelim(first, ch) }; }).sort(function (a, b) { return b.count - a.count; });
     // Repair Record exported from VBA/Sublime can be fixed-width with commas inside product descriptions.
     // Do not let a comma in free text become the delimiter; use positional slicing from the header instead.
-    if (!ranked.length || ranked[0].count < 2 || (role === "repair" && ranked[0].ch === "," && ranked[0].count < 8)) {
+    if (!ranked.length || (ranked[0].count < 2 && !(role === "skucost" && ranked[0].count >= 1)) || (role === "repair" && ranked[0].ch === "," && ranked[0].count < 8)) {
         var fixed = traceOpsYieldParseFixedWidthText(raw, role);
         if (fixed && fixed.length) return fixed;
     }
@@ -14107,7 +14919,7 @@ function App() {
     var sbArr = _useState(window.innerWidth > 900);
     var sidebarOpen = sbArr[0];
     var setSidebarOpen = sbArr[1];
-    var langArr = _useState(localStorage.getItem("traceops_lang") || "en");
+    var langArr = _useState("en");
     var lang = langArr[0];
     var setLang = langArr[1];
     var yieldWeekStationArr = _useState("AOI");
@@ -28692,8 +29504,8 @@ body:has(#recovery-section) .main-content.expanded{
         }).filter(Boolean).sort(function(a,b) { return b.total - a.total || b.risk - a.risk || String(a.mode).localeCompare(String(b.mode)); }).slice(0, 6);
         if (!modes.length) {
             return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, padding: '14px 16px' } },
-                h('div', { style: { fontSize: 14, fontWeight: 900, color: '#102A43' } }, 'Tendencias por modo de falla'),
-                h('div', { style: { fontSize: 11, color: '#5F766C', marginTop: 6 } }, 'No hay semanas Cisco suficientes con RefDes valido para graficar tendencias.'));
+                h('div', { style: { fontSize: 14, fontWeight: 900, color: '#102A43' } }, 'Failure Mode Trends'),
+                h('div', { style: { fontSize: 11, color: '#5F766C', marginTop: 6 } }, 'There are not enough Cisco weeks with valid RefDes data to chart trends.'));
         }
         var allWeeksMap = {};
         modes.forEach(function(m){ (m.points || []).forEach(function(p){ allWeeksMap[String(p.week || 'N/D')] = p.week || 'N/D'; }); });
@@ -28816,7 +29628,7 @@ body:has(#recovery-section) .main-content.expanded{
                 return h('div', { key:'mini'+m.mode, style:{ border:'1px solid #D9E6F7', borderRadius:16, background:'#FAFCFF', padding:10, display:'grid', gridTemplateColumns:'minmax(0,1fr) 86px', gap:8, alignItems:'center', minHeight:86 } }, [
                     h('div', { key:'copy', style:{ minWidth:0 } }, [
                         h('div', { key:'mode', title:m.mode, style:{ fontSize:11.5, fontWeight:900, color:'#102A43', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, modeShortName(m.mode)),
-                        h('div', { key:'meta', style:{ fontSize:10, color:'#5F766C', marginTop:4, lineHeight:1.25 } }, m.total + ' SN-eventos · ' + m.refs + ' refs'),
+                        h('div', { key:'meta', style:{ fontSize:10, color:'#5F766C', marginTop:4, lineHeight:1.25 } }, m.total + ' SN events · ' + m.refs + ' refs'),
                         h('div', { key:'last', style:{ fontSize:9.5, color: m.delta > 0 ? '#C44141' : (m.delta < 0 ? '#1A7A3C' : '#5F766C'), marginTop:4, fontWeight:900 } }, lastLabel.fiscal + ' · ' + lastLabel.week + ' · ' + trendText)
                     ]),
                     h('svg', { key:'spark', viewBox:'0 0 86 48', style:{ width:86, height:48, display:'block', overflow:'visible' } }, [
@@ -28853,11 +29665,11 @@ body:has(#recovery-section) .main-content.expanded{
                 h('div', { key:'copy', style:{ minWidth:0 } }, [
                     h('div', { key:'ey', style:{ fontSize:10, fontWeight:900, color:'#2F6FB3', letterSpacing:'.12em', textTransform:'uppercase' } }, 'Cisco weekly trend'),
                     h('div', { key:'ti', style:{ fontSize:isMobile()?22:18, fontWeight:900, color:'#102A43', marginTop:4, lineHeight:1.1 } }, 'Failure Trend In/Out'),
-                    h('div', { key:'su', style:{ fontSize:isMobile()?12.5:11, color:'#5F766C', marginTop:5, lineHeight:1.35, maxWidth:760 } }, 'Tendencia semanal por modo de falla usando SN únicos dentro del scope activo. Vista ejecutiva con barras estándar y tabla de resumen.')
+                    h('div', { key:'su', style:{ fontSize:isMobile()?12.5:11, color:'#5F766C', marginTop:5, lineHeight:1.35, maxWidth:760 } }, 'Weekly trend by failure mode using unique SNs within the active scope. Executive view with standard bars and a summary table.')
                 ]),
                 h('div', { key:'switch', style:{ display:'flex', gap:6, flexWrap:'wrap' } }, [
-                    h('button', { 'data-trend-btn':'bars', type:'button', onClick:function(e){ setTrendView(e,'bars'); }, style:{ border:'1px solid #C9DAF5', borderRadius:999, background:'#102A43', color:'#fff', padding:'8px 11px', fontSize:11, fontWeight:900, cursor:'pointer' } }, 'Barras estándar'),
-                    h('button', { 'data-trend-btn':'table', type:'button', onClick:function(e){ setTrendView(e,'table'); }, style:{ border:'1px solid #C9DAF5', borderRadius:999, background:'#fff', color:'#1F3A5F', padding:'8px 11px', fontSize:11, fontWeight:900, cursor:'pointer' } }, 'Tabla')
+                    h('button', { 'data-trend-btn':'bars', type:'button', onClick:function(e){ setTrendView(e,'bars'); }, style:{ border:'1px solid #C9DAF5', borderRadius:999, background:'#102A43', color:'#fff', padding:'8px 11px', fontSize:11, fontWeight:900, cursor:'pointer' } }, 'Standard Bars'),
+                    h('button', { 'data-trend-btn':'table', type:'button', onClick:function(e){ setTrendView(e,'table'); }, style:{ border:'1px solid #C9DAF5', borderRadius:999, background:'#fff', color:'#1F3A5F', padding:'8px 11px', fontSize:11, fontWeight:900, cursor:'pointer' } }, 'Table')
                 ])
             ]),
             h('div', { key:'body', style:{ padding:isMobile()?'12px 10px 28px':'14px 16px' } }, [
@@ -28866,7 +29678,7 @@ body:has(#recovery-section) .main-content.expanded{
                 renderBars(),
                 renderMiniTrendCards(),
                 h('div', { className:'traceops-trend-table', style:{ display:'none', overflowX:'auto', WebkitOverflowScrolling:'touch' } }, h('table', { style:{ width:'100%', borderCollapse:'collapse', fontSize:11 } }, [
-                    h('thead', { key:'thead' }, h('tr', null, ['Modo','SN acumulados','Refs','Ultima semana','Delta'].map(function(c){ return h('th', { key:c, style:{ textAlign:'left', padding:'9px 10px', background:'#F7FAFF', color:'#5F766C', fontWeight:900, borderBottom:'1px solid #D9E6F7' } }, c); }))),
+                    h('thead', { key:'thead' }, h('tr', null, ['Failure Mode','Cumulative SN','Refs','Latest Week','Delta'].map(function(c){ return h('th', { key:c, style:{ textAlign:'left', padding:'9px 10px', background:'#F7FAFF', color:'#5F766C', fontWeight:900, borderBottom:'1px solid #D9E6F7' } }, c); }))),
                     h('tbody', { key:'tbody' }, modes.map(function(m){ var l=m.points.length?cleanWeekLabel(m.points[m.points.length-1].week):{fiscal:'N/D',week:'N/D'}; return h('tr', { key:m.mode }, [
                         h('td', { style:{ padding:'9px 10px', borderBottom:'1px solid #ECF3FF', fontWeight:900, color:'#102A43' } }, m.mode),
                         h('td', { style:{ padding:'9px 10px', borderBottom:'1px solid #ECF3FF' } }, m.total),
@@ -28876,9 +29688,9 @@ body:has(#recovery-section) .main-content.expanded{
                     ]); }))
                 ])),
                 h('div', { key:'foot', style:{ display:'flex', gap:8, flexWrap:'wrap', padding:'10px 2px 0' } }, [
-                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, modes.length + ' modos'),
-                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, modes.reduce(function(a,m){ return a + m.total; }, 0) + ' SN-eventos acumulados'),
-                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, weeks.length + ' semanas')
+                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, modes.length + ' modes'),
+                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, modes.reduce(function(a,m){ return a + m.total; }, 0) + ' cumulative SN events'),
+                    h('span', { style:{ border:'1px solid #D9E6F7', background:'#F7FAFF', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900, color:'#1F3A5F' } }, weeks.length + ' weeks')
                 ])
             ])
         ]);
@@ -30417,7 +31229,7 @@ body:has(#recovery-section) .main-content.expanded{
         }
         function optionButton(kind, opt, active, onClick) {
             var value = kind === 'SN' ? opt.sn : (kind === 'PN' ? opt.part : (kind === 'SIDE' ? opt.side : opt.ref));
-            var meta = kind === 'SN' ? (opt.modeCount + ' modos · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' ev') : kind === 'SIDE' ? (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.refCount + ' refs') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' ev');
+            var meta = kind === 'SN' ? (opt.modeCount + ' modes · ' + opt.refCount + ' refs · ' + opt.eventCount + ' events') : kind === 'PN' ? (opt.serialCount + ' SN · ' + opt.refCount + ' refs · ' + opt.eventCount + ' events') : kind === 'SIDE' ? (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.refCount + ' refs') : (opt.serialCount + ' SN · ' + opt.partCount + ' PN · ' + opt.eventCount + ' events');
             return h('button', { key: kind + value, type: 'button', onClick: onClick, style: { textAlign: 'left', border: '1px solid ' + (active ? '#1F6FEB' : '#D9E6F7'), background: active ? '#EEF5FF' : '#fff', color: '#102A43', borderRadius: 12, padding: '8px 9px', cursor: 'pointer', minWidth: 0 } }, [
                 h('div', { key: 'v', style: { fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, value),
                 h('div', { key: 'm', style: { fontSize: 9.5, color: '#5F766C', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, meta)
@@ -30451,16 +31263,16 @@ body:has(#recovery-section) .main-content.expanded{
         return h('section', { style: { background: '#fff', border: '1px solid #D9E6F7', borderRadius: 18, overflow: 'hidden' } }, [
             h('div', { key: 'hdr', style: { padding: '14px 18px', background: '#F7FAFF', borderBottom: '1px solid #ECF3FF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' } }, [
                 h('div', { key: 'copy' }, [
-                    h('div', { key: 't', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Filtros combinados de Board Impact'),
-                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Selección múltiple por Side, SN, número de parte y RefDes. Side alimenta automáticamente PN y RefDes del lado seleccionado.')
+                    h('div', { key: 't', style: { fontSize: 15, fontWeight: 900, color: '#102A43' } }, 'Combined Board Impact Filters'),
+                    h('div', { key: 's', style: { fontSize: 10.5, color: '#5F766C', marginTop: 4 } }, 'Multi-select by Side, SN, part number, and RefDes. Side automatically populates PN and RefDes for the selected side.')
                 ]),
                 h('div', { key: 'summary', style: { display: 'inline-flex', borderRadius: 999, background: '#EEF5FF', border: '1px solid #C9DAF5', color: '#1F3A5F', padding: '7px 10px', fontSize: 11, fontWeight: 900 } }, (filteredRows || []).length + ' / ' + (totalRows || 0) + ' eventos')
             ]),
             h('div', { key: 'body', style: { padding: 14, display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : 'repeat(4,minmax(0,1fr))', gap: 10 } }, [
-                column('Side', activeSideList.length ? activeSideList.length + ' seleccionado(s)' : sideOptions.length + ' disponible(s)', (sideOptions || []).slice(0, 8).map(function(x){ var active = activeSideList.indexOf(x.side) >= 0; return optionButton('SIDE', x, active, function(){ applySideSelection(traceOpsBoardMultiToggle(activeSideList, x.side, traceOpsBoardNormalizeSide)); }); })),
-                column('Serial Number', activeSnList.length ? activeSnList.length + ' seleccionado(s)' : serialOptions.length + ' disponible(s)', (serialOptions || []).slice(0, 40).map(function(x){ var active = activeSnList.indexOf(x.sn) >= 0; return optionButton('SN', x, active, function(){ setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, x.sn, traceOpsYieldCleanSn)); setBoardSnFilter(''); setBoardDetailZoom(false); }); })),
-                column('Numero de parte', activePartList.length ? activePartList.length + ' seleccionado(s)' : partOptions.length + ' disponible(s)', (partOptions || []).slice(0, 40).map(function(x){ var active = activePartList.indexOf(x.part) >= 0; return optionButton('PN', x, active, function(){ var nextParts = traceOpsBoardMultiToggle(activePartList, x.part); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); setBoardDetailZoom(false); }); })),
-                column('RefDes', activeRefList.length ? activeRefList.length + ' seleccionado(s)' : refOptions.length + ' disponible(s)', (refOptions || []).slice(0, 80).map(function(x){ var active = activeRefList.indexOf(x.ref) >= 0; return optionButton('REF', x, active, function(){ var next = traceOpsBoardMultiToggle(activeRefList, x.ref, traceOpsBoardNormalizeRef); setBoardRefMultiFilter(next); if (next.length) setBoardSelectedRef(next[0]); setBoardDetailZoom(false); }); }))
+                column('Side', activeSideList.length ? activeSideList.length + ' selected' : sideOptions.length + ' available', (sideOptions || []).slice(0, 8).map(function(x){ var active = activeSideList.indexOf(x.side) >= 0; return optionButton('SIDE', x, active, function(){ applySideSelection(traceOpsBoardMultiToggle(activeSideList, x.side, traceOpsBoardNormalizeSide)); }); })),
+                column('Serial Number', activeSnList.length ? activeSnList.length + ' selected' : serialOptions.length + ' available', (serialOptions || []).slice(0, 40).map(function(x){ var active = activeSnList.indexOf(x.sn) >= 0; return optionButton('SN', x, active, function(){ setBoardSnMultiFilter(traceOpsBoardMultiToggle(activeSnList, x.sn, traceOpsYieldCleanSn)); setBoardSnFilter(''); setBoardDetailZoom(false); }); })),
+                column('Part Number', activePartList.length ? activePartList.length + ' selected' : partOptions.length + ' available', (partOptions || []).slice(0, 40).map(function(x){ var active = activePartList.indexOf(x.part) >= 0; return optionButton('PN', x, active, function(){ var nextParts = traceOpsBoardMultiToggle(activePartList, x.part); var pnRefs = {}; (partOptions || []).forEach(function(opt){ if (nextParts.indexOf(opt.part) < 0) return; (opt.refList || Object.keys(opt.refs || {})).forEach(function(ref){ ref = traceOpsBoardNormalizeRef(ref); if (ref) pnRefs[ref] = true; }); }); var nextRefs = Object.keys(pnRefs).sort(function(a,b){ return String(a).localeCompare(String(b)); }); setBoardPartMultiFilter(nextParts); setBoardRefMultiFilter(nextRefs); if (nextRefs.length) setBoardSelectedRef(nextRefs[0]); setBoardDetailZoom(false); }); })),
+                column('RefDes', activeRefList.length ? activeRefList.length + ' selected' : refOptions.length + ' available', (refOptions || []).slice(0, 80).map(function(x){ var active = activeRefList.indexOf(x.ref) >= 0; return optionButton('REF', x, active, function(){ var next = traceOpsBoardMultiToggle(activeRefList, x.ref, traceOpsBoardNormalizeRef); setBoardRefMultiFilter(next); if (next.length) setBoardSelectedRef(next[0]); setBoardDetailZoom(false); }); }))
             ]),
             totalActive ? h('div', { key: 'active', style: { padding: '0 14px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' } }, [
                 (activeSideList || []).map(function(v){ return chip('Side', v, function(){ applySideSelection((activeSideList || []).filter(function(x){ return x !== v; })); }); }),
@@ -30483,7 +31295,7 @@ body:has(#recovery-section) .main-content.expanded{
                 h('div', { key: 'tools', style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } }, [
                     h('select', { key: 'select', value: activeSn || '', onChange: function(e){ setBoardSnFilter(e.target.value); setBoardDetailZoom(false); }, style: { height: 38, minWidth: isMobile() ? 220 : 320, border: '1px solid #C9DAF5', borderRadius: 999, background: '#fff', color: '#102A43', padding: '0 12px', fontSize: 12, fontWeight: 900, outline: 'none' } }, [
                         h('option', { key: 'all', value: '' }, 'Todos los seriales (' + serialOptions.length + ' SN)'),
-                        serialOptions.map(function(x){ return h('option', { key: x.sn, value: x.sn }, x.sn + ' · ' + x.modeCount + ' modos · ' + x.refCount + ' refs · ' + x.eventCount + ' eventos'); })
+                        serialOptions.map(function(x){ return h('option', { key: x.sn, value: x.sn }, x.sn + ' · ' + x.modeCount + ' modes · ' + x.refCount + ' refs · ' + x.eventCount + ' events'); })
                     ]),
                     activeSn ? h('button', { key: 'clear', type: 'button', onClick: function(){ setBoardSnFilter(''); }, style: { border: '1px solid #C9DAF5', background: '#fff', color: '#1F3A5F', borderRadius: 999, padding: '10px 12px', fontSize: 11, fontWeight: 900, cursor: 'pointer' } }, 'Limpiar SN') : null
                 ])
@@ -30927,7 +31739,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h("div", { title: String(sku) + (family ? " · " + String(family) : ""), style: { fontSize: 12, color: "#102A43", fontWeight: 900, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, sku),
                     family ? h("div", { title: String(family), style: { fontSize: 9.5, color: "#5F766C", fontWeight: 700, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, family) : null),
                 h("div", null,
-                    h("div", { style: { fontSize: 9, color: "#5F766C", fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase" } }, "Estacion"),
+                    h("div", { style: { fontSize: 9, color: "#5F766C", fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase" } }, "Station"),
                     h("div", { style: { fontSize: 12, color: "#102A43", fontWeight: 800, marginTop: 3 } }, row.station || ctx.station || "Repair")),
                 h("div", { style: { minWidth: 0 } },
                     h("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
@@ -30943,30 +31755,30 @@ body:has(#recovery-section) .main-content.expanded{
                 h("div", { style: { minWidth: 0, flex: 1 } },
                     h("div", { style: { fontSize: 10, fontWeight: 900, color: "#2F6FB3", textTransform: "uppercase", letterSpacing: ".12em" } }, "Yield Flow > Board Impact"),
                     h("div", { style: { fontSize: isMobile() ? 26 : 30, fontWeight: 900, color: "#102A43", marginTop: 6, lineHeight: 1.05 } }, "Board Impact View"),
-                    h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 8, lineHeight: 1.45, maxWidth: 820 } }, "Contexto: ", String(ctx.wo || "WO scope"), " · ", String(ctx.mode || "Modo de falla"), activeBoardSideFilters.length ? " · Side filtros: " + activeBoardSideFilters.join("/") : "", activeBoardSnFilters.length ? " · SN filtros: " + activeBoardSnFilters.length : "", activeBoardPartFilters.length ? " · PN filtros: " + activeBoardPartFilters.length : "", activeBoardRefFilters.length ? " · Ref filtros: " + activeBoardRefFilters.length : "", " · Ref activa: ", selectedRef)),
+                    h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 8, lineHeight: 1.45, maxWidth: 820 } }, "Context: ", String(ctx.wo || "WO scope"), " · ", String(ctx.mode || "Failure mode"), activeBoardSideFilters.length ? " · Side filters: " + activeBoardSideFilters.join("/") : "", activeBoardSnFilters.length ? " · SN filters: " + activeBoardSnFilters.length : "", activeBoardPartFilters.length ? " · PN filters: " + activeBoardPartFilters.length : "", activeBoardRefFilters.length ? " · Ref filters: " + activeBoardRefFilters.length : "", " · Active Ref: ", selectedRef)),
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
-                    h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Regresar a Yield Flow"),
+                    h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Back to Yield Flow"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #B7CBEA", background: "#102A43", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
-                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.buildQualityAlertMarkdownFromState && window.downloadMarkdownFile) { var result = window.buildQualityAlertMarkdownFromState(); window.downloadMarkdownFile(result.filename, result.markdown); } }, style: { border: "1px solid rgba(134,217,255,.42)", background: "linear-gradient(135deg,#1F6FEB,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generar Markdown"),
-                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.downloadObsidianKnowledgePackFromState) { window.downloadObsidianKnowledgePackFromState(); } }, style: { border: "1px solid rgba(242,184,75,.52)", background: "linear-gradient(135deg,#F2B84B,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generar Knowledge Pack"),
+                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.buildQualityAlertMarkdownFromState && window.downloadMarkdownFile) { var result = window.buildQualityAlertMarkdownFromState(); window.downloadMarkdownFile(result.filename, result.markdown); } }, style: { border: "1px solid rgba(134,217,255,.42)", background: "linear-gradient(135deg,#1F6FEB,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generate Markdown"),
+                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.downloadObsidianKnowledgePackFromState) { window.downloadObsidianKnowledgePackFromState(); } }, style: { border: "1px solid rgba(242,184,75,.52)", background: "linear-gradient(135deg,#F2B84B,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generate Knowledge Pack"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #F1C04E", background: "linear-gradient(135deg,#FFF7D8,#FFFFFF)", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
-                    h("button", { type: "button", onClick: function () { var v = prompt("Buscar RefDes en PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Buscar RefDes"),
+                    h("button", { type: "button", onClick: function () { var v = prompt("Search RefDes in PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Search RefDes"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
 
             h("section", { key: "board-impact-export-center", id: "board-impact-export-center", className: "traceops-board-export-center", style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "14px" : "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
                 h("div", { style: { minWidth: 220 } },
                     h("div", { style: { fontSize: 15, fontWeight: 950, color: "#102A43" } }, "Board Impact Export Center"),
-                    h("div", { style: { fontSize: 11, color: "#5F766C", marginTop: 4 } }, "Exports usando el scope activo de Board Impact.")),
-                h("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
-                    h("button", { key: "board-export-issue-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker XLSX"),
-                    h("button", { key: "board-export-action-xlsx", className: "traceops-board-export-btn", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker XLSX"))),
+                    h("div", { style: { fontSize: 11, color: "#5F766C", marginTop: 4 } }, "Export filtered by the active Yield Flow scope. Paretos included."))),
+            h("section", { key: "smtinel-board-export-toolbar-v96", id: "smtinel-board-export-toolbar-v96", "data-smtinel-board-export-toolbar": "v96", style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "12px" : "12px 14px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(240px,1fr))", gap: 10, boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
+                h("button", { id: "board-export-issue-v96", key: "board-export-issue-v96", "data-board-export-issue": "1", "data-board-export-v96": "issue", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #BFE7D1", background: "#EAF7EF", color: "#0F6B3F", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker"),
+                h("button", { id: "board-export-action-v96", key: "board-export-action-v96", "data-board-export-action": "1", "data-board-export-v96": "action", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: failureRateManufactured, boardFailureRateBuilt: failureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #F1C04E", background: "#FFF7D8", color: "#8A5A00", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker")),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } },
                 kpi("WOs impactadas", affectedWos, "scope filtrado", "blue"),
-                kpi("Seriales afectados", affectedSerials, ctx.station || "Repair / SFC", "amber"),
+                kpi("Affected Serials", affectedSerials, ctx.station || "Repair / SFC", "amber"),
                 kpi("FR vs MFG", traceOpsYieldFlowFmt(boardFailureRateManufactured, 2) + "%", traceOpsYieldFlowFmt(affectedSerials) + " fails / " + traceOpsYieldFlowFmt(totalManufacturedUnits) + " mfg", "red"),
                 kpi("FR vs Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%", traceOpsYieldFlowFmt(affectedSerials) + " fails / " + traceOpsYieldFlowFmt(totalBuiltUnits) + " built", "purple"),
                 kpi("Refs unicas", uniqueRefs.length || 1, (boardSide === "bottom" ? "BOTTOM" : "TOP") + " side", "purple"),
-                kpi("Criticidad", selectedSeverity.label, selectedRef, selectedSeverity.key === "critical" ? "red" : selectedSeverity.key === "high" ? "amber" : "yellow")),
+                kpi("Criticality", selectedSeverity.label, selectedRef, selectedSeverity.key === "critical" ? "red" : selectedSeverity.key === "high" ? "amber" : "yellow")),
             traceOpsBoardMultiFilterCard(h, boardSerialOptions, boardPartOptions, boardRefOptions, boardSideOptions, activeBoardSnFilters, activeBoardPartFilters, activeBoardRefFilters, activeBoardSideFilters, rows, allBoardRows.length),
             traceOpsBoardRenderFailureTrendPanel(modeOptions),
             ccItems.length ? h("section", { id: "traceops-board-cc-actions", style: { background: "#FFFDF4", border: "1px solid #F1C04E", borderRadius: 18, padding: isMobile() ? "12px" : "14px 16px", display: "flex", flexDirection: "column", gap: 10 } }, [
@@ -30983,8 +31795,8 @@ body:has(#recovery-section) .main-content.expanded{
             ]) : null,
             h("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "10px 10px" : "10px 12px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "320px minmax(0,1fr)", gap: 10, alignItems: "center", overflow: "hidden" } },
                 h("div", { style: { minWidth: 0 } },
-                    h("div", { style: { fontSize: 13, fontWeight: 900, color: "#102A43" } }, "Heatmap por modo de falla"),
-                    h("div", { style: { fontSize: 9.5, color: "#5F766C", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, modeOptions.length, " modos · ", uniqueRefs.length, " refs · Repair_record")),
+                    h("div", { style: { fontSize: 13, fontWeight: 900, color: "#102A43" } }, "Failure Mode Heatmap"),
+                    h("div", { style: { fontSize: 9.5, color: "#5F766C", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, modeOptions.length, " modes · ", uniqueRefs.length, " refs · Repair Record")),
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", paddingBottom: 2, scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" } },
                     (modeOptions.length ? modeOptions : [{ mode: activeMode, risk: affectedSerials, serials: rows, refs: uniqueRefs }]).slice(0, 40).map(function(m) {
                         var active = String(m.mode) === activeMode;
@@ -31001,14 +31813,14 @@ body:has(#recovery-section) .main-content.expanded{
             h("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 18, overflow: "hidden" } },
                 h("div", { style: { padding: "14px 18px", background: "#F7FAFF", borderBottom: "1px solid #ECF3FF", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" } },
                     h("div", null,
-                        h("div", { style: { fontSize: 15, fontWeight: 900, color: "#102A43" } }, "Mapa de impacto en tablilla"),
-                        h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 4 } }, "PDF " + (yieldFilters.family && yieldFilters.family !== "ALL" ? yieldFilters.family : "Warwick") + " como fuente visual · pagina ", boardPdfState.page || (boardSide === "bottom" ? 2 : 1), boardDetailZoom ? " · zoom detalle activo" : "", boardVisualRefGroup && boardVisualRefGroup.length > 1 ? " · PN heatmap: " + boardVisualRefGroup.length + " refs" : "")),
+                        h("div", { style: { fontSize: 15, fontWeight: 900, color: "#102A43" } }, "Board Impact Map"),
+                        h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 4 } }, "PDF " + (yieldFilters.family && yieldFilters.family !== "ALL" ? yieldFilters.family : "Warwick") + " as visual source · page ", boardPdfState.page || (boardSide === "bottom" ? 2 : 1), boardDetailZoom ? " · detail zoom active" : "", boardVisualRefGroup && boardVisualRefGroup.length > 1 ? " · PN heatmap: " + boardVisualRefGroup.length + " refs" : "")),
                     h("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
                         h("div", { style: { display: "flex", border: "1px solid #C9DAF5", borderRadius: 999, overflow: "hidden", background: "#fff" } },
                             ["top", "bottom"].map(function (side) { return h("button", { key: side, type: "button", onClick: function () { setBoardSide(side); }, style: { border: 0, padding: "9px 15px", background: boardSide === side ? "#1F6FEB" : "#fff", color: boardSide === side ? "#fff" : "#1F3A5F", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, side.toUpperCase()); })),
-                        h("button", { type: "button", onClick: function () { setBoardDetailZoom(false); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#fff" : "#1F6FEB", color: boardDetailZoom ? "#1F3A5F" : "#fff", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Vista general"),
-                        h("button", { type: "button", onClick: function () { setBoardDetailZoom(true); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#1F6FEB" : "#fff", color: boardDetailZoom ? "#fff" : "#1F3A5F", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Detalle"),
-                        h("input", { value: selectedRef, onChange: function (e) { setBoardSelectedRef(e.target.value); }, onKeyDown: function (e) { if (e.key === "Enter") { setBoardDetailZoom(true); setBoardSelectedRef(e.currentTarget.value.trim()); } }, placeholder: "Buscar RefDes", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, padding: "0 12px", fontSize: 12, fontWeight: 800, color: "#102A43", outline: "none", minWidth: 150 } }))),
+                        h("button", { type: "button", onClick: function () { setBoardDetailZoom(false); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#fff" : "#1F6FEB", color: boardDetailZoom ? "#1F3A5F" : "#fff", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Overview"),
+                        h("button", { type: "button", onClick: function () { setBoardDetailZoom(true); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#1F6FEB" : "#fff", color: boardDetailZoom ? "#fff" : "#1F3A5F", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Detail"),
+                        h("input", { value: selectedRef, onChange: function (e) { setBoardSelectedRef(e.target.value); }, onKeyDown: function (e) { if (e.key === "Enter") { setBoardDetailZoom(true); setBoardSelectedRef(e.currentTarget.value.trim()); } }, placeholder: "Search RefDes", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, padding: "0 12px", fontSize: 12, fontWeight: 800, color: "#102A43", outline: "none", minWidth: 150 } }))),
                 h("div", { style: { padding: isMobile() ? "12px" : "16px" } },
                     h("div", { id: "traceops-board-pdf-stage", style: { position: "relative", width: "100%", height: isMobile() ? "72svh" : (boardDetailZoom ? 740 : 680), maxHeight: isMobile() ? "760px" : (boardDetailZoom ? 740 : 680), overflow: "auto", border: "1px solid #D8D8DC", borderRadius: isMobile() ? 26 : 22, background: "#D1D1D6", display: "block", textAlign: "center", WebkitOverflowScrolling: "touch", boxShadow: "inset 0 1px 0 rgba(255,255,255,.45)", overscrollBehavior: "contain" } },
                         h("div", { style: { position: "sticky", top: 14, left: 0, width: "100%", zIndex: 3, display: "flex", justifyContent: "center", pointerEvents: "none" } },
@@ -31039,7 +31851,7 @@ body:has(#recovery-section) .main-content.expanded{
                             refSortTh("Component code", "partNumber"),
                             refSortTh("Comp. type", "componentType"),
                             refSortTh("Comp. desc", "componentDescription"),
-                            refSortTh("Criticidad", "severity"),
+                            refSortTh("Criticality", "severity"),
                             refSortTh("Descripcion", "description"),
                             refSortTh("Paquete", "packageType"),
                             refSortTh("Lado", "side"),
@@ -31072,10 +31884,10 @@ body:has(#recovery-section) .main-content.expanded{
                         h("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 4 } }, selectedRef, " · ", snList.length || selectedStat.qty, " seriales detectados · SKU visible por SN")),
                     h("div", { style: { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "6px 10px", background: "#fff", border: "1px solid " + selectedSeverity.border, color: selectedSeverity.color, fontSize: 11, fontWeight: 900 } }, selectedSeverity.label)),
                 h("div", { style: { padding: 14, display: "flex", flexDirection: "column", gap: 8, maxHeight: isMobile() ? 360 : 420, overflow: "auto" } },
-                    snList.length ? snList.map(snCard) : h("div", { style: { padding: 12, color: "#5F766C", fontSize: 12 } }, "No hay lista de SN especifica para esta referencia en el contexto actual. SMTinel mostrara los seriales cuando el ZIP incluya SN + Fail Location/RefDes."))),
+                    snList.length ? snList.map(snCard) : h("div", { style: { padding: 12, color: "#5F766C", fontSize: 12 } }, "There is no specific SN list for this reference in the current context. SMTinel will display serials when the ZIP includes SN + Fail Location/RefDes."))),
             h("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 18, overflow: "hidden" } },
                 h("div", { style: { padding: "14px 18px", background: "#F7FAFF", borderBottom: "1px solid #ECF3FF", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" } },
-                    h("div", { style: { fontSize: 15, fontWeight: 900, color: "#102A43" } }, "Detalle de referencia"),
+                    h("div", { style: { fontSize: 15, fontWeight: 900, color: "#102A43" } }, "Reference Detail"),
                     h("div", { style: { fontSize: 12, fontWeight: 900, color: boardPdfState.found ? "#1A7A3C" : "#B87820" } }, boardPdfState.found ? "Localizada" : "Pendiente")),
                 h("div", { style: { padding: "18px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "1fr 1fr", gap: 14 } },
                     h("div", null,
@@ -31087,9 +31899,9 @@ body:has(#recovery-section) .main-content.expanded{
                                 h("div", { key: "pn", style: { fontSize: 13, color: "#102A43", fontWeight: 900, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile() ? 220 : 360 } }, selectedStat.componentCode || "N/D")
                             ])
                         ]),
-                        h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 10, lineHeight: 1.5 } }, "La busqueda usa el texto vectorial del PDF. Si el RefDes aparece en la pagina opuesta, SMTinel cambia automaticamente entre TOP/BOTTOM.")),
+                        h("div", { style: { fontSize: 12.5, color: "#5F766C", marginTop: 10, lineHeight: 1.5 } }, "The search uses vector text from the PDF. If the RefDes appears on the opposite page, SMTinel automatically switches between TOP and BOTTOM.")),
                     h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
-                        [["Lado", boardSide.toUpperCase()], ["Pagina PDF", String(boardPdfState.page || (boardSide === "bottom" ? 2 : 1))], ["WOs", affectedWos], ["Seriales", affectedSerials], ["Component code", selectedStat.componentCode || "N/D"], ["Comp. type", selectedStat.componentType || "N/D"], ["Comp. desc", selectedStat.componentDescription || "N/D"], ["FR MFG", traceOpsYieldFlowFmt(boardFailureRateManufactured, 2) + "%"], ["FR Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%"]].map(function (m) { return h("div", { key: m[0], style: { background: "#F7FAFF", border: "1px solid #D9E6F7", borderRadius: 12, padding: 12 } }, h("div", { style: { fontSize: 9.5, color: "#5F766C", fontWeight: 900, textTransform: "uppercase", letterSpacing: ".08em" } }, m[0]), h("div", { style: { fontSize: 18, color: "#102A43", fontWeight: 900, marginTop: 5 } }, m[1])); }))),
+                        [["Side", boardSide.toUpperCase()], ["PDF Page", String(boardPdfState.page || (boardSide === "bottom" ? 2 : 1))], ["WOs", affectedWos], ["Serials", affectedSerials], ["Component code", selectedStat.componentCode || "N/D"], ["Comp. type", selectedStat.componentType || "N/D"], ["Comp. desc", selectedStat.componentDescription || "N/D"], ["FR MFG", traceOpsYieldFlowFmt(boardFailureRateManufactured, 2) + "%"], ["FR Built", traceOpsYieldFlowFmt(boardFailureRateBuilt, 2) + "%"]].map(function (m) { return h("div", { key: m[0], style: { background: "#F7FAFF", border: "1px solid #D9E6F7", borderRadius: 12, padding: 12 } }, h("div", { style: { fontSize: 9.5, color: "#5F766C", fontWeight: 900, textTransform: "uppercase", letterSpacing: ".08em" } }, m[0]), h("div", { style: { fontSize: 18, color: "#102A43", fontWeight: 900, marginTop: 5 } }, m[1])); }))),
                 h("div", { style: { padding: "0 18px 18px", display: "grid", gap: 12 } },
                     h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "1fr 1fr", gap: 10 } }, [
                         h("div", { key: "woSummary", style: { border: "1px solid #D9E6F7", background: "#F7FAFF", borderRadius: 12, padding: 12 } }, [
@@ -35585,9 +36397,7 @@ body:has(#recovery-section) .main-content.expanded{
             React.createElement("div", { className: "saas-topbar-actions" },
                 React.createElement("div", { className: "saas-header-pill", title: t("langLabel"), style: { gap: 6, padding: "6px 8px" } },
                     React.createElement("span", { className: "hide-mobile", style: { fontSize: 10, fontWeight: 700, color: "#6A6560", marginRight: 2 } }, t("langLabel")),
-                    React.createElement("button", { type: "button", onClick: function () { setLang("en"); }, style: { border: "none", background: lang === "en" ? "#1F3A5F" : "transparent", color: lang === "en" ? "#fff" : "#6A6560", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, "EN"),
-                    React.createElement("button", { type: "button", onClick: function () { setLang("es"); }, style: { border: "none", background: lang === "es" ? "#1F3A5F" : "transparent", color: lang === "es" ? "#fff" : "#6A6560", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, "ES"),
-                    React.createElement("button", { type: "button", onClick: function () { setLang("zh"); }, style: { border: "none", background: lang === "zh" ? "#1F3A5F" : "transparent", color: lang === "zh" ? "#fff" : "#6A6560", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, "\u4E2D\u6587")),
+                    React.createElement("button", { type: "button", onClick: function () { setLang("en"); }, style: { border: "none", background: "#1F3A5F", color: "#fff", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "default" } }, "EN")),
                 React.createElement("div", { className: "saas-header-pill", title: authUser ? cloudStatus : "Abrir login Supabase", onClick: function () { if (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) { setSidebarOpen(true); setAuthMode("signin"); } }, style: { cursor: (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) ? "pointer" : "default" } },
                     React.createElement("span", { style: { display: "inline-block", width: 8, height: 8, borderRadius: 99, background: authUser ? "#2F6FB3" : (window.SMTinelCloud && window.SMTinelCloud.isConfigured() ? "#2F6FB3" : "#B87820") } }),
                     React.createElement("span", { className: "hide-mobile" }, authUser ? t("cloudRcca") : (window.SMTinelCloud && window.SMTinelCloud.isConfigured() ? "Entrar Supabase" : t("localRcca")))),
@@ -44895,6 +45705,15 @@ body.traceops-premium-shell [class*="impact"]{
     try{
       var nodes=[].slice.call(document.querySelectorAll('button,a'));
       nodes.forEach(function(n){
+        var isBoardTrackerExport = n.hasAttribute('data-board-export-issue') ||
+          n.hasAttribute('data-board-export-action') ||
+          (n.closest && !!n.closest('#board-impact-export-center'));
+        if(isBoardTrackerExport){
+          n.style.removeProperty('display');
+          n.style.removeProperty('visibility');
+          n.style.removeProperty('opacity');
+          return;
+        }
         var t=(n.textContent||'').trim();
         var label=(t+' '+(n.getAttribute('aria-label')||'')+' '+(n.getAttribute('title')||'')).toLowerCase();
         var isExport=(/export|download|descargar/.test(label));
@@ -48273,18 +49092,18 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     return new Promise(function(resolve){ setTimeout(resolve, 0); });
   }
   function roleRank(role){
-    var order = { sfc:1, repair:2, wo:3, stations:4, dbmodel:5, bom:6, calendar:7, cesium:8 };
+    var order = { sfc:1, repair:2, wo:3, stations:4, dbmodel:5, skucost:6, bom:7, calendar:8, cesium:9 };
     return order[String(role||'').toLowerCase()] || 99;
   }
   function hasCommon(parsed){
-    return !!(parsed && ((parsed.wo||[]).length || (parsed.repair||[]).length || (parsed.calendar||[]).length || (parsed.dbmodel||[]).length || (parsed.bom||[]).length || (parsed.stations||[]).length));
+    return !!(parsed && ((parsed.wo||[]).length || (parsed.repair||[]).length || (parsed.calendar||[]).length || (parsed.dbmodel||[]).length || (parsed.skucost||[]).length || (parsed.bom||[]).length || (parsed.stations||[]).length));
   }
   function hasBu(parsed){
     return !!(parsed && ((parsed.sfc||[]).length || (parsed.cesium||[]).length));
   }
   function commonRows(common){
     common = common || {};
-    return { wo:(common.wo||[]).length, repair:(common.repair||[]).length, calendar:(common.calendar||[]).length, dbmodel:(common.dbmodel||[]).length, bom:(common.bom||[]).length, stations:(common.stations||[]).length };
+    return { wo:(common.wo||[]).length, repair:(common.repair||[]).length, calendar:(common.calendar||[]).length, dbmodel:(common.dbmodel||[]).length, skucost:(common.skucost||[]).length, bom:(common.bom||[]).length, stations:(common.stations||[]).length };
   }
   var priorDetect = window.traceOpsYieldDetectTextRole;
   function detectRole(path){
@@ -48293,6 +49112,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     if (n === 'stationstxt' || n.indexOf('stationstxt') >= 0 || n.indexOf('stations') >= 0) return 'stations';
     if (n.indexOf('ciscocalendary') >= 0 || n.indexOf('ciscocalendar') >= 0 || n.indexOf('calendario') >= 0 || n.indexOf('fiscalcalendar') >= 0) return 'calendar';
     if (n.indexOf('dbmodel') >= 0 || n.indexOf('db_model') >= 0 || n.indexOf('modelmaster') >= 0) return 'dbmodel';
+    if (n.indexOf('skucost') >= 0 || n.indexOf('costbysku') >= 0 || n.indexOf('costosku') >= 0) return 'skucost';
     if (n === 'bomtxt' || n.indexOf('bom') >= 0 || n.indexOf('billofmaterial') >= 0 || n.indexOf('componentmaster') >= 0) return 'bom';
     if (n.indexOf('cesium') >= 0 || n.indexOf('functionaltest') >= 0 || n.indexOf('teststation') >= 0 || n.indexOf('ftreport') >= 0) return 'cesium';
     if (n.indexOf('sfc') >= 0 || n.indexOf('shopfloor') >= 0 || n.indexOf('currentevent') >= 0) return 'sfc';
@@ -48319,6 +49139,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       repair: (parsed.repair && parsed.repair.length) ? parsed.repair : ((old && old.repair) || []),
       calendar: (parsed.calendar && parsed.calendar.length) ? parsed.calendar : ((old && old.calendar) || []),
       dbmodel: (parsed.dbmodel && parsed.dbmodel.length) ? parsed.dbmodel : ((old && old.dbmodel) || []),
+      skucost: (parsed.skucost && parsed.skucost.length) ? parsed.skucost : ((old && old.skucost) || []),
       bom: (parsed.bom && parsed.bom.length) ? parsed.bom : ((old && old.bom) || []),
       stations: (parsed.stations && parsed.stations.length) ? parsed.stations : ((old && old.stations) || [])
     };
@@ -48334,6 +49155,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     if (!(parsed.repair||[]).length) parsed.repair = common.repair || [];
     if (!(parsed.calendar||[]).length) parsed.calendar = common.calendar || [];
     if (!(parsed.dbmodel||[]).length) parsed.dbmodel = common.dbmodel || [];
+    if (!(parsed.skucost||[]).length) parsed.skucost = common.skucost || [];
     if (!(parsed.bom||[]).length) parsed.bom = common.bom || [];
     if (!(parsed.stations||[]).length) parsed.stations = common.stations || [];
     try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
@@ -48416,7 +49238,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     });
     if (!entries.length) return null;
     entries.sort(function(a,b){ return roleRank(a.role) - roleRank(b.role); });
-    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [], stations: [] };
+    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], skucost: [], cesium: [], bom: [], stations: [] };
     var pulled = [];
     for (var i=0; i<entries.length; i++){
       if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
@@ -48462,13 +49284,13 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       sheets:pulled,
       notes: !hasBu(parsed) ? 'Common DB cache updated. Load a BU package next.' : 'SFC has no Excel formulas. SMTinel enriches from Station_on_line_report, DB_Model, Stations, Cisco Calendar, Repair_Record and BOM.'
     };
-    var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom, parsed.stations);
+    var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom, parsed.stations, parsed.skucost);
     try {
       window.TRACEOPS_YIELD_BRIDGE_DEBUG = {
         sfcRows:(parsed.sfc||[]).length,
         cesiumRows:(parsed.cesium||[]).length,
         ftRows:(window.TRACEOPS_YIELD_FT_ROWS||[]).length,
-        commonRows: commonRows({wo:parsed.wo, repair:parsed.repair, calendar:parsed.calendar, dbmodel:parsed.dbmodel, bom:parsed.bom, stations:parsed.stations}),
+        commonRows: commonRows({wo:parsed.wo, repair:parsed.repair, calendar:parsed.calendar, dbmodel:parsed.dbmodel, skucost:parsed.skucost, bom:parsed.bom, stations:parsed.stations}),
         riskRows:(window.TRACEOPS_RISK_SUMMARY_ROWS||[]).length,
         rule:'Raw SFC + Common DB enrichment; SFC.BOXSN/SN -> Cesium.sysserialno; Repair/BOM/Calendar from Common DB',
         createdAt:new Date().toISOString()
@@ -49649,7 +50471,8 @@ document.addEventListener("DOMContentLoaded",sched);document.addEventListener("c
   function ensureCenter(){ var root=document.getElementById('boardimpact-section'); if(!root) return; var center=document.getElementById('board-impact-export-center'); if(center && /Export Issue Tracker XLSX/i.test(center.textContent||'')) return; if(!center){ center=document.createElement('section'); center.id='board-impact-export-center'; center.className='traceops-board-export-center'; var firstChild=root.children&&root.children[0]; if(firstChild) firstChild.insertAdjacentElement('afterend',center); else root.insertBefore(center,root.firstChild); } center.style.display='flex'; center.style.visibility='visible'; center.style.opacity='1'; center.innerHTML='<div style="min-width:300px"><div style="font-size:15px;font-weight:950;color:#102A43">Board Impact Export Center</div><div style="font-size:11px;color:#5F766C;margin-top:4px">Issue export y Action/RCCA export separados. No clones.</div></div><button data-smtinel-board-native-export="v80" data-board-export-issue="1" class="traceops-board-export-btn" type="button">Export Issue Tracker XLS</button><button data-smtinel-board-native-export="v80" data-board-export-action="1" class="traceops-board-export-btn" type="button">Export Action / RCCA XLS</button>'; Array.prototype.forEach.call(center.querySelectorAll('[data-board-export-issue],[data-board-export-action]'),function(btn){ btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); download(btn.hasAttribute('data-board-export-action')?'Action':'Issue'); }, true); }); }
   function run(){ try{ ensureCenter(); }catch(e){ console.warn('[SMTinel] Board Impact v79 export guard:',e); } }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  // Legacy v80 DOM polling disabled. The native React Export Center is authoritative.
+  window.__SMTINEL_BOARD_EXPORT_V80_DOM_POLLING_DISABLED__=true;
   window.SMTINEL_BOARD_IMPACT_EXPORT_V80={version:VERSION,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
@@ -56853,7 +57676,8 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ ensureCenter(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,450);
+  // Legacy v76 DOM polling disabled. The native React Export Center is authoritative.
+  window.__SMTINEL_BOARD_EXPORT_V76_DOM_POLLING_DISABLED__=true;
   window.SMTINEL_BOARD_IMPACT_EXPORT_V76={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, model:buildModel};
 })();
 </script>
@@ -57015,7 +57839,8 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ try{ ensureCenter(); }catch(e){} }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  // Legacy v77 DOM polling disabled. The native React Export Center is authoritative.
+  window.__SMTINEL_BOARD_EXPORT_V77_DOM_POLLING_DISABLED__=true;
   window.SMTINEL_BOARD_IMPACT_EXPORT_V77={version:VERSION, exportIssue:function(){download('Issue');}, exportAction:function(){download('Action');}, buildBook:buildBook};
 })();
 </script>
@@ -57271,7 +58096,8 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   }
   function run(){ try{ ensureCenter(); bindGlobalExportHijack(); }catch(e){ console.warn('[SMTinel] Board Impact v84 export guard:', e); } }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(run,700);
+  // Legacy v84 DOM polling disabled. The native React Export Center is authoritative.
+  window.__SMTINEL_BOARD_EXPORT_V84_DOM_POLLING_DISABLED__=true;
   window.SMTINEL_BOARD_IMPACT_EXPORT_V84={version:VERSION,model:buildModel,exportIssue:function(){download('Issue');},exportAction:function(){download('Action');}};
 })();
 </script>
@@ -58129,9 +58955,9 @@ html body [class*="version-badge"]{
   function norm(v){return String(v==null?'':v).trim().toUpperCase();}
   function num(v){var n=Number(String(v==null?'':v).replace(/[$, ]/g,'')); return isFinite(n)?n:0;}
   function money(v){return '$'+Math.round(v||0).toLocaleString('en-US');}
-  function allRows(){var out=[]; try{if(Array.isArray(window.TRACEOPS_YIELD_BY_WO_ROWS)) out=out.concat(window.TRACEOPS_YIELD_BY_WO_ROWS);}catch(_){} try{if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) out=out.concat(window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){} try{var s=window.traceOpsYieldCacheSnapshot&&window.traceOpsYieldCacheSnapshot(); if(s){['byWoRows','flowTracker','stationOnLineRows','workOrders','wo','sfcWorkOrders'].forEach(function(k){if(Array.isArray(s[k])) out=out.concat(s[k]);});}}catch(_){} return out.filter(function(r){return r&&typeof r==='object';});}
-  function buildCostIndex(rows){var idx={},costRows=0; rows.forEach(function(r){var cost=num(pick(r,['Cost','cost','COST','Unit Cost','unit_cost','SKU Cost','skuCost'])); if(!cost) return; costRows++; var bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); [bu+'|'+fam+'|'+ver,fam+'|'+ver,fam].forEach(function(k){if(k.replace(/\|/g,'')) idx[k]=cost;});}); return {idx:idx,costRows:costRows};}
-  function costFor(r,idx){var bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); return idx[bu+'|'+fam+'|'+ver]||idx[fam+'|'+ver]||idx[fam]||num(pick(r,['Cost','cost','COST','Unit Cost','unit_cost','SKU Cost','skuCost']));}
+  function allRows(){var source=[]; try{if(Array.isArray(window.TRACEOPS_YIELD_BY_WO_ROWS)&&window.TRACEOPS_YIELD_BY_WO_ROWS.length) source=window.TRACEOPS_YIELD_BY_WO_ROWS.slice(); else if(Array.isArray(window.TRACEOPS_YIELD_FLOW_TRACKER)) source=window.TRACEOPS_YIELD_FLOW_TRACKER.slice();}catch(_){} var out=[],seen={}; source.forEach(function(r,idx){if(!r||typeof r!=='object')return; var wo=norm(pick(r,['wo','WO','workOrder','WorkOrderNo','Work Order']))||('ROW'+idx); if(seen[wo])return; seen[wo]=1; out.push(r);}); return out;}
+  function buildCostIndex(rows){var idx={},costRows=0; rows.forEach(function(r){var cost=num(pick(r,['Cost','cost','COST','unitCost','Unit Cost','unit_cost','SKU Cost','skuCost','COSTO'])); if(!cost) return; costRows++; var sku=norm(pick(r,['sku','SKU','skuno','SkuNo','P_NO','P NO','Product Number'])), bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); [sku,bu+'|'+fam+'|'+ver,fam+'|'+ver,fam].forEach(function(k){if(k&&k.replace(/\|/g,'')) idx[k]=cost;});}); try{Object.keys(window.TRACEOPS_YIELD_COST_BY_SKU||{}).forEach(function(k){idx[norm(k)]=window.TRACEOPS_YIELD_COST_BY_SKU[k];});}catch(_){} return {idx:idx,costRows:costRows};}
+  function costFor(r,idx){var direct=num(pick(r,['Cost','cost','COST','unitCost','Unit Cost','unit_cost','SKU Cost','skuCost','COSTO'])); var sku=norm(pick(r,['sku','SKU','skuno','SkuNo','P_NO','P NO','Product Number'])), bu=norm(pick(r,['BU','bu'])), fam=norm(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model'])), ver=norm(pick(r,['Version','version','Rev','REV'])); return direct||idx[sku]||idx[bu+'|'+fam+'|'+ver]||idx[fam+'|'+ver]||idx[fam]||0;}
   function render(){try{var rows=allRows(); if(!rows.length) return; var ci=buildCostIndex(rows); var famMap={},lineMap={},total=0,missing=0; rows.forEach(function(r){var qty=num(pick(r,['risk','Risk','fail','Fail','failureQty','Qty SN','Qty SN Impacted','totalRisk','Total Risk']))||0; if(!qty) return; var c=costFor(r,ci.idx); var fam=String(pick(r,['Product Family','productFamily','ProductFamily','family','Family','model','Model','sku','SKU'])||'N/D'); var line=String(pick(r,['Line','line','LINE'])||'N/D'); if(!c){missing++; return;} var impact=qty*c; total+=impact; famMap[fam]=(famMap[fam]||0)+impact; lineMap[line]=(lineMap[line]||0)+impact;}); var host=document.querySelector('#yieldflow-section')||document.querySelector('[id*=yieldflow]')||document.querySelector('#module-workspace'); if(!host) return; var old=document.getElementById('smtinel-yield-cost-impact-card'); if(old) old.remove(); var top=Object.keys(famMap).sort(function(a,b){return famMap[b]-famMap[a];}).slice(0,5); var card=document.createElement('section'); card.id='smtinel-yield-cost-impact-card'; card.style.cssText='margin:14px 0;padding:18px 20px;border:1px solid #F5D08A;border-radius:18px;background:#FFF9EC;color:#102A43;box-shadow:0 2px 12px rgba(20,32,51,.06)'; card.innerHTML='<div style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#9A6A16">Business Impact · SKU Cost</div><div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-top:8px"><div><div style="font-size:28px;font-weight:950;color:#C05A00">'+money(total)+'</div><div style="font-size:11px;color:#5F766C">Costo expuesto por unidades en riesgo</div></div><div style="font-size:12px;color:#5F766C">Cost rows detectadas: <b>'+ci.costRows+'</b> · Missing cost: <b>'+missing+'</b></div></div><div style="margin-top:12px;display:grid;gap:7px">'+(top.length?top.map(function(k){return '<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid #F5D08A;padding-top:7px"><b>'+k+'</b><span style="font-weight:900;color:#C05A00">'+money(famMap[k])+'</span></div>';}).join(''):'<div style="font-size:12px;color:#5F766C">No se detecto Cost asociado al scope actual. Verifica Station_on_line_report.</div>')+'</div>'; host.insertBefore(card, host.firstChild);}catch(e){}}
   document.addEventListener('click',function(){setTimeout(render,300);});
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(render,1000);}); else setTimeout(render,1000);
@@ -59226,7 +60052,7 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   function bind(){document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('button,a,[role="button"]'):null; if(!b)return; var t=u(b.textContent||b.getAttribute('aria-label')||''); var inExportCenter=!!(b.closest&&b.closest('#board-impact-export-center,.traceops-board-export-center')); if(inExportCenter && /XLSX$/.test(t) && !b.hasAttribute('data-board-export-issue') && !b.hasAttribute('data-board-export-action')) return; var isI=b.hasAttribute('data-board-export-issue')||(inExportCenter&&/EXPORT ISSUE TRACKER/.test(t)); var isA=b.hasAttribute('data-board-export-action')||(inExportCenter&&/EXPORT ACTION|ACTION\s*\/\s*RCCA|RCCA XLS|RCCA TRACKER/.test(t)); if(!isI&&!isA)return; e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation)e.stopImmediatePropagation(); save(isA?'Action':'Issue'); return false;},true);}
   function retag(){var c=document.getElementById('board-impact-export-center'); if(!c)return; var note=c.querySelector('div div + div'); if(note) note.textContent='v94: export filtrado por filtros activos de Yield Flow. Paretos incluidos.';}
   window.SMTINEL_BOARD_IMPACT_EXPORT_V94={version:VERSION,exportIssue:function(){save('Issue');},exportAction:function(){save('Action');},model:buildModel};
-  bind(); setInterval(retag,1500); retag();
+  bind(); retag();
 })();
 </script>
 
@@ -60042,3 +60868,276 @@ html body.smtinel-apple-premium .saas-header-pill{
 }
 </style>
 <!-- /SMTinel Apple Music Premium v2.1 SAFE Compact Dock Patch -->
+<!-- SMTinel V13.14.2 - Yield Flow import performance injection -->
+<script id="smtinel-yield-flow-import-performance-v13142">
+(function(){
+  "use strict";
+  if (window.__SMTINEL_YIELD_IMPORT_PERF_V13142__) return;
+  window.__SMTINEL_YIELD_IMPORT_PERF_V13142__ = true;
+  window.TRACEOPS_YIELD_PERF = window.TRACEOPS_YIELD_PERF || { parser: {}, builds: [], cache: {} };
+
+  function now(){ try { return performance.now(); } catch(_) { return Date.now(); } }
+  function remember(role, started, rows, mode){
+    try {
+      window.TRACEOPS_YIELD_PERF.parser[String(role || "unknown")] = {
+        ms: Math.round((now() - started) * 10) / 10,
+        rows: Number(rows || 0),
+        mode: mode || "direct-delimited",
+        recordedAt: new Date().toISOString()
+      };
+    } catch(_) {}
+  }
+  function lineAt(text, start){
+    var end = text.indexOf("\n", start);
+    if (end < 0) end = text.length;
+    var line = text.slice(start, end);
+    if (line.charAt(line.length - 1) === "\r") line = line.slice(0, -1);
+    return { line: line, next: end + 1 };
+  }
+  function delimiterCount(line, delimiter){
+    var count = 0;
+    for (var i = 0; i < line.length; i++) if (line.charAt(i) === delimiter) count += 1;
+    return count;
+  }
+  function directDelimitedPacket(text, role){
+    text = String(text == null ? "" : text);
+    if (!text) return null;
+    var first = "", cursor = 0, physical = 0;
+    while (cursor <= text.length && physical < 80) {
+      var firstLine = lineAt(text, cursor);
+      cursor = firstLine.next;
+      physical += 1;
+      if (firstLine.line && firstLine.line.trim()) { first = firstLine.line.replace(/^\uFEFF/, ""); break; }
+      if (cursor > text.length) break;
+    }
+    if (!first) return null;
+    var candidates = ["\t", "|", ";", ","].map(function(ch){ return { ch: ch, count: delimiterCount(first, ch) }; });
+    candidates.sort(function(a,b){ return b.count - a.count; });
+    var delimiter = candidates[0] && candidates[0].ch;
+    var bestCount = candidates[0] ? candidates[0].count : 0;
+    if (!delimiter || (bestCount < 2 && !(role === "skucost" && bestCount >= 1)) || delimiter === ",") return null;
+
+    var samples = [], samplePhysical = [], pos = 0, lineNumber = 0;
+    while (pos <= text.length && samples.length < 25 && lineNumber <= 250000) {
+      var sampleLine = lineAt(text, pos);
+      pos = sampleLine.next;
+      var value = sampleLine.line;
+      if (lineNumber === 0) value = value.replace(/^\uFEFF/, "");
+      if (value && value.trim()) {
+        samples.push(value.split(delimiter).map(function(v){ return String(v == null ? "" : v).trim(); }));
+        samplePhysical.push(lineNumber);
+      }
+      lineNumber += 1;
+      if (pos > text.length) break;
+    }
+    if (!samples.length) return null;
+    var bestIdx = -1, bestScore = 0;
+    for (var s = 0; s < samples.length; s++) {
+      var score = 0;
+      try { score = window.traceOpsYieldHeaderScore(samples[s], role); } catch(_) {}
+      if (score > bestScore) { bestScore = score; bestIdx = s; }
+    }
+    if (bestIdx < 0 || bestScore < 3) return null;
+    var header = samples[bestIdx].map(function(v, idx){
+      var h = String(v == null ? "" : v).trim().replace(/^\uFEFF/, "");
+      return h || ("Column_" + (idx + 1));
+    });
+    var headerPhysical = samplePhysical[bestIdx];
+    var objects = [], rowStart = 0, rowPhysical = 0;
+    while (rowStart <= text.length && rowPhysical <= 250000) {
+      var rowLine = lineAt(text, rowStart);
+      rowStart = rowLine.next;
+      var rowText = rowLine.line;
+      if (rowPhysical > headerPhysical && rowText && rowText.trim()) {
+        var cells = rowText.split(delimiter);
+        var obj = {}, nonEmpty = 0;
+        for (var c = 0; c < header.length; c++) {
+          var cell = cells[c] == null ? "" : String(cells[c]).trim();
+          if (cell) nonEmpty += 1;
+          obj[header[c]] = cell;
+        }
+        if (nonEmpty) objects.push(obj);
+      }
+      rowPhysical += 1;
+      if (rowStart > text.length) break;
+    }
+    return { __smtinelDirectObjectsV13142: true, objects: objects };
+  }
+
+  var legacyParse = window.traceOpsYieldParseDelimitedText;
+  var legacyObjects = window.traceOpsYieldObjectsFromRawRows;
+  if (typeof legacyParse === "function" && typeof legacyObjects === "function") {
+    var fastParse = function(text, role){
+      var started = now(), packet = null;
+      try { packet = directDelimitedPacket(text, role); } catch(_) { packet = null; }
+      if (packet) { packet.__smtinelStartedAt = started; return packet; }
+      var rows = legacyParse.call(this, text, role);
+      remember(role, started, rows && rows.length, "legacy-fallback");
+      return rows;
+    };
+    var fastObjects = function(rawRows, role){
+      if (rawRows && rawRows.__smtinelDirectObjectsV13142) {
+        var direct = rawRows.objects || [];
+        remember(role, rawRows.__smtinelStartedAt || now(), direct.length, "direct-delimited");
+        return direct;
+      }
+      return legacyObjects.call(this, rawRows || [], role);
+    };
+    window.traceOpsYieldParseDelimitedText = fastParse;
+    window.traceOpsYieldObjectsFromRawRows = fastObjects;
+    try { traceOpsYieldParseDelimitedText = fastParse; } catch(_) {}
+    try { traceOpsYieldObjectsFromRawRows = fastObjects; } catch(_) {}
+  }
+
+  /* Prevent the historical eager Cross-Model wrapper. Keep raw references so the
+     existing Cross-Model screen calculates only when the user opens it. */
+  window.__SMTINEL_CROSSMODEL_BUILD_WRAPPED__ = true;
+  function costPick(row, names){
+    row = row || {};
+    for (var i = 0; i < names.length; i++) {
+      if (row[names[i]] != null && String(row[names[i]]).trim() !== "") return row[names[i]];
+    }
+    return "";
+  }
+  function costNumber(value){
+    var n = Number(String(value == null ? "" : value).replace(/[$,\s]/g, ""));
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+  function costSkuKey(value){ return String(value == null ? "" : value).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  function costWoKey(value){ return String(value == null ? "" : value).trim().replace(/^0+/, "") || "0"; }
+  function buildYieldCostLookup(workRows, skuCostRows){
+    var lookup = { byWo: Object.create(null), bySku: Object.create(null), stationCostRows: 0, skuCostRows: 0 };
+    (workRows || []).forEach(function(row){
+      var cost = costNumber(costPick(row, ["Cost","COST","cost","Unit Cost","unit_cost","SKU Cost","skuCost","COSTO"]));
+      if (!cost) return;
+      var sku = costSkuKey(costPick(row, ["P_NO","P NO","SKU","SkuNo","skuno","sku","Product Number","Part Number"]));
+      var wo = costWoKey(costPick(row, ["Work Orde 00000","WO","WorkOrderNo","workorderno","Work Order","Order"]));
+      if (sku) lookup.bySku[sku] = cost;
+      if (wo && wo !== "0") lookup.byWo[wo] = cost;
+      lookup.stationCostRows += 1;
+    });
+    (skuCostRows || []).forEach(function(row){
+      var cost = costNumber(costPick(row, ["COSTO","Cost","COST","cost","Unit Cost","SKU Cost"]));
+      var sku = costSkuKey(costPick(row, ["SKU","P_NO","P NO","SkuNo","skuno","Product Number","Part Number"]));
+      if (!cost || !sku) return;
+      lookup.bySku[sku] = cost;
+      lookup.skuCostRows += 1;
+    });
+    return lookup;
+  }
+  function applyYieldCosts(rows, lookup){
+    var mapped = 0, missing = 0;
+    (rows || []).forEach(function(row){
+      var direct = costNumber(costPick(row, ["Cost","cost","COST","unitCost","Unit Cost"]));
+      var wo = costWoKey(costPick(row, ["wo","WO","workOrder","WorkOrderNo","Work Order"]));
+      var sku = costSkuKey(costPick(row, ["sku","SKU","skuno","SkuNo","P_NO","Product Number"]));
+      var byWo = wo && wo !== "0" ? lookup.byWo[wo] : 0;
+      var bySku = sku ? lookup.bySku[sku] : 0;
+      var cost = direct || byWo || bySku || 0;
+      row.cost = cost;
+      row.Cost = cost;
+      row.unitCost = cost;
+      row.costSource = direct ? "row" : (byWo ? "Station_on_line_report.WO" : (bySku ? "Common DB SKU" : "missing"));
+      if (cost) mapped += 1; else missing += 1;
+    });
+    return { mapped: mapped, missing: missing };
+  }
+  var previousBuild = window.traceOpsYieldBuildFromImported;
+  if (typeof previousBuild === "function" && !previousBuild.__smtinelPerfV13142) {
+    var measuredBuild = function(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows, stationsRows, skuCostRows){
+      var started = now();
+      window.SMTINEL_CROSS_MODEL_RISK_DATA = null;
+      window.SMTINEL_CROSS_MODEL_RISK = null;
+      window.SMTINEL_CROSSMODEL_LAST_PARSED = {
+        wo: workRows || [], sfc: sfcRows || [], repair: repairRows || [], meta: sourceMeta || {},
+        calendar: calendarRows || [], dbmodel: dbModelRows || [], cesium: cesiumRows || [],
+        bom: bomRows || [], stations: stationsRows || [], skucost: skuCostRows || []
+      };
+      var result = previousBuild.apply(this, arguments);
+      var costLookup = buildYieldCostLookup(workRows || [], skuCostRows || []);
+      var costCoverage = applyYieldCosts(window.TRACEOPS_YIELD_BY_WO_ROWS || [], costLookup);
+      applyYieldCosts(window.TRACEOPS_YIELD_FLOW_TRACKER || [], costLookup);
+      window.TRACEOPS_YIELD_COST_BY_SKU = costLookup.bySku;
+      window.TRACEOPS_YIELD_COST_BY_WO = costLookup.byWo;
+      window.TRACEOPS_YIELD_RAW_STATION_ON_LINE_ROWS = workRows || [];
+      var elapsed = Math.round((now() - started) * 10) / 10;
+      try {
+        window.TRACEOPS_YIELD_PERF.builds.push({ ms: elapsed, recordedAt: new Date().toISOString(), mode: "core-lazy-crossmodel" });
+        if (window.TRACEOPS_YIELD_PERF.builds.length > 12) window.TRACEOPS_YIELD_PERF.builds.shift();
+        if (window.TRACEOPS_YIELD_IMPORT_META) {
+          window.TRACEOPS_YIELD_IMPORT_META.performance = window.TRACEOPS_YIELD_IMPORT_META.performance || {};
+          window.TRACEOPS_YIELD_IMPORT_META.performance.coreBuildMs = elapsed;
+          window.TRACEOPS_YIELD_IMPORT_META.performance.parser = window.TRACEOPS_YIELD_PERF.parser;
+          window.TRACEOPS_YIELD_IMPORT_META.performance.crossModel = "lazy-on-open";
+          window.TRACEOPS_YIELD_IMPORT_META.rows = window.TRACEOPS_YIELD_IMPORT_META.rows || {};
+          window.TRACEOPS_YIELD_IMPORT_META.rows.stationCostRows = costLookup.stationCostRows;
+          window.TRACEOPS_YIELD_IMPORT_META.rows.skuCostRows = costLookup.skuCostRows;
+          window.TRACEOPS_YIELD_IMPORT_META.rows.costSkus = Object.keys(costLookup.bySku).length;
+          window.TRACEOPS_YIELD_IMPORT_META.rows.costMappedWo = costCoverage.mapped;
+          window.TRACEOPS_YIELD_IMPORT_META.rows.costMissingWo = costCoverage.missing;
+        }
+      } catch(_) {}
+      return result;
+    };
+    measuredBuild.__smtinelPerfV13142 = true;
+    window.traceOpsYieldBuildFromImported = measuredBuild;
+    try { traceOpsYieldBuildFromImported = measuredBuild; } catch(_) {}
+  }
+
+  /* Restore exact-file IndexedDB cache. Snapshot serialization starts only when
+     the browser is idle, so the READY state and loader are not blocked. */
+  function idleRun(fn){
+    if (window.requestIdleCallback) return window.requestIdleCallback(fn, { timeout: 1800 });
+    return setTimeout(fn, 0);
+  }
+  function perfSaveLocalCache(file, summary){
+    return new Promise(function(resolve){
+      idleRun(function(){
+        try {
+          if (typeof traceOpsLocalCacheSupported !== "function" || !traceOpsLocalCacheSupported()) return resolve(null);
+          var meta = {
+            fileName: file && file.name || (summary && summary.fileName) || "local import",
+            fileSize: file && file.size || 0,
+            lastModified: file && file.lastModified || 0,
+            fingerprint: traceOpsYieldFileFingerprint(file),
+            cachedAt: new Date().toISOString(),
+            storage: "IndexedDB local browser only",
+            privacy: "local-only-no-cloud",
+            engine: "V13.14.2 direct-parser-lazy-crossmodel"
+          };
+          var record = {
+            id: TRACEOPS_LOCAL_CACHE_KEY,
+            version: TRACEOPS_LOCAL_CACHE_VERSION,
+            meta: meta,
+            summary: summary || window.TRACEOPS_YIELD_IMPORT_META || {},
+            snapshot: traceOpsYieldCacheSnapshot()
+          };
+          traceOpsLocalCachePut(record).then(function(saved){
+            try { localStorage.setItem("traceops_yieldflow_cache_meta", JSON.stringify(meta)); } catch(_) {}
+            window.TRACEOPS_YIELD_PERF.cache = { lastSave: meta.cachedAt, fingerprint: meta.fingerprint, saved: !!saved };
+            resolve(saved);
+          }).catch(function(){ resolve(null); });
+        } catch(_) { resolve(null); }
+      });
+    });
+  }
+  function perfTrySameFileCache(file){
+    try {
+      if (!file || typeof traceOpsLocalCacheSupported !== "function" || !traceOpsLocalCacheSupported()) return Promise.resolve(null);
+      return traceOpsLocalCacheGet(TRACEOPS_LOCAL_CACHE_KEY).then(function(record){
+        if (!record || !record.meta || record.version !== TRACEOPS_LOCAL_CACHE_VERSION) return null;
+        var expected = traceOpsYieldFileFingerprint(file);
+        if (!expected || String(record.meta.fingerprint || "") !== expected) return null;
+        var applied = traceOpsYieldApplyLocalCache(record);
+        window.TRACEOPS_YIELD_PERF.cache = { hit: !!applied, fingerprint: expected, restoredAt: new Date().toISOString() };
+        return applied;
+      }).catch(function(){ return null; });
+    } catch(_) { return Promise.resolve(null); }
+  }
+  window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = false;
+  window.traceOpsYieldSaveLocalCache = perfSaveLocalCache;
+  window.traceOpsYieldTryApplySameFileCache = perfTrySameFileCache;
+  try { traceOpsYieldSaveLocalCache = perfSaveLocalCache; } catch(_) {}
+  try { traceOpsYieldTryApplySameFileCache = perfTrySameFileCache; } catch(_) {}
+})();
+</script>
