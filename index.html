@@ -15136,7 +15136,7 @@ function App() {
     var boardPdfStateArr = _useState({ status: "idle", message: "PDF listo para busqueda", page: 1, found: false });
     var boardPdfState = boardPdfStateArr[0];
     var setBoardPdfState = boardPdfStateArr[1];
-    var yieldImportArr = _useState({ status: "idle", message: "Yield Flow ready. Import ZIP/Excel to populate dashboard.", summary: null, progress: 0, phase: "IDLE" });
+    var yieldImportArr = _useState({ status: "idle", message: "Step 1/2: load the current Common DB ZIP. Then load the current SFC + Cesium ZIP. Previous iterations are never retained.", summary: null, progress: 0, phase: "IDLE" });
     var yieldImportState = yieldImportArr[0];
     var setYieldImportState = yieldImportArr[1];
     var criticalModelAnalysisArr = _useState({ status: "idle", message: "Upload a ZIP/XLSX file to calculate critical model analysis.", result: null });
@@ -15198,12 +15198,12 @@ function App() {
             if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(250);
             return;
         }
-        setYieldImportState({ status: "loading", message: "Temporary local import: validating ZIP/Excel and extracting target sheets only...", summary: null, progress: 12, phase: "READING_ZIP" });
+        setYieldImportState({ status: "loading", message: "Starting a fresh import cycle: clearing the previous Yield Flow dataset and validating the ZIP...", summary: null, progress: 12, phase: "READING_ZIP" });
         if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(12, "READING_ZIP", "Validating the local ZIP/Excel file and preparing target-sheet extraction...");
         setCriticalModelDetail(null);
         setCriticalModelAnalysisState({ status: "loading", message: "Calculating critical models from imported rows...", result: null });
         setYieldImportState({ status: "loading", message: "Optimizing ZIP/XLSX import and extracting target sheets...", summary: null, progress: 34, phase: "EXTRACTING_XLSX" });
-        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Import Performance Engine V11.3: exact cache, SFC/Repair first, and indexes by SN/WO/Ref...");
+        if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(34, "EXTRACTING_XLSX", "Fresh-cycle import: extracting only the current file and rebuilding indexes by SN/WO/Ref...");
         setTimeout(function () {
             traceOpsYieldTryApplySameFileCache(file).then(function(cachedSummary) {
                 if (cachedSummary) {
@@ -15223,14 +15223,12 @@ function App() {
                 setYieldImportState({ status: "loading", message: "Tracing valid sheets and building Yield Flow model...", summary: summary, progress: 78, phase: "BUILDING_FLOW" });
                 if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(78, "BUILDING_FLOW", "Building the Yield Flow model, traceability, and critical analysis...");
                 setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" });
-                setYieldImportState({ status: "ok", progress: 100, phase: "READY", message: "Local import completed: " + ((summary.rows && summary.rows.workOrders) || 0) + " WO · " + ((summary.rows && summary.rows.sfcWorkOrders) || 0) + " WO in SFC · " + ((summary.rows && summary.rows.sfc) || 0) + " SFC · " + ((summary.rows && summary.rows.repairs) || 0) + " repair rows · " + ((summary.rows && summary.rows.validRepairSn) || 0) + " valid repaired SN · " + ((summary.rows && summary.rows.calendar) || 0) + " calendar rows · " + ((summary.rows && summary.rows.dbModel) || 0) + " DB model rows · " + ((summary.rows && summary.rows.cesiumInScope) || 0) + " Cesium FT rows in scope. Bridge rule: SFC[BOXSN] extracts the FJZ serial and links it to Cesium[syserialno]. Parent/part serials remain legacy fallbacks; Repair retains SN/parentsernum compatibility. Scope and filters come from SFC; DB Model only enriches BU/model. Local IndexedDB cache is enabled: the dataset remains in this browser only and is not uploaded to the cloud.", summary: summary });
-                traceOpsYieldSaveLocalCache(file, summary).then(function () {
-                    setYieldImportState(function(prev) {
-                        if (!prev || prev.status !== "ok") return prev;
-                        return Object.assign({}, prev, { message: prev.message + " Session saved locally; it will be restored after refresh without reloading the ZIP file." });
-                    });
-                });
-                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, "READY", "Local import completed. Preparing dashboard...");
+                var commonOnly = summary && (summary.mode === "common-session-v13.14.8" || summary.source === "CURRENT COMMON DB · session only");
+                var completionMessage = commonOnly
+                    ? "Step 1/2 complete. The current Common DB is held in session memory only. Load the current SFC + Cesium ZIP to complete this iteration."
+                    : "Step 2/2 complete: " + ((summary.rows && summary.rows.workOrders) || 0) + " WO · " + ((summary.rows && summary.rows.sfc) || 0) + " SFC rows · " + ((summary.rows && summary.rows.repairs) || 0) + " repair rows · " + ((summary.rows && summary.rows.cesiumInScope) || 0) + " Cesium FT rows. This dashboard uses only the Common DB and SFC + Cesium files from the current iteration. No ZIP data or dataset is retained for the next cycle.";
+                setYieldImportState({ status: "ok", progress: 100, phase: commonOnly ? "COMMON_READY" : "READY", message: completionMessage, summary: summary });
+                if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, commonOnly ? "COMMON_READY" : "READY", commonOnly ? "Common DB ready. Load SFC + Cesium next." : "Fresh paired import complete. Preparing dashboard...");
                 if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(650);
                 traceOpsScheduleCriticalModelAnalysis();
             }).catch(function (err) {
@@ -15241,24 +15239,9 @@ function App() {
         }, 40);
     }
     React.useEffect(function () {
-        var cancelled = false;
-        traceOpsYieldLoadLocalCache().then(function (summary) {
-            if (cancelled || !summary) return;
-            setActiveModule("yieldflow");
-            setYieldFilters({ bu: "ALL", family: "ALL", sku: "ALL", week: "ALL", line: "ALL", sfcStation: "ALL", cesiumArea: "ALL", wo: "ALL", sn: "", from: "", to: "" });
-            setYieldImportState({
-                status: "ok",
-                progress: 100,
-                phase: "RESTORED_CACHE",
-                message: "Yield Flow session restored from the browser's local cache. The ZIP file was not reloaded and no information was sent to the cloud. Source: " + ((summary && summary.fileName) || (summary && summary.container) || "local cache"),
-                summary: summary
-            });
-            setCriticalModelDetail(null);
-            traceOpsScheduleCriticalModelAnalysis();
-        }).catch(function (err) {
-            console.warn("[SMTinel] No se pudo restaurar cache local Yield Flow:", err);
-        });
-        return function () { cancelled = true; };
+        /* Fresh-cycle policy: never restore a Yield Flow dataset from a prior browser session. */
+        try { Promise.resolve(traceOpsYieldClearLocalCache()).catch(function () {}); } catch (_) {}
+        return function () {};
     }, []);
     var maintenanceTabArr = _useState("log");
     var maintenanceTab = maintenanceTabArr[0];
@@ -28276,7 +28259,7 @@ body:has(#recovery-section) .main-content.expanded{
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, yieldText("importTitle")),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Temporary local import: the Excel file is not retained. File size is validated and only SFC, Work Orders / Build Info, and Repair Record data are extracted.")),
+                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Fresh two-file cycle: load the current Common DB ZIP first, then the current SFC + Cesium ZIP. Each file replaces the previous iteration; no ZIP or dataset is restored from browser storage.")),
                     React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
                         React.createElement("input", { id: "traceops-yield-zip-import", type: "file", accept: ".zip,.xlsx,.xlsm,.txt,.tsv,.csv", style: { display: "none" }, onChange: function (e) { if (e && e.preventDefault)
                                 e.preventDefault(); var f = e.target.files && e.target.files[0]; handleYieldFlowZipImport(f); setTimeout(function () { try {
@@ -49105,6 +49088,32 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     common = common || {};
     return { wo:(common.wo||[]).length, repair:(common.repair||[]).length, calendar:(common.calendar||[]).length, dbmodel:(common.dbmodel||[]).length, skucost:(common.skucost||[]).length, bom:(common.bom||[]).length, stations:(common.stations||[]).length };
   }
+  /* V13.14.8: Common DB is session-only and belongs to one import cycle.
+     It is deliberately consumed by the next SFC + Cesium package so a later
+     iteration cannot inherit rows from an older Common DB. */
+  var sessionCommon = null;
+  var sessionCommonCycle = 0;
+  function clearActiveYieldDataset(reason){
+    var arrays = [
+      'TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS','TRACEOPS_YIELD_DB_MODEL_OPTIONS',
+      'TRACEOPS_YIELD_FT_ROWS','TRACEOPS_YIELD_FT_AREA_ROWS','TRACEOPS_YIELD_ACTION_TRACKER_ROWS',
+      'TRACEOPS_YIELD_SFC_EVENTS','TRACEOPS_RISK_SUMMARY_ROWS','TRACEOPS_YIELD_RAW_STATION_ON_LINE_ROWS'
+    ];
+    var maps = [
+      'TRACEOPS_YIELD_CISCO_WEEK_RANGES','TRACEOPS_YIELD_DB_MODEL_MAP','TRACEOPS_YIELD_BOM_MAP',
+      'TRACEOPS_YIELD_SN_TO_SFC','TRACEOPS_YIELD_REPAIRS_BY_SN','TRACEOPS_YIELD_COST_BY_SKU',
+      'TRACEOPS_YIELD_COST_BY_WO'
+    ];
+    arrays.forEach(function(name){ try { window[name] = []; } catch(_) {} });
+    maps.forEach(function(name){ try { window[name] = {}; } catch(_) {} });
+    try { window.TRACEOPS_YIELD_IMPORT_META = { source:'Awaiting current-cycle files', rows:{}, residualDataCleared:true, resetReason:reason || 'new import' }; } catch(_) {}
+    try { window.TRACEOPS_YIELD_FILTER_INDEX_CACHE = null; } catch(_) {}
+    try { window.TRACEOPS_YIELD_MODEL_CACHE = { key:null, value:null }; } catch(_) {}
+    try { window.TRACEOPS_CRITICAL_MODEL_CACHE = { key:null, value:null }; } catch(_) {}
+    try { window.TRACEOPS_YIELD_FT_BRIDGE_INDEX = null; } catch(_) {}
+    try { window.SMTINEL_CROSS_MODEL_RISK_DATA = null; window.SMTINEL_CROSS_MODEL_RISK = null; window.SMTINEL_CROSSMODEL_LAST_PARSED = null; } catch(_) {}
+    try { window.TRACEOPS_YIELD_IMPORT_CYCLE = { status:'loading', residualDataCleared:true, resetAt:new Date().toISOString(), reason:reason || 'new import' }; } catch(_) {}
+  }
   var priorDetect = window.traceOpsYieldDetectTextRole;
   function detectRole(path){
     var n = normText(path || '');
@@ -49131,25 +49140,25 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     return false;
   }
   async function saveCommon(parsed, sourceName){
-    var old = await dbGet('activeCommon');
     var common = {
       savedAt: new Date().toISOString(),
-      sourceName: sourceName || (old && old.sourceName) || '',
-      wo: (parsed.wo && parsed.wo.length) ? parsed.wo : ((old && old.wo) || []),
-      repair: (parsed.repair && parsed.repair.length) ? parsed.repair : ((old && old.repair) || []),
-      calendar: (parsed.calendar && parsed.calendar.length) ? parsed.calendar : ((old && old.calendar) || []),
-      dbmodel: (parsed.dbmodel && parsed.dbmodel.length) ? parsed.dbmodel : ((old && old.dbmodel) || []),
-      skucost: (parsed.skucost && parsed.skucost.length) ? parsed.skucost : ((old && old.skucost) || []),
-      bom: (parsed.bom && parsed.bom.length) ? parsed.bom : ((old && old.bom) || []),
-      stations: (parsed.stations && parsed.stations.length) ? parsed.stations : ((old && old.stations) || [])
+      sourceName: sourceName || '',
+      cycle: ++sessionCommonCycle,
+      wo: (parsed.wo || []).slice(),
+      repair: (parsed.repair || []).slice(),
+      calendar: (parsed.calendar || []).slice(),
+      dbmodel: (parsed.dbmodel || []).slice(),
+      skucost: (parsed.skucost || []).slice(),
+      bom: (parsed.bom || []).slice(),
+      stations: (parsed.stations || []).slice()
     };
-    var ok = await dbPut('activeCommon', common);
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: ok, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
+    sessionCommon = common;
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, storage: 'session-memory', consumed: false, cycle: common.cycle, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
     return common;
   }
   async function mergeCommon(parsed){
     if (!hasBu(parsed)) return null;
-    var common = await dbGet('activeCommon');
+    var common = sessionCommon;
     if (!common) return null;
     if (!(parsed.wo||[]).length) parsed.wo = common.wo || [];
     if (!(parsed.repair||[]).length) parsed.repair = common.repair || [];
@@ -49158,7 +49167,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     if (!(parsed.skucost||[]).length) parsed.skucost = common.skucost || [];
     if (!(parsed.bom||[]).length) parsed.bom = common.bom || [];
     if (!(parsed.stations||[]).length) parsed.stations = common.stations || [];
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
+    sessionCommon = null;
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: false, storage: 'session-memory', consumed: true, cycle: common.cycle, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
     return common;
   }
 
@@ -49223,10 +49233,11 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
   window.traceOpsYieldTryImportTextZip = async function(file, options){
     if (!file || !/\.zip$/i.test(file.name || '')) return null;
+    clearActiveYieldDataset('new ZIP: ' + String(file.name || 'unnamed'));
     await window.ensureZipTools();
     if (window.smtinelImportAbortReset) window.smtinelImportAbortReset();
     var started = Date.now();
-    progress(options, 12, 'SCAN', 'Escaneando ZIP TXT y detectando Common DB / BU package...');
+    progress(options, 12, 'SCAN', 'Scanning the ZIP and detecting the Common DB or SFC + Cesium package...');
     var outer = await JSZip.loadAsync(file);
     var entries = [];
     outer.forEach(function(path, entry){
@@ -49236,7 +49247,11 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       if (!role) return;
       entries.push({ path:path, entry:entry, role:role });
     });
-    if (!entries.length) return null;
+    if (!entries.length) {
+      sessionCommon = null;
+      try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded:false, storage:'session-memory', consumed:true, reason:'Unrecognized ZIP; reload current Common DB' }; } catch(_) {}
+      return null;
+    }
     entries.sort(function(a,b){ return roleRank(a.role) - roleRank(b.role); });
     var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], skucost: [], cesium: [], bom: [], stations: [] };
     var pulled = [];
@@ -49244,7 +49259,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
       var item = entries[i];
       var pct = 18 + Math.round((i / Math.max(1, entries.length)) * 50);
-      progress(options, pct, 'PARSING_' + String(item.role||'').toUpperCase(), 'Leyendo ' + item.path.split('/').pop() + ' sin formulas Excel...');
+      progress(options, pct, 'PARSING_' + String(item.role||'').toUpperCase(), 'Reading ' + item.path.split('/').pop() + ' without Excel formulas...');
       var text = await item.entry.async('string');
       await yieldThread();
       var rawRows = window.traceOpsYieldParseDelimitedText(text, item.role);
@@ -49258,33 +49273,42 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       }
       await yieldThread();
     }
-    if (hasCommon(parsed)) {
-      progress(options, 68, 'COMMON_CACHE', 'Guardando Common DB local: WO, Repair, Calendar, DB_Model, BOM y Stations...');
+    if (hasCommon(parsed) && !hasBu(parsed)) {
+      progress(options, 68, 'COMMON_SESSION', 'Step 1/2: replacing Common DB in session memory...');
       await saveCommon(parsed, file.name);
     }
     var common = await mergeCommon(parsed);
+    if (hasBu(parsed) && !common) {
+      throw new Error('Current-cycle Common DB is missing. Load the updated Common DB ZIP first, then load the updated SFC + Cesium ZIP. Previous iterations are never reused.');
+    }
     if (common) {
-      progress(options, 74, 'COMMON_MERGED', 'Common DB conectado: enriqueciendo SFC raw desde WO/SKU/Calendar/BOM/Repair...');
+      progress(options, 74, 'COMMON_MERGED', 'Step 2/2: current Common DB connected to the current SFC + Cesium package...');
       await yieldThread();
     }
     if (!hasBu(parsed) && hasCommon(parsed)) {
-      progress(options, 100, 'COMMON_READY', 'Common DB cargado. Ahora carga el ZIP de BU con SFC.txt + Cesium.txt.');
+      progress(options, 100, 'COMMON_READY', 'Step 1/2 complete. Current Common DB is held in session memory only. Now load the updated SFC + Cesium ZIP.');
       try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
     } else if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) {
-      throw new Error('El ZIP TXT no contiene SFC, Cesium, Repair_Record o Station_on_line_report reconocibles.');
+      sessionCommon = null;
+      try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded:false, storage:'session-memory', consumed:true, reason:'Recognized files contained no usable rows; reload current Common DB' }; } catch(_) {}
+      throw new Error('The ZIP does not contain recognizable SFC, Cesium, Repair_Record, or Station_on_line_report data.');
     }
-    progress(options, 82, 'BUILDING_DATASET', 'Construyendo dataset activo con SFC raw + Common DB enrichment...');
+    progress(options, 82, 'BUILDING_DATASET', 'Building the active dataset from current SFC data and current Common DB enrichment...');
     var meta = {
-      source: !hasBu(parsed) ? 'COMMON DB local' : 'ZIP TXT local + Common DB',
-      mode: !hasBu(parsed) ? 'common-cache-v13.2.21' : 'text-import-common-enriched-v13.2.21',
+      source: !hasBu(parsed) ? 'CURRENT COMMON DB · session only' : 'CURRENT SFC + CESIUM · current Common DB',
+      mode: !hasBu(parsed) ? 'common-session-v13.14.8' : 'fresh-paired-import-v13.14.8',
       fileName:file.name,
       importStartMs:(options && options.importStartMs) || started,
       workbookName: !hasBu(parsed) ? 'COMMON DB package' : 'BU package with SFC/Cesium',
       container:file.name,
       sheets:pulled,
-      notes: !hasBu(parsed) ? 'Common DB cache updated. Load a BU package next.' : 'SFC has no Excel formulas. SMTinel enriches from Station_on_line_report, DB_Model, Stations, Cisco Calendar, Repair_Record and BOM.'
+      notes: !hasBu(parsed) ? 'Current Common DB replaced in session memory. No browser cache is retained. Load the current SFC + Cesium package next.' : 'Fresh paired cycle completed. SFC/Cesium were enriched only with the Common DB loaded in this browser session; no prior iteration was reused.'
     };
     var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom, parsed.stations, parsed.skucost);
+    try {
+      if (built) built.mode = meta.mode;
+      if (window.TRACEOPS_YIELD_IMPORT_META) window.TRACEOPS_YIELD_IMPORT_META.mode = meta.mode;
+    } catch(_) {}
     try {
       window.TRACEOPS_YIELD_BRIDGE_DEBUG = {
         sfcRows:(parsed.sfc||[]).length,
@@ -49298,7 +49322,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       console.info('[SMTinel V13.2.20 Common Enrichment]', window.TRACEOPS_YIELD_BRIDGE_DEBUG);
     } catch(_) {}
     var secs = ((Date.now() - started) / 1000).toFixed(1);
-    progress(options, 100, 'READY', 'Import listo en ' + secs + 's. Common DB + BU enrichment activo.');
+    try { window.TRACEOPS_YIELD_IMPORT_CYCLE = { status:hasBu(parsed) ? 'complete' : 'waiting-sfc-cesium', cycle:common && common.cycle || sessionCommonCycle, commonSource:common && common.sourceName || file.name, buSource:hasBu(parsed) ? file.name : '', residualDataCleared:true, completedAt:hasBu(parsed) ? new Date().toISOString() : '' }; } catch(_) {}
+    progress(options, 100, hasBu(parsed) ? 'READY' : 'COMMON_READY', hasBu(parsed) ? ('Step 2/2 complete in ' + secs + 's. Fresh Common DB + SFC + Cesium cycle is active.') : 'Step 1/2 complete. Load the current SFC + Cesium ZIP.');
     try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
     return built;
   };
@@ -61139,5 +61164,62 @@ html body.smtinel-apple-premium .saas-header-pill{
   window.traceOpsYieldTryApplySameFileCache = perfTrySameFileCache;
   try { traceOpsYieldSaveLocalCache = perfSaveLocalCache; } catch(_) {}
   try { traceOpsYieldTryApplySameFileCache = perfTrySameFileCache; } catch(_) {}
+})();
+</script>
+<script id="smtinel-v13-14-8-fresh-yield-flow-cycle-guard">
+(function(){
+  'use strict';
+  var VERSION_LABEL = 'SMTinel V13.14.8 - Fresh Yield Flow Import Cycle - 2026-07-21';
+  window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
+  window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
+  window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
+  window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
+  window.TRACEOPS_YIELD_CACHE_POLICY = {
+    version: 'fresh-cycle-v13.14.8',
+    persistentDatasetCache: false,
+    persistentCommonDbCache: false,
+    requiredOrder: ['Common DB', 'SFC + Cesium'],
+    commonLifetime: 'one import cycle in memory',
+    updatedAt: '2026-07-21'
+  };
+
+  function noCache(){ return Promise.resolve(null); }
+  function noSave(){ return Promise.resolve(false); }
+  window.traceOpsYieldSaveLocalCache = noSave;
+  window.traceOpsYieldLoadLocalCache = noCache;
+  window.traceOpsYieldTryApplySameFileCache = noCache;
+  window.traceOpsYieldMergeCachedCommon = function(){ return Promise.resolve({ merged:false, common:null, reason:'Fresh-cycle policy' }); };
+  window.traceOpsYieldSaveCommonPayload = function(){ return Promise.resolve({ saved:false, rows:{}, reason:'Common DB is session-only' }); };
+  try { traceOpsYieldSaveLocalCache = noSave; } catch(_) {}
+  try { traceOpsYieldLoadLocalCache = noCache; } catch(_) {}
+  try { traceOpsYieldTryApplySameFileCache = noCache; } catch(_) {}
+  try { traceOpsYieldMergeCachedCommon = window.traceOpsYieldMergeCachedCommon; } catch(_) {}
+  try { traceOpsYieldSaveCommonPayload = window.traceOpsYieldSaveCommonPayload; } catch(_) {}
+
+  function removeLegacyYieldStorage(){
+    try { localStorage.removeItem('traceops_yieldflow_cache_meta'); } catch(_) {}
+    try { sessionStorage.removeItem('traceops_yieldflow_cache_meta'); } catch(_) {}
+    if (!window.indexedDB) return;
+    ['SMTinelLocalCache', 'SMTinelCommonDB'].forEach(function(dbName){
+      try {
+        var request = indexedDB.deleteDatabase(dbName);
+        request.onblocked = function(){
+          try { console.warn('[SMTinel Fresh Cycle] Legacy Yield Flow storage will be removed after open transactions close:', dbName); } catch(_) {}
+        };
+      } catch(_) {}
+    });
+  }
+  removeLegacyYieldStorage();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', removeLegacyYieldStorage, { once:true });
+
+  try {
+    window.TRACEOPS_YIELD_IMPORT_CYCLE = {
+      status: 'awaiting-common-db',
+      residualDataCleared: true,
+      requiredNext: 'Load current Common DB ZIP',
+      policy: 'Common DB 1/2 -> SFC + Cesium 2/2; no prior iteration is retained',
+      initializedAt: new Date().toISOString()
+    };
+  } catch(_) {}
 })();
 </script>
