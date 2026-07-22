@@ -13883,7 +13883,11 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         return true;
     }
     var baseRows = TRACEOPS_YIELD_BY_WO_ROWS.filter(function (item) {
-        if (TRACEOPS_YIELD_IMPORT_META && TRACEOPS_YIELD_IMPORT_META.mode === "imported")
+        var meta = TRACEOPS_YIELD_IMPORT_META || {};
+        var mode = String(meta.mode || "");
+        var rowsMeta = meta.rows || {};
+        var hasImportedSfc = Number(rowsMeta.sfc || rowsMeta.sfcWorkOrders || 0) > 0;
+        if (mode === "imported" || mode.indexOf("fresh-paired-import") === 0 || hasImportedSfc)
             return true;
         return String(item.bu || "").toUpperCase().indexOf("NGFW") >= 0;
     }).map(function (r) {
