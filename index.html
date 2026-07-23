@@ -12789,6 +12789,17 @@ function traceOpsYieldMatchesFilter(value, selected) {
     // A typed value works as a case-insensitive contains search.
     return selectedUpper.length >= 2 && valueUpper.indexOf(selectedUpper) >= 0;
 }
+function traceOpsYieldMatchesExactFilter(value, selected) {
+    if (!selected || selected === 'ALL')
+        return true;
+    var rawValue = String(value || '').trim();
+    var rawSelected = String(selected || '').trim();
+    if (!rawSelected || rawSelected === 'ALL')
+        return true;
+    if (!rawValue)
+        return false;
+    return rawValue.toUpperCase() === rawSelected.toUpperCase();
+}
 function traceOpsYieldWoRiskCount(row) {
     if (!row)
         return 0;
@@ -13564,8 +13575,8 @@ function traceOpsOspRowMatchesFilters(r, filters) {
     filters = filters || {};
     var snFilter = traceOpsYieldCleanSn(filters.sn || filters.serial || filters.serialNumber || '');
     return traceOpsYieldMatchesFilter(r.bu, filters.bu) &&
-        traceOpsYieldMatchesFilter(r.family, filters.family) &&
-        traceOpsYieldMatchesFilter(r.sku, filters.sku) &&
+        traceOpsYieldMatchesExactFilter(r.family, filters.family) &&
+        traceOpsYieldMatchesExactFilter(r.sku, filters.sku) &&
         traceOpsYieldMatchesFilter(r.week, filters.week) &&
         traceOpsYieldMatchesFilter(r.line, filters.line) &&
         traceOpsYieldMatchesFilter(String(r.wo || ''), filters.wo) &&
@@ -13963,8 +13974,8 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
     }
     function rowMatchesCurrentScope(r, ignoreKey) {
         return (ignoreKey === 'bu' || traceOpsYieldMatchesFilter(r.buLabel, filters.bu)) &&
-            (ignoreKey === 'family' || traceOpsYieldMatchesFilter(r.family, filters.family)) &&
-            (ignoreKey === 'sku' || traceOpsYieldMatchesFilter(r.sku, filters.sku)) &&
+            (ignoreKey === 'family' || traceOpsYieldMatchesExactFilter(r.family, filters.family)) &&
+            (ignoreKey === 'sku' || traceOpsYieldMatchesExactFilter(r.sku, filters.sku)) &&
             (ignoreKey === 'week' || traceOpsYieldMatchesWeekScope(r.week)) &&
             (ignoreKey === 'line' || traceOpsYieldMatchesFilter(r.line, filters.line)) &&
             (ignoreKey === 'sfcStation' || traceOpsYieldWoHasSfcStation(r.wo, filters.sfcStation)) &&
@@ -14061,8 +14072,8 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         var week = meta ? meta.week : (t.week || '');
         var buLabel = meta ? traceOpsYieldInferBU(meta.bu, meta.family, meta.sku) : traceOpsYieldInferBU(t.bu || '', t.model || t.family || '', t.skuno || t.sku || '');
         var basicMatch = traceOpsYieldMatchesFilter(buLabel, filters.bu) &&
-            traceOpsYieldMatchesFilter(family, filters.family) &&
-            traceOpsYieldMatchesFilter(sku, filters.sku) &&
+            traceOpsYieldMatchesExactFilter(family, filters.family) &&
+            traceOpsYieldMatchesExactFilter(sku, filters.sku) &&
             traceOpsYieldMatchesFilter(line, filters.line) &&
             traceOpsYieldMatchesFilter(rawWo, filters.wo) &&
             ((!filters.week || filters.week === 'ALL') ? true : (week ? traceOpsYieldMatchesFilter(week, filters.week) : true)) &&
@@ -14076,11 +14087,11 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
             return true;
         var hasSpecificIdentityFilter = (!!filters.family && filters.family !== 'ALL') || (!!filters.sku && filters.sku !== 'ALL') || (!!filters.line && filters.line !== 'ALL') || (!!filters.wo && filters.wo !== 'ALL');
         if (hasSpecificIdentityFilter) {
-            var familyMatchLoose = !filters.family || filters.family === 'ALL' || traceOpsYieldNorm(family) === traceOpsYieldNorm(filters.family);
-            var skuMatch = !filters.sku || filters.sku === 'ALL' || String(sku || '') === String(filters.sku || '');
+            var familyMatchExact = traceOpsYieldMatchesExactFilter(family, filters.family);
+            var skuMatch = traceOpsYieldMatchesExactFilter(sku, filters.sku);
             var lineMatch = !filters.line || filters.line === 'ALL' || String(line || '') === String(filters.line || '');
             var woMatch = !filters.wo || filters.wo === 'ALL' || String(rawWo || '') === String(filters.wo || '') || String(normWo || '') === String(filters.wo || '').replace(/^0+/, '');
-            return familyMatchLoose && skuMatch && lineMatch && woMatch;
+            return familyMatchExact && skuMatch && lineMatch && woMatch;
         }
         return false;
     });
@@ -14283,8 +14294,8 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
     var stationFpy = traceOpsBuildYieldFlowStationFpy(rows, trackerRows);
     var ftRows = (TRACEOPS_YIELD_FT_ROWS || []).filter(function (r) {
         var rr = { date: r.recordTime || "", family: r.family, sku: r.sku, week: r.week, line: r.line, wo: r.wo, buLabel: r.bu, testArea: traceOpsYieldCesiumAreaValue(r) };
-        return traceOpsYieldMatchesFilter(rr.family, filters.family) &&
-            traceOpsYieldMatchesFilter(rr.sku, filters.sku) &&
+        return traceOpsYieldMatchesExactFilter(rr.family, filters.family) &&
+            traceOpsYieldMatchesExactFilter(rr.sku, filters.sku) &&
             traceOpsYieldMatchesFilter(rr.week, filters.week) &&
             traceOpsYieldMatchesFilter(rr.line, filters.line) &&
             traceOpsYieldMatchesFilter(rr.testArea, filters.cesiumArea) &&
@@ -14314,8 +14325,8 @@ function traceOpsBuildYieldFlowModelLocalRaw(filters) {
         var week = String(sfc.week || '').trim();
         var currentStation = sfc.event || sfc.currentEvent || sfc.station || '';
         var match = traceOpsYieldMatchesFilter(bu, filters.bu) &&
-            traceOpsYieldMatchesFilter(family, filters.family) &&
-            traceOpsYieldMatchesFilter(sku, filters.sku) &&
+            traceOpsYieldMatchesExactFilter(family, filters.family) &&
+            traceOpsYieldMatchesExactFilter(sku, filters.sku) &&
             traceOpsYieldMatchesFilter(line, filters.line) &&
             traceOpsYieldMatchesFilter(wo, filters.wo) &&
             traceOpsYieldMatchesFilter(week, filters.week) &&
@@ -60115,6 +60126,7 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   function splitTokens(v){return s(v).split(/[,;|\n\r\t ]+/).map(function(x){return s(x);}).filter(Boolean);}
   function eqOrAll(filter,value){filter=s(filter); if(!filter || u(filter)==='ALL' || u(filter)==='N/D') return true; value=s(value); if(!value) return false; return u(value)===u(filter);}
   function includesOrAll(filter,value){filter=s(filter); if(!filter || u(filter)==='ALL' || u(filter)==='N/D') return true; value=s(value); if(!value) return false; return u(value).indexOf(u(filter))>=0 || u(filter).indexOf(u(value))>=0;}
+  function exactOrAll(filter,value){filter=s(filter); if(!filter || u(filter)==='ALL' || u(filter)==='N/D') return true; value=s(value); if(!value) return false; return u(value)===u(filter);}
   function rowSn(r){return cleanSn(pick(r,['SN','sn','serial','serialNumber','Serial Number','syserialno','sysserialno','boxsn','BOXSN','bridgeKey','Parent Serial','parentsernum','parentsn']));}
   function rowWo(r){return s(pick(r,['WO','wo','WorkOrder','workOrder','Work Order','WORKORDER','orderno','Order No','ORDERNO','work_order']));}
   function rowStation(r){return s(pick(r,['Station','station','STATION','sfcStation','SFC Station','linea_estacion','testArea','Test Area','TEST AREA','cesiumArea','area','Area']));}
@@ -60138,7 +60150,7 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   function activeFilters(){var f={}; try{Object.assign(f,window.__SMTINEL_ACTIVE_YIELD_FILTERS||{});}catch(_){} try{var st=window.__SMTINEL_BOARD_IMPACT_MD_STATE;if(st&&st.yieldFilters)Object.assign(f,st.yieldFilters);}catch(_){} return f;}
   function snap(){try{return window.traceOpsYieldCacheSnapshot?window.traceOpsYieldCacheSnapshot():null;}catch(_){return null;}}
   function allRows(){var pools=[]; function add(a){if(Array.isArray(a))pools.push(a);} try{add(window.TRACEOPS_YIELD_FT_ROWS);}catch(_){} try{add(window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){} try{add(window.yieldFlowModel&&window.yieldFlowModel.rows);}catch(_){} var z=snap(); if(z){['ftRows','rows','cesiumRows','yieldRows','stationRows','rawRows','sfcRows','sfc','workOrders','sfcWorkOrders'].forEach(function(k){add(z[k]);});} var out=[]; pools.forEach(function(p){p.forEach(function(r){if(r&&typeof r==='object')out.push(r);});}); return out;}
-  function rowMatchesFilter(r,f){ if(!f) return true; if(!eqOrAll(f.bu,rowBu(r))) return false; if(!includesOrAll(f.family,rowFamily(r))) return false; if(!includesOrAll(f.sku,rowSku(r))) return false; if(!eqOrAll(f.week,rowWeek(r))) return false; if(!eqOrAll(f.line,rowLine(r))) return false; if(!eqOrAll(f.sfcStation,rowStation(r))) return false; if(!eqOrAll(f.cesiumArea,rowStation(r))) return false; var wf=s(f.wo); if(wf && u(wf)!=='ALL' && u(wf)!=='N/D'){var w=rowWo(r); if(u(w).indexOf(u(wf))<0 && u(wf).indexOf(u(w))<0) return false;} var sf=s(f.sn); if(sf){var sn=rowSn(r); var toks=splitTokens(sf).map(cleanSn); if(toks.length && toks.indexOf(sn)<0) return false;} return true; }
+  function rowMatchesFilter(r,f){ if(!f) return true; if(!eqOrAll(f.bu,rowBu(r))) return false; if(!exactOrAll(f.family,rowFamily(r))) return false; if(!exactOrAll(f.sku,rowSku(r))) return false; if(!eqOrAll(f.week,rowWeek(r))) return false; if(!eqOrAll(f.line,rowLine(r))) return false; if(!eqOrAll(f.sfcStation,rowStation(r))) return false; if(!eqOrAll(f.cesiumArea,rowStation(r))) return false; var wf=s(f.wo); if(wf && u(wf)!=='ALL' && u(wf)!=='N/D'){var w=rowWo(r); if(u(w).indexOf(u(wf))<0 && u(wf).indexOf(u(w))<0) return false;} var sf=s(f.sn); if(sf){var sn=rowSn(r); var toks=splitTokens(sf).map(cleanSn); if(toks.length && toks.indexOf(sn)<0) return false;} return true; }
   function scopedYieldRows(){var f=activeFilters(), rows=allRows(), out=rows.filter(function(r){return rowMatchesFilter(r,f);}); if(!out.length && rows.length) out=rows.filter(function(r){return isFailish(r)&&rowMatchesFilter(r,f);}); return out;}
   function repairsForSn(sn){var a=[]; try{var m=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{}; var keys=[sn,cleanSn(sn),s(sn)]; keys.forEach(function(k){if(Array.isArray(m[k])) a=a.concat(m[k]);});}catch(_){} return a;}
   function enrichFromYield(sn,yrows){for(var i=0;i<yrows.length;i++){if(rowSn(yrows[i])===sn) return yrows[i];} return {};}
