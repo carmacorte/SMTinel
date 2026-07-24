@@ -9,6 +9,7 @@ window.TRACEOPS_SUPABASE = {
   anonKey: "sb_publishable_FRi9eaXD-6TYVXLCCUCWkg_1VuvcIhV"
 };
 </script>
+
 <meta charset="UTF-8"/><!-- SMTinel v2026-03-22 | STORYLINE-EXECUTIVE-ENTERPRISE-V13.2.46 | FIXED-V10-LUX-PREMIUM-FOCUS-RANGE | FIXED-V7-COMPONENT-CODE-BOARD-IMPACT | FIXED-V5-FR-MFG-BUILT openai-only FIXED-V4-YIELDFLOW-SCOPE | recovery icon cards fused | blue palette fused | ppt palette fused | ppt grid glow fused | ppt addShape fix | safari pptx guard | pptx ref fix complete | d0-d2 improvement pack | premium shell css consolidated | ops-hero patch A | hdr patch B | main-content patch C | a11y P5-P6 | console guards P3-P4 | ppt-trust | bom lookup v8 -->
 <script>
 window.__traceopsZipReady = null;
@@ -2818,6 +2819,529 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
 }
 
 </style>
+
+<!-- SMTinel V13.14.11 - Daily Email Export -->
+<style id="smtinel-daily-email-export-style-v13-14-11">
+  #smtinel-daily-email-export-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:42px;
+    padding:0 16px;
+    border-radius:999px;
+    border:1px solid #C9DAF5;
+    background:linear-gradient(135deg,#102A43,#1F6FAE);
+    color:#fff;
+    font:900 12px/1 Inter,Segoe UI,Arial,sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+    box-shadow:0 10px 24px rgba(16,42,67,.16);
+  }
+  #smtinel-daily-email-export-btn:hover{transform:translateY(-1px)}
+  #smtinel-daily-email-export-btn[disabled]{opacity:.65;cursor:wait;transform:none}
+  #smtinel-email-export-toast{
+    position:fixed;
+    right:18px;
+    bottom:178px;
+    z-index:2147483300;
+    max-width:min(420px,calc(100vw - 28px));
+    padding:12px 14px;
+    border-radius:16px;
+    background:#102A43;
+    color:#fff;
+    box-shadow:0 24px 70px rgba(16,42,67,.30);
+    font:800 12px/1.35 Inter,Segoe UI,Arial,sans-serif;
+  }
+  #smtinel-email-export-modal{
+    position:fixed;
+    inset:0;
+    z-index:2147483400;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(5,18,32,.56);
+    backdrop-filter:blur(10px);
+  }
+  #smtinel-email-export-modal[hidden]{display:none}
+  #smtinel-email-export-modal .smtinel-email-dialog{
+    width:min(980px,100%);
+    max-height:min(820px,calc(100vh - 36px));
+    overflow:hidden;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    border-radius:22px;
+    background:#F7FAFF;
+    border:1px solid rgba(255,255,255,.55);
+    box-shadow:0 32px 90px rgba(0,0,0,.28);
+    color:#102A43;
+  }
+  #smtinel-email-export-modal .smtinel-email-head,
+  #smtinel-email-export-modal .smtinel-email-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 16px;
+    background:#fff;
+    border-bottom:1px solid #D9E6F7;
+  }
+  #smtinel-email-export-modal .smtinel-email-foot{
+    border-top:1px solid #D9E6F7;
+    border-bottom:0;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  #smtinel-email-export-modal h3{margin:0;font-size:16px;font-weight:950;color:#102A43}
+  #smtinel-email-export-modal p{margin:4px 0 0;color:#5F766C;font-size:12px}
+  #smtinel-email-export-modal .smtinel-email-body{
+    overflow:auto;
+    padding:16px;
+  }
+  #smtinel-email-export-modal .smtinel-email-subject{
+    width:100%;
+    box-sizing:border-box;
+    min-height:40px;
+    border:1px solid #C9DAF5;
+    border-radius:12px;
+    padding:0 12px;
+    font:800 12px Inter,Segoe UI,Arial,sans-serif;
+    color:#102A43;
+    background:#fff;
+    margin-bottom:12px;
+  }
+  #smtinel-email-export-modal .smtinel-email-preview{
+    border:1px solid #D9E6F7;
+    border-radius:16px;
+    background:#fff;
+    padding:14px;
+  }
+  #smtinel-email-export-modal button{
+    min-height:38px;
+    border-radius:999px;
+    border:1px solid #C9DAF5;
+    background:#fff;
+    color:#102A43;
+    font:900 12px Inter,Segoe UI,Arial,sans-serif;
+    padding:0 14px;
+    cursor:pointer;
+  }
+  #smtinel-email-export-modal button.primary{
+    background:linear-gradient(135deg,#102A43,#1F6FAE);
+    color:#fff;
+    border:0;
+  }
+  @media(max-width:680px){
+    #smtinel-daily-email-export-btn{min-height:38px;padding:0 12px;font-size:11px}
+    #smtinel-email-export-modal{padding:0}
+    #smtinel-email-export-modal .smtinel-email-dialog{height:100vh;max-height:none;border-radius:0}
+    #smtinel-email-export-modal .smtinel-email-head{align-items:flex-start;flex-direction:column}
+  }
+</style>
+<script id="smtinel-daily-email-export-script-v13-14-11">
+(function(){
+  'use strict';
+  var VERSION='SMTinel V13.14.15 - Notes Stable Email Header - 2026-07-23';
+  window.SMTINEL_BUILD_VERSION=VERSION;
+  window.SMTINEL_BUILD_BADGE=VERSION;
+  window.SMTINEL_VERSION_TEXT=VERSION;
+  var BTN_ID='smtinel-daily-email-export-btn';
+  var MODAL_ID='smtinel-email-export-modal';
+  var TOAST_ID='smtinel-email-export-toast';
+  function arr(x){return Array.prototype.slice.call(x||[]);}
+  function text(v){return String(v==null?'':v).replace(/\s+/g,' ').trim();}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function norm(v){return text(v).toUpperCase();}
+  function num(v){var n=Number(String(v==null?'':v).replace(/[$,%\s,]/g,''));return isFinite(n)?n:0;}
+  function money(v){return '$'+Math.round(Number(v)||0).toLocaleString('en-US');}
+  function pct(v){var n=Number(v)||0;return (Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigits:n%1?1:0,maximumFractionDigits:1})+'%';}
+  function pick(row,keys){row=row||{};for(var i=0;i<keys.length;i++){if(row[keys[i]]!=null&&text(row[keys[i]])!=='')return row[keys[i]];}return '';}
+  function visible(el){if(!el||!el.getBoundingClientRect)return false;var r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';}
+  function bestRows(){
+    var pools=[];
+    function add(a){if(Array.isArray(a)&&a.length)pools.push(a);}
+    try{add(window.TRACEOPS_YIELD_BY_WO_ROWS);}catch(_){}
+    try{add(window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){}
+    try{add(window.yieldFlowModel&&window.yieldFlowModel.rows);}catch(_){}
+    try{add(window.TRACEOPS_YIELD_FT_ROWS);}catch(_){}
+    pools.sort(function(a,b){return b.length-a.length;});
+    return pools[0]||[];
+  }
+  function getKpi(rows){
+    var k={};
+    try{k=window.yieldFlowModel&&window.yieldFlowModel.kpi||{};}catch(_){}
+    var total=0,clean=0,risk=0,orders={},families={},skus={},lines={},weeks={};
+    rows.forEach(function(r){
+      var units=num(pick(r,['total','Total','units','Units','qty','Qty','lotQty','MFG Qty','mfg']));
+      var rowRisk=num(pick(r,['risk','Risk','fail','Fail','failureQty','Qty SN','Qty SN Impacted','totalRisk','Total Risk']));
+      var rowClean=num(pick(r,['clean','Clean','pass','Pass']));
+      if(!units&&rowClean+rowRisk)units=rowClean+rowRisk;
+      if(!rowClean&&units)rowClean=Math.max(0,units-rowRisk);
+      total+=units;clean+=rowClean;risk+=rowRisk;
+      var wo=text(pick(r,['wo','WO','workOrder','WorkOrderNo','Work Order']));if(wo)orders[wo]=1;
+      var fam=text(pick(r,['family','Product Family','productFamily','ProductFamily','model','Model']));if(fam)families[fam]=1;
+      var sku=text(pick(r,['sku','SKU','skuno','SkuNo','P_NO','Product Number']));if(sku)skus[sku]=1;
+      var line=text(pick(r,['line','Line','LINE','productionLine']));if(line)lines[line]=1;
+      var week=text(pick(r,['week','Week','fiscalWeek','ciscoWeek']));if(week)weeks[week]=1;
+    });
+    total=total||num(k.total)||num(k.units)||rows.length;
+    risk=risk||num(k.risk);
+    clean=clean||num(k.clean)||Math.max(0,total-risk);
+    return {
+      total:total,
+      clean:clean,
+      risk:risk,
+      yieldPct:total?clean/total*100:num(k.yield||k.cleanYield),
+      orders:num(k.orders)||Object.keys(orders).length,
+      families:Object.keys(families),
+      skus:Object.keys(skus),
+      lines:Object.keys(lines),
+      weeks:Object.keys(weeks)
+    };
+  }
+  function snFromRow(r,idx){
+    return text(pick(r,['sn','SN','serial','Serial','serialNumber','sysserialno','sfcSn','bridgeKey','parentsernum','BOXSN']))||('ROW-'+idx);
+  }
+  function repairRowsFor(sn){
+    var out=[],map={};
+    try{map=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{};}catch(_){}
+    [sn,norm(sn),text(sn)].forEach(function(k){if(k&&Array.isArray(map[k]))out=out.concat(map[k]);});
+    return out;
+  }
+  function rowSignal(row){
+    return norm(Object.keys(row||{}).map(function(k){return row[k];}).join(' '));
+  }
+  function isCriticalSignal(s){
+    return /CRITICAL|HOLD|CONTAIN|STOP|MISSING|WRONG|SHORT|INSUFFICIENT|VOID|BRIDGE|RECUR|ESCALAT/.test(s||'');
+  }
+  function recovery(rows){
+    var active={},useActive=false;
+    try{active=window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC||{};useActive=Object.keys(active).length>0;}catch(_){}
+    var source=useActive?Object.keys(active).map(function(sn){return {sn:sn,row:active[sn]||{}};}):rows.map(function(r,i){return {sn:snFromRow(r,i),row:r};});
+    var fast=0,repair=0,critical=0,breach=0,issues={};
+    source.forEach(function(item){
+      var reps=repairRowsFor(item.sn);
+      var sig=rowSignal(item.row)+' '+reps.map(rowSignal).join(' ');
+      if(/>24|24\+|OVER|365|1Y|SLA/.test(sig))breach++;
+      if(reps.length>1||isCriticalSignal(sig)){critical++;}
+      else if(reps.length){repair++;}
+      else{fast++;}
+      if(reps.length){
+        reps.forEach(function(rep){
+          var fm=text(pick(rep,['FailureMode','failureMode','Failure Mode','failure','Failure','defect','Defect','testinfo','Test Info','remark','Remark']))||'Repair Record Touch';
+          issues[fm]=(issues[fm]||0)+1;
+        });
+      }
+    });
+    return {open:source.length,fast:fast,repair:repair,critical:critical,breach:breach,issues:issues,source:useActive?'Yield Flow active SN scope':'Yield Flow rows'};
+  }
+  function costModel(rows){
+    function skuKey(v){return String(v==null?'':v).toUpperCase().replace(/[^A-Z0-9]/g,'');}
+    function woKey(v){return text(v).replace(/^0+/,'')||'0';}
+    function domCostSnapshot(){
+      var card=document.getElementById('smtinel-yield-cost-impact-card');
+      if(!card)return null;
+      var raw=text(card.textContent||'');
+      var moneyMatches=raw.match(/\$[\d,]+/g)||[];
+      if(!moneyMatches.length)return null;
+      var totalDom=num(moneyMatches[0]);
+      var top=[];
+      try{
+        arr(card.querySelectorAll('div')).forEach(function(div){
+          var line=text(div.textContent||'');
+          var m=line.match(/(.+?)\s*(\$[\d,]+)\s*$/);
+          if(!m)return;
+          var name=text(m[1]).replace(/Business Impact.*?Missing cost:\s*\d+/i,'').replace(/Exposed cost from risk units/i,'');
+          var value=num(m[2]);
+          if(name&&value&&top.length<6&&name.length<80)top.push({name:name,value:value});
+        });
+      }catch(_){}
+      return {total:totalDom,missing:0,top:top,source:'Business Impact card'};
+    }
+    function addPool(out,a){if(Array.isArray(a))a.forEach(function(r){if(r&&typeof r==='object')out.push(r);});}
+    function costRows(){
+      var out=[];
+      try{addPool(out,window.TRACEOPS_YIELD_BY_WO_ROWS);}catch(_){}
+      try{addPool(out,window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){}
+      addPool(out,rows);
+      return out;
+    }
+    function costIndex(list){
+      var idx={sku:Object.create(null),wo:Object.create(null),family:Object.create(null)};
+      function addSku(k,v){k=skuKey(k);if(k&&v)idx.sku[k]=v;}
+      function addWo(k,v){k=woKey(k);if(k&&k!=='0'&&v)idx.wo[k]=v;}
+      function addFam(k,v){k=norm(k);if(k&&v)idx.family[k]=v;}
+      (list||[]).forEach(function(r){
+        var c=num(pick(r,['cost','Cost','COST','unitCost','Unit Cost','unit_cost','SKU Cost','skuCost','COSTO']));
+        if(!c)return;
+        addSku(pick(r,['sku','SKU','skuno','SkuNo','P_NO','P NO','Product Number','Part Number']),c);
+        addWo(pick(r,['wo','WO','workOrder','WorkOrderNo','Work Order','Order']),c);
+        addFam(pick(r,['family','Product Family','productFamily','ProductFamily','model','Model']),c);
+      });
+      try{Object.keys(window.TRACEOPS_YIELD_COST_BY_SKU||{}).forEach(function(k){addSku(k,num(window.TRACEOPS_YIELD_COST_BY_SKU[k]));});}catch(_){}
+      try{Object.keys(window.TRACEOPS_YIELD_COST_BY_WO||{}).forEach(function(k){addWo(k,num(window.TRACEOPS_YIELD_COST_BY_WO[k]));});}catch(_){}
+      try{
+        var parsed=window.SMTINEL_CROSSMODEL_LAST_PARSED||{};
+        (parsed.skucost||[]).forEach(function(r){
+          var c=num(pick(r,['COSTO','Cost','COST','cost','Unit Cost','SKU Cost']));
+          addSku(pick(r,['SKU','P_NO','P NO','SkuNo','skuno','Product Number','Part Number']),c);
+        });
+      }catch(_){}
+      return idx;
+    }
+    function unitCost(r,idx){
+      var direct=num(pick(r,['cost','Cost','COST','unitCost','Unit Cost','unit_cost','SKU Cost','skuCost','COSTO']));
+      if(direct)return direct;
+      var wo=woKey(pick(r,['wo','WO','workOrder','WorkOrderNo','Work Order','Order']));
+      var sku=skuKey(pick(r,['sku','SKU','skuno','SkuNo','P_NO','P NO','Product Number','Part Number']));
+      var fam=norm(pick(r,['family','Product Family','productFamily','ProductFamily','model','Model']));
+      return (wo&&idx.wo[wo])||(sku&&idx.sku[sku])||(fam&&idx.family[fam])||0;
+    }
+    var sourceRows=costRows(),idx=costIndex(sourceRows),total=0,missing=0,fam={};
+    var seen={};
+    sourceRows.forEach(function(r,i){
+      var key=[text(pick(r,['wo','WO','workOrder','WorkOrderNo','Work Order','Order']))||('ROW'+i),text(pick(r,['sku','SKU','skuno','SkuNo','P_NO','Product Number']))||'',text(pick(r,['family','Product Family','productFamily','ProductFamily','model','Model']))||''].join('|');
+      if(seen[key])return;
+      seen[key]=1;
+      var risk=num(pick(r,['risk','Risk','fail','Fail','failureQty','Qty SN','Qty SN Impacted','totalRisk','Total Risk']));
+      if(!risk)return;
+      var unit=unitCost(r,idx);
+      var family=text(pick(r,['family','Product Family','productFamily','ProductFamily','model','Model','sku','SKU']))||'N/D';
+      if(risk&&unit){var value=risk*unit;total+=value;fam[family]=(fam[family]||0)+value;}
+      else if(risk&&!unit)missing+=1;
+    });
+    var model={total:total,missing:missing,top:Object.keys(fam).sort(function(a,b){return fam[b]-fam[a];}).slice(0,6).map(function(k){return {name:k,value:fam[k]};}),source:'Yield Flow cost rows'};
+    if(!model.total){
+      var dom=domCostSnapshot();
+      if(dom&&dom.total)return dom;
+    }
+    return model;
+  }
+  function topList(map,limit){
+    return Object.keys(map||{}).sort(function(a,b){return map[b]-map[a];}).slice(0,limit||5).map(function(k){return {name:k,qty:map[k]};});
+  }
+  function activeScopeText(kpi){
+    var f=[];
+    try{var filters=window.__SMTINEL_ACTIVE_YIELD_FILTERS||{};Object.keys(filters).forEach(function(k){var v=filters[k];if(v!=null&&text(v)&&norm(v)!=='ALL')f.push(k+'='+v);});}catch(_){}
+    if(f.length)return f.join(' | ');
+    var parts=[];
+    if(kpi.families.length&&kpi.families.length<=3)parts.push('Family: '+kpi.families.join(', '));
+    if(kpi.lines.length&&kpi.lines.length<=5)parts.push('Lines: '+kpi.lines.join(', '));
+    if(kpi.weeks.length&&kpi.weeks.length<=3)parts.push('Week: '+kpi.weeks.join(', '));
+    return parts.join(' | ')||'ALL';
+  }
+  function buildReport(){
+    var rows=bestRows();
+    if(!rows.length)return null;
+    var k=getKpi(rows),r=recovery(rows),c=costModel(rows),issues=topList(r.issues,5);
+    var now=new Date();
+    var date=now.toISOString().slice(0,10);
+    var subject='SMTinel Daily Output & Recovery Report - '+date;
+    var css='font-family:Segoe UI,Arial,sans-serif;color:#102A43;line-height:1.35';
+    function statusLine(){
+      var status=k.yieldPct>=90?'Flow Normal':'Flow Attention';
+      return '<div style="font-size:13px;color:#102A43;margin-top:10px;font-weight:700">'+
+        '<span style="color:#126C45">Status: '+esc(status)+'</span>'+
+        '<span style="color:#829AB1"> | </span>'+
+        '<span style="color:#A83232">Critical Hold: '+esc(r.critical)+'</span>'+
+        '<span style="color:#829AB1"> | </span>'+
+        '<span style="color:#9A5A00">Cost Exposure: '+esc(money(c.total))+'</span>'+
+      '</div>';
+    }
+    function metric(label,value,sub){return '<td style="border:1px solid #D9E6F7;border-radius:12px;background:#fff;padding:12px;vertical-align:top"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#60748D;font-weight:800">'+esc(label)+'</div><div style="font-size:24px;font-weight:900;margin-top:4px">'+esc(value)+'</div><div style="font-size:11px;color:#5F766C;margin-top:4px">'+esc(sub||'')+'</div></td>';}
+    function rowsHtml(list,kind){
+      if(!list.length)return '<tr><td colspan="3" style="padding:10px;border:1px solid #D9E6F7;color:#5F766C">No records detected in the current scope.</td></tr>';
+      return list.map(function(x,i){return '<tr><td style="padding:9px;border:1px solid #D9E6F7">'+(i+1)+'</td><td style="padding:9px;border:1px solid #D9E6F7;font-weight:700">'+esc(x.name)+'</td><td style="padding:9px;border:1px solid #D9E6F7;text-align:right;font-weight:800">'+esc(kind==='money'?money(x.value):String(x.qty))+'</td></tr>';}).join('');
+    }
+    var html='<div style="'+css+';max-width:980px;margin:0 auto;background:#F7FAFF;padding:18px;border:1px solid #D9E6F7;border-radius:16px">'+
+      '<div style="background:#FFFFFF;color:#102A43;border:1px solid #C9DAF5;border-left:6px solid #1F6FAE;border-radius:14px;padding:18px">'+
+      '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#1F6FAE;font-weight:800">SMTinel Daily Output & Recovery Report</div>'+
+      '<div style="font-size:24px;font-weight:900;margin-top:4px;color:#102A43">Yield Flow Executive Scope</div>'+
+      '<div style="font-size:13px;color:#334E68;margin-top:8px">Cut-off: '+esc(now.toLocaleString())+' · Source: '+esc(r.source)+' · Scope: '+esc(activeScopeText(k))+'</div>'+
+      statusLine()+'</div>'+
+      '<table role="presentation" style="width:100%;border-spacing:10px;margin-top:8px"><tr>'+
+      metric('SMT Units',Math.round(k.total).toLocaleString('en-US'),'active rows / WO scope')+
+      metric('Clean Yield',pct(k.yieldPct),'clean / total')+
+      metric('Risk Units',Math.round(k.risk||r.repair+r.critical).toLocaleString('en-US'),'repair or failure exposure')+
+      '</tr><tr>'+
+      metric('Open WIP',Math.round(r.open).toLocaleString('en-US'),'active SN scope')+
+      metric('Fast Track',Math.round(r.fast).toLocaleString('en-US'),'clean WIP ready to move')+
+      metric('Cost Exposure',money(c.total),'open risk cost')+
+      '</tr></table>'+
+      '<h3 style="margin:18px 0 8px;font-size:16px">Daily Recovery Queue</h3>'+
+      '<table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">Route</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:right">Qty</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">Interpretation</th></tr></thead><tbody>'+
+      '<tr><td style="padding:9px;border:1px solid #D9E6F7;font-weight:800">Fast Track</td><td style="padding:9px;border:1px solid #D9E6F7;text-align:right">'+r.fast.toLocaleString('en-US')+'</td><td style="padding:9px;border:1px solid #D9E6F7">Clean units that can be prioritized for reintegration.</td></tr>'+
+      '<tr><td style="padding:9px;border:1px solid #D9E6F7;font-weight:800">Repair Queue</td><td style="padding:9px;border:1px solid #D9E6F7;text-align:right">'+r.repair.toLocaleString('en-US')+'</td><td style="padding:9px;border:1px solid #D9E6F7">Units with repair evidence requiring standard workflow.</td></tr>'+
+      '<tr><td style="padding:9px;border:1px solid #D9E6F7;font-weight:800">Critical Hold</td><td style="padding:9px;border:1px solid #D9E6F7;text-align:right">'+r.critical.toLocaleString('en-US')+'</td><td style="padding:9px;border:1px solid #D9E6F7">Units with critical, repeated, or containment signals.</td></tr>'+
+      '</tbody></table>'+
+      '<h3 style="margin:18px 0 8px;font-size:16px">Top Issues</h3>'+
+      '<table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">#</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">Issue</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:right">Qty</th></tr></thead><tbody>'+rowsHtml(issues,'qty')+'</tbody></table>'+
+      '<h3 style="margin:18px 0 8px;font-size:16px">Cost Exposure</h3>'+
+      '<table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">#</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:left">Model / Product Family</th><th style="padding:9px;border:1px solid #D9E6F7;background:#EAF2FE;text-align:right">Open Cost</th></tr></thead><tbody>'+rowsHtml(c.top,'money')+'</tbody></table>'+
+      '<div style="margin-top:14px;padding:12px;border-radius:12px;background:#fff;border:1px solid #D9E6F7;color:#5F766C;font-size:12px"><b style="color:#102A43">Note:</b> This email uses data already available in SMTinel: SMT Yield Flow scope, Recovery Intelligence split, Board Impact repair evidence, and Common DB SKU cost. FAT, Packing, MPS, and shipment can be added when those sources are connected.</div>'+
+      '</div>';
+    var plain=[
+      subject,
+      '',
+      'Cut-off: '+now.toLocaleString(),
+      'Source: '+r.source,
+      'Scope: '+activeScopeText(k),
+      '',
+      'SMT Units: '+Math.round(k.total).toLocaleString('en-US'),
+      'Clean Yield: '+pct(k.yieldPct),
+      'Risk Units: '+Math.round(k.risk||r.repair+r.critical).toLocaleString('en-US'),
+      'Open WIP: '+Math.round(r.open).toLocaleString('en-US'),
+      'Fast Track: '+r.fast.toLocaleString('en-US'),
+      'Repair Queue: '+r.repair.toLocaleString('en-US'),
+      'Critical Hold: '+r.critical.toLocaleString('en-US'),
+      'Cost Exposure: '+money(c.total),
+      '',
+      'Top Issues:',
+      issues.map(function(x,i){return (i+1)+'. '+x.name+' - '+x.qty;}).join('\n')||'No records detected.',
+      '',
+      'Top Cost Exposure:',
+      c.top.map(function(x,i){return (i+1)+'. '+x.name+' - '+money(x.value);}).join('\n')||'No cost exposure detected.'
+    ].join('\n');
+    return {subject:subject,html:html,plain:plain,date:date};
+  }
+  function download(report){
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title></head><body>'+report.html+'</body></html>';
+    var blob=new Blob([doc],{type:'text/html;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='SMTinel_Daily_Output_Recovery_Email_'+report.date+'.html';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+  }
+  function copyReport(report){
+    try{
+      if(navigator.clipboard&&window.ClipboardItem){
+        var item=new ClipboardItem({'text/html':new Blob([report.html],{type:'text/html'}),'text/plain':new Blob([report.plain],{type:'text/plain'})});
+        return navigator.clipboard.write([item]).then(function(){return 'HTML email copied to clipboard.';});
+      }
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(report.plain).then(function(){return 'Plain text email copied to clipboard.';});
+      }
+    }catch(_){}
+    return Promise.resolve('Email generated. Clipboard was not available in this browser.');
+  }
+  function toast(message){
+    var old=document.getElementById(TOAST_ID);if(old)old.remove();
+    var t=document.createElement('div');t.id=TOAST_ID;t.textContent=message;document.body.appendChild(t);
+    setTimeout(function(){if(t&&t.parentElement)t.remove();},4500);
+  }
+  function ensureModal(){
+    var m=document.getElementById(MODAL_ID);
+    if(m)return m;
+    m=document.createElement('div');
+    m.id=MODAL_ID;
+    m.hidden=true;
+    m.innerHTML='<div class="smtinel-email-dialog" role="dialog" aria-modal="true" aria-label="Daily email export preview"><div class="smtinel-email-head"><div><h3>Daily Email Export</h3><p>Copy the subject and paste the HTML body into the email thread.</p></div><button type="button" data-email-close>Close</button></div><div class="smtinel-email-body"><input class="smtinel-email-subject" readonly aria-label="Email subject"><div class="smtinel-email-preview"></div></div><div class="smtinel-email-foot"><button type="button" data-copy-subject>Copy subject</button><button type="button" data-copy-plain>Copy plain text</button><button type="button" class="primary" data-copy-html>Copy HTML body</button><button type="button" data-download-html>Download HTML</button></div></div>';
+    m.addEventListener('click',function(e){if(e.target===m||e.target.closest('[data-email-close]'))m.hidden=true;});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')m.hidden=true;});
+    document.body.appendChild(m);
+    return m;
+  }
+  function showPreview(report){
+    var m=ensureModal();
+    m.__report=report;
+    var input=m.querySelector('.smtinel-email-subject');
+    var preview=m.querySelector('.smtinel-email-preview');
+    input.value=report.subject;
+    preview.innerHTML=report.html;
+    m.querySelector('[data-copy-subject]').onclick=function(){navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(report.subject).then(function(){toast('Subject copied.');}):toast('Clipboard is not available.');};
+    m.querySelector('[data-copy-plain]').onclick=function(){navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(report.plain).then(function(){toast('Plain text copied.');}):toast('Clipboard is not available.');};
+    m.querySelector('[data-copy-html]').onclick=function(){copyReport(report).then(toast);};
+    m.querySelector('[data-download-html]').onclick=function(){download(report);toast('HTML email downloaded.');};
+    m.hidden=false;
+  }
+  function exportEmail(){
+    var btn=document.getElementById(BTN_ID);
+    if(btn){btn.disabled=true;btn.dataset.old=btn.textContent;btn.textContent='Building email...';}
+    try{
+      var report=buildReport();
+      if(!report){alert('Load/process Yield Flow first, then run Export Daily Email.');return;}
+      download(report);
+      copyReport(report).then(function(msg){toast(msg+' Backup HTML downloaded.');showPreview(report);});
+    }catch(e){
+      console.error('[SMTinel Daily Email Export]',e);
+      alert('Daily Email Export: '+(e&&e.message?e.message:e));
+    }finally{
+      if(btn){setTimeout(function(){btn.disabled=false;btn.textContent=btn.dataset.old||'Export Daily Email';},250);}
+    }
+  }
+  function activeReportContext(){
+    var contexts=[
+      document.getElementById('yieldflow-section'),
+      document.getElementById('recovery-section'),
+      document.querySelector('[data-module="yield-flow"]'),
+      document.querySelector('[data-module="recovery-intelligence"]')
+    ].filter(Boolean);
+    for(var i=0;i<contexts.length;i++){
+      if(visible(contexts[i]))return contexts[i];
+    }
+    return null;
+  }
+  function findToolbarAnchor(context){
+    var labels=/Export Executive PPTX|Download XLSX log|Load ZIP\/Excel|Export TSV|Refresh/i;
+    var scope=context||document;
+    var buttons=arr(scope.querySelectorAll('button,a,[role="button"]')).filter(function(b){return visible(b)&&labels.test(text(b.textContent||b.getAttribute('aria-label')||''));});
+    buttons.sort(function(a,b){
+      var at=text(a.textContent||a.getAttribute('aria-label')||''),bt=text(b.textContent||b.getAttribute('aria-label')||'');
+      function score(t){return /Load ZIP\/Excel/i.test(t)?1:/Export TSV/i.test(t)?2:/Download XLSX log/i.test(t)?3:/Export Executive PPTX/i.test(t)?4:/Refresh/i.test(t)?8:9;}
+      return score(at)-score(bt);
+    });
+    return buttons[0]||null;
+  }
+  function findActionHost(context){
+    if(!context)return null;
+    var selectors=['.ri-tf-top-actions','.traceops-yield-actions','.yield-flow-actions','.module-actions','.hero-actions','.toolbar'];
+    for(var i=0;i<selectors.length;i++){
+      var el=context.querySelector&&context.querySelector(selectors[i]);
+      if(el&&visible(el))return el;
+    }
+    return null;
+  }
+  function mount(){
+    if(!document.body)return;
+    var btn=document.getElementById(BTN_ID);
+    if(!btn){
+      btn=document.createElement('button');
+      btn.id=BTN_ID;
+      btn.type='button';
+      btn.innerHTML='<span>✉</span><span>Export Daily Email</span>';
+      btn.setAttribute('aria-label','Export Daily Email');
+      btn.onclick=exportEmail;
+    }
+    btn.style.position='';
+    btn.style.right='';
+    btn.style.bottom='';
+    btn.style.zIndex='';
+    var context=activeReportContext();
+    if(!context){
+      if(btn.parentElement)btn.remove();
+      return;
+    }
+    var anchor=findToolbarAnchor(context);
+    if(anchor&&anchor.parentElement){
+      if(btn.parentElement!==anchor.parentElement)anchor.parentElement.insertBefore(btn,anchor.nextSibling);
+    }else{
+      var host=findActionHost(context);
+      if(host&&btn.parentElement!==host)host.appendChild(btn);
+      else if(btn.parentElement)btn.remove();
+    }
+  }
+  function start(){
+    mount();
+    [250,700,1400,2600].forEach(function(ms){setTimeout(mount,ms);});
+    try{new MutationObserver(function(){mount();}).observe(document.body,{childList:true,subtree:true});}catch(_){setInterval(mount,2000);}
+    window.SMTinelExportDailyEmail=exportEmail;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
 
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -27750,6 +28274,7 @@ body:has(#recovery-section) .main-content.expanded{
     }
 
     var yieldFlowModel = traceOpsBuildYieldFlowModelLocal(yieldFilters);
+    try { window.yieldFlowModel = yieldFlowModel; } catch (_) {}
     async function exportYieldFlowXlsx() {
         await window.ensureExcelTools();
         var model = traceOpsBuildYieldFlowModelLocal(yieldFilters);
@@ -58321,23 +58846,73 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
   function load(){try{var raw=localStorage.getItem(KEY); if(raw)return upgrade(JSON.parse(raw)); var old=localStorage.getItem('smtinel_recovery_triage_state_v1'); if(old)return upgrade(JSON.parse(old));}catch(e){console.warn('[SMTinel] RI load failed',e);} return state0();}
   var state=load();
   function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){console.warn('[SMTinel] RI save failed',e);}}
+  function cleanSn(v){return String(v==null?'':v).replace(/\s+/g,'').toUpperCase();}
+  function pick(o,ks){o=o||{}; for(var i=0;i<ks.length;i++){var k=ks[i]; if(o[k]!=null && String(o[k]).trim()!=='') return o[k];} return '';}
+  function repRows(sn){var out=[], map={}; try{map=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{};}catch(_){} [sn,cleanSn(sn),String(sn||'').trim()].forEach(function(k){ if(k && Array.isArray(map[k])) out=out.concat(map[k]); }); return out;}
+  function ms(v){var raw=String(v==null?'':v).trim(); if(!raw)return 0; var n=Date.parse(raw); if(isFinite(n))return n; return 0;}
+  function routeFromYield(sfc,reps){
+    var text=[sfc&&sfc.event,sfc&&sfc.currentEvent,sfc&&sfc.station,sfc&&sfc.testArea,sfc&&sfc.status,sfc&&sfc.result].concat((reps||[]).map(function(r){return [pick(r,['failureMode','Failure Mode','testInfo','Test Info','symptom','Failure','failName','failingTestName']),pick(r,['actionDesc','repairAction','disposition','remark','comments'])].join(' ');})).join(' ');
+    if((reps||[]).length>=2 || /missing|wrong component|short|critical|stop|contain|mix|bga|void/i.test(text)) return 'critical';
+    if((reps||[]).length || /fail|repair|rework|ng|open|bridge|insufficient|misalign|lifted|xray|x-ray/i.test(text)) return 'repair';
+    return 'fast';
+  }
+  function defectFromYield(sfc,reps){
+    var r=(reps&&reps[0])||{};
+    return String(pick(r,['failureMode','Failure Mode','testInfo','Test Info','TEST INFO','symptom','Failure','failName','failingTestName','testName','actionDesc','remark']) || pick(sfc,['failureMode','testInfo','currentEvent','event','station','testArea']) || 'Clean WIP / pending reintegration').trim();
+  }
+  function yieldFlowUnits(){
+    var active={};
+    try{active=window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC||{};}catch(_){}
+    var keys=Object.keys(active||{});
+    if(!keys.length) return [];
+    var seen={}, out=[];
+    keys.forEach(function(snKey){
+      var sfc=active[snKey]||{};
+      var sn=cleanSn(pick(sfc,['sn','SN','sfcSn','serial','serialNumber','syserialno','sysserialno'])||snKey);
+      if(!sn || seen[sn]) return;
+      seen[sn]=1;
+      var reps=repRows(sn);
+      var route=routeFromYield(sfc,reps);
+      var t=ms(pick(sfc,['eventTime','buildStartDate','date','startSmt','recordTime'])||pick(reps[0]||{},['repairTime','date','createdAt','recordTime'])) || (now()-3600000);
+      var station=String(pick(sfc,['currentEvent','event','station','testArea'])||'Current station N/D').trim();
+      var line=String(pick(sfc,['line','Line'])||'Line N/D').trim();
+      var sku=String(pick(sfc,['sku','SKU','skuno'])||'SKU N/D').trim();
+      out.push({id:'yf-'+sn,serial:sn,defect:defectFromYield(sfc,reps),line:line+' · '+station+' · '+sku,route:route,createdAt:t,status:ROUTES[route].toUpperCase(),source:'yield-flow',wo:pick(sfc,['wo','WO','workOrder']),sku:sku,station:station,repairCount:reps.length});
+    });
+    return out.sort(function(a,b){return b.createdAt-a.createdAt;});
+  }
+  function activeUnits(){var yf=yieldFlowUnits(); return yf.length?yf:state.units;}
+  function isYieldFlowMode(){return yieldFlowUnits().length>0;}
+  function dailyFromUnits(units){
+    var start=new Date(now()); start.setHours(0,0,0,0);
+    var rows=[];
+    for(var i=6;i>=0;i--){var d=new Date(start.getTime()-i*86400000); rows.push({d:d.toLocaleDateString([], {month:'short',day:'numeric'}),i:0,o:0,c:0,day:d});}
+    (units||[]).forEach(function(u){var t=new Date(Number(u.createdAt||0)); t.setHours(0,0,0,0); rows.forEach(function(r){ if(r.day.getTime()===t.getTime()){ r.i++; if(u.route==='fast')r.o++; if(u.route==='critical')r.c++; }});});
+    return rows;
+  }
+  function activeDaily(){var yf=yieldFlowUnits(); return yf.length?dailyFromUnits(yf):state.daily;}
+  function activeHistory(){
+    var yf=yieldFlowUnits();
+    if(!yf.length) return state.history||[];
+    return yf.slice(0,12).map(function(u){return {time:u.createdAt,serial:u.serial,event:u.route==='fast'?'Yield Flow clean WIP':(u.route==='critical'?'Yield Flow critical hold':'Yield Flow repair queue'),from:'Yield Flow',to:ROUTES[u.route],by:'SMTinel'};});
+  }
   function matchAny(text,arr){text=norm(text); return arr.some(function(k){return text.indexOf(norm(k))>=0;});}
-  function recurrenceRoute(defect){var n=norm(defect); if(!n)return false; var cutoff=now()-4*3600000; var count=state.units.filter(function(u){var d=norm(u.defect); return u.createdAt>=cutoff && (d.indexOf(n)>=0 || n.indexOf(d)>=0 || d===n);}).length; return count>=2;}
-  function classify(defect){if(recurrenceRoute(defect))return {route:'critical',reason:'Recurrence engine: 3 eventos equivalentes dentro de 4h'}; if(matchAny(defect,kw.critical))return {route:'critical',reason:'Keyword crítico: containment / RCA / stop line'}; if(matchAny(defect,kw.fast))return {route:'fast',reason:'Unidad limpia o reintegración directa'}; if(matchAny(defect,kw.repair))return {route:'repair',reason:'Defecto con reparación técnica requerida'}; return {route:'repair',reason:'Sin regla clara: validación en reparación'};}
-  function counts(){return {fast:state.units.filter(function(u){return u.route==='fast'}).length,repair:state.units.filter(function(u){return u.route==='repair'}).length,critical:state.units.filter(function(u){return u.route==='critical'}).length};}
+  function recurrenceRoute(defect){var n=norm(defect); if(!n)return false; var cutoff=now()-4*3600000; var count=activeUnits().filter(function(u){var d=norm(u.defect); return u.createdAt>=cutoff && (d.indexOf(n)>=0 || n.indexOf(d)>=0 || d===n);}).length; return count>=2;}
+  function classify(defect){if(recurrenceRoute(defect))return {route:'critical',reason:'Recurrence engine: 3 equivalent events within 4h'}; if(matchAny(defect,kw.critical))return {route:'critical',reason:'Critical keyword: containment / RCA / stop line'}; if(matchAny(defect,kw.fast))return {route:'fast',reason:'Clean unit or direct reintegration'}; if(matchAny(defect,kw.repair))return {route:'repair',reason:'Technical repair required'}; return {route:'repair',reason:'No clear rule: route to repair validation'};}
+  function counts(){var units=activeUnits(); return {fast:units.filter(function(u){return u.route==='fast'}).length,repair:units.filter(function(u){return u.route==='repair'}).length,critical:units.filter(function(u){return u.route==='critical'}).length};}
   function breach(u){var h=ageHours(u.createdAt), sla=SLAS[u.route]||24; if(h>=sla)return 'overdue'; if(h>=sla*.75)return 'warn'; return '';}
-  function metrics(){var c=counts(), open=state.units.length, fastRatio=open?Math.round(c.fast/open*100):0, breaches=state.units.filter(function(u){return breach(u)==='overdue'}).length; var rec=open?Number((c.critical/open*100).toFixed(1)):0; var confidence=Math.max(62,Math.min(94,88-breaches*2-c.critical)); var repairDemand=c.repair+c.critical*2+122; var repairCapacity=168; return {open:open,fastRatio:fastRatio,breaches:breaches,rec:rec,confidence:confidence,repairDemand:repairDemand,repairCapacity:repairCapacity,net:repairCapacity-repairDemand};}
+  function metrics(){var units=activeUnits(), c=counts(), open=units.length, fastRatio=open?Math.round(c.fast/open*100):0, breaches=units.filter(function(u){return breach(u)==='overdue'}).length; var rec=open?Number((c.critical/open*100).toFixed(1)):0; var confidence=Math.max(58,Math.min(96,90-breaches*2-c.critical+(isYieldFlowMode()?4:0))); var repairDemand=isYieldFlowMode()?(c.repair+c.critical):c.repair+c.critical*2+122; var repairCapacity=isYieldFlowMode()?(c.fast+c.repair):168; return {open:open,fastRatio:fastRatio,breaches:breaches,rec:rec,confidence:confidence,repairDemand:repairDemand,repairCapacity:repairCapacity,net:repairCapacity-repairDemand,source:isYieldFlowMode()?'Yield Flow scope':'Local fallback'};}
   function status(m){if(m.breaches>0 || m.rec>=20)return 'CRITICAL ESCALATION'; if(m.net<0)return 'RECOVERY CONSTRAINED'; if(m.fastRatio>=40 && m.breaches===0)return 'FLOW NORMAL'; return 'RECOVERY WATCH';}
   function trend(cls,txt){return '<small class="'+cls+'">'+txt+'</small>';}
-  function unitHtml(u){var b=breach(u), age=fmtAge(u.createdAt), ageCls=b==='overdue'?'bad':(b==='warn'?'warn':''); return '<div class="ri-tf-unit '+esc(u.route)+' '+b+'" data-id="'+esc(u.id)+'"><div class="ri-tf-unit-top"><span class="ri-tf-serial">SN: '+esc(u.serial)+'</span><span class="ri-tf-age '+ageCls+'">'+(b==='overdue'?'⚠ ':'')+esc(age)+'</span></div><div class="ri-tf-defect">'+esc(u.defect)+'</div><div class="ri-tf-meta"><span>'+esc(u.line||'Line N/D')+'</span><span class="ri-tf-status '+esc(u.route)+'">'+esc(ROUTES[u.route])+'</span></div><div class="ri-tf-card-actions">'+actionsHtml(u.route)+'</div></div>';}
-  function actionsHtml(route){if(route==='fast')return '<button class="ri-tf-mini" data-act="view">View</button><button class="ri-tf-mini done" data-act="close">Complete</button>'; if(route==='critical')return '<button class="ri-tf-mini" data-act="view">Details</button><button class="ri-tf-mini critical" data-act="move" data-route="repair">Escalate</button>'; return '<button class="ri-tf-mini" data-act="view">Details</button><button class="ri-tf-mini repair" data-act="move" data-route="fast">Move</button>';}
-  function colHtml(route,count){var units=state.units.filter(function(u){return u.route===route}).sort(function(a,b){return b.createdAt-a.createdAt}).slice(0,5); var sub=route==='fast'?'Clean or minor defects':route==='repair'?'Standard repair workflow':'Stop-ship or major defects'; var link=route==='fast'?'View all Fast Track':route==='repair'?'View all Repair Queue':'View all Critical Hold'; return '<section class="ri-tf-col"><div class="ri-tf-col-head"><div class="ri-tf-col-title"><span class="ri-tf-dot '+route+'"></span><div><b>'+labels[route]+'</b><small>'+sub+'</small></div></div><span class="ri-tf-count">'+count+'</span></div><div class="ri-tf-list">'+(units.map(unitHtml).join('')||'<div class="ri-tf-empty">Sin unidades en esta ruta.</div>')+'</div><div class="ri-tf-col-link"><span>'+link+' ('+count+')</span><span>→</span></div></section>';}
-  function chartHtml(){var mx=Math.max.apply(null,state.daily.map(function(d){return Math.max(d.i,d.o)}).concat([1]))*1.15; return state.daily.map(function(d){return '<div class="ri-tf-day"><div class="ri-tf-bars"><span class="ri-tf-bar in" title="Incoming '+d.i+'" style="height:'+Math.max(4,d.i/mx*112)+'px"></span><span class="ri-tf-bar out" title="Closed '+d.o+'" style="height:'+Math.max(4,d.o/mx*112)+'px"></span></div><small>'+esc(d.d)+'</small></div>';}).join('');}
-  function agingBuckets(){var buckets=[['> 24 Hours',0,'red'],['12 - 24 Hours',0,'amber'],['6 - 12 Hours',0,'yellow'],['3 - 6 Hours',0,'blue'],['< 3 Hours',0,'green']]; state.units.forEach(function(u){var h=ageHours(u.createdAt); if(h>24)buckets[0][1]++; else if(h>=12)buckets[1][1]++; else if(h>=6)buckets[2][1]++; else if(h>=3)buckets[3][1]++; else buckets[4][1]++;}); return buckets.map(function(b){return '<div class="ri-tf-alert-row '+b[2]+'"><span>'+b[0]+'</span><b>'+b[1]+'</b></div>';}).join('');}
-  function actionRows(){var rows=state.units.slice().sort(function(a,b){return ageHours(b.createdAt)-ageHours(a.createdAt)}).slice(0,4); if(!rows.length)return '<tr><td colspan="7">No active recovery actions.</td></tr>'; return rows.map(function(u,i){var pri=u.route==='critical'?'High':u.route==='repair'?'Medium':'Low'; var act=u.route==='critical'?'Escalate to PE - '+u.defect:u.route==='repair'?'Rework - '+u.defect:'Fast Track - '+u.defect; var owner=['James Lee','Priya Nair','Alan Chen','Sara Kim'][i%4]; var stat=u.route==='fast'?'Completed':u.route==='repair'?'Queued':'In Progress'; return '<tr><td><a href="#">ACT-'+(12568-i)+'</a></td><td><a href="#">'+esc(u.serial)+'</a></td><td>'+esc(act)+'</td><td>'+esc(owner)+'</td><td><span class="ri-tf-pill '+pri.toLowerCase()+'">'+pri+'</span></td><td>Today</td><td><span class="ri-tf-pill '+(stat==='Completed'?'done':stat==='Queued'?'queued':'progress')+'">'+stat+'</span></td></tr>';}).join('');}
-  function historyRows(){var rows=(state.history||[]).slice(0,5); if(!rows.length)return '<tr><td colspan="6">No recent activity.</td></tr>'; return rows.map(function(h){return '<tr><td>'+esc(when(h.time))+'</td><td><a href="#">'+esc(h.serial)+'</a></td><td>'+esc(h.event)+'</td><td>'+esc(h.from)+'</td><td>'+esc(h.to)+'</td><td>'+esc(h.by)+'</td></tr>';}).join('');}
-  function render(el){var m=metrics(), c=counts(), st=status(m); el.innerHTML='<div class="ri-tf-shell"><div class="ri-tf-topbar"><div class="ri-tf-breadcrumb"><b>SMTinel</b><span>›</span><b>Recovery Intelligence</b></div><div class="ri-tf-top-actions"><button class="ri-tf-iconbtn" data-rictl="refresh">⟳ Refresh</button><button class="ri-tf-iconbtn" data-rictl="focus">Filters</button><button class="ri-tf-iconbtn" data-rictl="reset">Reset</button></div></div><section class="ri-tf-hero"><div class="ri-tf-hero-head"><div><div class="ri-tf-title-row"><h2>Recovery Intelligence</h2><span class="ri-tf-status-badge">'+esc(st)+'</span></div><p>AI-powered triage and recovery orchestration for maximum line continuity.</p></div><div class="ri-tf-live"><span>'+esc(new Date().toLocaleDateString())+' · '+esc(new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))+'</span><b>● Live</b></div></div><div class="ri-tf-kpis"><div class="ri-tf-kpi"><span>Open WIP</span><b>'+m.open+'</b>'+trend('good','↑ 18 vs yesterday')+'</div><div class="ri-tf-kpi"><span>Fast Track Ratio</span><b>'+m.fastRatio+'%</b>'+trend('good','↑ target >40%')+'</div><div class="ri-tf-kpi"><span>SLA Breach</span><b>'+m.breaches+'</b>'+trend(m.breaches?'bad':'good',(m.breaches?'↓ control required':'0 active'))+'</div><div class="ri-tf-kpi"><span>Recurrence Rate</span><b>'+m.rec+'%</b>'+trend(m.rec>20?'bad':'good','Critical / WIP')+'</div><div class="ri-tf-kpi"><span>Forecast Confidence</span><b>'+m.confidence+'%</b>'+trend('good','Based on flow split')+'</div></div></section><nav class="ri-tf-flow"><div class="ri-tf-flow-step">▣ Incoming</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step">⎇ Triage</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step fast">▶ Fast Track</div><div class="ri-tf-flow-step repair">⌘ Repair Queue</div><div class="ri-tf-flow-step critical">! Critical Hold</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step">✓ Closed</div></nav><section class="ri-tf-panel" id="ri-tf-triage-panel"><div class="ri-tf-panel-head"><div><h3>▧ Incoming Triage Panel</h3><p>Scan, classify, and route units before they contaminate the repair bucket. Finally, civilization.</p></div><div class="ri-tf-auto">Auto-assign enabled</div></div><div class="ri-tf-triage-body"><div class="ri-tf-form"><div class="ri-tf-field"><label>Serial Number</label><input class="ri-tf-input" id="ri-tf-serial" placeholder="Scan or enter serial number"></div><div class="ri-tf-field"><label>Detected Defect</label><input class="ri-tf-input" id="ri-tf-defect" placeholder="Select or type defect"></div><div class="ri-tf-field"><label>Source Line</label><input class="ri-tf-input" id="ri-tf-line" placeholder="Select line"></div><button class="ri-tf-btn primary" data-add="auto">✦ Auto Triage</button></div><div class="ri-tf-route-row"><button class="ri-tf-route fast" data-add="fast"><i>▶</i><span><b>Fast Track</b>Minor defects, quick turnaround</span></button><button class="ri-tf-route repair" data-add="repair"><i>⌘</i><span><b>Repair Queue</b>Standard repair workflow</span></button><button class="ri-tf-route critical" data-add="critical"><i>!</i><span><b>Critical Hold</b>Stop-ship or major defects</span></button></div></div></section><section class="ri-tf-kanban">'+colHtml('fast',c.fast)+colHtml('repair',c.repair)+colHtml('critical',c.critical)+'</section><section class="ri-tf-intel"><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Throughput (Last 7 Days)</h3><div class="ri-tf-legend"><span><i class="incoming"></i>Incoming</span><span><i class="closed"></i>Closed</span></div></div><div class="ri-tf-panel-body"><div class="ri-tf-chart">'+chartHtml()+'</div></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Aging Alerts</h3></div><div class="ri-tf-panel-body"><div class="ri-tf-alerts">'+agingBuckets()+'</div></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Forecast & Capacity</h3></div><div class="ri-tf-panel-body"><div class="ri-tf-capacity"><div class="ri-tf-capacity-row"><span>Repair Demand (Next 24h)</span><b>'+m.repairDemand+'</b></div><div class="ri-tf-capacity-row"><span>Repair Capacity (Next 24h)</span><b>'+m.repairCapacity+'</b></div><div class="ri-tf-capacity-row"><span>Net Flow</span><b class="'+(m.net>=0?'good':'bad')+'">'+(m.net>=0?'+':'')+m.net+'</b></div><div class="ri-tf-capacity-row"><span>Projected Recovery Date</span><b>'+esc(new Date(now()+2*86400000).toLocaleDateString())+'</b></div><div class="ri-tf-capacity-row"><span>Confidence</span><b class="pill">'+m.confidence+'%</b></div></div></div></section></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>▦ Recovery Action Tracker</h3></div><div class="ri-tf-table-wrap"><table class="ri-tf-table"><thead><tr><th>Action ID</th><th>Serial Number</th><th>Action</th><th>Owner</th><th>Priority</th><th>Target Date</th><th>Status</th></tr></thead><tbody>'+actionRows()+'</tbody></table></div><div class="ri-tf-footer-link"><span>View all actions</span><span>→</span></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>◷ Serial History / Recent Activity</h3></div><div class="ri-tf-table-wrap"><table class="ri-tf-table"><thead><tr><th>Time</th><th>Serial Number</th><th>Event</th><th>From</th><th>To</th><th>By</th></tr></thead><tbody>'+historyRows()+'</tbody></table></div><div class="ri-tf-footer-link"><span>View full history</span><span>→</span></div></section></div>'; bind(el);}
-  function bind(el){el.querySelectorAll('[data-add]').forEach(function(btn){btn.onclick=function(){add(btn.getAttribute('data-add'),el);};}); el.querySelectorAll('[data-act]').forEach(function(btn){btn.onclick=function(){var card=btn.closest('.ri-tf-unit'); if(!card)return; var id=card.getAttribute('data-id'); if(btn.getAttribute('data-act')==='close')closeUnit(id,el); else if(btn.getAttribute('data-act')==='move')moveUnit(id,btn.getAttribute('data-route'),el);};}); var reset=el.querySelector('[data-rictl="reset"]'); if(reset)reset.onclick=function(){if(confirm('Borrar el estado local del Recovery Intelligence y reiniciar el board?')){localStorage.removeItem(KEY);state=state0();save();render(el);}}; var refresh=el.querySelector('[data-rictl="refresh"]'); if(refresh)refresh.onclick=function(){render(el);}; var focus=el.querySelector('[data-rictl="focus"]'); if(focus)focus.onclick=function(){var x=el.querySelector('#ri-tf-serial'); if(x){x.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){x.focus();},250);}}; ['ri-tf-serial','ri-tf-defect','ri-tf-line'].forEach(function(id,i){var inp=el.querySelector('#'+id); if(inp)inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); var next=['ri-tf-defect','ri-tf-line',null][i]; if(next)el.querySelector('#'+next).focus(); else add('auto',el);}};});}
+  function unitHtml(u){var b=breach(u), age=fmtAge(u.createdAt), ageCls=b==='overdue'?'bad':(b==='warn'?'warn':''); return '<div class="ri-tf-unit '+esc(u.route)+' '+b+'" data-id="'+esc(u.id)+'" data-source="'+esc(u.source||'local')+'"><div class="ri-tf-unit-top"><span class="ri-tf-serial">SN: '+esc(u.serial)+'</span><span class="ri-tf-age '+ageCls+'">'+(b==='overdue'?'⚠ ':'')+esc(age)+'</span></div><div class="ri-tf-defect">'+esc(u.defect)+'</div><div class="ri-tf-meta"><span>'+esc(u.line||'Line N/D')+'</span><span class="ri-tf-status '+esc(u.route)+'">'+esc(ROUTES[u.route])+'</span></div><div class="ri-tf-card-actions">'+actionsHtml(u.route,u)+'</div></div>';}
+  function actionsHtml(route,u){if(u&&u.source==='yield-flow')return '<button class="ri-tf-mini" data-act="view">Yield Flow</button><button class="ri-tf-mini" data-act="view">'+esc(u.wo||'Scope')+'</button>'; if(route==='fast')return '<button class="ri-tf-mini" data-act="view">View</button><button class="ri-tf-mini done" data-act="close">Complete</button>'; if(route==='critical')return '<button class="ri-tf-mini" data-act="view">Details</button><button class="ri-tf-mini critical" data-act="move" data-route="repair">Escalate</button>'; return '<button class="ri-tf-mini" data-act="view">Details</button><button class="ri-tf-mini repair" data-act="move" data-route="fast">Move</button>';}
+  function colHtml(route,count){var units=activeUnits().filter(function(u){return u.route===route}).sort(function(a,b){return b.createdAt-a.createdAt}).slice(0,5); var sub=route==='fast'?'Clean or minor defects':route==='repair'?'Standard repair workflow':'Stop-ship or major defects'; var link=route==='fast'?'View all Fast Track':route==='repair'?'View all Repair Queue':'View all Critical Hold'; return '<section class="ri-tf-col"><div class="ri-tf-col-head"><div class="ri-tf-col-title"><span class="ri-tf-dot '+route+'"></span><div><b>'+labels[route]+'</b><small>'+sub+'</small></div></div><span class="ri-tf-count">'+count+'</span></div><div class="ri-tf-list">'+(units.map(unitHtml).join('')||'<div class="ri-tf-empty">No units in this route.</div>')+'</div><div class="ri-tf-col-link"><span>'+link+' ('+count+')</span><span>→</span></div></section>';}
+  function chartHtml(){var daily=activeDaily(); var mx=Math.max.apply(null,daily.map(function(d){return Math.max(d.i,d.o)}).concat([1]))*1.15; return daily.map(function(d){return '<div class="ri-tf-day"><div class="ri-tf-bars"><span class="ri-tf-bar in" title="Incoming '+d.i+'" style="height:'+Math.max(4,d.i/mx*112)+'px"></span><span class="ri-tf-bar out" title="Closed '+d.o+'" style="height:'+Math.max(4,d.o/mx*112)+'px"></span></div><small>'+esc(d.d)+'</small></div>';}).join('');}
+  function agingBuckets(){var buckets=[['> 24 Hours',0,'red'],['12 - 24 Hours',0,'amber'],['6 - 12 Hours',0,'yellow'],['3 - 6 Hours',0,'blue'],['< 3 Hours',0,'green']]; activeUnits().forEach(function(u){var h=ageHours(u.createdAt); if(h>24)buckets[0][1]++; else if(h>=12)buckets[1][1]++; else if(h>=6)buckets[2][1]++; else if(h>=3)buckets[3][1]++; else buckets[4][1]++;}); return buckets.map(function(b){return '<div class="ri-tf-alert-row '+b[2]+'"><span>'+b[0]+'</span><b>'+b[1]+'</b></div>';}).join('');}
+  function actionRows(){var rows=activeUnits().slice().sort(function(a,b){return ageHours(b.createdAt)-ageHours(a.createdAt)}).slice(0,4); if(!rows.length)return '<tr><td colspan="7">No active recovery actions.</td></tr>'; return rows.map(function(u,i){var pri=u.route==='critical'?'High':u.route==='repair'?'Medium':'Low'; var act=u.route==='critical'?'Contain / escalate - '+u.defect:u.route==='repair'?'Repair validation - '+u.defect:'Reintegration check - '+u.defect; var owner=u.source==='yield-flow'?'Yield Flow scope':['James Lee','Priya Nair','Alan Chen','Sara Kim'][i%4]; var stat=u.route==='fast'?'Ready':u.route==='repair'?'Queued':'In Progress'; return '<tr><td><a href="#">ACT-'+(12568-i)+'</a></td><td><a href="#">'+esc(u.serial)+'</a></td><td>'+esc(act)+'</td><td>'+esc(owner)+'</td><td><span class="ri-tf-pill '+pri.toLowerCase()+'">'+pri+'</span></td><td>Today</td><td><span class="ri-tf-pill '+(stat==='Ready'?'done':stat==='Queued'?'queued':'progress')+'">'+stat+'</span></td></tr>';}).join('');}
+  function historyRows(){var rows=activeHistory().slice(0,5); if(!rows.length)return '<tr><td colspan="6">No recent activity.</td></tr>'; return rows.map(function(h){return '<tr><td>'+esc(when(h.time))+'</td><td><a href="#">'+esc(h.serial)+'</a></td><td>'+esc(h.event)+'</td><td>'+esc(h.from)+'</td><td>'+esc(h.to)+'</td><td>'+esc(h.by)+'</td></tr>';}).join('');}
+  function render(el){var m=metrics(), c=counts(), st=status(m); el.innerHTML='<div class="ri-tf-shell"><div class="ri-tf-topbar"><div class="ri-tf-breadcrumb"><b>SMTinel</b><span>›</span><b>Recovery Intelligence</b></div><div class="ri-tf-top-actions"><button class="ri-tf-iconbtn" data-rictl="refresh">⟳ Refresh</button><button class="ri-tf-iconbtn" data-rictl="focus">Filters</button><button class="ri-tf-iconbtn" data-rictl="reset">Reset</button></div></div><section class="ri-tf-hero"><div class="ri-tf-hero-head"><div><div class="ri-tf-title-row"><h2>Recovery Intelligence</h2><span class="ri-tf-status-badge">'+esc(st)+'</span></div><p>Triage, reintegration, repair queue, and containment control in one operating view.</p></div><div class="ri-tf-live"><span>'+esc(new Date().toLocaleDateString())+' · '+esc(new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))+'</span><b>● '+esc(m.source)+'</b></div></div><div class="ri-tf-kpis"><div class="ri-tf-kpi"><span>Open WIP</span><b>'+m.open+'</b>'+trend('good','↑ 18 vs yesterday')+'</div><div class="ri-tf-kpi"><span>Fast Track</span><b>'+m.fastRatio+'%</b>'+trend('good','↑ target >40%')+'</div><div class="ri-tf-kpi"><span>SLA Breach</span><b>'+m.breaches+'</b>'+trend(m.breaches?'bad':'good',(m.breaches?'↓ control required':'0 active'))+'</div><div class="ri-tf-kpi"><span>Critical Mix</span><b>'+m.rec+'%</b>'+trend(m.rec>20?'bad':'good','Critical / WIP')+'</div><div class="ri-tf-kpi"><span>Recovery Confidence</span><b>'+m.confidence+'%</b>'+trend('good','Based on flow split')+'</div></div></section><nav class="ri-tf-flow"><div class="ri-tf-flow-step">▣ Incoming</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step">⎇ Triage</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step fast">▶ Fast Track</div><div class="ri-tf-flow-step repair">⌘ Repair Queue</div><div class="ri-tf-flow-step critical">! Critical Hold</div><div class="ri-tf-flow-arrow">→</div><div class="ri-tf-flow-step">✓ Closed</div></nav><section class="ri-tf-panel" id="ri-tf-triage-panel"><div class="ri-tf-panel-head"><div><h3>▧ Incoming Triage Panel</h3><p>Scan, classify, and route units before they age into repair exposure.</p></div><div class="ri-tf-auto">Auto-assign enabled</div></div><div class="ri-tf-triage-body"><div class="ri-tf-form"><div class="ri-tf-field"><label>Serial Number</label><input class="ri-tf-input" id="ri-tf-serial" placeholder="Scan or enter serial number"></div><div class="ri-tf-field"><label>Detected Defect</label><input class="ri-tf-input" id="ri-tf-defect" placeholder="Select or type defect"></div><div class="ri-tf-field"><label>Source Line</label><input class="ri-tf-input" id="ri-tf-line" placeholder="Select line"></div><button class="ri-tf-btn primary" data-add="auto">✦ Auto Triage</button></div><div class="ri-tf-route-row"><button class="ri-tf-route fast" data-add="fast"><i>▶</i><span><b>Fast Track</b>Minor defects, quick turnaround</span></button><button class="ri-tf-route repair" data-add="repair"><i>⌘</i><span><b>Repair Queue</b>Standard repair workflow</span></button><button class="ri-tf-route critical" data-add="critical"><i>!</i><span><b>Critical Hold</b>Stop-ship or major defects</span></button></div></div></section><section class="ri-tf-kanban">'+colHtml('fast',c.fast)+colHtml('repair',c.repair)+colHtml('critical',c.critical)+'</section><section class="ri-tf-intel"><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Recovery Throughput</h3><div class="ri-tf-legend"><span><i class="incoming"></i>Incoming</span><span><i class="closed"></i>Closed</span></div></div><div class="ri-tf-panel-body"><div class="ri-tf-chart">'+chartHtml()+'</div></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Aging Control</h3></div><div class="ri-tf-panel-body"><div class="ri-tf-alerts">'+agingBuckets()+'</div></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>Capacity Forecast</h3></div><div class="ri-tf-panel-body"><div class="ri-tf-capacity"><div class="ri-tf-capacity-row"><span>Repair Demand (Next 24h)</span><b>'+m.repairDemand+'</b></div><div class="ri-tf-capacity-row"><span>Repair Capacity (Next 24h)</span><b>'+m.repairCapacity+'</b></div><div class="ri-tf-capacity-row"><span>Net Flow</span><b class="'+(m.net>=0?'good':'bad')+'">'+(m.net>=0?'+':'')+m.net+'</b></div><div class="ri-tf-capacity-row"><span>Projected Recovery Date</span><b>'+esc(new Date(now()+2*86400000).toLocaleDateString())+'</b></div><div class="ri-tf-capacity-row"><span>Confidence</span><b class="pill">'+m.confidence+'%</b></div></div></div></section></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>▦ Recovery Action Tracker</h3></div><div class="ri-tf-table-wrap"><table class="ri-tf-table"><thead><tr><th>Action ID</th><th>Serial Number</th><th>Action</th><th>Owner</th><th>Priority</th><th>Target Date</th><th>Status</th></tr></thead><tbody>'+actionRows()+'</tbody></table></div><div class="ri-tf-footer-link"><span>View all actions</span><span>→</span></div></section><section class="ri-tf-panel"><div class="ri-tf-panel-head"><h3>◷ Serial History / Recent Activity</h3></div><div class="ri-tf-table-wrap"><table class="ri-tf-table"><thead><tr><th>Time</th><th>Serial Number</th><th>Event</th><th>From</th><th>To</th><th>By</th></tr></thead><tbody>'+historyRows()+'</tbody></table></div><div class="ri-tf-footer-link"><span>View full history</span><span>→</span></div></section></div>'; bind(el);}
+  function bind(el){el.querySelectorAll('[data-add]').forEach(function(btn){btn.onclick=function(){add(btn.getAttribute('data-add'),el);};}); el.querySelectorAll('[data-act]').forEach(function(btn){btn.onclick=function(){var card=btn.closest('.ri-tf-unit'); if(!card)return; var id=card.getAttribute('data-id'); if(btn.getAttribute('data-act')==='close')closeUnit(id,el); else if(btn.getAttribute('data-act')==='move')moveUnit(id,btn.getAttribute('data-route'),el);};}); var reset=el.querySelector('[data-rictl="reset"]'); if(reset)reset.onclick=function(){if(confirm('Clear the local Recovery Intelligence state and restart the board?')){localStorage.removeItem(KEY);state=state0();save();render(el);}}; var refresh=el.querySelector('[data-rictl="refresh"]'); if(refresh)refresh.onclick=function(){render(el);}; var focus=el.querySelector('[data-rictl="focus"]'); if(focus)focus.onclick=function(){var x=el.querySelector('#ri-tf-serial'); if(x){x.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){x.focus();},250);}}; ['ri-tf-serial','ri-tf-defect','ri-tf-line'].forEach(function(id,i){var inp=el.querySelector('#'+id); if(inp)inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); var next=['ri-tf-defect','ri-tf-line',null][i]; if(next)el.querySelector('#'+next).focus(); else add('auto',el);}};});}
   function readForm(el){var sn=(el.querySelector('#ri-tf-serial')||{}).value||('X7F4H'+String(now()).slice(-5)); var df=(el.querySelector('#ri-tf-defect')||{}).value||'Unknown defect'; var ln=(el.querySelector('#ri-tf-line')||{}).value||'Line N/D'; return {serial:sn.trim(),defect:df.trim(),line:ln.trim()};}
   function clearForm(el){['ri-tf-serial','ri-tf-defect','ri-tf-line'].forEach(function(id){var x=el.querySelector('#'+id); if(x)x.value='';}); var s=el.querySelector('#ri-tf-serial'); if(s)s.focus();}
   function pushHistory(serial,event,from,to,by){state.history=state.history||[]; state.history.unshift({time:now(),serial:serial,event:event,from:from,to:to,by:by||'System'}); state.history=state.history.slice(0,50);}
@@ -59587,6 +60162,16 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
 }());
 </script>
 
+<script id="smtinel-v13-14-11-build-finalizer">
+(function(){
+  'use strict';
+  var VERSION='SMTinel V13.14.15 - Notes Stable Email Header - 2026-07-23';
+  window.SMTINEL_BUILD_VERSION=VERSION;
+  window.SMTINEL_BUILD_BADGE=VERSION;
+  window.SMTINEL_VERSION_TEXT=VERSION;
+})();
+</script>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
@@ -60394,9 +60979,9 @@ body.smtinel-gpu-safe .smtinel-real-raven-radar::after{
   function buildFusion(){
     var c=counts();
     return '<section id="ri-fusion-methodology" class="ri-fusion-strip" data-smtinel-module="recovery-clean-fusion">'
-      +'<article class="ri-fusion-card primary"><span class="kicker">Clean Fusion Layer</span><h3>Un solo Recovery Intel: triage primero, forecast después.</h3><p>El Bonepile deja de ser un bucket ciego. Cada serial entra por una FSM: Fast Track, Repair Queue o Critical Hold. El forecast se calcula por flujo, no por montón. Qué concepto tan radical: separar cosas distintas.</p><div class="ri-fusion-flow"><span class="ri-fusion-chip">INCOMING</span><span class="ri-fusion-chip">TRIAGE</span><span class="ri-fusion-chip fast">FAST</span><span class="ri-fusion-chip repair">REPAIR</span><span class="ri-fusion-chip critical">CRITICAL</span><span class="ri-fusion-chip">CLOSED</span></div></article>'
+      +'<article class="ri-fusion-card primary"><span class="kicker">Clean Fusion Layer</span><h3>Single Recovery Intel: triage first, forecast second.</h3><p>Bonepile stops behaving like a blind bucket. Each serial enters one route: Fast Track, Repair Queue, or Critical Hold. Forecast is calculated by flow path, not by mixed WIP.</p><div class="ri-fusion-flow"><span class="ri-fusion-chip">INCOMING</span><span class="ri-fusion-chip">TRIAGE</span><span class="ri-fusion-chip fast">FAST</span><span class="ri-fusion-chip repair">REPAIR</span><span class="ri-fusion-chip critical">CRITICAL</span><span class="ri-fusion-chip">CLOSED</span></div></article>'
       +'<article class="ri-fusion-card"><span class="kicker">Bonepile Composition</span><h3>Active WIP classification</h3><p>The operating total now reads as Fast Track + Repair Queue + Critical Hold, so clean units do not consume actual repair capacity.</p><div class="ri-fusion-metrics"><div class="ri-fusion-mini"><small>Fast</small><b>'+esc(c.fast)+'</b></div><div class="ri-fusion-mini"><small>Repair</small><b>'+esc(c.repair)+'</b></div><div class="ri-fusion-mini"><small>Critical</small><b>'+esc(c.critical)+'</b></div></div></article>'
-      +'<article class="ri-fusion-card"><span class="kicker">Action System</span><h3>Tracker connected to the flow</h3><p>Actions stay under the Kanban to target the right path: reintegration, repair, or containment. Less duplication, less executive theater.</p><button type="button" class="ri-fusion-link" data-ri-scroll-tracker="1">Go to Action Tracker</button></article>'
+      +'<article class="ri-fusion-card"><span class="kicker">Action System</span><h3>Tracker connected to the flow</h3><p>Actions stay under the Kanban to target the right path: reintegration, repair, or containment. Less duplication, clearer execution.</p><button type="button" class="ri-fusion-link" data-ri-scroll-tracker="1">Go to Action Tracker</button></article>'
       +'</section>';
   }
   function tuneHeader(section){
@@ -61311,5 +61896,376 @@ html body.smtinel-apple-premium .saas-header-pill{
       initializedAt: new Date().toISOString()
     };
   } catch(_) {}
+})();
+</script>
+<!-- SMTinel V13.14.10 - Recovery Intel Yield Flow Feed -->
+<style id="smtinel-ri-yield-flow-feed-v13-14-10">
+  html body #recovery-section{
+    max-width:1560px!important;
+    padding:0 0 132px!important;
+  }
+  html body #recovery-section #ri-triage-flow{
+    max-width:1480px!important;
+    margin:0 auto 30px!important;
+  }
+  html body #recovery-section .ri-tf-shell{
+    gap:14px!important;
+    padding:16px!important;
+    border-radius:18px!important;
+    background:linear-gradient(180deg,#F7FAFF 0%,#F3F7FC 100%)!important;
+    border:1px solid #D9E6F7!important;
+    box-shadow:0 14px 36px rgba(16,42,67,.07)!important;
+  }
+  html body #recovery-section .ri-tf-topbar{
+    min-height:44px!important;
+    padding:0!important;
+  }
+  html body #recovery-section .ri-tf-breadcrumb{
+    border:1px solid #D9E6F7!important;
+    background:#fff!important;
+    border-radius:12px!important;
+    padding:10px 12px!important;
+    color:#102A43!important;
+    box-shadow:0 5px 14px rgba(16,42,67,.04)!important;
+  }
+  html body #recovery-section .ri-tf-top-actions{
+    gap:8px!important;
+  }
+  html body #recovery-section .ri-tf-iconbtn{
+    height:40px!important;
+    border-radius:12px!important;
+    border:1px solid #D9E6F7!important;
+    color:#1F3A5F!important;
+    background:#fff!important;
+    box-shadow:0 6px 16px rgba(16,42,67,.05)!important;
+  }
+  html body #recovery-section .ri-tf-hero{
+    padding:18px!important;
+    border-radius:16px!important;
+    background:
+      radial-gradient(circle at 82% 8%,rgba(92,154,223,.36),transparent 28%),
+      linear-gradient(135deg,#071A33 0%,#102A43 48%,#1F3A5F 100%)!important;
+    border:1px solid rgba(120,170,220,.28)!important;
+    box-shadow:0 16px 40px rgba(16,42,67,.22)!important;
+  }
+  html body #recovery-section .ri-tf-hero:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px),
+      linear-gradient(180deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:36px 36px;
+    opacity:.5;
+  }
+  html body #recovery-section .ri-tf-hero>*{
+    position:relative;
+    z-index:1;
+  }
+  html body #recovery-section .ri-tf-hero-head{
+    align-items:center!important;
+    margin-bottom:14px!important;
+  }
+  html body #recovery-section .ri-tf-hero h2{
+    font-size:25px!important;
+    letter-spacing:-.035em!important;
+    color:#fff!important;
+  }
+  html body #recovery-section .ri-tf-hero p{
+    max-width:840px!important;
+    font-size:12.5px!important;
+    color:rgba(255,255,255,.78)!important;
+  }
+  html body #recovery-section .ri-tf-status-badge{
+    background:#F7B731!important;
+    color:#102A43!important;
+    border:1px solid rgba(255,255,255,.28)!important;
+    box-shadow:none!important;
+  }
+  html body #recovery-section .ri-tf-live b{
+    color:#DDF6EA!important;
+    background:rgba(30,138,100,.20)!important;
+    border-color:rgba(127,227,181,.24)!important;
+  }
+  html body #recovery-section .ri-tf-kpis{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:10px!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+  html body #recovery-section .ri-tf-kpi{
+    min-height:96px!important;
+    padding:13px 14px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    border-radius:13px!important;
+    background:rgba(255,255,255,.94)!important;
+    box-shadow:0 10px 26px rgba(0,0,0,.10)!important;
+  }
+  html body #recovery-section .ri-tf-kpi span{
+    color:#60748D!important;
+    font-size:10px!important;
+    letter-spacing:.055em!important;
+    text-transform:uppercase!important;
+  }
+  html body #recovery-section .ri-tf-kpi b{
+    color:#102A43!important;
+    font-size:26px!important;
+    font-weight:950!important;
+    letter-spacing:-.02em!important;
+  }
+  html body #recovery-section .ri-tf-kpi small{
+    color:#5F766C!important;
+    font-size:10.5px!important;
+  }
+  html body #recovery-section .ri-tf-kpi small.bad{
+    color:#A83232!important;
+  }
+  html body #recovery-section .ri-tf-flow{
+    grid-template-columns:1fr 24px 1fr 24px 1fr 1fr 1fr 24px 1fr!important;
+    padding:10px!important;
+    gap:8px!important;
+    border-radius:15px!important;
+    background:#fff!important;
+    border:1px solid #D9E6F7!important;
+    box-shadow:0 8px 22px rgba(16,42,67,.045)!important;
+  }
+  html body #recovery-section .ri-tf-flow-step{
+    height:42px!important;
+    border-radius:11px!important;
+    font-size:11px!important;
+    color:#1F3A5F!important;
+    background:#F7FAFF!important;
+    border-color:#D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-flow-step.fast{
+    background:#EEF9F3!important;
+    color:#1E8A64!important;
+    border-color:#D2EBDD!important;
+  }
+  html body #recovery-section .ri-tf-flow-step.repair{
+    background:#EEF5FF!important;
+    color:#1F3A5F!important;
+    border-color:#D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-flow-step.critical{
+    background:#FDEEEE!important;
+    color:#A83232!important;
+    border-color:#F5D4D4!important;
+  }
+  html body #recovery-section .ri-tf-panel,
+  html body #recovery-section .ri-tf-col{
+    border-radius:16px!important;
+    border:1px solid #D9E6F7!important;
+    background:#fff!important;
+    box-shadow:0 8px 24px rgba(16,42,67,.055)!important;
+  }
+  html body #recovery-section .ri-tf-panel-head{
+    min-height:56px!important;
+    padding:14px 16px!important;
+    background:#F7FAFF!important;
+    border-bottom:1px solid #D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-panel-head h3{
+    color:#102A43!important;
+    font-size:14px!important;
+    letter-spacing:-.015em!important;
+  }
+  html body #recovery-section .ri-tf-panel-head p{
+    color:#5F766C!important;
+    font-size:11.5px!important;
+  }
+  html body #recovery-section .ri-tf-triage-body{
+    padding:15px 16px 16px!important;
+  }
+  html body #recovery-section .ri-tf-field label,
+  html body #recovery-section .ri-tf-table thead th{
+    color:#5F766C!important;
+    letter-spacing:.055em!important;
+    text-transform:uppercase!important;
+  }
+  html body #recovery-section .ri-tf-input{
+    height:42px!important;
+    border-radius:11px!important;
+    border-color:#D9E6F7!important;
+    box-shadow:none!important;
+  }
+  html body #recovery-section .ri-tf-btn.primary{
+    background:linear-gradient(135deg,#1F6FAE,#1E8A64)!important;
+    color:#fff!important;
+    box-shadow:0 10px 20px rgba(31,111,174,.18)!important;
+  }
+  html body #recovery-section .ri-tf-route{
+    min-height:64px!important;
+    border-radius:14px!important;
+    padding:13px 14px!important;
+  }
+  html body #recovery-section .ri-tf-route b{
+    color:#102A43!important;
+  }
+  html body #recovery-section .ri-tf-kanban{
+    gap:14px!important;
+  }
+  html body #recovery-section .ri-tf-col-head{
+    padding:14px 14px 10px!important;
+  }
+  html body #recovery-section .ri-tf-col-title b{
+    color:#102A43!important;
+    font-size:14px!important;
+  }
+  html body #recovery-section .ri-tf-list{
+    max-height:520px!important;
+    gap:10px!important;
+  }
+  html body #recovery-section .ri-tf-unit{
+    border-radius:13px!important;
+    padding:12px!important;
+    border-width:1px!important;
+    box-shadow:none!important;
+  }
+  html body #recovery-section .ri-tf-defect{
+    font-size:13px!important;
+    color:#102A43!important;
+  }
+  html body #recovery-section .ri-tf-mini{
+    height:30px!important;
+    border-radius:9px!important;
+    font-size:10.5px!important;
+    color:#1F3A5F!important;
+  }
+  html body #recovery-section .ri-tf-intel{
+    grid-template-columns:1.15fr .85fr .95fr!important;
+    gap:14px!important;
+  }
+  html body #recovery-section .ri-tf-chart{
+    height:170px!important;
+  }
+  html body #recovery-section .ri-tf-bars{
+    height:112px!important;
+  }
+  html body #recovery-section .ri-tf-bar.in{
+    background:#1E8A64!important;
+  }
+  html body #recovery-section .ri-tf-bar.out{
+    background:#1F6FAE!important;
+  }
+  html body #recovery-section .ri-tf-legend .incoming{
+    background:#1E8A64!important;
+  }
+  html body #recovery-section .ri-tf-legend .closed{
+    background:#1F6FAE!important;
+  }
+  html body #recovery-section .ri-tf-alert-row{
+    min-height:46px!important;
+    border-radius:11px!important;
+    font-size:12px!important;
+    border:1px solid transparent!important;
+  }
+  html body #recovery-section .ri-tf-alert-row.red{
+    background:#FDEEEE!important;
+    color:#A83232!important;
+    border-color:#F5D4D4!important;
+  }
+  html body #recovery-section .ri-tf-alert-row.amber,
+  html body #recovery-section .ri-tf-alert-row.yellow{
+    background:#FFF7E8!important;
+    color:#B76E12!important;
+    border-color:#F4D8A8!important;
+  }
+  html body #recovery-section .ri-tf-alert-row.blue{
+    background:#EEF5FF!important;
+    color:#1F3A5F!important;
+    border-color:#D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-alert-row.green{
+    background:#EEF9F3!important;
+    color:#1E8A64!important;
+    border-color:#D2EBDD!important;
+  }
+  html body #recovery-section .ri-tf-capacity{
+    border-color:#D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-capacity-row{
+    padding:10px!important;
+    font-size:12px!important;
+  }
+  html body #recovery-section .ri-tf-table thead th{
+    background:#EAF2FE!important;
+    font-size:10px!important;
+    border-color:#D9E6F7!important;
+  }
+  html body #recovery-section .ri-tf-table tbody td{
+    font-size:12px!important;
+    color:#243B53!important;
+  }
+  html body #recovery-section .ri-tf-footer-link{
+    color:#1F3A5F!important;
+  }
+  @media(max-width:1320px){
+    html body #recovery-section .ri-tf-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+    html body #recovery-section .ri-tf-intel{grid-template-columns:1fr!important;}
+  }
+  @media(max-width:1100px){
+    html body #recovery-section .ri-tf-flow{grid-template-columns:1fr!important;}
+    html body #recovery-section .ri-tf-flow-arrow{display:none!important;}
+    html body #recovery-section .ri-tf-kanban{grid-template-columns:1fr!important;}
+  }
+  @media(max-width:760px){
+    html body #recovery-section .ri-tf-kpis{grid-template-columns:1fr!important;}
+    html body #recovery-section .ri-tf-form,
+    html body #recovery-section .ri-tf-route-row{grid-template-columns:1fr!important;}
+  }
+</style>
+<script id="smtinel-ri-yield-flow-feed-script-v13-14-10">
+(function(){
+  'use strict';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.10 - Recovery Intel Yield Flow Feed - 2026-07-23';
+  window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
+  window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
+  function cleanText(root){
+    if(!root) return;
+    var map=[
+      ['Triage, reintegration, repair queue, and containment control in one operating view.','Triage, reintegration, repair queue, and containment control in one operating view.'],
+      ['Scan, classify, and route units before they age into repair exposure.','Scan, classify, and route units before they age into repair exposure.'],
+      ['Or route manually','Manual route override'],
+      ['Fast Track','Fast Track'],
+      ['SLA Breach','SLA Breach'],
+      ['Critical Mix','Critical Mix'],
+      ['Recovery Confidence','Recovery Confidence'],
+      ['Recovery Throughput','Recovery Throughput'],
+      ['Aging Control','Aging Control'],
+      ['Capacity Forecast','Capacity Forecast'],
+      ['Recovery Action Tracker','Recovery Action Tracker'],
+      ['Serial History / Recent Activity','Serial History / Recent Activity']
+    ];
+    var nodes=root.querySelectorAll('h2,h3,p,span,b,small,div,button,label,th,td');
+    Array.prototype.forEach.call(nodes,function(n){
+      if(n.children && n.children.length) return;
+      var txt=String(n.textContent||'').replace(/\s+/g,' ').trim();
+      for(var i=0;i<map.length;i++){
+        if(txt===map[i][0]){
+          n.textContent=map[i][1];
+          break;
+        }
+      }
+    });
+    var hero=root.querySelector('.ri-tf-hero');
+    if(hero) hero.setAttribute('data-yield-flow-feed','v13.14.10');
+    var panel=root.querySelector('#ri-tf-triage-panel .ri-tf-panel-head p');
+    if(panel) panel.textContent='Scan, classify, and route units before they age into repair exposure.';
+  }
+  function apply(){
+    var section=document.getElementById('recovery-section');
+    var host=section && section.querySelector('#ri-triage-flow');
+    if(!host) return;
+    cleanText(host);
+  }
+  var timer=null;
+  function schedule(){clearTimeout(timer); timer=setTimeout(apply,80);}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule); else schedule();
+  try{new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});}catch(_){setInterval(apply,1500);}
 })();
 </script>
