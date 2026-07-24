@@ -2942,7 +2942,7 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
 <script id="smtinel-daily-email-export-script-v13-14-11">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.15 - Notes Stable Email Header - 2026-07-23';
+  var VERSION='SMTinel V13.14.16 - Daily Email Risk KPI Sync - 2026-07-24';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -2961,9 +2961,13 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
   function bestRows(){
     var pools=[];
     function add(a){if(Array.isArray(a)&&a.length)pools.push(a);}
+    try{
+      if(window.yieldFlowModel&&Array.isArray(window.yieldFlowModel.rows)&&window.yieldFlowModel.rows.length){
+        return window.yieldFlowModel.rows;
+      }
+    }catch(_){}
     try{add(window.TRACEOPS_YIELD_BY_WO_ROWS);}catch(_){}
     try{add(window.TRACEOPS_YIELD_FLOW_TRACKER);}catch(_){}
-    try{add(window.yieldFlowModel&&window.yieldFlowModel.rows);}catch(_){}
     try{add(window.TRACEOPS_YIELD_FT_ROWS);}catch(_){}
     pools.sort(function(a,b){return b.length-a.length;});
     return pools[0]||[];
@@ -2971,6 +2975,13 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
   function getKpi(rows){
     var k={};
     try{k=window.yieldFlowModel&&window.yieldFlowModel.kpi||{};}catch(_){}
+    function metric(keys){
+      for(var i=0;i<keys.length;i++){
+        var value=k[keys[i]];
+        if(value!=null&&text(value)!==''&&isFinite(num(value)))return {found:true,value:num(value)};
+      }
+      return {found:false,value:0};
+    }
     var total=0,clean=0,risk=0,orders={},families={},skus={},lines={},weeks={};
     rows.forEach(function(r){
       var units=num(pick(r,['total','Total','units','Units','qty','Qty','lotQty','MFG Qty','mfg']));
@@ -2985,15 +2996,20 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
       var line=text(pick(r,['line','Line','LINE','productionLine']));if(line)lines[line]=1;
       var week=text(pick(r,['week','Week','fiscalWeek','ciscoWeek']));if(week)weeks[week]=1;
     });
-    total=total||num(k.total)||num(k.units)||rows.length;
-    risk=risk||num(k.risk);
-    clean=clean||num(k.clean)||Math.max(0,total-risk);
+    var officialTotal=metric(['units','total']);
+    var officialRisk=metric(['risk','riskUnits']);
+    var officialClean=metric(['clean','cleanUnits']);
+    var officialYield=metric(['yield','cleanYield']);
+    var officialOrders=metric(['orders','workOrders']);
+    total=officialTotal.found?officialTotal.value:(total||rows.length);
+    risk=officialRisk.found?officialRisk.value:risk;
+    clean=officialClean.found?officialClean.value:(clean||Math.max(0,total-risk));
     return {
       total:total,
       clean:clean,
       risk:risk,
-      yieldPct:total?clean/total*100:num(k.yield||k.cleanYield),
-      orders:num(k.orders)||Object.keys(orders).length,
+      yieldPct:officialYield.found?officialYield.value:(total?clean/total*100:0),
+      orders:officialOrders.found?officialOrders.value:Object.keys(orders).length,
       families:Object.keys(families),
       skus:Object.keys(skus),
       lines:Object.keys(lines),
@@ -60165,7 +60181,7 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
 <script id="smtinel-v13-14-11-build-finalizer">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.15 - Notes Stable Email Header - 2026-07-23';
+  var VERSION='SMTinel V13.14.16 - Daily Email Risk KPI Sync - 2026-07-24';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
