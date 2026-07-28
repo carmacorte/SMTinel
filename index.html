@@ -2942,7 +2942,7 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
 <script id="smtinel-daily-email-export-script-v13-14-11">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.16 - Daily Email Risk KPI Sync - 2026-07-24';
+  var VERSION='SMTinel V13.14.17 - Consolidated SN Trace Export - 2026-07-27';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -29479,7 +29479,7 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("input", { type: "text", value: snSearchInput, onChange: function(e) { setSnSearchInput(e.target.value); }, onKeyDown: function(e) { if (e.key === "Enter") traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, placeholder: "Enter one or more serial numbers...", title: "Paste multiple serial numbers separated by commas, spaces, or line breaks", style: { border: "1px solid #C8D8F0", borderRadius: 999, padding: "7px 12px", fontSize: 11, width: 260, outline: "none", fontFamily: "monospace" } }),
                         React.createElement("button", { type: "button", onClick: function() { traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 999, padding: "7px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" } }, "Search"),
                         snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { setSnSearchQuery(""); setSnSearchInput(""); }, style: { background: "#F0EDE9", color: "#5F766C", border: "1px solid #DDD", borderRadius: 999, padding: "7px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "× Limpiar") : null,
-                        snSearchQuery ? React.createElement("button", { type: "button", onClick: function() { traceOpsYieldExportSerialTrace(snSearchQuery); }, title: "Download a structured Excel file with a summary and complete history for each serial number", style: { background: "#FFFFFF", color: "#1F3A5F", border: "1px solid #CFE0FB", borderRadius: 999, padding: "7px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16,42,67,.06)" } }, "Download XLSX") : null)),
+                        (snSearchQuery || traceOpsYieldParseSerialInput(snSearchInput).length) ? React.createElement("button", { type: "button", onClick: function() { traceOpsYieldExportSerialTrace(snSearchQuery || snSearchInput); }, title: "Export every serial number entered in the search to one structured Excel file with summary and complete history", style: { background: "#FFFFFF", color: "#1F3A5F", border: "1px solid #CFE0FB", borderRadius: 999, padding: "7px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16,42,67,.06)" } }, "Export All SN XLSX") : null)),
                 React.createElement("div", { style: { padding: "14px 18px" } },
                     snSearchQuery ? (function() {
                         var snKeys = traceOpsYieldParseSerialInput(snSearchQuery);
@@ -60181,7 +60181,7 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
 <script id="smtinel-v13-14-11-build-finalizer">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.16 - Daily Email Risk KPI Sync - 2026-07-24';
+  var VERSION='SMTinel V13.14.17 - Consolidated SN Trace Export - 2026-07-27';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
