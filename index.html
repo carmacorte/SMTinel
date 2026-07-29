@@ -2942,7 +2942,7 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
 <script id="smtinel-daily-email-export-script-v13-14-11">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.25 - Board Export Data Quality Fix - 2026-07-28';
+  var VERSION='SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -3821,7 +3821,7 @@ async function signUp(email, password){
   "use strict";
   if(window.__SMTINEL_BOARD_EXPORT_V96__) return;
   window.__SMTINEL_BOARD_EXPORT_V96__=true;
-  var BUILD_LABEL="SMTinel V13.14.25 - Board Export Data Quality Fix - 2026-07-28";
+  var BUILD_LABEL="SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29";
   var scheduled=false;
   function setIfDifferent(node,name,value){
     if(node.getAttribute(name)!==value) node.setAttribute(name,value);
@@ -36722,57 +36722,135 @@ body:has(#recovery-section) .main-content.expanded{
     }
     function traceOpsBonepileBuildPayload() {
         var target = ['SMTLOADING','AOI2','AOI4'];
-        var activeSfc = window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC || window.TRACEOPS_YIELD_SN_TO_SFC || {};
-        var activeFt = window.TRACEOPS_YIELD_ACTIVE_FT_ROWS || window.TRACEOPS_YIELD_FT_ROWS || [];
-        var breakdown = window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN;
-        if (!breakdown && typeof window.traceOpsYieldBuildStationSequenceBreakdown === 'function') {
-            breakdown = window.traceOpsYieldBuildStationSequenceBreakdown(activeSfc, activeFt, { restrictToSfc: true });
-        }
-        breakdown = breakdown || { rows: [], allRows: [], totalUnits: 0 };
-        var stationRows = breakdown.allRows || breakdown.rows || [];
+        var fullSfc = window.TRACEOPS_YIELD_SN_TO_SFC || {};
+        var fullFt = window.TRACEOPS_YIELD_FT_ROWS || [];
+        var activeSfc = window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC || {};
+        var activeFt = window.TRACEOPS_YIELD_ACTIVE_FT_ROWS || [];
         var woLine = traceOpsBonepileBuildWoLineMap();
         var lineBySn = window.TRACEOPS_YIELD_LINE_BY_SN || {};
-        var rows = [];
-        var totals = { SMTLOADING: 0, AOI2: 0, AOI4: 0 };
 
-        stationRows.forEach(function(st) {
-            var station = String(st && st.station || '').trim().toUpperCase();
-            if (target.indexOf(station) < 0) return;
-            totals[station] = Number(st.qty || 0);
-            (st.serials || []).forEach(function(serialRow) {
-                serialRow = serialRow || {};
-                var sn = String(serialRow.sn || '').trim();
-                var sfc = activeSfc[sn] || activeSfc[String(sn).toUpperCase()] || {};
-                var directSnLine = lineBySn[sn] || lineBySn[String(sn).toUpperCase()] || '';
-                if (directSnLine && typeof directSnLine === 'object') directSnLine = directSnLine.line || directSnLine.Line || '';
-                var wo = String(serialRow.wo || sfc.wo || '').trim();
-                var line = traceOpsBonepileNormLine(serialRow.line || sfc.line || directSnLine || woLine[traceOpsBonepileNormWo(wo)] || '');
-                var costInfo = traceOpsYieldUnitCostForContext(serialRow);
-                rows.push({
-                    sn: sn,
-                    wo: wo,
-                    sku: String(serialRow.sku || sfc.sku || '').trim(),
-                    line: line,
+        function buildScope(sfcMap, ftRows, suppliedBreakdown, sourceName) {
+            var breakdown = suppliedBreakdown;
+            if (!breakdown && typeof window.traceOpsYieldBuildStationSequenceBreakdown === 'function') {
+                breakdown = window.traceOpsYieldBuildStationSequenceBreakdown(sfcMap || {}, ftRows || [], { restrictToSfc: true });
+            }
+            breakdown = breakdown || { rows: [], allRows: [], totalUnits: 0 };
+            var stationRows = breakdown.allRows || breakdown.rows || [];
+            var rows = [];
+            var snapshotRows = [];
+            var totals = { SMTLOADING: 0, AOI2: 0, AOI4: 0 };
+            var stationSummary = [];
+            var lineGroups = Object.create(null);
+            var seenSn = Object.create(null);
+
+            stationRows.forEach(function(st) {
+                var station = traceOpsYieldNormalizeSequenceStation(st && st.station || '');
+                if (!station || Number(st && st.qty || 0) <= 0) return;
+                if (target.indexOf(station) >= 0) totals[station] = Number(st.qty || 0);
+                stationSummary.push({
                     station: station,
-                    location: line + '|' + station,
-                    ageBucket: String(serialRow.ageBucket || 'age0_30'),
-                    repair: !!serialRow.hasRepair,
-                    buildStart: String(serialRow.buildStartDate || sfc.buildStartDate || sfc.startSmt || ''),
-                    family: String(serialRow.family || sfc.family || ''),
-                    bu: String(serialRow.bu || sfc.bu || ''),
-                    unitCost: Number(costInfo.cost || 0),
-                    cost: Number(costInfo.cost || 0),
-                    costSource: costInfo.source || 'missing'
+                    units: Number(st.qty || 0),
+                    clean: Number(st.cleanQty || 0),
+                    repair: Number(st.repairQty || 0),
+                    cost: Number(st.costValue || 0),
+                    repairCost: Number(st.repairCostValue || 0),
+                    flowPct: Number(st.flowPct || 0)
+                });
+                (st.serials || []).forEach(function(serialRow) {
+                    serialRow = serialRow || {};
+                    var sn = traceOpsYieldCleanSn(serialRow.sn || '');
+                    if (!sn || seenSn[sn]) return;
+                    seenSn[sn] = true;
+                    var sfc = sfcMap[sn] || sfcMap[String(sn).toUpperCase()] || {};
+                    var directSnLine = lineBySn[sn] || lineBySn[String(sn).toUpperCase()] || '';
+                    if (directSnLine && typeof directSnLine === 'object') directSnLine = directSnLine.line || directSnLine.Line || '';
+                    var wo = String(serialRow.wo || sfc.wo || '').trim();
+                    var line = traceOpsBonepileNormLine(serialRow.line || sfc.line || directSnLine || woLine[traceOpsBonepileNormWo(wo)] || '');
+                    var sku = String(serialRow.sku || sfc.sku || '').trim();
+                    var family = String(serialRow.family || sfc.family || sfc.model || '').trim();
+                    var costInfo = traceOpsYieldUnitCostForContext(serialRow);
+                    var unitCost = Number(costInfo.cost || 0);
+                    var baseRow = {
+                        sn: sn,
+                        wo: wo,
+                        sku: sku,
+                        line: line,
+                        station: station,
+                        location: line + '|' + station,
+                        ageBucket: String(serialRow.ageBucket || 'age0_30'),
+                        repair: !!serialRow.hasRepair,
+                        buildStart: String(serialRow.buildStartDate || sfc.buildStartDate || sfc.startSmt || ''),
+                        family: family,
+                        bu: String(serialRow.bu || sfc.bu || ''),
+                        unitCost: unitCost,
+                        cost: unitCost,
+                        costSource: costInfo.source || 'missing'
+                    };
+                    snapshotRows.push({
+                        sn: sn, wo: wo, sku: sku, family: family, line: line,
+                        station: station, repair: !!serialRow.hasRepair, cost: unitCost
+                    });
+                    if (target.indexOf(station) >= 0) rows.push(baseRow);
+                    var groupKey = [line, family || 'N/D', sku || 'N/D'].join('|');
+                    if (!lineGroups[groupKey]) {
+                        lineGroups[groupKey] = {
+                            line: line, family: family || 'N/D', sku: sku || 'N/D',
+                            units: 0, repair: 0, cost: 0, woMap: Object.create(null),
+                            stations: Object.create(null)
+                        };
+                    }
+                    var group = lineGroups[groupKey];
+                    group.units += 1;
+                    group.repair += baseRow.repair ? 1 : 0;
+                    group.cost += unitCost;
+                    group.stations[station] = (group.stations[station] || 0) + 1;
+                    if (wo) group.woMap[wo] = true;
                 });
             });
-        });
+            var lineSummary = Object.keys(lineGroups).map(function(key) {
+                var group = lineGroups[key];
+                return {
+                    line: group.line,
+                    family: group.family,
+                    sku: group.sku,
+                    workOrders: Object.keys(group.woMap).sort(),
+                    units: group.units,
+                    repair: group.repair,
+                    cost: group.cost,
+                    stations: group.stations
+                };
+            }).sort(function(a, b) {
+                return String(a.line).localeCompare(String(b.line), undefined, { numeric: true }) ||
+                    String(a.family).localeCompare(String(b.family)) ||
+                    String(a.sku).localeCompare(String(b.sku));
+            });
+            stationSummary.sort(function(a, b) { return Number(b.units || 0) - Number(a.units || 0); });
+            return {
+                rows: rows,
+                snapshotRows: snapshotRows,
+                totals: totals,
+                totalUnits: Number(breakdown.totalUnits || snapshotRows.length || 0),
+                stationSummary: stationSummary,
+                lineSummary: lineSummary,
+                source: sourceName
+            };
+        }
+
+        var activeBreakdown = window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN || null;
+        var fullScope = buildScope(fullSfc, fullFt, null, 'FULL_LOADED_SFC');
+        var activeScope = buildScope(activeSfc, activeFt, activeBreakdown, 'YIELD_FLOW_ACTIVE_FILTERS');
         return {
-            rows: rows,
-            totals: totals,
-            totalUnits: Number(breakdown.totalUnits || 0),
+            rows: fullScope.rows,
+            totals: fullScope.totals,
+            totalUnits: fullScope.totalUnits,
+            stationSummary: fullScope.stationSummary,
+            lineSummary: fullScope.lineSummary,
+            snapshotRows: fullScope.snapshotRows,
+            scopes: { FULL: fullScope, ACTIVE: activeScope },
+            defaultScope: 'FULL',
             activeFilters: window.TRACEOPS_YIELD_ACTIVE_FILTERS || {},
             generatedAt: new Date().toISOString(),
-            source: window.TRACEOPS_YIELD_ACTIVE_STATION_BREAKDOWN ? 'ACTIVE_YIELD_FLOW_BREAKDOWN' : 'GLOBAL_YIELD_FLOW_BREAKDOWN'
+            source: fullScope.source
         };
     }
     function traceOpsBonepilePostToFrame(targetWindow, message) {
@@ -36821,6 +36899,80 @@ body:has(#recovery-section) .main-content.expanded{
     }
 
     var SMTINEL_BONEPILE_SRCDOC = "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>SMTinel Bonepile Visual Tracker</title>\n<style>\n:root{--navy:#102a43;--blue:#2f6fb3;--line:#d9e6f7;--bg:#f5f7fa;--card:#fff;--muted:#627d98;--good:#1a7a3c;--warn:#b87820;--bad:#c0392b;--violet:#6b2da8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--navy)}.wrap{padding:18px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.head h1{margin:0;font-size:24px}.head p{margin:6px 0 0;color:var(--muted)}button,select,input{font:inherit}.btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer}.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}.kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}.kpi small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}.kpi strong{display:block;font-size:24px;margin-top:5px}.kpi.money{background:#fff9ee;border-color:#f5d6a6}.kpi.money strong{color:var(--warn)}.recon{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px;color:var(--muted);font-size:12px;min-height:38px;align-items:center}.recon b{color:var(--navy)}.ok{color:var(--good)!important}.warn{color:var(--warn)!important}.bad{color:var(--bad)!important}.layout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.line{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px}.line h3{margin:0 0 10px;font-size:15px}.stations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.station{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fbff;cursor:pointer;text-align:left;min-width:0}.station.active{outline:3px solid rgba(47,111,179,.25);border-color:var(--blue)}.station b{display:block;font-size:19px;margin:3px 0}.station span{display:block;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}.station em{display:block;font-style:normal;font-size:11px;font-weight:900;color:var(--warn);margin-top:4px;overflow:hidden;text-overflow:ellipsis}.tools{display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);padding:12px;border-radius:16px;margin-bottom:12px}.tools input,.tools select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}.tablebox{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:520px}table{border-collapse:collapse;width:100%;font-size:12px}th{position:sticky;top:0;background:#eef5ff;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf2f7;white-space:nowrap}.num{text-align:right}.moneytxt{color:var(--warn);font-weight:800}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-weight:800;font-size:10px}.repair{background:#fdf0ee;color:var(--bad)}.clean{background:#eaf7ef;color:var(--good)}.empty{padding:30px;text-align:center;color:var(--muted)}@media(max-width:1050px){.layout{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.layout,.kpis,.tools{grid-template-columns:1fr}.stations{grid-template-columns:1fr}.wrap{padding:10px}}\n</style>\n</head>\n<body>\n<div class=\"wrap\">\n  <div class=\"head\"><div><h1>Bonepile Visual Tracker</h1><p>Exact Yield Flow population for SMTLOADING, AOI2 and AOI4, separated by production line with financial exposure by SN.</p></div><button class=\"btn\" id=\"refresh\">Refresh</button></div>\n  <div class=\"kpis\" id=\"kpis\"></div>\n  <div class=\"recon\" id=\"recon\"><span>Waiting for Yield Flow data…</span></div>\n  <div class=\"layout\" id=\"layout\"></div>\n  <div class=\"tools\">\n    <input id=\"q\" placeholder=\"Search SN, WO or SKU\">\n    <select id=\"line\"><option value=\"ALL\">All lines</option></select>\n    <select id=\"station\"><option value=\"ALL\">All stations</option></select>\n    <select id=\"age\"><option value=\"ALL\">All aging</option><option value=\"age0_30\">0-30D</option><option value=\"age31_60\">31-60D</option><option value=\"age61_90\">61-90D</option><option value=\"age91_365\">91-365D</option><option value=\"ageOver365\">&gt;1Y</option></select>\n    <select id=\"repair\"><option value=\"ALL\">Clean + Repair</option><option value=\"YES\">Repair</option><option value=\"NO\">Clean</option></select>\n    <button class=\"btn\" id=\"export\">Export TSV</button>\n  </div>\n  <div class=\"tablebox\"><table><thead><tr><th>SN</th><th>WO</th><th>SKU</th><th>Line</th><th>Current station</th><th>Location</th><th>Aging bucket</th><th>Repair</th><th class=\"num\">Unit cost</th><th class=\"num\">Cost</th><th>Build start</th></tr></thead><tbody id=\"tbody\"><tr><td colspan=\"11\" class=\"empty\">Waiting for Yield Flow data…</td></tr></tbody></table></div>\n</div>\n<script>\n(function(){\n'use strict';\nvar rows=[],filtered=[],selected='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},source='';\nvar TARGET=['SMTLOADING','AOI2','AOI4'];\nvar requestCounter=0,lastResponse=0;\nfunction esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]})}\nfunction money(v){var n=Number(v||0);if(!isFinite(n))n=0;return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0})}\nfunction sumCost(list){return (list||[]).reduce(function(a,r){return a+Number((r&&r.cost)||0)},0)}\nfunction requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow…</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}setTimeout(function(){if(Date.now()-lastResponse>2500)document.getElementById('recon').innerHTML='<span class=\"warn\"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}\nfunction showError(message){document.getElementById('recon').innerHTML='<span class=\"bad\"><b>Bonepile data error:</b> '+esc(message)+'</span>'}\nfunction apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){return(!q||(r.sn+' '+r.wo+' '+r.sku).toUpperCase().indexOf(q)>=0)&&(ln==='ALL'||r.line===ln)&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderLayout();renderRecon()}\nfunction count(st,ln){return rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}).length}\nfunction stationCost(st,ln){return sumCost(rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}))}\nfunction renderKpis(){var unassigned=rows.filter(function(r){return r.line==='UNASSIGNED'}).length,repairCost=sumCost(rows.filter(function(r){return r.repair}));document.getElementById('kpis').innerHTML=[['In-scope WIP',rows.length,''],['WIP value',money(sumCost(rows)),'money'],['Repair value',money(repairCost),'money'],['SMTLOADING',count('SMTLOADING')+' / '+money(stationCost('SMTLOADING')),''],['AOI2',count('AOI2')+' / '+money(stationCost('AOI2')),''],['AOI4',count('AOI4')+' / '+money(stationCost('AOI4')),'']].map(function(x){return'<div class=\"kpi '+(x[2]||'')+'\"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>'}).join('')}\nfunction renderRecon(){var parts=TARGET.map(function(st){var located=count(st),expected=Number(stationTotals[st]||0),ok=located===expected;return'<span><b>'+st+':</b> <b class=\"'+(ok?'ok':'warn')+'\">'+located.toLocaleString()+' / '+expected.toLocaleString()+'</b> · <b class=\"warn\">'+money(stationCost(st))+'</b></span>'});document.getElementById('recon').innerHTML='<span><b>Breakdown reconciliation</b></span>'+parts.join('<span>·</span>')+'<span>Source: '+esc(source||'N/D')+'</span>'}\nfunction renderLayout(){var lines=['L12','L13','L14','L15','L16','L17','L18'];document.getElementById('layout').innerHTML=lines.map(function(ln){var cards=TARGET.map(function(st){var n=count(st,ln),c=stationCost(st,ln),key=ln+'|'+st;return'<button class=\"station '+(selected===key?'active':'')+'\" data-key=\"'+key+'\"><span>'+st+'</span><b>'+n.toLocaleString()+'</b><span>serials</span><em>'+money(c)+'</em></button>'}).join('');return'<div class=\"line\"><h3>SMT LINE '+ln.slice(1)+'</h3><div class=\"stations\">'+cards+'</div></div>'}).join('');[].slice.call(document.querySelectorAll('[data-key]')).forEach(function(b){b.onclick=function(){var x=this.getAttribute('data-key').split('|');selected=this.getAttribute('data-key');document.getElementById('line').value=x[0];document.getElementById('station').value=x[1];apply()}})}\nfunction renderTable(){var tb=document.getElementById('tbody');if(!filtered.length){tb.innerHTML='<tr><td colspan=\"11\" class=\"empty\">No serials match the current filters.</td></tr>';return}tb.innerHTML=filtered.slice(0,5000).map(function(r){return'<tr><td><b>'+esc(r.sn)+'</b></td><td>'+esc(r.wo)+'</td><td>'+esc(r.sku)+'</td><td>'+esc(r.line)+'</td><td>'+esc(r.station)+'</td><td>'+esc(r.location)+'</td><td>'+esc(String(r.ageBucket||'').replace('age','').replace('_','-').replace('Over365','>365D'))+'</td><td><span class=\"tag '+(r.repair?'repair':'clean')+'\">'+(r.repair?'REPAIR':'CLEAN')+'</span></td><td class=\"num moneytxt\">'+money(r.unitCost||0)+'</td><td class=\"num moneytxt\">'+money(r.cost||0)+'</td><td>'+esc(r.buildStart)+'</td></tr>'}).join('')}\nfunction options(){var lines=Array.from(new Set(rows.map(function(r){return r.line}))).sort();document.getElementById('line').innerHTML='<option value=\"ALL\">All lines</option>'+lines.map(function(x){return'<option>'+esc(x)+'</option>'}).join('');document.getElementById('station').innerHTML='<option value=\"ALL\">All stations</option>'+TARGET.map(function(x){return'<option>'+x+'</option>'}).join('')}\nfunction receive(payload){payload=payload||{};rows=Array.isArray(payload.rows)?payload.rows:[];stationTotals=payload.totals||{SMTLOADING:0,AOI2:0,AOI4:0};source=payload.source||'';lastResponse=Date.now();options();apply()}\nfunction exportTsv(){var h=['SN','WO','SKU','Line','CurrentStation','Location','AgingBucket','Repair','UnitCost','Cost','CostSource','BuildStartDate'],body=[h.join('\\t')].concat(filtered.map(function(r){return[r.sn,r.wo,r.sku,r.line,r.station,r.location,r.ageBucket,r.repair?'YES':'NO',r.unitCost||0,r.cost||0,r.costSource||'',r.buildStart].join('\\t')})).join('\\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/tab-separated-values'}));a.download='SMTinel_Bonepile_SMT_Stations_'+new Date().toISOString().slice(0,10)+'.tsv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}\nwindow.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});\n['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';apply()})});document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;\nrenderKpis();renderLayout();requestData();setInterval(function(){if(document.visibilityState==='visible')requestData()},15000)\n})();\n<\/script>\n</body></html>";
+
+    // Bonepile v3: explicit full/filtered scope, exact SN reconciliation and shift-handoff email.
+    SMTINEL_BONEPILE_SRCDOC = String.raw`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMTinel Bonepile Visual Tracker</title>
+<style>
+:root{--navy:#102a43;--blue:#2f6fb3;--line:#d9e6f7;--bg:#f5f7fa;--muted:#627d98;--good:#1a7a3c;--warn:#b87820;--bad:#c0392b}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--navy)}.wrap{padding:18px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.head h1{margin:0;font-size:24px}.head p{margin:6px 0 0;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}button,select,input,textarea{font:inherit}.btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.good{background:#eaf7ef;color:#0f6b3f;border-color:#bfe7d1}.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}.kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}.kpi small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}.kpi strong{display:block;font-size:24px;margin-top:5px}.kpi.money{background:#fff9ee;border-color:#f5d6a6}.kpi.money strong{color:var(--warn)}.recon{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px;color:var(--muted);font-size:12px;min-height:38px;align-items:center}.recon b{color:var(--navy)}.ok{color:var(--good)!important}.warn{color:var(--warn)!important}.bad{color:var(--bad)!important}.layout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.line{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px}.line h3{margin:0 0 10px;font-size:15px}.stations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.station{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fbff;cursor:pointer;text-align:left;min-width:0}.station.active{outline:3px solid rgba(47,111,179,.25);border-color:var(--blue)}.station b{display:block;font-size:19px;margin:3px 0}.station span{display:block;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}.station em{display:block;font-style:normal;font-size:11px;font-weight:900;color:var(--warn);margin-top:4px;overflow:hidden;text-overflow:ellipsis}.tools{display:grid;grid-template-columns:1.7fr repeat(5,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);padding:12px;border-radius:16px;margin-bottom:12px}.tools input,.tools select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}.tablebox{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:520px}table{border-collapse:collapse;width:100%;font-size:12px}th{position:sticky;top:0;background:#eef5ff;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf2f7;white-space:nowrap}.num{text-align:right}.moneytxt{color:var(--warn);font-weight:800}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-weight:800;font-size:10px}.repair{background:#fdf0ee;color:var(--bad)}.clean{background:#eaf7ef;color:var(--good)}.empty{padding:30px;text-align:center;color:var(--muted)}.modal{position:fixed;inset:0;background:rgba(8,24,40,.58);display:none;align-items:center;justify-content:center;padding:24px;z-index:99}.modal.open{display:flex}.dialog{width:min(1160px,96vw);max-height:92vh;background:#fff;border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.3)}.dialog-head,.dialog-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}.dialog-foot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end;flex-wrap:wrap}.dialog-body{padding:16px;overflow:auto;background:#f5f7fa}.subject{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}.notes{width:100%;min-height:76px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}.email-preview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}.email-preview h2{margin:0 0 4px}.email-preview h3{margin:18px 0 8px}.email-preview table{font-size:11px}.email-preview th{position:static}.email-preview td{white-space:normal;vertical-align:top}.sub{font-size:11px;color:var(--muted);margin:4px 0 12px}@media(max-width:1050px){.layout{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.layout,.kpis,.tools{grid-template-columns:1fr}.stations{grid-template-columns:1fr}.wrap{padding:10px}.head{display:block}.actions{margin-top:10px;justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div><h1>Bonepile Visual Tracker</h1><p>Exact current SFC population for SMTLOADING, AOI2 and AOI4, with an end-of-shift handoff across every station.</p></div><div class="actions"><button class="btn good" id="baseline">Capture Shift Start</button><button class="btn primary" id="shiftEmail">Export Shift Email</button><button class="btn" id="refresh">Refresh</button></div></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="recon" id="recon"><span>Waiting for Yield Flow data...</span></div>
+  <div class="layout" id="layout"></div>
+  <div class="tools">
+    <input id="q" placeholder="Search SN, WO or SKU">
+    <select id="scope"><option value="FULL">Full loaded SFC</option><option value="ACTIVE">Yield Flow active filters</option></select>
+    <select id="line"><option value="ALL">All lines</option></select>
+    <select id="station"><option value="ALL">All stations</option></select>
+    <select id="age"><option value="ALL">All aging</option><option value="age0_30">0-30D</option><option value="age31_60">31-60D</option><option value="age61_90">61-90D</option><option value="age91_365">91-365D</option><option value="ageOver365">&gt;1Y</option></select>
+    <select id="repair"><option value="ALL">Clean + Repair</option><option value="YES">Repair</option><option value="NO">Clean</option></select>
+    <button class="btn" id="export">Export TSV</button>
+  </div>
+  <div class="tablebox"><table><thead><tr><th>SN</th><th>WO</th><th>SKU</th><th>Line</th><th>Current station</th><th>Location</th><th>Aging bucket</th><th>Repair</th><th class="num">Unit cost</th><th class="num">Cost</th><th>Build start</th></tr></thead><tbody id="tbody"><tr><td colspan="11" class="empty">Waiting for Yield Flow data...</td></tr></tbody></table></div>
+</div>
+<div class="modal" id="emailModal"><div class="dialog"><div class="dialog-head"><div><b>End-of-Shift Email Export</b><div class="sub">Current station snapshot plus movement since the captured shift baseline.</div></div><button class="btn" id="closeEmail">Close</button></div><div class="dialog-body"><input class="subject" id="emailSubject"><textarea class="notes" id="shiftNotes" placeholder="Add shift status, issues, containment, or handoff notes..."></textarea><div class="email-preview" id="emailPreview"></div></div><div class="dialog-foot"><button class="btn" id="copySubject">Copy subject</button><button class="btn" id="copyPlain">Copy plain text</button><button class="btn primary" id="copyHtml">Copy HTML body</button><button class="btn" id="downloadEmail">Download HTML</button></div></div></div>
+<script>
+(function(){
+'use strict';
+var payloadState={},scopeState={},rows=[],snapshotRows=[],filtered=[],selected='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},source='',scopeMode='FULL';
+var TARGET=['SMTLOADING','AOI2','AOI4'],requestCounter=0,lastResponse=0,scopeInitialized=false;
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function money(v){var n=Number(v||0);if(!isFinite(n))n=0;return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0})}
+function sumCost(list){return(list||[]).reduce(function(a,r){return a+Number(r&&r.cost||0)},0)}
+function requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow...</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}var requestedAt=Date.now();setTimeout(function(){if(lastResponse<requestedAt)document.getElementById('recon').innerHTML='<span class="warn"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}
+function showError(message){document.getElementById('recon').innerHTML='<span class="bad"><b>Bonepile data error:</b> '+esc(message)+'</span>'}
+function loadScope(mode){scopeMode=mode==='ACTIVE'?'ACTIVE':'FULL';scopeState=(payloadState.scopes&&payloadState.scopes[scopeMode])||payloadState||{};rows=Array.isArray(scopeState.rows)?scopeState.rows:[];snapshotRows=Array.isArray(scopeState.snapshotRows)?scopeState.snapshotRows:[];stationTotals=scopeState.totals||{SMTLOADING:0,AOI2:0,AOI4:0};source=scopeState.source||payloadState.source||'';options();apply();updateBaselineButton()}
+function apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){return(!q||(r.sn+' '+r.wo+' '+r.sku+' '+r.family).toUpperCase().indexOf(q)>=0)&&(ln==='ALL'||r.line===ln)&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderLayout();renderRecon()}
+function count(st,ln){return rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}).length}
+function stationCost(st,ln){return sumCost(rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}))}
+function renderKpis(){var repairCost=sumCost(rows.filter(function(r){return r.repair}));document.getElementById('kpis').innerHTML=[['In-scope WIP',rows.length,''],['WIP value',money(sumCost(rows)),'money'],['Repair value',money(repairCost),'money'],['SMTLOADING',count('SMTLOADING')+' / '+money(stationCost('SMTLOADING')),''],['AOI2',count('AOI2')+' / '+money(stationCost('AOI2')),''],['AOI4',count('AOI4')+' / '+money(stationCost('AOI4')),'']].map(function(x){return'<div class="kpi '+(x[2]||'')+'"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>'}).join('')}
+function renderRecon(){var parts=TARGET.map(function(st){var located=count(st),expected=Number(stationTotals[st]||0),ok=located===expected;return'<span><b>'+st+':</b> <b class="'+(ok?'ok':'warn')+'">'+located.toLocaleString()+' / '+expected.toLocaleString()+'</b> · <b class="warn">'+money(stationCost(st))+'</b></span>'});var total=Number(scopeState.totalUnits||snapshotRows.length||0);document.getElementById('recon').innerHTML='<span><b>SN reconciliation:</b> '+snapshotRows.length.toLocaleString()+' / '+total.toLocaleString()+'</span>'+parts.join('<span>·</span>')+'<span><b>Scope:</b> '+esc(scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters')+' · '+esc(source||'N/D')+'</span>'}
+function renderLayout(){var known=['L12','L13','L14','L15','L16','L17','L18'],extra=Array.from(new Set(rows.map(function(r){return r.line}).filter(function(x){return known.indexOf(x)<0}))).sort();document.getElementById('layout').innerHTML=known.concat(extra).map(function(ln){var cards=TARGET.map(function(st){var n=count(st,ln),c=stationCost(st,ln),key=ln+'|'+st;return'<button class="station '+(selected===key?'active':'')+'" data-key="'+esc(key)+'"><span>'+st+'</span><b>'+n.toLocaleString()+'</b><span>serials</span><em>'+money(c)+'</em></button>'}).join('');return'<div class="line"><h3>'+(ln.indexOf('L')===0?'SMT LINE '+ln.slice(1):esc(ln))+'</h3><div class="stations">'+cards+'</div></div>'}).join('');[].slice.call(document.querySelectorAll('[data-key]')).forEach(function(b){b.onclick=function(){var x=this.getAttribute('data-key').split('|');selected=this.getAttribute('data-key');document.getElementById('line').value=x[0];document.getElementById('station').value=x[1];apply()}})}
+function renderTable(){var tb=document.getElementById('tbody');if(!filtered.length){tb.innerHTML='<tr><td colspan="11" class="empty">No serials match the current filters.</td></tr>';return}tb.innerHTML=filtered.slice(0,5000).map(function(r){return'<tr><td><b>'+esc(r.sn)+'</b></td><td>'+esc(r.wo)+'</td><td>'+esc(r.sku)+'</td><td>'+esc(r.line)+'</td><td>'+esc(r.station)+'</td><td>'+esc(r.location)+'</td><td>'+esc(String(r.ageBucket||'').replace('age','').replace('_','-').replace('Over365','>365D'))+'</td><td><span class="tag '+(r.repair?'repair':'clean')+'">'+(r.repair?'REPAIR':'CLEAN')+'</span></td><td class="num moneytxt">'+money(r.unitCost||0)+'</td><td class="num moneytxt">'+money(r.cost||0)+'</td><td>'+esc(r.buildStart)+'</td></tr>'}).join('')}
+function options(){var line=document.getElementById('line'),station=document.getElementById('station'),oldLine=line.value||'ALL',oldStation=station.value||'ALL',lines=Array.from(new Set(rows.map(function(r){return r.line}))).sort();line.innerHTML='<option value="ALL">All lines</option>'+lines.map(function(x){return'<option>'+esc(x)+'</option>'}).join('');station.innerHTML='<option value="ALL">All stations</option>'+TARGET.map(function(x){return'<option>'+x+'</option>'}).join('');if(lines.indexOf(oldLine)>=0)line.value=oldLine;if(TARGET.indexOf(oldStation)>=0)station.value=oldStation}
+function receive(payload){payloadState=payload||{};lastResponse=Date.now();if(!scopeInitialized){scopeMode=payloadState.defaultScope||'FULL';document.getElementById('scope').value=scopeMode;scopeInitialized=true}loadScope(document.getElementById('scope').value)}
+function exportTsv(){var h=['SN','WO','SKU','ProductFamily','Line','CurrentStation','Location','AgingBucket','Repair','UnitCost','Cost','CostSource','BuildStartDate'],body=[h.join('\t')].concat(filtered.map(function(r){return[r.sn,r.wo,r.sku,r.family,r.line,r.station,r.location,r.ageBucket,r.repair?'YES':'NO',r.unitCost||0,r.cost||0,r.costSource||'',r.buildStart].join('\t')})).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/tab-separated-values'}));a.download='SMTinel_Bonepile_'+scopeMode+'_'+new Date().toISOString().slice(0,10)+'.tsv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
+function baselineKey(){return'smtinel:bonepile:shift-baseline:'+scopeMode}
+function getBaseline(){try{return JSON.parse(localStorage.getItem(baselineKey())||'null')}catch(_){return null}}
+function updateBaselineButton(){var b=getBaseline(),el=document.getElementById('baseline');el.textContent=b&&b.capturedAt?'Shift Start: '+new Date(b.capturedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'Capture Shift Start'}
+function captureBaseline(){var minimal=snapshotRows.map(function(r){return{sn:r.sn,station:r.station,line:r.line,family:r.family,sku:r.sku,wo:r.wo}}),value={capturedAt:new Date().toISOString(),scope:scopeMode,rows:minimal};try{localStorage.setItem(baselineKey(),JSON.stringify(value));updateBaselineButton();document.getElementById('recon').innerHTML='<span class="ok"><b>Shift baseline captured:</b> '+minimal.length.toLocaleString()+' serials at '+new Date(value.capturedAt).toLocaleString()+'</span>'}catch(e){showError('Unable to save shift baseline: '+String(e&&e.message||e))}}
+function currentSnapshot(){var ln=document.getElementById('line').value;return snapshotRows.filter(function(r){return ln==='ALL'||r.line===ln})}
+function movementFor(current){var base=getBaseline(),out={available:false,moved:0,entered:0,exited:0,unchanged:0,capturedAt:''};if(!base||!Array.isArray(base.rows))return out;var ln=document.getElementById('line').value,bm={},cm={};base.rows.filter(function(r){return ln==='ALL'||r.line===ln}).forEach(function(r){if(r&&r.sn)bm[r.sn]=r});current.forEach(function(r){if(r&&r.sn)cm[r.sn]=r});Object.keys(cm).forEach(function(sn){if(!bm[sn])out.entered++;else if(String(bm[sn].station)!==String(cm[sn].station))out.moved++;else out.unchanged++});Object.keys(bm).forEach(function(sn){if(!cm[sn])out.exited++});out.available=true;out.capturedAt=base.capturedAt||'';return out}
+function summarizeStations(list){var map={};list.forEach(function(r){var k=r.station||'UNMAPPED';if(!map[k])map[k]={station:k,units:0,repair:0,cost:0};map[k].units++;map[k].repair+=r.repair?1:0;map[k].cost+=Number(r.cost||0)});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return b.units-a.units})}
+function summarizeLines(list){var map={};list.forEach(function(r){var k=[r.line||'UNASSIGNED',r.family||'N/D',r.sku||'N/D'].join('|');if(!map[k])map[k]={line:r.line||'UNASSIGNED',family:r.family||'N/D',sku:r.sku||'N/D',units:0,repair:0,cost:0,wos:{},stations:{}};var g=map[k];g.units++;g.repair+=r.repair?1:0;g.cost+=Number(r.cost||0);if(r.wo)g.wos[r.wo]=1;g.stations[r.station]=(g.stations[r.station]||0)+1});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return String(a.line).localeCompare(String(b.line),undefined,{numeric:true})||b.units-a.units})}
+function emailHtml(){var current=currentSnapshot(),move=movementFor(current),stations=summarizeStations(current),lines=summarizeLines(current),cut=new Date(),scopeLabel=scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters',notes=document.getElementById('shiftNotes').value.trim(),totalCost=current.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=current.filter(function(r){return r.repair}).length,top=stations[0]||{station:'N/D',units:0};var td='padding:7px 9px;border:1px solid #d9e6f7;vertical-align:top;',th=td+'background:#eaf2ff;text-align:left;color:#102a43;',metric='padding:10px;border:1px solid #d9e6f7;background:#fff;';var stationRows=stations.map(function(s){return'<tr><td style="'+td+'"><b>'+esc(s.station)+'</b></td><td style="'+td+'text-align:right">'+s.units.toLocaleString()+'</td><td style="'+td+'text-align:right">'+s.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(s.cost)+'</td><td style="'+td+'text-align:right">'+(current.length?(s.units/current.length*100).toFixed(1):'0.0')+'%</td></tr>'}).join('');var lineRows=lines.map(function(g){var status=Object.keys(g.stations).sort(function(a,b){return g.stations[b]-g.stations[a]}).map(function(st){return st+': '+g.stations[st].toLocaleString()}).join(' · ');return'<tr><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'">'+esc(g.family)+'</td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+esc(Object.keys(g.wos).sort().join(', '))+'</td><td style="'+td+'text-align:right">'+g.units.toLocaleString()+'</td><td style="'+td+'">'+esc(status)+'</td><td style="'+td+'text-align:right">'+g.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(g.cost)+'</td></tr>'}).join('');var processed=move.available?move.moved.toLocaleString():'N/D',baseline=move.available?new Date(move.capturedAt).toLocaleString():'Not captured — current snapshot only';return'<div style="font-family:Arial,Segoe UI,sans-serif;color:#102a43;max-width:1100px"><div style="border-left:5px solid #2f6fb3;padding:14px 16px;background:#f8fbff;border-radius:10px"><div style="font-size:11px;font-weight:bold;letter-spacing:.1em;color:#2f6fb3">SMTINEL END-OF-SHIFT WIP STATUS</div><h2 style="margin:5px 0">Station Handoff Report</h2><div style="font-size:12px;color:#627d98">Cut-off: '+esc(cut.toLocaleString())+' · Scope: '+esc(scopeLabel)+' · Line: '+esc(document.getElementById('line').value)+'</div><div style="font-size:12px;color:#627d98">Shift baseline: '+esc(baseline)+'</div></div><table style="border-collapse:collapse;width:100%;margin-top:12px"><tr><td style="'+metric+'"><small>CURRENT SCOPE</small><br><b style="font-size:24px">'+current.length.toLocaleString()+'</b></td><td style="'+metric+'"><small>PROCESSED / MOVED</small><br><b style="font-size:24px">'+processed+'</b></td><td style="'+metric+'"><small>ENTERED / EXITED</small><br><b style="font-size:24px">'+(move.available?(move.entered+' / '+move.exited):'N/D')+'</b></td><td style="'+metric+'"><small>REPAIR UNITS</small><br><b style="font-size:24px">'+repair.toLocaleString()+'</b></td><td style="'+metric+'"><small>WIP VALUE</small><br><b style="font-size:24px;color:#b87820">'+money(totalCost)+'</b></td></tr></table><p style="font-size:13px"><b>Handoff focus:</b> The largest current queue is '+esc(top.station)+' with '+top.units.toLocaleString()+' units. '+(move.available?move.moved.toLocaleString()+' serials changed station since shift start.':'Capture Shift Start at the beginning of the next shift to calculate movement accurately.')+'</p>'+(notes?'<div style="padding:10px 12px;background:#fff7e8;border:1px solid #f5d6a6;border-radius:8px"><b>Shift status / notes:</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'<h3>Current Station Status</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Station</th><th style="'+th+'">Units</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th><th style="'+th+'">Share</th></tr></thead><tbody>'+stationRows+'</tbody></table><h3>Line / Model Handoff</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Units</th><th style="'+th+'">Status by station</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th></tr></thead><tbody>'+lineRows+'</tbody></table><p style="font-size:10px;color:#627d98">Source: SMTinel current SFC station snapshot. Processed/moved is calculated only when a shift-start baseline exists; it is not inferred from the ending snapshot.</p></div>'}
+function refreshEmail(){document.getElementById('emailPreview').innerHTML=emailHtml()}
+function openEmail(){var d=new Date(),line=document.getElementById('line').value;document.getElementById('emailSubject').value='SMTinel End-of-Shift WIP Status - '+(line==='ALL'?'All Lines':line)+' - '+d.toISOString().slice(0,10);refreshEmail();document.getElementById('emailModal').classList.add('open')}
+function closeEmail(){document.getElementById('emailModal').classList.remove('open')}
+function copyText(text){if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();return Promise.resolve()}
+function fallbackCopyHtml(html){var div=document.createElement('div');div.contentEditable='true';div.style.position='fixed';div.style.left='-9999px';div.innerHTML=html;document.body.appendChild(div);var range=document.createRange();range.selectNodeContents(div);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand('copy');sel.removeAllRanges();div.remove()}
+function copyHtml(){var html=emailHtml(),plain=document.getElementById('emailPreview').innerText;if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]).catch(function(){fallbackCopyHtml(html)})}else fallbackCopyHtml(html)}
+function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body>'+emailHtml()+'</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
+window.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});
+['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';apply()})});document.getElementById('scope').onchange=function(){loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;document.getElementById('shiftEmail').onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadEmail').onclick=downloadEmail;
+renderKpis();renderLayout();requestData();setInterval(function(){if(document.visibilityState==='visible')requestData()},30000)
+})();
+${'</scr'+'ipt>'}
+</body>
+</html>`;
 
     function renderBonepileSection() {
         return React.createElement("section", { id: "bonepile-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
@@ -60326,7 +60478,7 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
 <script id="smtinel-v13-14-11-build-finalizer">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.25 - Board Export Data Quality Fix - 2026-07-28';
+  var VERSION='SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
