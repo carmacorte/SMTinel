@@ -2942,7 +2942,7 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
 <script id="smtinel-daily-email-export-script-v13-14-11">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29';
+  var VERSION='SMTinel V13.14.35 - Paired Line Layout Mapping - 2026-07-30';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -3821,7 +3821,7 @@ async function signUp(email, password){
   "use strict";
   if(window.__SMTINEL_BOARD_EXPORT_V96__) return;
   window.__SMTINEL_BOARD_EXPORT_V96__=true;
-  var BUILD_LABEL="SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29";
+  var BUILD_LABEL="SMTinel V13.14.35 - Paired Line Layout Mapping - 2026-07-30";
   var scheduled=false;
   function setIfDifferent(node,name,value){
     if(node.getAttribute(name)!==value) node.setAttribute(name,value);
@@ -10672,8 +10672,8 @@ var TRACEOPS_YIELD_FLOW_STATIONS = ["SMTLOADING", "AOI2", "AOI4", "AOI", "ICT", 
 var TRACEOPS_YIELD_STATION_BLOCKS = { STOCKIN: "SFC current event", PCBASSY: "Cesium after Stockin", PCBP2: "Cesium after Stockin", PCB2C: "Cesium after Stockin", PCBFT: "Cesium after Stockin" };
 var TRACEOPS_YIELD_STATION_SEQUENCE = [
     { no: "001", station: "SMTLOADING" }, { no: "002", station: "PASTE" }, { no: "003", station: "AOI" }, { no: "004", station: "AOI2" }, { no: "005", station: "AOI4" },
-    { no: "006", station: "XRAY" }, { no: "007", station: "FIVE_DX" }, { no: "008", station: "5DX" }, { no: "009", station: "VI" }, { no: "010", station: "VI2" },
-    { no: "011", station: "ROUTER" }, { no: "012", station: "AUTOPF" }, { no: "013", station: "ICT" }, { no: "014", station: "PICT" }, { no: "015", station: "PCBBS" },
+    { no: "006", station: "XRAY" }, { no: "007", station: "FIVE_DX" }, { no: "009", station: "VI" }, { no: "010", station: "ROUTER" },
+    { no: "011", station: "VI2" }, { no: "012", station: "AUTOPF" }, { no: "013", station: "ICT" }, { no: "014", station: "PICT" }, { no: "015", station: "PCBBS" },
     { no: "016", station: "PWVALIDATE" }, { no: "017", station: "STOCKIN" }, { no: "018", station: "JOBFINISH" }, { no: "019", station: "QUACK" }, { no: "020", station: "EPCBDL" },
     { no: "021", station: "PCBDL" }, { no: "022", station: "PCBDG" }, { no: "023", station: "PCBBS_2" }, { no: "024", station: "PCBASSY" }, { no: "025", station: "PCBLED" },
     { no: "026", station: "PCBP2" }, { no: "027", station: "PCB2C" }, { no: "028", station: "ASSOC" }, { no: "029", station: "OPCB2C" }, { no: "030", station: "PCBST" },
@@ -13019,7 +13019,8 @@ function traceOpsYieldNormalizeSequenceStation(value) {
         "PCBBRIDGE": "PCBBS",
         "O-PCB2C": "OPCB2C",
         "5DXPREP": "FIVE_DX",
-        "5DXPROCESS": "5DX",
+        "5DX": "FIVE_DX",
+        "5DXPROCESS": "FIVE_DX",
         "SYSTEMASSY": "SYSASSY",
         "SYSTEMVF": "SYSVF",
         "SYSTEMFT": "SYSFT",
@@ -36742,6 +36743,46 @@ body:has(#recovery-section) .main-content.expanded{
             var stationSummary = [];
             var lineGroups = Object.create(null);
             var seenSn = Object.create(null);
+            var repairEvidenceRows = [];
+            var repairEvidenceSeen = Object.create(null);
+
+            function collectRepairEvidence(sn, context) {
+                var store = window.TRACEOPS_YIELD_REPAIRS_BY_SN || {};
+                var repairList = store[sn] || store[String(sn || '').toUpperCase()] || [];
+                (repairList || []).forEach(function(rep) {
+                    rep = rep || {};
+                    var refdes = String(traceOpsBonepilePick(rep, ['refdes','failLocation','location','repairRef']) || 'N/D').trim() || 'N/D';
+                    var failureMode = String(traceOpsBonepilePick(rep, ['failureMode','rootCause','symptom','repairSymptom','mode']) || 'N/D').trim() || 'N/D';
+                    var componentPn = String(traceOpsBonepilePick(rep, ['componentPn','partNumber','componentCode']) || 'N/D').trim() || 'N/D';
+                    if (refdes === 'N/D' && failureMode === 'N/D') return;
+                    var evidenceKey = [
+                        String(sn || '').toUpperCase(),
+                        refdes.toUpperCase(),
+                        failureMode.toUpperCase(),
+                        componentPn.toUpperCase()
+                    ].join('|');
+                    if (repairEvidenceSeen[evidenceKey]) return;
+                    repairEvidenceSeen[evidenceKey] = true;
+                    context = context || {};
+                    repairEvidenceRows.push({
+                        sn: sn,
+                        line: context.line || '',
+                        family: context.family || '',
+                        sku: context.sku || '',
+                        wo: context.wo || '',
+                        currentStation: context.station || '',
+                        repairStation: String(rep.station || rep.detectionStation || ''),
+                        refdes: refdes,
+                        failureMode: failureMode,
+                        componentPn: componentPn,
+                        componentType: String(rep.componentType || ''),
+                        componentDescription: String(rep.componentDescription || ''),
+                        side: String(rep.side || ''),
+                        week: String(rep.week || '')
+                    });
+                });
+                return repairList || [];
+            }
 
             stationRows.forEach(function(st) {
                 var station = traceOpsYieldNormalizeSequenceStation(st && st.station || '');
@@ -36786,9 +36827,12 @@ body:has(#recovery-section) .main-content.expanded{
                         cost: unitCost,
                         costSource: costInfo.source || 'missing'
                     };
+                    var linkedRepairs = collectRepairEvidence(sn, baseRow);
+                    baseRow.repair = baseRow.repair || linkedRepairs.length > 0;
                     snapshotRows.push({
                         sn: sn, wo: wo, sku: sku, family: family, line: line,
-                        station: station, repair: !!serialRow.hasRepair, cost: unitCost
+                        station: station, repair: baseRow.repair, cost: unitCost,
+                        costSource: costInfo.source || 'missing'
                     });
                     if (target.indexOf(station) >= 0) rows.push(baseRow);
                     var groupKey = [line, family || 'N/D', sku || 'N/D'].join('|');
@@ -36807,6 +36851,77 @@ body:has(#recovery-section) .main-content.expanded{
                     if (wo) group.woMap[wo] = true;
                 });
             });
+            var unmappedSummary = {
+                station: 'UNMAPPED / REVIEW',
+                units: 0,
+                clean: 0,
+                repair: 0,
+                cost: 0,
+                repairCost: 0,
+                flowPct: 0
+            };
+            Object.keys(sfcMap || {}).forEach(function(snKey) {
+                var sfc = sfcMap[snKey] || {};
+                var sn = traceOpsYieldCleanSn(sfc.sn || sfc.sfcSn || snKey || '');
+                if (!sn || seenSn[sn]) return;
+                seenSn[sn] = true;
+                var directSnLine = lineBySn[sn] || lineBySn[String(sn).toUpperCase()] || '';
+                if (directSnLine && typeof directSnLine === 'object') directSnLine = directSnLine.line || directSnLine.Line || '';
+                var wo = String(sfc.wo || '').trim();
+                var line = traceOpsBonepileNormLine(sfc.line || directSnLine || woLine[traceOpsBonepileNormWo(wo)] || '');
+                var sku = String(sfc.sku || '').trim();
+                var family = String(sfc.family || sfc.model || '').trim();
+                var rawStation = String(sfc.event || sfc.currentEvent || sfc.station || 'N/D').trim();
+                var repairStore = window.TRACEOPS_YIELD_REPAIRS_BY_SN || {};
+                var repairs = repairStore[sn] || repairStore[String(sn).toUpperCase()] || [];
+                var hasRepair = !!(repairs && repairs.length);
+                var costInfo = traceOpsYieldUnitCostForContext(Object.assign({}, sfc, { sn: sn, wo: wo, sku: sku, family: family }));
+                var unitCost = Number(costInfo.cost || 0);
+                snapshotRows.push({
+                    sn: sn,
+                    wo: wo,
+                    sku: sku,
+                    family: family,
+                    line: line,
+                    station: 'UNMAPPED / REVIEW',
+                    rawStation: rawStation,
+                    repair: hasRepair,
+                    cost: unitCost,
+                    costSource: costInfo.source || 'missing'
+                });
+                collectRepairEvidence(sn, {
+                    sn: sn,
+                    wo: wo,
+                    sku: sku,
+                    family: family,
+                    line: line,
+                    station: 'UNMAPPED / REVIEW'
+                });
+                unmappedSummary.units += 1;
+                unmappedSummary.repair += hasRepair ? 1 : 0;
+                unmappedSummary.clean += hasRepair ? 0 : 1;
+                unmappedSummary.cost += unitCost;
+                unmappedSummary.repairCost += hasRepair ? unitCost : 0;
+                var groupKey = [line, family || 'N/D', sku || 'N/D'].join('|');
+                if (!lineGroups[groupKey]) {
+                    lineGroups[groupKey] = {
+                        line: line, family: family || 'N/D', sku: sku || 'N/D',
+                        units: 0, repair: 0, cost: 0, woMap: Object.create(null),
+                        stations: Object.create(null)
+                    };
+                }
+                var group = lineGroups[groupKey];
+                group.units += 1;
+                group.repair += hasRepair ? 1 : 0;
+                group.cost += unitCost;
+                group.stations['UNMAPPED / REVIEW'] = (group.stations['UNMAPPED / REVIEW'] || 0) + 1;
+                if (wo) group.woMap[wo] = true;
+            });
+            if (unmappedSummary.units > 0) {
+                unmappedSummary.flowPct = Number(breakdown.totalUnits || 0) ?
+                    (unmappedSummary.units / Number(breakdown.totalUnits || 1) * 100) : 0;
+                stationSummary.push(unmappedSummary);
+            }
             var lineSummary = Object.keys(lineGroups).map(function(key) {
                 var group = lineGroups[key];
                 return {
@@ -36832,6 +36947,8 @@ body:has(#recovery-section) .main-content.expanded{
                 totalUnits: Number(breakdown.totalUnits || snapshotRows.length || 0),
                 stationSummary: stationSummary,
                 lineSummary: lineSummary,
+                repairRows: repairEvidenceRows,
+                unmappedUnits: unmappedSummary.units,
                 source: sourceName
             };
         }
@@ -36846,6 +36963,7 @@ body:has(#recovery-section) .main-content.expanded{
             stationSummary: fullScope.stationSummary,
             lineSummary: fullScope.lineSummary,
             snapshotRows: fullScope.snapshotRows,
+            repairRows: fullScope.repairRows,
             scopes: { FULL: fullScope, ACTIVE: activeScope },
             defaultScope: 'FULL',
             activeFilters: window.TRACEOPS_YIELD_ACTIVE_FILTERS || {},
@@ -36932,20 +37050,39 @@ body:has(#recovery-section) .main-content.expanded{
 <script>
 (function(){
 'use strict';
-var payloadState={},scopeState={},rows=[],snapshotRows=[],filtered=[],selected='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},source='',scopeMode='FULL';
+var payloadState={},scopeState={},rows=[],snapshotRows=[],repairRows=[],filtered=[],selected='',selectedLayoutLine='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},source='',scopeMode='FULL';
 var TARGET=['SMTLOADING','AOI2','AOI4'],requestCounter=0,lastResponse=0,scopeInitialized=false;
+var LINE_STATION_LAYOUT={
+  L12:['SMTLOADING','AOI2','AOI4'],
+  L13:['SMTLOADING','AOI2'],
+  L15:['SMTLOADING','AOI2'],
+  L17:['SMTLOADING','AOI2'],
+  L14:['AOI4'],
+  L16:['AOI4'],
+  L18:['AOI4']
+};
+function stationsForLine(line){return(LINE_STATION_LAYOUT[line]||TARGET).slice()}
+var BOTTOM_LINE_BY_TOP={L14:'L13',L16:'L15',L18:'L17'};
+var TOP_LINE_BY_BOTTOM={L13:'L14',L15:'L16',L17:'L18'};
+function layoutLineForRow(r){var line=String(r&&r.line||'').toUpperCase(),station=String(r&&r.station||'').toUpperCase();if((station==='SMTLOADING'||station==='AOI2')&&BOTTOM_LINE_BY_TOP[line])return BOTTOM_LINE_BY_TOP[line];if(station==='AOI4'&&TOP_LINE_BY_BOTTOM[line])return TOP_LINE_BY_BOTTOM[line];return line}
+var SFC_STATION_SEQUENCE=['SMTLOADING','PASTE','AOI','AOI2','AOI4','XRAY','FIVE_DX','VI','ROUTER','VI2','AUTOPF','ICT','PICT','PCBBS','PWVALIDATE','STOCKIN','JOBFINISH','QUACK','EPCBDL','PCBDL','PCBDG','PCBBS_2','PCBASSY','PCBLED','PCBP2','PCB2C','ASSOC','OPCB2C','PCBST','SYSASSY','PCBINT','SYSVF','SYSFT','HIPOT','PCBHIPOT','PCBPM','PCBPM3','PCBFT','PCBFT*','SYSDL*','SYSDL','START','REPAIRED','REWORK','REWORK_2','REWORK_3','REWORK_4','MRB','LABELSCRAP','SCRAP','IPCB2SCRP','PCB2SCRP','PCBSCRP','ASSYPM01','EASSOC','GBUTD'];
+var SFC_STATION_ORDER={};SFC_STATION_SEQUENCE.forEach(function(st,i){SFC_STATION_ORDER[st]=i});
+function canonicalSfcStation(value){var st=String(value||'').trim().toUpperCase();return st==='5DX'?'FIVE_DX':st}
+function compareSfcStations(a,b){var ak=canonicalSfcStation(a&&a.station||a),bk=canonicalSfcStation(b&&b.station||b),ai=Object.prototype.hasOwnProperty.call(SFC_STATION_ORDER,ak)?SFC_STATION_ORDER[ak]:9999,bi=Object.prototype.hasOwnProperty.call(SFC_STATION_ORDER,bk)?SFC_STATION_ORDER[bk]:9999;return ai-bi||ak.localeCompare(bk)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function money(v){var n=Number(v||0);if(!isFinite(n))n=0;return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0})}
 function sumCost(list){return(list||[]).reduce(function(a,r){return a+Number(r&&r.cost||0)},0)}
 function requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow...</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}var requestedAt=Date.now();setTimeout(function(){if(lastResponse<requestedAt)document.getElementById('recon').innerHTML='<span class="warn"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}
 function showError(message){document.getElementById('recon').innerHTML='<span class="bad"><b>Bonepile data error:</b> '+esc(message)+'</span>'}
-function loadScope(mode){scopeMode=mode==='ACTIVE'?'ACTIVE':'FULL';scopeState=(payloadState.scopes&&payloadState.scopes[scopeMode])||payloadState||{};rows=Array.isArray(scopeState.rows)?scopeState.rows:[];snapshotRows=Array.isArray(scopeState.snapshotRows)?scopeState.snapshotRows:[];stationTotals=scopeState.totals||{SMTLOADING:0,AOI2:0,AOI4:0};source=scopeState.source||payloadState.source||'';options();apply();updateBaselineButton()}
-function apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){return(!q||(r.sn+' '+r.wo+' '+r.sku+' '+r.family).toUpperCase().indexOf(q)>=0)&&(ln==='ALL'||r.line===ln)&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderLayout();renderRecon()}
+function loadScope(mode){scopeMode=mode==='ACTIVE'?'ACTIVE':'FULL';scopeState=(payloadState.scopes&&payloadState.scopes[scopeMode])||payloadState||{};rows=(Array.isArray(scopeState.rows)?scopeState.rows:[]).map(function(r){return Object.assign({},r,{station:canonicalSfcStation(r&&r.station)})});snapshotRows=(Array.isArray(scopeState.snapshotRows)?scopeState.snapshotRows:[]).map(function(r){return Object.assign({},r,{station:canonicalSfcStation(r&&r.station)})});repairRows=(Array.isArray(scopeState.repairRows)?scopeState.repairRows:[]).map(function(r){return Object.assign({},r,{currentStation:canonicalSfcStation(r&&r.currentStation)})});stationTotals=scopeState.totals||{SMTLOADING:0,AOI2:0,AOI4:0};source=scopeState.source||payloadState.source||'';selected='';selectedLayoutLine='';options();apply();updateBaselineButton()}
+function apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){var lineOk=selectedLayoutLine?layoutLineForRow(r)===selectedLayoutLine:(ln==='ALL'||r.line===ln);return(!q||(r.sn+' '+r.wo+' '+r.sku+' '+r.family).toUpperCase().indexOf(q)>=0)&&lineOk&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderLayout();renderRecon()}
 function count(st,ln){return rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}).length}
 function stationCost(st,ln){return sumCost(rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}))}
+function layoutCount(st,ln){return rows.filter(function(r){return r.station===st&&layoutLineForRow(r)===ln}).length}
+function layoutStationCost(st,ln){return sumCost(rows.filter(function(r){return r.station===st&&layoutLineForRow(r)===ln}))}
 function renderKpis(){var repairCost=sumCost(rows.filter(function(r){return r.repair}));document.getElementById('kpis').innerHTML=[['In-scope WIP',rows.length,''],['WIP value',money(sumCost(rows)),'money'],['Repair value',money(repairCost),'money'],['SMTLOADING',count('SMTLOADING')+' / '+money(stationCost('SMTLOADING')),''],['AOI2',count('AOI2')+' / '+money(stationCost('AOI2')),''],['AOI4',count('AOI4')+' / '+money(stationCost('AOI4')),'']].map(function(x){return'<div class="kpi '+(x[2]||'')+'"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>'}).join('')}
 function renderRecon(){var parts=TARGET.map(function(st){var located=count(st),expected=Number(stationTotals[st]||0),ok=located===expected;return'<span><b>'+st+':</b> <b class="'+(ok?'ok':'warn')+'">'+located.toLocaleString()+' / '+expected.toLocaleString()+'</b> · <b class="warn">'+money(stationCost(st))+'</b></span>'});var total=Number(scopeState.totalUnits||snapshotRows.length||0);document.getElementById('recon').innerHTML='<span><b>SN reconciliation:</b> '+snapshotRows.length.toLocaleString()+' / '+total.toLocaleString()+'</span>'+parts.join('<span>·</span>')+'<span><b>Scope:</b> '+esc(scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters')+' · '+esc(source||'N/D')+'</span>'}
-function renderLayout(){var known=['L12','L13','L14','L15','L16','L17','L18'],extra=Array.from(new Set(rows.map(function(r){return r.line}).filter(function(x){return known.indexOf(x)<0}))).sort();document.getElementById('layout').innerHTML=known.concat(extra).map(function(ln){var cards=TARGET.map(function(st){var n=count(st,ln),c=stationCost(st,ln),key=ln+'|'+st;return'<button class="station '+(selected===key?'active':'')+'" data-key="'+esc(key)+'"><span>'+st+'</span><b>'+n.toLocaleString()+'</b><span>serials</span><em>'+money(c)+'</em></button>'}).join('');return'<div class="line"><h3>'+(ln.indexOf('L')===0?'SMT LINE '+ln.slice(1):esc(ln))+'</h3><div class="stations">'+cards+'</div></div>'}).join('');[].slice.call(document.querySelectorAll('[data-key]')).forEach(function(b){b.onclick=function(){var x=this.getAttribute('data-key').split('|');selected=this.getAttribute('data-key');document.getElementById('line').value=x[0];document.getElementById('station').value=x[1];apply()}})}
+function renderLayout(){var known=['L12','L13','L14','L15','L16','L17','L18'],extra=Array.from(new Set(rows.map(function(r){return r.line}).filter(function(x){return known.indexOf(x)<0}))).sort();document.getElementById('layout').innerHTML=known.concat(extra).map(function(ln){var allowed=stationsForLine(ln),cards=allowed.map(function(st){var n=layoutCount(st,ln),c=layoutStationCost(st,ln),key=ln+'|'+st;return'<button class="station '+(selected===key?'active':'')+'" data-key="'+esc(key)+'"><span>'+st+'</span><b>'+n.toLocaleString()+'</b><span>serials</span><em>'+money(c)+'</em></button>'}).join('');return'<div class="line"><h3>'+(ln.indexOf('L')===0?'SMT LINE '+ln.slice(1):esc(ln))+'</h3><div class="stations" style="grid-template-columns:repeat('+allowed.length+',minmax(0,1fr))">'+cards+'</div></div>'}).join('');[].slice.call(document.querySelectorAll('[data-key]')).forEach(function(b){b.onclick=function(){var x=this.getAttribute('data-key').split('|');selected=this.getAttribute('data-key');selectedLayoutLine=x[0];document.getElementById('line').value=x[0];document.getElementById('station').value=x[1];apply()}})}
 function renderTable(){var tb=document.getElementById('tbody');if(!filtered.length){tb.innerHTML='<tr><td colspan="11" class="empty">No serials match the current filters.</td></tr>';return}tb.innerHTML=filtered.slice(0,5000).map(function(r){return'<tr><td><b>'+esc(r.sn)+'</b></td><td>'+esc(r.wo)+'</td><td>'+esc(r.sku)+'</td><td>'+esc(r.line)+'</td><td>'+esc(r.station)+'</td><td>'+esc(r.location)+'</td><td>'+esc(String(r.ageBucket||'').replace('age','').replace('_','-').replace('Over365','>365D'))+'</td><td><span class="tag '+(r.repair?'repair':'clean')+'">'+(r.repair?'REPAIR':'CLEAN')+'</span></td><td class="num moneytxt">'+money(r.unitCost||0)+'</td><td class="num moneytxt">'+money(r.cost||0)+'</td><td>'+esc(r.buildStart)+'</td></tr>'}).join('')}
 function options(){var line=document.getElementById('line'),station=document.getElementById('station'),oldLine=line.value||'ALL',oldStation=station.value||'ALL',lines=Array.from(new Set(rows.map(function(r){return r.line}))).sort();line.innerHTML='<option value="ALL">All lines</option>'+lines.map(function(x){return'<option>'+esc(x)+'</option>'}).join('');station.innerHTML='<option value="ALL">All stations</option>'+TARGET.map(function(x){return'<option>'+x+'</option>'}).join('');if(lines.indexOf(oldLine)>=0)line.value=oldLine;if(TARGET.indexOf(oldStation)>=0)station.value=oldStation}
 function receive(payload){payloadState=payload||{};lastResponse=Date.now();if(!scopeInitialized){scopeMode=payloadState.defaultScope||'FULL';document.getElementById('scope').value=scopeMode;scopeInitialized=true}loadScope(document.getElementById('scope').value)}
@@ -36956,9 +37093,14 @@ function updateBaselineButton(){var b=getBaseline(),el=document.getElementById('
 function captureBaseline(){var minimal=snapshotRows.map(function(r){return{sn:r.sn,station:r.station,line:r.line,family:r.family,sku:r.sku,wo:r.wo}}),value={capturedAt:new Date().toISOString(),scope:scopeMode,rows:minimal};try{localStorage.setItem(baselineKey(),JSON.stringify(value));updateBaselineButton();document.getElementById('recon').innerHTML='<span class="ok"><b>Shift baseline captured:</b> '+minimal.length.toLocaleString()+' serials at '+new Date(value.capturedAt).toLocaleString()+'</span>'}catch(e){showError('Unable to save shift baseline: '+String(e&&e.message||e))}}
 function currentSnapshot(){var ln=document.getElementById('line').value;return snapshotRows.filter(function(r){return ln==='ALL'||r.line===ln})}
 function movementFor(current){var base=getBaseline(),out={available:false,moved:0,entered:0,exited:0,unchanged:0,capturedAt:''};if(!base||!Array.isArray(base.rows))return out;var ln=document.getElementById('line').value,bm={},cm={};base.rows.filter(function(r){return ln==='ALL'||r.line===ln}).forEach(function(r){if(r&&r.sn)bm[r.sn]=r});current.forEach(function(r){if(r&&r.sn)cm[r.sn]=r});Object.keys(cm).forEach(function(sn){if(!bm[sn])out.entered++;else if(String(bm[sn].station)!==String(cm[sn].station))out.moved++;else out.unchanged++});Object.keys(bm).forEach(function(sn){if(!cm[sn])out.exited++});out.available=true;out.capturedAt=base.capturedAt||'';return out}
-function summarizeStations(list){var map={};list.forEach(function(r){var k=r.station||'UNMAPPED';if(!map[k])map[k]={station:k,units:0,repair:0,cost:0};map[k].units++;map[k].repair+=r.repair?1:0;map[k].cost+=Number(r.cost||0)});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return b.units-a.units})}
+function summarizeStations(list){var map={};list.forEach(function(r){var k=r.station||'UNMAPPED';if(!map[k])map[k]={station:k,units:0,repair:0,cost:0};map[k].units++;map[k].repair+=r.repair?1:0;map[k].cost+=Number(r.cost||0)});return Object.keys(map).map(function(k){return map[k]}).sort(compareSfcStations)}
 function summarizeLines(list){var map={};list.forEach(function(r){var k=[r.line||'UNASSIGNED',r.family||'N/D',r.sku||'N/D'].join('|');if(!map[k])map[k]={line:r.line||'UNASSIGNED',family:r.family||'N/D',sku:r.sku||'N/D',units:0,repair:0,cost:0,wos:{},stations:{}};var g=map[k];g.units++;g.repair+=r.repair?1:0;g.cost+=Number(r.cost||0);if(r.wo)g.wos[r.wo]=1;g.stations[r.station]=(g.stations[r.station]||0)+1});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return String(a.line).localeCompare(String(b.line),undefined,{numeric:true})||b.units-a.units})}
-function emailHtml(){var current=currentSnapshot(),move=movementFor(current),stations=summarizeStations(current),lines=summarizeLines(current),cut=new Date(),scopeLabel=scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters',notes=document.getElementById('shiftNotes').value.trim(),totalCost=current.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=current.filter(function(r){return r.repair}).length,top=stations[0]||{station:'N/D',units:0};var td='padding:7px 9px;border:1px solid #d9e6f7;vertical-align:top;',th=td+'background:#eaf2ff;text-align:left;color:#102a43;',metric='padding:10px;border:1px solid #d9e6f7;background:#fff;';var stationRows=stations.map(function(s){return'<tr><td style="'+td+'"><b>'+esc(s.station)+'</b></td><td style="'+td+'text-align:right">'+s.units.toLocaleString()+'</td><td style="'+td+'text-align:right">'+s.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(s.cost)+'</td><td style="'+td+'text-align:right">'+(current.length?(s.units/current.length*100).toFixed(1):'0.0')+'%</td></tr>'}).join('');var lineRows=lines.map(function(g){var status=Object.keys(g.stations).sort(function(a,b){return g.stations[b]-g.stations[a]}).map(function(st){return st+': '+g.stations[st].toLocaleString()}).join(' · ');return'<tr><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'">'+esc(g.family)+'</td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+esc(Object.keys(g.wos).sort().join(', '))+'</td><td style="'+td+'text-align:right">'+g.units.toLocaleString()+'</td><td style="'+td+'">'+esc(status)+'</td><td style="'+td+'text-align:right">'+g.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(g.cost)+'</td></tr>'}).join('');var processed=move.available?move.moved.toLocaleString():'N/D',baseline=move.available?new Date(move.capturedAt).toLocaleString():'Not captured — current snapshot only';return'<div style="font-family:Arial,Segoe UI,sans-serif;color:#102a43;max-width:1100px"><div style="border-left:5px solid #2f6fb3;padding:14px 16px;background:#f8fbff;border-radius:10px"><div style="font-size:11px;font-weight:bold;letter-spacing:.1em;color:#2f6fb3">SMTINEL END-OF-SHIFT WIP STATUS</div><h2 style="margin:5px 0">Station Handoff Report</h2><div style="font-size:12px;color:#627d98">Cut-off: '+esc(cut.toLocaleString())+' · Scope: '+esc(scopeLabel)+' · Line: '+esc(document.getElementById('line').value)+'</div><div style="font-size:12px;color:#627d98">Shift baseline: '+esc(baseline)+'</div></div><table style="border-collapse:collapse;width:100%;margin-top:12px"><tr><td style="'+metric+'"><small>CURRENT SCOPE</small><br><b style="font-size:24px">'+current.length.toLocaleString()+'</b></td><td style="'+metric+'"><small>PROCESSED / MOVED</small><br><b style="font-size:24px">'+processed+'</b></td><td style="'+metric+'"><small>ENTERED / EXITED</small><br><b style="font-size:24px">'+(move.available?(move.entered+' / '+move.exited):'N/D')+'</b></td><td style="'+metric+'"><small>REPAIR UNITS</small><br><b style="font-size:24px">'+repair.toLocaleString()+'</b></td><td style="'+metric+'"><small>WIP VALUE</small><br><b style="font-size:24px;color:#b87820">'+money(totalCost)+'</b></td></tr></table><p style="font-size:13px"><b>Handoff focus:</b> The largest current queue is '+esc(top.station)+' with '+top.units.toLocaleString()+' units. '+(move.available?move.moved.toLocaleString()+' serials changed station since shift start.':'Capture Shift Start at the beginning of the next shift to calculate movement accurately.')+'</p>'+(notes?'<div style="padding:10px 12px;background:#fff7e8;border:1px solid #f5d6a6;border-radius:8px"><b>Shift status / notes:</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'<h3>Current Station Status</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Station</th><th style="'+th+'">Units</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th><th style="'+th+'">Share</th></tr></thead><tbody>'+stationRows+'</tbody></table><h3>Line / Model Handoff</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Units</th><th style="'+th+'">Status by station</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th></tr></thead><tbody>'+lineRows+'</tbody></table><p style="font-size:10px;color:#627d98">Source: SMTinel current SFC station snapshot. Processed/moved is calculated only when a shift-start baseline exists; it is not inferred from the ending snapshot.</p></div>'}
+function emailStationLabel(station){var st=canonicalSfcStation(station||'N/D');return st==='VI'?'VI1':st}
+function summarizeModelRepairs(){var ln=document.getElementById('line').value,map={};repairRows.filter(function(r){return ln==='ALL'||r.line===ln}).forEach(function(r){r=r||{};var model=String(r.family||r.sku||'N/D').trim()||'N/D',modelKey=model.toUpperCase(),sn=String(r.sn||'').trim(),refdes=String(r.refdes||'N/D').trim()||'N/D',mode=String(r.failureMode||'N/D').trim()||'N/D',refKey=refdes.toUpperCase()+'|'+mode.toUpperCase();if(!map[modelKey])map[modelKey]={model:model,sns:{},refs:{}};var g=map[modelKey];if(sn)g.sns[sn]=1;if(mode.toUpperCase()==='RETEST')return;if(!g.refs[refKey])g.refs[refKey]={refdes:refdes,mode:mode,sns:{}};if(sn)g.refs[refKey].sns[sn]=1});return Object.keys(map).map(function(k){var g=map[k];g.repairQty=Object.keys(g.sns).length;g.topRefs=Object.keys(g.refs).map(function(refKey){var ref=g.refs[refKey];ref.qty=Object.keys(ref.sns).length;return ref}).sort(function(a,b){return b.qty-a.qty||String(a.refdes).localeCompare(String(b.refdes),undefined,{numeric:true})}).slice(0,5);return g}).filter(function(g){return g.repairQty>0}).sort(function(a,b){return b.repairQty-a.repairQty||String(a.model).localeCompare(String(b.model))})}
+function modelRepairSummarySection(){var models=summarizeModelRepairs(),td='padding:8px 10px;border:1px solid #d9e6f7;vertical-align:top;',th=td+'background:#eaf2ff;text-align:left;color:#102a43;',rowsHtml=models.map(function(g){var refs=g.topRefs.map(function(ref,i){return(i+1)+'. '+ref.refdes+' — '+ref.mode+' ('+ref.qty+' SN)'}).join(' | ');return'<tr><td style="'+td+'"><b>'+esc(g.model)+'</b></td><td style="'+td+'text-align:right;white-space:nowrap"><b>'+g.repairQty.toLocaleString()+' repair</b></td><td style="'+td+'">'+esc(refs||'No non-retest RefDes available')+'</td></tr>'}).join('');if(!rowsHtml)rowsHtml='<tr><td colspan="3" style="'+td+'color:#627d98">No linked repair references were found for the current scope and line selection.</td></tr>';return'<h3 style="margin-top:18px">Top 5 Repair References by Model</h3><p style="font-size:11px;color:#627d98">Compact Pareto based on distinct affected serials. RETEST remains in repair-unit totals but is excluded from the RefDes ranking.</p><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Model</th><th style="'+th+'">Repair units</th><th style="'+th+'">Top 5 RefDes / failure mode</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'}
+function emailHtml(){var current=currentSnapshot(),move=movementFor(current),stations=summarizeStations(current),lines=summarizeLines(current),cut=new Date(),scopeLabel=scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters',notes=document.getElementById('shiftNotes').value.trim(),totalCost=current.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=current.filter(function(r){return r.repair}).length,top=stations.slice().sort(function(a,b){return b.units-a.units})[0]||{station:'N/D',units:0};var td='padding:7px 9px;border:1px solid #d9e6f7;vertical-align:top;',th=td+'background:#eaf2ff;text-align:left;color:#102a43;',metric='padding:10px;border:1px solid #d9e6f7;background:#fff;';var stationRows=stations.map(function(s){return'<tr><td style="'+td+'"><b>'+esc(emailStationLabel(s.station))+'</b></td><td style="'+td+'text-align:right">'+s.units.toLocaleString()+'</td><td style="'+td+'text-align:right">'+s.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(s.cost)+'</td><td style="'+td+'text-align:right">'+(current.length?(s.units/current.length*100).toFixed(1):'0.0')+'%</td></tr>'}).join('');var lineRows=lines.map(function(g){var status=Object.keys(g.stations).sort(compareSfcStations).map(function(st){return emailStationLabel(st)+': '+g.stations[st].toLocaleString()}).join(' | ');return'<tr><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'">'+esc(g.family)+'</td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+esc(Object.keys(g.wos).sort().join(' | '))+'</td><td style="'+td+'text-align:right">'+g.units.toLocaleString()+'</td><td style="'+td+'">'+esc(status)+'</td><td style="'+td+'text-align:right">'+g.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(g.cost)+'</td></tr>'}).join('');var processed=move.available?move.moved.toLocaleString():'N/D',baseline=move.available?new Date(move.capturedAt).toLocaleString():'Not captured — current snapshot only';return'<div style="font-family:Arial,Segoe UI,sans-serif;color:#102a43;max-width:1100px"><div style="border-left:5px solid #2f6fb3;padding:14px 16px;background:#f8fbff;border-radius:10px"><div style="font-size:11px;font-weight:bold;letter-spacing:.1em;color:#2f6fb3">SMTINEL END-OF-SHIFT WIP STATUS</div><h2 style="margin:5px 0">Station Handoff Report</h2><div style="font-size:12px;color:#627d98">Cut-off: '+esc(cut.toLocaleString())+' · Scope: '+esc(scopeLabel)+' · Line: '+esc(document.getElementById('line').value)+'</div><div style="font-size:12px;color:#627d98">Shift baseline: '+esc(baseline)+'</div></div><table style="border-collapse:collapse;width:100%;margin-top:12px"><tr><td style="'+metric+'"><small>CURRENT SCOPE</small><br><b style="font-size:24px">'+current.length.toLocaleString()+'</b></td><td style="'+metric+'"><small>PROCESSED / MOVED</small><br><b style="font-size:24px">'+processed+'</b></td><td style="'+metric+'"><small>ENTERED / EXITED</small><br><b style="font-size:24px">'+(move.available?(move.entered+' / '+move.exited):'N/D')+'</b></td><td style="'+metric+'"><small>REPAIR UNITS</small><br><b style="font-size:24px">'+repair.toLocaleString()+'</b></td><td style="'+metric+'"><small>WIP VALUE</small><br><b style="font-size:24px;color:#b87820">'+money(totalCost)+'</b></td></tr></table><p style="font-size:13px"><b>Handoff focus:</b> The largest current queue is '+esc(emailStationLabel(top.station))+' with '+top.units.toLocaleString()+' units. '+(move.available?move.moved.toLocaleString()+' serials changed station since shift start.':'Capture Shift Start at the beginning of the next shift to calculate movement accurately.')+'</p>'+(notes?'<div style="padding:10px 12px;background:#fff7e8;border:1px solid #f5d6a6;border-radius:8px"><b>Shift status / notes:</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'<h3>Current Station Status</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Station</th><th style="'+th+'">Units</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th><th style="'+th+'">Share</th></tr></thead><tbody>'+stationRows+'</tbody></table><h3>Line / Model Handoff</h3><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Units</th><th style="'+th+'">Status by station</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP Value</th></tr></thead><tbody>'+lineRows+'</tbody></table><p style="font-size:10px;color:#627d98">Source: SMTinel current SFC station snapshot plus normalized Repair Record evidence used by Board Impact. Stations follow the configured SFC sequence; stations with zero units are omitted. Processed/moved is calculated only when a shift-start baseline exists; it is not inferred from the ending snapshot.</p></div>'}
+var baseEmailHtml=emailHtml;
+emailHtml=function(){var html=baseEmailHtml(),current=currentSnapshot(),unmapped=current.filter(function(r){return r.station==='UNMAPPED / REVIEW'}).length,missingCost=current.filter(function(r){return Number(r.cost||0)<=0}).length,alerts='';if(unmapped)alerts+='<div style="margin:12px 0;padding:10px 12px;background:#fff0ee;border:1px solid #f1b5ae;border-radius:8px;color:#a43b2e"><b>Station mapping review:</b> '+unmapped.toLocaleString()+' serials have an SFC event outside the configured station sequence. They are retained as UNMAPPED / REVIEW and are not excluded from the total.</div>';if(missingCost)alerts+='<div style="margin:12px 0;padding:10px 12px;background:#fff7e8;border:1px solid #f5d6a6;border-radius:8px;color:#8a5a00"><b>Cost mapping review:</b> '+missingCost.toLocaleString()+' serials have no matched SKU cost in the current Common DB.</div>';html=html.replace('<p style="font-size:10px;color:#627d98">Source:',modelRepairSummarySection()+'<p style="font-size:10px;color:#627d98">Source:');html=html.replace(/>\$0<\/td>/g,'>Value not assigned yet</td>').replace(/>\$0<\/b>/g,'>Value not assigned yet</b>');return html.replace('<h3>Current Station Status</h3>',alerts+'<h3>Current Station Status</h3>')};
 function refreshEmail(){document.getElementById('emailPreview').innerHTML=emailHtml()}
 function openEmail(){var d=new Date(),line=document.getElementById('line').value;document.getElementById('emailSubject').value='SMTinel End-of-Shift WIP Status - '+(line==='ALL'?'All Lines':line)+' - '+d.toISOString().slice(0,10);refreshEmail();document.getElementById('emailModal').classList.add('open')}
 function closeEmail(){document.getElementById('emailModal').classList.remove('open')}
@@ -36967,7 +37109,7 @@ function fallbackCopyHtml(html){var div=document.createElement('div');div.conten
 function copyHtml(){var html=emailHtml(),plain=document.getElementById('emailPreview').innerText;if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]).catch(function(){fallbackCopyHtml(html)})}else fallbackCopyHtml(html)}
 function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body>'+emailHtml()+'</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
 window.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});
-['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';apply()})});document.getElementById('scope').onchange=function(){loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;document.getElementById('shiftEmail').onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadEmail').onclick=downloadEmail;
+['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';selectedLayoutLine='';apply()})});document.getElementById('scope').onchange=function(){selected='';selectedLayoutLine='';loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;document.getElementById('shiftEmail').onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadEmail').onclick=downloadEmail;
 renderKpis();renderLayout();requestData();setInterval(function(){if(document.visibilityState==='visible')requestData()},30000)
 })();
 ${'</scr'+'ipt>'}
@@ -37198,7 +37340,7 @@ ${'</scr'+'ipt>'}
                 React.createElement("div", { className: "sidebar-section-title" }, "Cuenta y sincronizacion RCCA"),
                 React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
                     React.createElement("div", { style: { fontSize: 10, lineHeight: 1.5, color: "rgba(255,255,255,.62)" } }, window.SMTinelCloud && window.SMTinelCloud.isConfigured() ? "Inicia sesion para ver en PC y celular las RCCA manuales con la misma cuenta." : "Modo local activo. Agrega TRACEOPS_SUPABASE para sincronizar entre dispositivos."),
-                    React.createElement("div", { style: { fontSize: 10, lineHeight: 1.4, color: syncBusy ? "#CDE7C5" : "rgba(255,255,255,.5)", padding: "8px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, background: "rgba(255,255,255,.03)" } }, authUser && authUser.email ? ("Sesión: " + authUser.email + " · " + cloudStatus) : (!authReady ? "Inicializando nube..." : cloudStatus)),
+                    React.createElement("div", { style: { fontSize: 10, lineHeight: 1.4, color: syncBusy ? "#CDE7C5" : "rgba(255,255,255,.5)", padding: "8px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, background: "rgba(255,255,255,.03)" } }, authUser ? ("Sesión: " + (authUser.email || authUser.phone || "Cloud user") + " · " + cloudStatus) : (!authReady ? "Inicializando nube..." : cloudStatus)),
                     React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 10, fontWeight: 700, color: realtimeUi.color, background: realtimeUi.bg, border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "8px 10px" } },
                         React.createElement("span", { style: { display: "inline-block", width: 8, height: 8, borderRadius: 99, background: realtimeUi.color } }),
                         React.createElement("span", null, realtimeUi.label)),
@@ -42796,6 +42938,29 @@ body.traceops-premium-shell .app-logo-img,
   flex-direction: column;
   gap: 12px;
 }
+.smt-login-form.hidden {
+  display: none;
+}
+.smt-auth-mode {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 0 0 18px;
+}
+.smt-auth-mode button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 5px 2px;
+  background: transparent;
+  color: #8A847C;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.smt-auth-mode button.active {
+  color: #DC2626;
+  border-bottom-color: #DC2626;
+}
 .smt-login-form input {
   width: 100%;
   padding: 10px 14px;
@@ -42884,26 +43049,30 @@ body.traceops-premium-shell .app-logo-img,
 
 <div id="smt-login-modal" class="smt-login-modal hidden">
   <div class="smt-login-card">
-    <h2>SMTinel Acceso</h2>
-    <p>Sincroniza RCCA, 8D y RCA en la nube con tu cuenta Supabase.</p>
+    <h2>SMTinel Cloud Access</h2>
+    <p>Sign in or create an account to synchronize RCCA, 8D, shift handoffs, and Yield Flow packages.</p>
     <div id="smt-login-message"></div>
-    <div class="smt-login-form">
+    <div class="smt-auth-mode">
+      <button id="smt-auth-signin-mode" type="button" class="active">Sign in</button>
+      <button id="smt-auth-signup-mode" type="button">Create account</button>
+    </div>
+    <div id="smt-email-auth-form" class="smt-login-form">
       <input
         type="email"
         id="smt-login-email"
-        placeholder="tu@email.com"
+        placeholder="name@company.com"
         autocomplete="email"
       />
       <input
         type="password"
         id="smt-login-password"
-        placeholder="Contraseña"
+        placeholder="Password"
         autocomplete="current-password"
       />
-      <button id="smt-login-submit" type="button">Iniciar sesión</button>
+      <button id="smt-login-submit" type="button">Sign in</button>
     </div>
     <div class="smt-login-footer">
-      <a id="smt-login-close">Cerrar</a>
+      <a id="smt-login-close">Close</a>
     </div>
   </div>
 </div>
@@ -42916,6 +43085,7 @@ body.traceops-premium-shell .app-logo-img,
   var perf = window.TRACEOPS_CLOUD_PERF || {};
   var supabaseClient = null;
   var currentSession = null;
+  var authMode = 'signin';
 
   // Initialize Supabase client
   function initSupabaseClient() {
@@ -43013,10 +43183,9 @@ body.traceops-premium-shell .app-logo-img,
 
     if (session && session.user) {
       btn.classList.add('authenticated');
-      var email = session.user.email || 'Usuario';
-      var shortEmail = email.split('@')[0];
+      var identity = session.user.email || 'Cloud user';
       text.innerHTML = '<span class="smt-login-status"><span class="dot"></span>RCCA en nube</span>';
-      btn.title = 'Sesión: ' + email;
+      btn.title = 'Session: ' + identity;
       btn.onclick = function() { showLogoutConfirm(session); };
     } else {
       btn.classList.remove('authenticated');
@@ -43052,7 +43221,38 @@ body.traceops-premium-shell .app-logo-img,
     }
   }
 
-  // Handle email + password sign in
+  function updateAuthUI() {
+    var signinMode = document.getElementById('smt-auth-signin-mode');
+    var signupMode = document.getElementById('smt-auth-signup-mode');
+    var emailSubmit = document.getElementById('smt-login-submit');
+    signinMode.classList.toggle('active', authMode === 'signin');
+    signupMode.classList.toggle('active', authMode === 'signup');
+    emailSubmit.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+    document.getElementById('smt-login-password').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
+    showMessage('', 'info');
+  }
+
+  function completeAuth(session, identity) {
+    currentSession = session || null;
+    updateUI(currentSession);
+    if (currentSession) {
+      showMessage('Connected as ' + identity + '. Cloud synchronization is available.', 'success');
+      setTimeout(function() {
+        document.getElementById('smt-login-modal').classList.add('hidden');
+      }, 1200);
+    }
+  }
+
+  document.getElementById('smt-auth-signin-mode').addEventListener('click', function() {
+    authMode = 'signin';
+    updateAuthUI();
+  });
+  document.getElementById('smt-auth-signup-mode').addEventListener('click', function() {
+    authMode = 'signup';
+    updateAuthUI();
+  });
+
+  // Handle email + password sign in / registration
   document.getElementById('smt-login-submit').addEventListener('click', async function(e) {
     e.preventDefault();
     var email = document.getElementById('smt-login-email').value.trim();
@@ -43065,7 +43265,7 @@ body.traceops-premium-shell .app-logo-img,
 
     var btn = this;
     btn.disabled = true;
-    btn.textContent = 'Iniciando...';
+    btn.textContent = authMode === 'signup' ? 'Creating account...' : 'Signing in...';
 
     try {
       var client = supabaseClient || initSupabaseClient();
@@ -43074,25 +43274,31 @@ body.traceops-premium-shell .app-logo-img,
         return;
       }
 
-      var result = await client.auth.signInWithPassword({ email: email, password: password });
+      var result = authMode === 'signup'
+        ? await client.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { source: 'SMTinel', registration_method: 'email' } }
+          })
+        : await client.auth.signInWithPassword({ email: email, password: password });
       if (result.error) {
         showMessage('Error: ' + result.error.message, 'error');
       } else {
-        currentSession = result && result.data ? (result.data.session || null) : null;
-        updateUI(currentSession);
-        showMessage('Sesión iniciada como ' + email + '. Sync manual disponible.', 'success');
+        var session = result && result.data ? (result.data.session || null) : null;
         document.getElementById('smt-login-email').value = '';
         document.getElementById('smt-login-password').value = '';
-        setTimeout(function() {
-          document.getElementById('smt-login-modal').classList.add('hidden');
-        }, 1200);
+        if (authMode === 'signup' && !session) {
+          showMessage('Account created. Check your email and confirm the account before signing in.', 'success');
+        } else {
+          completeAuth(session, email);
+        }
       }
     } catch (err) {
       showMessage('Error: ' + (err.message || 'Request failed'), 'error');
       console.error('[SMTinel] Sign in error:', err);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Iniciar sesión';
+      btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
     }
   });
 
@@ -43105,6 +43311,11 @@ body.traceops-premium-shell .app-logo-img,
   function showMessage(text, type) {
     var msgDiv = document.getElementById('smt-login-message');
     if (msgDiv) {
+      if (!text) {
+        msgDiv.innerHTML = '';
+        msgDiv.className = '';
+        return;
+      }
       msgDiv.innerHTML = text;
       msgDiv.className = 'smt-login-message ' + (type || 'info');
     }
@@ -43132,6 +43343,7 @@ body.traceops-premium-shell .app-logo-img,
   window.addEventListener('load', function() {
     setTimeout(async function() {
       supabaseClient = initSupabaseClient();
+      updateAuthUI();
       if (perf && perf.autoBootstrap === false) {
         updateUI(null);
         return;
@@ -60478,7 +60690,7 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
 <script id="smtinel-v13-14-11-build-finalizer">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.26 - Bonepile Shift Handoff Fix - 2026-07-29';
+  var VERSION='SMTinel V13.14.35 - Paired Line Layout Mapping - 2026-07-30';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
