@@ -10402,7 +10402,7 @@ function traceOpsYieldFileFingerprint(file) {
 }
 function traceOpsYieldFastRoleRank(role) {
     var r = String(role || "").toLowerCase();
-    var rank = { sfc: 1, repair: 2, wo: 3, dbmodel: 4, skucost: 5, bom: 6, calendar: 7, cesium: 8 };
+    var rank = { sfc: 1, repair: 2, wo: 3, dbmodel: 4, skucost: 5, stations: 6, bom: 7, calendar: 8, cesium: 9 };
     return rank[r] || 99;
 }
 function traceOpsYieldEstimateEntryMb(entry) {
@@ -10672,8 +10672,8 @@ var TRACEOPS_YIELD_FLOW_STATIONS = ["SMTLOADING", "AOI2", "AOI4", "AOI", "ICT", 
 var TRACEOPS_YIELD_STATION_BLOCKS = { STOCKIN: "SFC current event", PCBASSY: "Cesium after Stockin", PCBP2: "Cesium after Stockin", PCB2C: "Cesium after Stockin", PCBFT: "Cesium after Stockin" };
 var TRACEOPS_YIELD_STATION_SEQUENCE = [
     { no: "001", station: "SMTLOADING" }, { no: "002", station: "PASTE" }, { no: "003", station: "AOI" }, { no: "004", station: "AOI2" }, { no: "005", station: "AOI4" },
-    { no: "006", station: "XRAY" }, { no: "007", station: "FIVE_DX" }, { no: "009", station: "VI" }, { no: "010", station: "ROUTER" },
-    { no: "011", station: "VI2" }, { no: "012", station: "AUTOPF" }, { no: "013", station: "ICT" }, { no: "014", station: "PICT" }, { no: "015", station: "PCBBS" },
+    { no: "006", station: "XRAY" }, { no: "007", station: "FIVE_DX" }, { no: "008", station: "AOIPF" }, { no: "009", station: "VI" }, { no: "010", station: "VI2" },
+    { no: "011", station: "ROUTER" }, { no: "012", station: "AUTOPF" }, { no: "013", station: "PCBQI" }, { no: "014", station: "PCBQI2" }, { no: "015", station: "PCBQI3" }, { no: "016", station: "RCIAOI" }, { no: "017", station: "ICT" }, { no: "018", station: "PICT" }, { no: "019", station: "PCBBS" },
     { no: "016", station: "PWVALIDATE" }, { no: "017", station: "STOCKIN" }, { no: "018", station: "JOBFINISH" }, { no: "019", station: "QUACK" }, { no: "020", station: "EPCBDL" },
     { no: "021", station: "PCBDL" }, { no: "022", station: "PCBDG" }, { no: "023", station: "PCBBS_2" }, { no: "024", station: "PCBASSY" }, { no: "025", station: "PCBLED" },
     { no: "026", station: "PCBP2" }, { no: "027", station: "PCB2C" }, { no: "028", station: "ASSOC" }, { no: "029", station: "OPCB2C" }, { no: "030", station: "PCBST" },
@@ -11334,6 +11334,8 @@ function traceOpsYieldSheetRole(sheetName) {
         return "calendar";
     if (/db model|dbmodel|dm model|dmmodel|model master|modelo maestro|master model|db_model/.test(n))
         return "dbmodel";
+    if (/^stations?$|station master|stations master|catalogo de estaciones/.test(n))
+        return "stations";
     if (/(^|\s)sfc(0\s)|shop floor|shopfloor|current event|sf control/.test(n))
         return "sfc";
     if (/repair|repar|rework|retrab|defect|failure|fail|ng record/.test(n))
@@ -11450,6 +11452,12 @@ function traceOpsYieldHeaderScore(headers, role) {
         if (hasAny(["description", "descripcion", "component description"]))
             score += 3;
     }
+    else if (role === "stations") {
+        if (hasAny(["station"]))
+            score += 4;
+        if (hasAny(["line", "area", "no"]))
+            score += 3;
+    }
     return score;
 }
 function traceOpsYieldDetectTextRole(name) {
@@ -11464,6 +11472,8 @@ function traceOpsYieldDetectTextRole(name) {
         return "skucost";
     if (n === "bomtxt" || n.indexOf("bom") >= 0 || n.indexOf("billofmaterial") >= 0 || n.indexOf("componentmaster") >= 0 || n.indexOf("componentlookup") >= 0)
         return "bom";
+    if (n === "stationstxt" || n === "stationscsv" || n === "stationstsv" || n.indexOf("stationmaster") >= 0 || n.indexOf("stationsmaster") >= 0)
+        return "stations";
     if (n.indexOf("sfc") >= 0 || n.indexOf("shopfloor") >= 0 || n.indexOf("currentevent") >= 0)
         return "sfc";
     if (n.indexOf("repair") >= 0 || n.indexOf("repar") >= 0 || n.indexOf("defect") >= 0)
@@ -11580,6 +11590,66 @@ function traceOpsYieldCsvSplit(line) {
     return out;
 }
 
+
+function traceOpsYieldStationMasterFromRawRows(rawRows) {
+    rawRows = rawRows || [];
+    var headerIdx = -1, stationCols = [];
+    for (var i = 0; i < Math.min(rawRows.length, 30); i++) {
+        var row = rawRows[i] || [], cols = [];
+        row.forEach(function(v, idx) {
+            if (traceOpsYieldCompact(v) === 'station') cols.push(idx);
+        });
+        if (cols.length) { headerIdx = i; stationCols = cols; break; }
+    }
+    if (headerIdx < 0 || !stationCols.length) return [];
+    // In Common DB the first Station column is an equipment/location ID (P21S...),
+    // and the following Station columns contain canonical SFC station names.
+    var canonicalCols = stationCols.length > 1 ? stationCols.slice(1) : stationCols.slice();
+    var out = [], seen = {};
+    function validStation(value) {
+        var raw = String(value == null ? '' : value).trim().toUpperCase();
+        if (!raw || raw === 'STATION') return '';
+        if (/^P\d{2}[A-Z0-9]+$/.test(raw) || raw === 'LOADINGI') return '';
+        if (!/^[A-Z0-9_*\-]+$/.test(raw) || raw.length > 30) return '';
+        return traceOpsYieldNormalizeSequenceStation(raw);
+    }
+    for (var r = headerIdx + 1; r < rawRows.length; r++) {
+        var arr = rawRows[r] || [];
+        canonicalCols.forEach(function(col) {
+            var station = validStation(arr[col]);
+            if (!station || seen[station]) return;
+            seen[station] = 1;
+            var no = '';
+            if (col + 1 < arr.length && /^\d+$/.test(String(arr[col + 1] || '').trim())) no = String(arr[col + 1]).trim();
+            out.push({ station: station, no: no });
+        });
+    }
+    return out;
+}
+function traceOpsYieldApplyImportedStations(rows) {
+    rows = rows || [];
+    var seq = TRACEOPS_YIELD_STATION_SEQUENCE || (TRACEOPS_YIELD_STATION_SEQUENCE = []);
+    var known = {};
+    seq.forEach(function(x) {
+        var code = traceOpsYieldNormalizeSequenceStation(x && x.station);
+        if (code) known[code] = true;
+    });
+    rows.forEach(function(row) {
+        var code = traceOpsYieldNormalizeSequenceStation(row && (row.station || row.Station));
+        if (!code || known[code]) return;
+        var no = String((row && (row.no || row.No)) || '').trim();
+        if (!no) no = String(seq.length + 1).padStart(3, '0');
+        seq.push({ no: no, station: code });
+        known[code] = true;
+    });
+    TRACEOPS_YIELD_STATION_ORDER = {};
+    seq.forEach(function(x, i) {
+        TRACEOPS_YIELD_STATION_ORDER[traceOpsYieldNormalizeSequenceStation(x.station)] = i;
+    });
+    try { window.TRACEOPS_YIELD_IMPORTED_STATIONS = rows.slice(); } catch (_) {}
+    return seq;
+}
+
 function traceOpsYieldCommonDbOpen() {
     return new Promise(function(resolve) {
         try {
@@ -11610,15 +11680,15 @@ function traceOpsYieldCommonDbGet(key) {
     });
 }
 function traceOpsYieldHasCommonPayload(parsed) {
-    return !!((parsed.wo && parsed.wo.length) || (parsed.repair && parsed.repair.length) || (parsed.calendar && parsed.calendar.length) || (parsed.dbmodel && parsed.dbmodel.length) || (parsed.bom && parsed.bom.length));
+    return !!((parsed.wo && parsed.wo.length) || (parsed.repair && parsed.repair.length) || (parsed.calendar && parsed.calendar.length) || (parsed.dbmodel && parsed.dbmodel.length) || (parsed.bom && parsed.bom.length) || (parsed.stations && parsed.stations.length));
 }
 function traceOpsYieldHasBuPayload(parsed) { return !!((parsed.sfc && parsed.sfc.length) || (parsed.cesium && parsed.cesium.length)); }
 async function traceOpsYieldSaveCommonPayload(parsed, sourceName) {
     if (!traceOpsYieldHasCommonPayload(parsed)) return { saved: false, rows: {} };
-    var common = { savedAt: new Date().toISOString(), sourceName: sourceName || '', wo: parsed.wo || [], repair: parsed.repair || [], calendar: parsed.calendar || [], dbmodel: parsed.dbmodel || [], bom: parsed.bom || [] };
+    var common = { savedAt: new Date().toISOString(), sourceName: sourceName || '', wo: parsed.wo || [], repair: parsed.repair || [], calendar: parsed.calendar || [], dbmodel: parsed.dbmodel || [], bom: parsed.bom || [], stations: parsed.stations || [] };
     var ok = await traceOpsYieldCommonDbPut('activeCommon', common);
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: ok, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length } }; } catch(_) {}
-    return { saved: ok, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length } };
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: ok, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length, stations: common.stations.length } }; } catch(_) {}
+    return { saved: ok, rows: { wo: common.wo.length, repair: common.repair.length, calendar: common.calendar.length, dbmodel: common.dbmodel.length, bom: common.bom.length, stations: common.stations.length } };
 }
 async function traceOpsYieldMergeCachedCommon(parsed) {
     if (!traceOpsYieldHasBuPayload(parsed)) return { merged: false, common: null };
@@ -11629,7 +11699,9 @@ async function traceOpsYieldMergeCachedCommon(parsed) {
     if (!(parsed.calendar || []).length) parsed.calendar = common.calendar || [];
     if (!(parsed.dbmodel || []).length) parsed.dbmodel = common.dbmodel || [];
     if (!(parsed.bom || []).length) parsed.bom = common.bom || [];
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: (common.wo || []).length, repair: (common.repair || []).length, calendar: (common.calendar || []).length, dbmodel: (common.dbmodel || []).length, bom: (common.bom || []).length } }; } catch(_) {}
+    if (!(parsed.stations || []).length) parsed.stations = common.stations || [];
+    traceOpsYieldApplyImportedStations(parsed.stations || []);
+    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, savedAt: common.savedAt, sourceName: common.sourceName, rows: { wo: (common.wo || []).length, repair: (common.repair || []).length, calendar: (common.calendar || []).length, dbmodel: (common.dbmodel || []).length, bom: (common.bom || []).length, stations: (common.stations || []).length } }; } catch(_) {}
     return { merged: true, common: common };
 }
 
@@ -11654,7 +11726,7 @@ async function traceOpsYieldTryImportTextZip(file, options) {
         return traceOpsYieldFastRoleRank(a.role) - traceOpsYieldFastRoleRank(b.role) || traceOpsYieldEstimateEntryMb(b.entry) - traceOpsYieldEstimateEntryMb(a.entry);
     });
     traceOpsYieldImportProgress(options, 22, "TXT_MANIFEST", "ZIP ligero detectado: procesando SFC/Repair primero y difiriendo auxiliares...");
-    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] };
+    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [], stations: [] };
     var pulledSheets = [];
     for (var i = 0; i < entries.length; i++) {
         await traceOpsYieldYieldThread();
@@ -11665,7 +11737,7 @@ async function traceOpsYieldTryImportTextZip(file, options) {
         await traceOpsYieldYieldThread();
         var rawRows = traceOpsYieldParseDelimitedText(text, item.role);
         await traceOpsYieldYieldThread();
-        var objects = traceOpsYieldObjectsFromRawRows(rawRows, item.role);
+        var objects = item.role === "stations" ? traceOpsYieldStationMasterFromRawRows(rawRows) : traceOpsYieldObjectsFromRawRows(rawRows, item.role);
         if (objects.length) {
             parsed[item.role] = parsed[item.role].concat(objects);
             pulledSheets.push({ name: item.path.split('/').pop(), role: item.role, rows: objects.length });
@@ -11687,6 +11759,7 @@ async function traceOpsYieldTryImportTextZip(file, options) {
     traceOpsYieldImportProgress(options, 72, "BUILDING_INDEX", "Construyendo indices SN/WO/Repair una sola vez...");
     await traceOpsYieldYieldThread();
     var isCommonOnly = traceOpsYieldHasCommonPayload(parsed) && !traceOpsYieldHasBuPayload(parsed);
+    traceOpsYieldApplyImportedStations(parsed.stations || []);
     return traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, {
         source: isCommonOnly ? "COMMON DB local" : "ZIP TXT local",
         mode: isCommonOnly ? "common-cache" : "text-import",
@@ -11695,7 +11768,7 @@ async function traceOpsYieldTryImportTextZip(file, options) {
         workbookName: isCommonOnly ? "COMMON DB package" : "TXT/TSV lightweight package",
         container: file.name,
         sheets: pulledSheets,
-        notes: isCommonOnly ? "Common DB cargado y cacheado. Ahora carga un paquete BU con SFC.txt + Cesium.txt; SMTinel enriquecera SFC desde Station_on_line_report, DB_Model, Repair_Record, BOM y Calendar." : "Import ligero V13.2.19: paquete BU conectado a Common DB cache cuando existe. SFC puede venir raw sin formulas; SMTinel recalcula Build Start Date, Line, BU, Product Family y Cisco Week durante la carga."
+        notes: isCommonOnly ? "Common DB cargado y cacheado. Ahora carga un paquete BU con SFC.txt + Cesium.txt; SMTinel enriquecera SFC desde Station_on_line_report, DB_Model, Repair_Record, BOM, Stations y Calendar." : "Import ligero V13.2.19: paquete BU conectado a Common DB cache cuando existe. SFC puede venir raw sin formulas; SMTinel recalcula Build Start Date, Line, BU, Product Family y Cisco Week durante la carga."
     }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
 }
 function traceOpsYieldObjectsFromRawRows(rawRows, role) {
@@ -12769,7 +12842,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
     var relDoc = new DOMParser().parseFromString(relsXml, "application/xml");
     var rels = {};
     Array.prototype.slice.call(relDoc.getElementsByTagName("Relationship")).forEach(function (rel) { rels[rel.getAttribute("Id")] = rel.getAttribute("Target"); });
-    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [] }, pulledSheets = [], targetSheetFiles = [];
+    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], cesium: [], bom: [], stations: [] }, pulledSheets = [], targetSheetFiles = [];
     var sheets = Array.prototype.slice.call(wbDoc.getElementsByTagName("sheet"));
     for (var i = 0; i < sheets.length; i++) {
         var sh = sheets[i], name = sh.getAttribute("name") || ("Sheet" + (i + 1)), role = traceOpsYieldSheetRole(name);
@@ -12799,7 +12872,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
         await traceOpsYieldYieldThread();
     }
     targetSheetFiles.sort(function(a,b){
-        var rank = { sfc: 1, wo: 2, repair: 3, cesium: 4, dbmodel: 5, bom: 6, calendar: 7 };
+        var rank = { sfc: 1, wo: 2, repair: 3, cesium: 4, dbmodel: 5, stations: 6, bom: 7, calendar: 8 };
         return (rank[a.role] || 99) - (rank[b.role] || 99);
     });
     var rowLimit = traceOpsYieldRowLimitForImport();
@@ -12812,7 +12885,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
         await traceOpsYieldYieldThread();
         var rawRows = traceOpsYieldRowsFromSheetXml(xml, sharedStrings, traceOpsYieldRowLimitForRole(info.role));
         await traceOpsYieldYieldThread();
-        var objects = traceOpsYieldObjectsFromRawRows(rawRows, info.role);
+        var objects = info.role === "stations" ? traceOpsYieldStationMasterFromRawRows(rawRows) : traceOpsYieldObjectsFromRawRows(rawRows, info.role);
         await traceOpsYieldYieldThread();
         if (objects.length) {
             parsed[info.role] = parsed[info.role].concat(objects);
@@ -12823,6 +12896,7 @@ async function traceOpsYieldImportExcelZip(file, options) {
         throw new Error("No se detectaron filas utiles. Revisa encabezados: SN/current event, WO/time start, defecto/referencia/PN.");
     traceOpsYieldImportProgress(options, 82, "BUILDING_INDEX", "Construyendo indices Yield Flow por WO, SN, SKU, modelo y semana...");
     await traceOpsYieldYieldThread();
+    traceOpsYieldApplyImportedStations(parsed.stations || []);
     var built = traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, { fileName: file.name, importStartMs: __traceOpsImportStart, workbookName: wbFile.name, container: wbFile.container, sheets: pulledSheets, notes: "Import Performance Engine V11.3: SFC/Repair priorizados, parsing por etapas, cache por fingerprint e indices reutilizables para SN/WO/Ref." }, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom);
     traceOpsYieldImportProgress(options, 94, "FINALIZING", "Finalizando cache local y dashboard Yield Flow...");
     await traceOpsYieldYieldThread();
@@ -13026,7 +13100,17 @@ function traceOpsYieldNormalizeSequenceStation(value) {
         "SYSTEMFT": "SYSFT",
         "PMCHECK": "PCBPM",
         "PM3VALIDATE": "PCBPM3",
-        "PCBFTFINAL": "PCBFT"
+        "PCBFTFINAL": "PCBFT",
+        "PCBQ1": "PCBQI",
+        "PCBQI1": "PCBQI",
+        "PCBQ2": "PCBQI2",
+        "PCB2Q2": "PCBQI2",
+        "PCBQ3": "PCBQI3",
+        "PCBQ01": "PCBQI",
+        "PCBQ02": "PCBQI2",
+        "PCBQ03": "PCBQI3",
+        "RCI_AOI": "RCIAOI",
+        "AUTO_PF": "AUTOPF"
     };
     if (map[raw]) return map[raw];
     return raw;
