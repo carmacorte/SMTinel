@@ -37364,7 +37364,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
   function bmSplitRefs(value){var txt=String(value||'').toUpperCase(),matches=txt.match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g)||[];return bmUnique(matches)}
   function bmGroups(patterns){var map={};(patterns||[]).slice(0,5).forEach(function(p){p=p||{};var model=String(p.model||'N/D').trim()||'N/D',key=model.toUpperCase();if(!map[key])map[key]={model:model,refs:{},modes:{},parts:{},serials:{}};bmSplitRefs(p.refdes).forEach(function(ref){map[key].refs[ref]=1});if(p.mode)map[key].modes[String(p.mode).trim()]=1;if(p.partNumber&&p.partNumber!=='Not specified')map[key].parts[String(p.partNumber).trim()]=1;(p.serials||[]).forEach(function(sn){if(sn)map[key].serials[String(sn).trim().toUpperCase()]=1})});return Object.keys(map).map(function(k){var g=map[k];return{model:g.model,refs:Object.keys(g.refs).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true})}).slice(0,18),modes:Object.keys(g.modes).sort().slice(0,5),parts:Object.keys(g.parts).sort().slice(0,5),serialCount:Object.keys(g.serials).length}}).filter(function(g){return g.refs.length}).sort(function(a,b){return b.serialCount-a.serialCount||String(a.model).localeCompare(String(b.model))})}
   function bmChip(text,kind){var tones={ref:['#fff1f2','#b42318','#f2b8bd'],mode:['#eef5ff','#1f3a5f','#cfe0fb'],pn:['#fff7d8','#8a5a00','#f1d58b']},t=tones[kind]||tones.mode;return'<span style="display:inline-block;margin:2px 5px 2px 0;padding:3px 7px;border-radius:999px;background:'+t[0]+';color:'+t[1]+';border:1px solid '+t[2]+';font-size:10px;font-weight:700">'+esc(text)+'</span>'}
-  function bmSection(patterns,role,sectionNo){var groups=bmGroups(patterns);if(!groups.length)return'';role=role||{};var color=role.color||'#b42318',border=role.border||'#f2b8bd',cards=groups.map(function(g,idx){var refs=g.refs.map(function(x){return bmChip(x,'ref')}).join(''),modes=(g.modes.length?g.modes:['N/D']).map(function(x){return bmChip(x,'mode')}).join(''),parts=(g.parts.length?g.parts:['Not specified']).map(function(x){return bmChip(x,'pn')}).join('');return'<details '+(idx===0?'open':'')+' style="margin-top:'+(idx?10:0)+'px;border:1px solid #d7e0ea;border-radius:8px;background:#fff;overflow:hidden"><summary style="cursor:pointer;padding:10px 12px;background:#f8fafc;color:#172b43;font-size:12px;font-weight:700">'+esc(g.model)+' · '+g.refs.length+' RefDes · '+g.serialCount.toLocaleString()+' SN</summary><div style="padding:10px 12px"><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em">References from top 5 repair causes</div><div style="margin-top:4px">'+refs+'</div><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em;margin-top:7px">Failure modes</div><div style="margin-top:4px">'+modes+'</div><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em;margin-top:7px">Part Number</div><div style="margin-top:4px">'+parts+'</div><div class="smtinel-report-boardmap" data-family="'+esc(g.model)+'" data-refs="'+esc(g.refs.join('|'))+'" style="margin-top:9px;border:1px dashed #b9cbe3;border-radius:8px;background:#f7faff;padding:12px;font-size:11px;color:#536b86">Preparing Board Impact map...</div></div></details>'}).join('');return'<div style="margin-top:14px;border:1px solid '+border+';border-radius:7px;overflow:hidden;background:#fff"><div style="padding:9px 12px;background:'+color+';color:#fff;font-size:15px;font-weight:700"><span style="display:inline-block;width:23px;height:23px;line-height:23px;text-align:center;border-radius:50%;background:#fff;color:'+color+';margin-right:7px">'+sectionNo+'</span>Repair Location Map by Model</div><div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.45">One board drawing is generated per model from the current top 5 repair causes. Detailed View creates an enlarged crop for each located RefDes, while the full TOP or BOTTOM drawing remains available as a collapsible overview.</div><div style="padding:0 12px 12px">'+cards+'</div></div>'}
+  function bmSection(patterns,role,sectionNo){var groups=bmGroups(patterns);if(!groups.length)return'';role=role||{};var color=role.color||'#b42318',border=role.border||'#f2b8bd',cards=groups.map(function(g,idx){var refs=g.refs.map(function(x){return bmChip(x,'ref')}).join(''),modes=(g.modes.length?g.modes:['N/D']).map(function(x){return bmChip(x,'mode')}).join(''),parts=(g.parts.length?g.parts:['Not specified']).map(function(x){return bmChip(x,'pn')}).join('');return'<details '+(idx===0?'open':'')+' style="margin-top:'+(idx?10:0)+'px;border:1px solid #d7e0ea;border-radius:8px;background:#fff;overflow:hidden"><summary style="cursor:pointer;padding:10px 12px;background:#f8fafc;color:#172b43;font-size:12px;font-weight:700">'+esc(g.model)+' · '+g.refs.length+' RefDes · '+g.serialCount.toLocaleString()+' SN</summary><div style="padding:10px 12px"><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em">References from top 5 repair causes</div><div style="margin-top:4px">'+refs+'</div><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em;margin-top:7px">Failure modes</div><div style="margin-top:4px">'+modes+'</div><div style="font-size:10px;font-weight:700;color:#60758f;text-transform:uppercase;letter-spacing:.05em;margin-top:7px">Part Number</div><div style="margin-top:4px">'+parts+'</div><div class="smtinel-report-boardmap" data-family="'+esc(g.model)+'" data-refs="'+esc(g.refs.join('|'))+'" style="margin-top:9px;border:1px dashed #b9cbe3;border-radius:8px;background:#f7faff;padding:12px;font-size:11px;color:#536b86">Preparing Board Impact map...</div></div></details>'}).join('');return'<div style="margin-top:14px;border:1px solid '+border+';border-radius:7px;overflow:hidden;background:#fff"><div style="padding:9px 12px;background:'+color+';color:#fff;font-size:15px;font-weight:700"><span style="display:inline-block;width:23px;height:23px;line-height:23px;text-align:center;border-radius:50%;background:#fff;color:'+color+';margin-right:7px">'+sectionNo+'</span>Repair Location Map by Model</div><div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.45">One board drawing is generated per model from the current top 5 repair causes. Detailed View creates one enlarged inspection window per TOP or BOTTOM side, automatically framing all located RefDes together. The complete drawing remains available as a collapsible overview.</div><div style="padding:0 12px 12px">'+cards+'</div></div>'}
 
   var bmBaseRoleSection=reportRoleSection;
   reportRoleSection=function(role,groups,td,th){var html=bmBaseRoleSection(role,groups,td,th);if(selectedReportFocus==='QUALITY')html+=bmSection(reportPatterns(),role,'5');return html};
@@ -37378,17 +37378,14 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
     var cards=payload.cards||[];
     if(!cards.length)return'<div style="font-size:11px;color:#8a5a00">No requested RefDes were located in the board drawing.</div>';
     var html=cards.map(function(card){
-      var detail=(card.details||[]).map(function(item){
-        return '<div style="border:1px solid #d7e0ea;border-radius:9px;background:#fff;overflow:hidden;min-width:0">'
-          +'<div style="padding:7px 9px;background:#f4f8fc;border-bottom:1px solid #d7e0ea;font-size:10px;font-weight:800;color:#17324d;text-transform:uppercase;letter-spacing:.05em">Detailed View · '+esc(item.ref)+' · '+esc(item.sideLabel||card.sideLabel)+'</div>'
-          +'<img src="'+item.dataUrl+'" alt="Detailed Board Impact location '+esc(item.ref)+'" style="display:block;width:100%;height:auto;background:#fff">'
-          +'</div>';
-      }).join('');
-      var omitted=Number(card.detailOmitted||0)>0?'<div style="margin-top:7px;font-size:10px;color:#8a5a00">'+Number(card.detailOmitted||0)+' additional RefDes remain available in the overview.</div>':'';
+      var refsLabel=esc((card.detailRefs||card.refs||[]).join(', '));
+      var detail=card.detailDataUrl?'<div style="border:1px solid #d7e0ea;border-radius:9px;background:#fff;overflow:hidden;min-width:0">'
+          +'<div style="padding:7px 9px;background:#f4f8fc;border-bottom:1px solid #d7e0ea;font-size:10px;font-weight:800;color:#17324d;text-transform:uppercase;letter-spacing:.05em">Detailed View · '+esc(card.sideLabel)+' · '+refsLabel+'</div>'
+          +'<img src="'+card.detailDataUrl+'" alt="Detailed Board Impact locations '+refsLabel+'" style="display:block;width:100%;height:auto;background:#fff">'
+          +'</div>':'';
       return '<div style="margin-top:12px;border:1px solid #cfdceb;border-radius:10px;background:#f9fbfe;padding:10px">'
-        +'<div style="font-size:11px;font-weight:800;color:#17324d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+esc(card.sideLabel)+' · Detailed component locations</div>'
-        +(detail?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px">'+detail+'</div>':'<div style="font-size:11px;color:#8a5a00">Detailed crops could not be generated for this side.</div>')
-        +omitted
+        +'<div style="font-size:11px;font-weight:800;color:#17324d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+esc(card.sideLabel)+' · Detailed component location</div>'
+        +(detail||'<div style="font-size:11px;color:#8a5a00">A grouped detail crop could not be generated for this side.</div>')
         +'<details style="margin-top:10px;border:1px solid #d7e0ea;border-radius:8px;background:#fff;overflow:hidden">'
         +'<summary style="cursor:pointer;padding:9px 11px;background:#f4f8fc;color:#31506f;font-size:11px;font-weight:800">View full board overview · '+esc((card.refs||[]).join(', '))+'</summary>'
         +'<div style="padding:9px"><img src="'+card.dataUrl+'" alt="Board Impact overview" style="display:block;width:100%;max-width:100%;height:auto;border:1px solid #d7e0ea;border-radius:8px;background:#fff"></div>'
@@ -61312,30 +61309,42 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
       await page2.render({canvasContext:detailPageCtx,viewport:detailViewport}).promise;
 
       var refsOnPage=Array.from(new Set(list.map(function(x){return x.ref;}))).sort(natural);
-      var detailCards=[];
-      refsOnPage.slice(0,12).forEach(function(ref){
+      var selectedBoxes=[];
+      refsOnPage.forEach(function(ref){
         var candidates=list.filter(function(x){return x.ref===ref;});
         if(!candidates.length)return;
-        var selected=candidates[0],b;
-        try{b=boxFor(detailViewport,selected.item);}catch(_){return;}
-        var cropW=Math.min(detailPage.width,Math.max(560,Math.round(detailPage.width*.34)));
-        var cropH=Math.min(detailPage.height,Math.max(360,Math.round(detailPage.height*.34)));
-        var cx=b.x+b.w/2,cy=b.y+b.h/2;
-        var sx=clamp(Math.round(cx-cropW/2),0,Math.max(0,detailPage.width-cropW));
-        var sy=clamp(Math.round(cy-cropH/2),0,Math.max(0,detailPage.height-cropH));
+        try{selectedBoxes.push({ref:ref,box:boxFor(detailViewport,candidates[0].item)});}catch(_){}
+      });
+
+      var detailDataUrl='';
+      if(selectedBoxes.length){
+        var minX=Math.min.apply(null,selectedBoxes.map(function(x){return x.box.x;}));
+        var minY=Math.min.apply(null,selectedBoxes.map(function(x){return x.box.y;}));
+        var maxX=Math.max.apply(null,selectedBoxes.map(function(x){return x.box.x+x.box.w;}));
+        var maxY=Math.max.apply(null,selectedBoxes.map(function(x){return x.box.y+x.box.h;}));
+        var contentW=Math.max(1,maxX-minX),contentH=Math.max(1,maxY-minY);
+        var padX=Math.max(120,contentW*.28),padY=Math.max(100,contentH*.65);
+        var cropW=Math.max(900,contentW+padX*2),cropH=Math.max(460,contentH+padY*2);
+        var targetRatio=2.15;
+        if(cropW/cropH<targetRatio)cropW=cropH*targetRatio;else cropH=cropW/targetRatio;
+        cropW=Math.min(detailPage.width,Math.round(cropW));
+        cropH=Math.min(detailPage.height,Math.round(cropH));
+        var centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;
+        var sx=clamp(Math.round(centerX-cropW/2),0,Math.max(0,detailPage.width-cropW));
+        var sy=clamp(Math.round(centerY-cropH/2),0,Math.max(0,detailPage.height-cropH));
         var crop=document.createElement('canvas');crop.width=cropW;crop.height=cropH;
         var cropCtx=crop.getContext('2d');cropCtx.fillStyle='#fff';cropCtx.fillRect(0,0,cropW,cropH);
         cropCtx.drawImage(detailPage,sx,sy,cropW,cropH,0,0,cropW,cropH);
-        mark(cropCtx,b.x-sx,b.y-sy,b.w,b.h,ref,0);
-        detailCards.push({ref:ref,dataUrl:crop.toDataURL('image/png'),sideLabel:pageNo===1?'TOP side':'BOTTOM side'});
-      });
+        selectedBoxes.forEach(function(item,i){var b=item.box;mark(cropCtx,b.x-sx,b.y-sy,b.w,b.h,item.ref,i);});
+        detailDataUrl=crop.toDataURL('image/png');
+      }
 
       cards.push({
         sideLabel:pageNo===1?'TOP side':'BOTTOM side',
         refs:refsOnPage,
         dataUrl:overview.toDataURL('image/png'),
-        details:detailCards,
-        detailOmitted:Math.max(0,refsOnPage.length-detailCards.length)
+        detailDataUrl:detailDataUrl,
+        detailRefs:selectedBoxes.map(function(x){return x.ref;})
       });
     }
     return {cards:cards,unfound:refs.filter(function(r){return !found[r];}),source:loaded.url};
