@@ -37995,13 +37995,20 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
   updateReportBuilder=function(){var type=reportType(),notesLabel=document.querySelector('label[for="shiftNotes"]'),notes=document.getElementById('shiftNotes'),landingButton=document.getElementById('downloadEmail');if(type!=='DBN'){if(dbnWrap)dbnWrap.style.display='none';if(dbnExcel)dbnExcel.style.display='none';if(landingButton)landingButton.textContent='Download Landing HTML';if(notesLabel)notesLabel.textContent='Management notes';if(notes)notes.placeholder='Add decisions, containment, owners, recovery actions or support assignments...';return dbnBaseUpdate()}if(landingButton)landingButton.textContent='Download DBN HTML';var roleWrap=document.getElementById('roleSelectorWrap'),periodWrap=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint');if(roleWrap)roleWrap.style.display='none';if(periodWrap)periodWrap.style.display='none';if(eq)eq.style.display='none';if(dbnWrap)dbnWrap.style.display='block';if(ppt)ppt.style.display='none';if(dbnExcel)dbnExcel.style.display='inline-block';if(title)title.textContent='DBN Follow-up';if(sub)sub.textContent='Unit route, terminal validation, retest evidence and current build constraints.';if(hint)hint.innerHTML='<b>DBN integrity:</b> confirmed PASS comes from Cesium terminal evidence. Earlier route steps may be marked Route inferred when the current SFC position is downstream. Add material constraints, ETA, owner or special monitoring in the notes field; SMTinel will not invent them.';if(notesLabel)notesLabel.textContent='DBN updates / constraints';if(notes)notes.placeholder='Add material constraints, ETA, owner, script status, cycle time or special monitoring...';dbnPopulateControls();dbnRequestTrace(false);setDefaultReportSubject();refreshEmail()};
   var dbnBaseInit=initReportBuilder;
   initReportBuilder=function(){dbnBaseInit();dbnPopulateControls();var model=document.getElementById('dbnModel'),wo=document.getElementById('dbnWo'),date=document.getElementById('dbnReportDate');if(model&&!model.getAttribute('data-dbn-bound')){model.setAttribute('data-dbn-bound','1');model.addEventListener('change',function(){dbnPopulateWos();dbnRequestTrace(true);setDefaultReportSubject();refreshEmail()})}if(wo&&!wo.getAttribute('data-dbn-bound')){wo.setAttribute('data-dbn-bound','1');wo.addEventListener('change',function(){dbnRequestTrace(true);setDefaultReportSubject();refreshEmail()})}if(date&&!date.getAttribute('data-dbn-bound')){date.setAttribute('data-dbn-bound','1');date.addEventListener('change',function(){setDefaultReportSubject();refreshEmail()})}};
+  function dbnLandingReportHtml(title,reportBody){
+    var safeTitle=esc(title||'SMTinel DBN Follow-up');
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safeTitle+'</title><style>'+
+      '*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#eef3f8;color:#172b43;font-family:Segoe UI,Arial,sans-serif}.dbn-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;background:rgba(255,255,255,.98);border-bottom:1px solid #d7e0ea;box-shadow:0 4px 16px rgba(11,47,89,.08)}.dbn-brand{display:flex;align-items:center;gap:12px;min-width:0}.dbn-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#0b3d70,#147c73);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:900}.dbn-title{min-width:0}.dbn-title strong{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dbn-title small{display:block;margin-top:2px;color:#60758f;font-weight:700;letter-spacing:.08em}.dbn-actions{display:flex;gap:8px}.dbn-actions button{border:1px solid #c9d8e8;background:#fff;color:#0b3d70;padding:8px 12px;border-radius:9px;font-weight:800;cursor:pointer}.dbn-actions button:hover{background:#f4f8fc}.dbn-main{padding:16px;max-width:1440px;margin:0 auto}.dbn-main>div{box-shadow:0 12px 32px rgba(11,47,89,.10)}@media print{body{background:#fff}.dbn-top{position:static;box-shadow:none}.dbn-actions{display:none}.dbn-main{padding:0;max-width:none}.dbn-main>div{box-shadow:none;border:0!important}}@media(max-width:760px){.dbn-top{align-items:flex-start}.dbn-title strong{font-size:15px}.dbn-title small{display:none}.dbn-actions button{padding:7px 9px}.dbn-main{padding:8px}}'+
+      '</style></head><body><header class="dbn-top"><div class="dbn-brand"><div class="dbn-mark">S</div><div class="dbn-title"><strong>'+safeTitle+'</strong><small>SMTINEL · TRACE · MONITOR · PROTECT</small></div></div><div class="dbn-actions"><button type="button" onclick="window.print()">Print / PDF</button></div></header><main class="dbn-main">'+reportBody+'</main></body></html>';
+  }
+
   function downloadDbnHtml(){
     var c=dbnRequireContext();if(!c)return;
     c=dbnContext();
     var button=document.getElementById('downloadEmail'),oldText=button&&button.textContent;
     try{
       if(button){button.disabled=true;button.textContent='Preparing DBN HTML...'}
-      var title=document.getElementById('emailSubject').value||('SMTinel DBN Follow-up - '+c.model),body=dbnReportHtml(true),html=landingReportHtml(title,body),a=document.createElement('a'),safe=function(v){return String(v||'N_D').replace(/[^A-Za-z0-9_-]+/g,'_')},url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+      var title=document.getElementById('emailSubject').value||('SMTinel DBN Follow-up - '+c.model),body=dbnReportHtml(true),html=dbnLandingReportHtml(title,body),a=document.createElement('a'),safe=function(v){return String(v||'N_D').replace(/[^A-Za-z0-9_-]+/g,'_')},url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
       a.href=url;a.download='SMTinel_DBN_Followup_'+safe(c.model)+'_'+safe(c.wo)+'_'+c.date+'.html';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
       setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},30000);
       if(button){button.textContent='DBN HTML downloaded';setTimeout(function(){button.disabled=false;button.textContent=oldText||'Download DBN HTML'},1400)}
@@ -63857,3 +63864,114 @@ html body.smtinel-apple-premium .saas-header-pill{
   try{new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});}catch(_){setInterval(apply,1500);}
 })();
 </script>
+
+<!-- SMTinel Desktop Full-Width Landing Layout -->
+<style id="smtinel-desktop-full-width-landing-v1">
+/* Desktop and landscape workspace: use the complete browser width.
+   Mobile keeps the compact stacked layout. */
+@media (min-width: 901px) {
+  html,
+  body,
+  #root,
+  body.traceops-premium-shell,
+  body.traceops-premium-shell #root {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  html body .main-content,
+  html body .main-content.expanded,
+  html body.traceops-premium-shell .main-content,
+  html body.traceops-premium-shell .main-content.expanded {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body .main-content > *,
+  html body .main-content.expanded > * {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body #module-workspace,
+  html body #results-section,
+  html body #yieldflow-section,
+  html body #yield-flow-section,
+  html body #rcca-section,
+  html body #eightd-section,
+  html body #boardimpact-section,
+  html body #board-impact-section,
+  html body #recovery-section,
+  html body #maintenance-section,
+  html body #storyline-section,
+  html body #smtinel-command-center,
+  html body .module-workspace,
+  html body .traceops-module-workspace,
+  html body .traceops-workspace,
+  html body .traceops-page,
+  html body .traceops-dashboard,
+  html body .toq-dashboard,
+  html body .smt-exec {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body #module-workspace > div:last-child {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  html body .saas-topbar,
+  html body .saas-topbar.sidebar-collapsed {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  html body .main-content,
+  html body .main-content.expanded,
+  html body.traceops-premium-shell .main-content,
+  html body.traceops-premium-shell .main-content.expanded {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .main-content,
+  html body .main-content.expanded,
+  html body.traceops-premium-shell .main-content,
+  html body.traceops-premium-shell .main-content.expanded {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    box-sizing: border-box !important;
+  }
+}
+</style>
