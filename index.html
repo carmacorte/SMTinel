@@ -18714,6 +18714,283 @@ body.traceops-premium-shell .main-content.expanded {
   }
 }
 </style>
+<!-- SMTINEL_APPLE_PRODUCTION_UI_PATCH_START -->
+<style id="smtinel-apple-production-ui-css">
+/* =========================================================
+   SMTinel Production UI Refresh · Apple-style industrial skin
+   Purpose: reduce onboarding copy, soften hierarchy, improve density.
+   ========================================================= */
+:root{
+  --smt-apple-bg:#f5f7fb;
+  --smt-apple-bg-2:#eef3f8;
+  --smt-apple-card:rgba(255,255,255,.82);
+  --smt-apple-card-solid:#ffffff;
+  --smt-apple-border:rgba(21,39,63,.10);
+  --smt-apple-border-strong:rgba(21,39,63,.16);
+  --smt-apple-text:#111827;
+  --smt-apple-muted:#667085;
+  --smt-apple-faint:#98a2b3;
+  --smt-apple-blue:#0a84ff;
+  --smt-apple-blue-2:#2f6fb3;
+  --smt-apple-teal:#147c73;
+  --smt-apple-green:#30d158;
+  --smt-apple-red:#ff3b30;
+  --smt-apple-orange:#ff9f0a;
+  --smt-apple-shadow-1:0 1px 2px rgba(16,24,40,.05);
+  --smt-apple-shadow-2:0 8px 24px rgba(16,24,40,.08);
+  --smt-apple-shadow-3:0 18px 48px rgba(16,24,40,.12);
+  --smt-apple-radius-sm:10px;
+  --smt-apple-radius:16px;
+  --smt-apple-radius-lg:24px;
+  --smt-apple-font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Arial,sans-serif;
+}
+html{scroll-behavior:smooth;}
+body.smtinel-apple-production{
+  background:
+    radial-gradient(circle at top left,rgba(10,132,255,.10),transparent 34vw),
+    radial-gradient(circle at 92% 12%,rgba(20,124,115,.10),transparent 28vw),
+    linear-gradient(180deg,var(--smt-apple-bg) 0%,var(--smt-apple-bg-2) 100%) !important;
+  color:var(--smt-apple-text) !important;
+  font-family:var(--smt-apple-font) !important;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+body.smtinel-apple-production *{font-family:inherit;}
+body.smtinel-apple-production ::selection{background:rgba(10,132,255,.20);color:#0b1220;}
+body.smtinel-apple-production ::-webkit-scrollbar{width:10px;height:10px;}
+body.smtinel-apple-production ::-webkit-scrollbar-track{background:transparent;}
+body.smtinel-apple-production ::-webkit-scrollbar-thumb{background:rgba(102,112,133,.32);border-radius:999px;border:2px solid transparent;background-clip:padding-box;}
+body.smtinel-apple-production ::-webkit-scrollbar-thumb:hover{background:rgba(102,112,133,.48);border:2px solid transparent;background-clip:padding-box;}
+
+/* Shell */
+body.smtinel-apple-production .sidebar,
+body.smtinel-apple-production aside.sidebar,
+body.smtinel-apple-production .traceops-focus-side-panel{
+  background:rgba(255,255,255,.72) !important;
+  border-right:1px solid var(--smt-apple-border) !important;
+  box-shadow:18px 0 42px rgba(16,24,40,.06) !important;
+  backdrop-filter:saturate(180%) blur(26px) !important;
+  -webkit-backdrop-filter:saturate(180%) blur(26px) !important;
+}
+body.smtinel-apple-production .main-content{
+  background:transparent !important;
+}
+body.smtinel-apple-production .saas-topbar,
+body.smtinel-apple-production .topbar,
+body.smtinel-apple-production header.saas-topbar{
+  background:rgba(255,255,255,.70) !important;
+  border-bottom:1px solid var(--smt-apple-border) !important;
+  box-shadow:0 10px 30px rgba(16,24,40,.05) !important;
+  backdrop-filter:saturate(180%) blur(26px) !important;
+  -webkit-backdrop-filter:saturate(180%) blur(26px) !important;
+}
+body.smtinel-apple-production .saas-topbar-title,
+body.smtinel-apple-production .section-title,
+body.smtinel-apple-production h1,
+body.smtinel-apple-production h2,
+body.smtinel-apple-production h3{
+  letter-spacing:-.035em;
+}
+body.smtinel-apple-production .saas-topbar-subtitle,
+body.smtinel-apple-production .subtitle,
+body.smtinel-apple-production .muted{color:var(--smt-apple-muted) !important;}
+
+/* Cards / panels */
+body.smtinel-apple-production .saas-hero-card,
+body.smtinel-apple-production .saas-upload-card,
+body.smtinel-apple-production .card,
+body.smtinel-apple-production .tcard,
+body.smtinel-apple-production .pf-card,
+body.smtinel-apple-production .foot,
+body.smtinel-apple-production .prog,
+body.smtinel-apple-production .api-bar,
+body.smtinel-apple-production .up,
+body.smtinel-apple-production .traceops-context,
+body.smtinel-apple-production .traceops-kpi-card,
+body.smtinel-apple-production .traceops-material-card,
+body.smtinel-apple-production .smt-exec-card,
+body.smtinel-apple-production .ri-gm-hero,
+body.smtinel-apple-production .ri-gm-metric,
+body.smtinel-apple-production [class*="-card"]{
+  border-radius:var(--smt-apple-radius-lg) !important;
+  border:1px solid var(--smt-apple-border) !important;
+  background:var(--smt-apple-card) !important;
+  box-shadow:var(--smt-apple-shadow-2) !important;
+  backdrop-filter:saturate(180%) blur(18px) !important;
+  -webkit-backdrop-filter:saturate(180%) blur(18px) !important;
+}
+body.smtinel-apple-production .saas-hero-card{
+  padding:22px 24px !important;
+  align-items:center !important;
+}
+body.smtinel-apple-production .saas-hero-title{font-size:clamp(24px,2.8vw,40px) !important;line-height:1.02 !important;letter-spacing:-.055em !important;color:#101828 !important;}
+body.smtinel-apple-production .saas-hero-eyebrow{color:var(--smt-apple-blue) !important;letter-spacing:.18em !important;}
+body.smtinel-apple-production .saas-upload-card{
+  background:linear-gradient(145deg,rgba(17,24,39,.96),rgba(21,60,92,.94)) !important;
+  color:#fff !important;
+  box-shadow:0 20px 60px rgba(16,24,40,.22) !important;
+}
+body.smtinel-apple-production .saas-upload-card h3{color:#fff !important;letter-spacing:-.02em;}
+body.smtinel-apple-production .saas-upload-card .saas-header-btn{background:#fff !important;color:#101828 !important;border-color:rgba(255,255,255,.88) !important;}
+
+/* Buttons */
+body.smtinel-apple-production button,
+body.smtinel-apple-production .btn,
+body.smtinel-apple-production .saas-header-btn,
+body.smtinel-apple-production .saas-menu-btn,
+body.smtinel-apple-production .up-btn,
+body.smtinel-apple-production [role="button"]{
+  border-radius:999px !important;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease !important;
+  will-change:transform;
+}
+body.smtinel-apple-production button:hover,
+body.smtinel-apple-production .btn:hover,
+body.smtinel-apple-production .saas-header-btn:hover,
+body.smtinel-apple-production .saas-menu-btn:hover,
+body.smtinel-apple-production .up-btn:hover,
+body.smtinel-apple-production [role="button"]:hover{
+  transform:translateY(-1px) scale(1.005) !important;
+  box-shadow:var(--smt-apple-shadow-2) !important;
+}
+body.smtinel-apple-production button:active,
+body.smtinel-apple-production .btn:active,
+body.smtinel-apple-production .saas-header-btn:active,
+body.smtinel-apple-production .saas-menu-btn:active,
+body.smtinel-apple-production .up-btn:active,
+body.smtinel-apple-production [role="button"]:active{
+  transform:scale(.985) !important;
+}
+body.smtinel-apple-production .saas-header-btn.primary,
+body.smtinel-apple-production .up-btn,
+body.smtinel-apple-production .btn.primary{
+  background:linear-gradient(135deg,#0a84ff,#0066cc) !important;
+  border-color:transparent !important;
+  color:#fff !important;
+  box-shadow:0 10px 22px rgba(10,132,255,.22) !important;
+}
+
+/* Inputs and filters */
+body.smtinel-apple-production input,
+body.smtinel-apple-production select,
+body.smtinel-apple-production textarea,
+body.smtinel-apple-production .api-input{
+  border-radius:14px !important;
+  border:1px solid var(--smt-apple-border-strong) !important;
+  background:rgba(255,255,255,.82) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55) !important;
+  color:#111827 !important;
+}
+body.smtinel-apple-production input:focus,
+body.smtinel-apple-production select:focus,
+body.smtinel-apple-production textarea:focus,
+body.smtinel-apple-production .api-input:focus{
+  outline:none !important;
+  border-color:rgba(10,132,255,.55) !important;
+  box-shadow:0 0 0 4px rgba(10,132,255,.13), inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+
+/* Upload / Yield Flow production mode */
+body.smtinel-apple-production .up{
+  border:1.5px dashed rgba(10,132,255,.30) !important;
+  background:rgba(255,255,255,.70) !important;
+  overflow:hidden;
+}
+body.smtinel-apple-production .up:hover,
+body.smtinel-apple-production .up.drag{
+  border-color:rgba(10,132,255,.70) !important;
+  background:rgba(235,245,255,.88) !important;
+}
+body.smtinel-apple-production .up-body{padding:28px 24px !important;}
+body.smtinel-apple-production .up-icon{
+  width:52px !important;height:52px !important;border-radius:18px !important;
+  background:linear-gradient(145deg,rgba(10,132,255,.12),rgba(20,124,115,.10)) !important;
+  border:1px solid rgba(10,132,255,.18) !important;
+  color:var(--smt-apple-blue) !important;
+}
+body.smtinel-apple-production .up h3{font-size:18px !important;letter-spacing:-.035em !important;}
+body.smtinel-apple-production .up p,
+body.smtinel-apple-production .up .chip,
+body.smtinel-apple-production .api-note,
+body.smtinel-apple-production .saas-hero-desc,
+body.smtinel-apple-production .saas-upload-card p,
+body.smtinel-apple-production .traceops-onboarding-copy,
+body.smtinel-apple-production .smtinel-prod-hidden-copy{
+  display:none !important;
+}
+
+/* KPI density */
+body.smtinel-apple-production .metric,
+body.smtinel-apple-production .kpi,
+body.smtinel-apple-production .smt-exec-kpi,
+body.smtinel-apple-production [class*="kpi"]{
+  border-radius:18px !important;
+  border:1px solid var(--smt-apple-border) !important;
+  background:rgba(255,255,255,.76) !important;
+  box-shadow:var(--smt-apple-shadow-1) !important;
+}
+body.smtinel-apple-production .metric b,
+body.smtinel-apple-production .kpi b,
+body.smtinel-apple-production [class*="kpi"] b{letter-spacing:-.045em !important;}
+
+/* Tables */
+body.smtinel-apple-production table{border-collapse:separate !important;border-spacing:0 !important;}
+body.smtinel-apple-production th{
+  background:rgba(247,250,252,.95) !important;
+  color:#344054 !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  border-color:rgba(16,24,40,.08) !important;
+}
+body.smtinel-apple-production td{border-color:rgba(16,24,40,.07) !important;}
+body.smtinel-apple-production tbody tr{transition:background .16s ease, transform .16s ease;}
+body.smtinel-apple-production tbody tr:hover{background:rgba(10,132,255,.055) !important;}
+
+/* Modal / overlays */
+body.smtinel-apple-production .modal,
+body.smtinel-apple-production .dialog,
+body.smtinel-apple-production [role="dialog"]{
+  border-radius:26px !important;
+  border:1px solid rgba(255,255,255,.42) !important;
+  box-shadow:0 30px 90px rgba(16,24,40,.28) !important;
+  backdrop-filter:saturate(180%) blur(28px) !important;
+  -webkit-backdrop-filter:saturate(180%) blur(28px) !important;
+}
+
+/* DBN reports inside the app/export preview */
+body.smtinel-apple-production .dbn-main>div,
+body.smtinel-apple-production .dbn-top{
+  border-radius:24px !important;
+  border:1px solid var(--smt-apple-border) !important;
+  background:rgba(255,255,255,.82) !important;
+  box-shadow:var(--smt-apple-shadow-2) !important;
+  backdrop-filter:saturate(180%) blur(18px) !important;
+}
+body.smtinel-apple-production .dbn-top{border-radius:0 0 22px 22px !important;}
+body.smtinel-apple-production .dbn-gantt-row{border-radius:14px !important;}
+
+/* Production copy scrub */
+body.smtinel-apple-production [data-smtinel-prod-hidden="true"]{display:none !important;}
+body.smtinel-apple-production [data-smtinel-prod-compact="true"]{max-width:760px;}
+body.smtinel-apple-production .smtinel-production-badge{
+  display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;
+  border:1px solid rgba(48,209,88,.22);background:rgba(48,209,88,.10);color:#137333;
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+}
+
+@media (prefers-reduced-motion: reduce){
+  body.smtinel-apple-production *,body.smtinel-apple-production *::before,body.smtinel-apple-production *::after{
+    animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;
+  }
+}
+@media (max-width:760px){
+  body.smtinel-apple-production .saas-hero-card{padding:18px !important;}
+  body.smtinel-apple-production .saas-hero-title{font-size:26px !important;}
+}
+</style>
+<!-- SMTINEL_APPLE_PRODUCTION_UI_PATCH_END -->
 </head>
 <body>
 
@@ -24373,7 +24650,7 @@ body:has(#recovery-section) .main-content.expanded{
         var columns = [
             { header: "Severity", key: "severity", width: 16 }, { header: "Line", key: "line", width: 12 }, { header: "Product Family", key: "productFamily", width: 34 }, { header: "SKU", key: "sku", width: 18 },
             { header: "Average Yield %", key: "avgYield", width: 18 }, { header: "Units", key: "totalUnits", width: 12 }, { header: "Risk Count", key: "riskCount", width: 14 }, { header: "Outliers", key: "outlierCount", width: 12 }, { header: "Critical Score", key: "criticalScore", width: 16 },
-            { header: "Q1", key: "q1", width: 12 }, { header: "Median", key: "median", width: 12 }, { header: "Q3", key: "q3", width: 12 }, { header: "IQR", key: "iqr", width: 12 }, { header: "Expected Low", key: "lowerFence", width: 16 }, { header: "Expected High", key: "upperFence", width: 16 }, { header: "CMA Bucket", key: "cmaBucket", width: 18 }, { header: "Pattern Type", key: "patternType", width: 28 }, { header: "Findings", key: "findings", width: 70 }, { header: "Conclusion", key: "conclusions", width: 70 }, { header: "Recommended Action", key: "actions", width: 80 }, { header: "Top WO", key: "topWo", width: 18 }, { header: "Top Shift", key: "topShift", width: 12 }
+            { header: "Q1", key: "q1", width: 12 }, { header: "Median", key: "median", width: 12 }, { header: "Q3", key: "q3", width: 12 }, { header: "IQR", key: "iqr", width: 12 }, { header: "Expected Low", key: "lowerFence", width: 16 }, { header: "Expected High", key: "upperFence", width: 16 }, { header: "CMA / Critical Model Analysis Bucket", key: "cmaBucket", width: 30 }, { header: "Pattern Type", key: "patternType", width: 28 }, { header: "Findings", key: "findings", width: 70 }, { header: "Conclusion", key: "conclusions", width: 70 }, { header: "Recommended Action", key: "actions", width: 80 }, { header: "Top WO", key: "topWo", width: 18 }, { header: "Top Shift", key: "topShift", width: 12 }
         ];
         var sortCol = (typeof activeSortColumn !== "undefined" && activeSortColumn) ? activeSortColumn : { key: "criticalScore", label: "Critical Score", type: "number" };
         groups.sort(function (a, b) {
@@ -28964,9 +29241,7 @@ body:has(#recovery-section) .main-content.expanded{
         return (React.createElement("div", { id: "yieldflow-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } },
             React.createElement("div", { style: { background: "linear-gradient(135deg,#102A43 0%,#1F3A5F 56%,#2B5F98 100%)", borderRadius: 18, padding: isMobile() ? "16px 14px" : "18px 20px", color: "#fff", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "minmax(0,1fr) auto", alignItems: "center", gap: isMobile() ? 10 : 14, overflow: "hidden" } },
                 React.createElement("div", { style: { minWidth: 0, width: "100%" } },
-                    React.createElement("div", { style: { fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", opacity: .72, marginBottom: 8 } }, "Yield intelligence"),
-                    React.createElement("div", { style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow: Process Output and SMT Progress to Stockin/FT"),
-                    React.createElement("div", { style: { fontSize: isMobile() ? 11.5 : 12.5, lineHeight: 1.55, opacity: .84, maxWidth: isMobile() ? "100%" : 800, marginTop: 8 } }, "Local executive view of process output, failure drivers, reintegration time, and work-order progress from SMT to Stockin/FT by business unit.")),
+                    React.createElement("div", { style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow: Process Output and SMT Progress to Stockin/FT")),
                 React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobile() ? "flex-start" : "flex-end", width: isMobile() ? "100%" : "auto" } },
                     React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)" } },
                         yieldFlowModel.kpi.orders,
@@ -28983,12 +29258,11 @@ body:has(#recovery-section) .main-content.expanded{
                     React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)" } },
                         traceOpsYieldFlowFmtHoursDays(yieldFlowModel.kpi.avgLeadHours, 1),
                         " Stockin/FT"),
-                    React.createElement("button", { type: "button", onClick: function() { var el = document.getElementById("traceops-yield-zip-import"); if(el) el.click(); }, disabled: yieldImportState.status === "loading", style: { width: "100%", border: "1px solid rgba(255,255,255,.5)", background: yieldImportState.status === "loading" ? "rgba(255,255,255,.1)" : "rgba(255,255,255,.22)", color: "#fff", borderRadius: 999, padding: "9px 14px", fontSize: 11.5, fontWeight: 800, cursor: yieldImportState.status === "loading" ? "wait" : "pointer", marginTop: 4 } }, yieldImportState.status === "loading" ? "Importing…" : "⬆ Load ZIP/Excel"))),
+                    React.createElement("button", { type: "button", onClick: function() { var el = document.getElementById("traceops-yield-zip-import"); if(el) el.click(); }, disabled: yieldImportState.status === "loading", style: { width: "100%", border: "1px solid rgba(255,255,255,.5)", background: yieldImportState.status === "loading" ? "rgba(255,255,255,.1)" : "rgba(255,255,255,.22)", color: "#fff", borderRadius: 999, padding: "9px 14px", fontSize: 11.5, fontWeight: 800, cursor: yieldImportState.status === "loading" ? "wait" : "pointer", marginTop: 4 } }, yieldImportState.status === "loading" ? "Importing…" : "Import ZIP"))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
                     React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, yieldText("importTitle")),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Fresh two-file cycle: load the current Common DB ZIP first, then the current SFC + Cesium ZIP. Each file replaces the previous iteration; no ZIP or dataset is restored from browser storage.")),
+                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, yieldText("importTitle"))),
                     React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
                         React.createElement("input", { id: "traceops-yield-zip-import", type: "file", accept: ".zip,.xlsx,.xlsm,.txt,.tsv,.csv", style: { display: "none" }, onChange: function (e) { if (e && e.preventDefault)
                                 e.preventDefault(); var f = e.target.files && e.target.files[0]; handleYieldFlowZipImport(f); setTimeout(function () { try {
@@ -28996,7 +29270,7 @@ body:has(#recovery-section) .main-content.expanded{
                             }
                             catch (_) { } }, 250); } }),
                         React.createElement("button", { type: "button", onClick: function () { var el = document.getElementById("traceops-yield-zip-import"); if (el)
-                                el.click(); }, disabled: yieldImportState.status === "loading", style: { border: "1px solid #1F3A5F", background: yieldImportState.status === "loading" ? "#D9E6F7" : "#1F3A5F", color: "#fff", borderRadius: 999, padding: "9px 13px", fontSize: 11, fontWeight: 800, cursor: yieldImportState.status === "loading" ? "wait" : "pointer" } }, yieldImportState.status === "loading" ? "Importing..." : "Load ZIP/Excel"))),
+                                el.click(); }, disabled: yieldImportState.status === "loading", style: { border: "1px solid #1F3A5F", background: yieldImportState.status === "loading" ? "#D9E6F7" : "#1F3A5F", color: "#fff", borderRadius: 999, padding: "9px 13px", fontSize: 11, fontWeight: 800, cursor: yieldImportState.status === "loading" ? "wait" : "pointer" } }, yieldImportState.status === "loading" ? "Importing..." : "Import ZIP"))),
                 React.createElement("div", { style: { padding: "13px 18px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "1.1fr 1fr", gap: 10 } },
                     React.createElement("div", { style: { background: yieldImportState.status === "error" ? "#FDEEEE" : (yieldImportState.status === "ok" ? "#EEF6FF" : "#FBFDFF"), border: "1px solid " + (yieldImportState.status === "error" ? "#F3D4D4" : (yieldImportState.status === "ok" ? "#D8E6FB" : "#E7EEF9")), borderRadius: 12, padding: "11px 12px" } },
                         React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: yieldImportState.status === "error" ? "#C44141" : "#1F3A5F", textTransform: "uppercase" } }, "Import Status"),
@@ -29004,7 +29278,7 @@ body:has(#recovery-section) .main-content.expanded{
                     React.createElement("div", { style: { background: "#FBFDFF", border: "1px solid #E7EEF9", borderRadius: 12, padding: "11px 12px" } },
                         React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#1F3A5F", textTransform: "uppercase" } }, "Imported Data"),
                         React.createElement("div", { style: { fontSize: 11.5, color: "#5F766C", lineHeight: 1.5, marginTop: 6 } },
-                            "WO/date/line/SKU come from Station On Line Report · SFC defines the scope: SN, WO, current event, and available SKU/model · DB Model only enriches BU/model by SKU · defect, reference, PN, and repair time come from Repair Record · pass/fail, test area, and failing test name come from Cesium.txt. OJT rule: SFC[SN] is linked through PARENTSERNUM / sysserialno; Repair retains the SN/parentsernum fallback. Evidence remains in memory only during the session; the Excel file is not stored. On mobile devices, large files are blocked before decompression.",
+                            "Current cycle",
                             yieldImportState.summary && yieldImportState.summary.sheets ? " Sheets: " + yieldImportState.summary.sheets.map(function (x) { return x.name + " (" + x.role + ":" + x.rows + ")"; }).join(" · ") : "")))),
             React.createElement("section", { style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 20, overflow: "hidden", boxShadow: "0 14px 30px rgba(16,42,67,.08)" } },
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "42% 58%", minHeight: isMobile() ? 0 : 224 } },
@@ -29039,8 +29313,7 @@ body:has(#recovery-section) .main-content.expanded{
             React.createElement("section", { style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 18, overflow: "hidden", boxShadow: "0 10px 22px rgba(16,42,67,.055)" } },
                 React.createElement("div", { style: { padding: "12px 15px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
                     React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#2F6FB3", textTransform: "uppercase", letterSpacing: ".12em" } }, "KPI support matrix"),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 2 } }, "Lead time, reintegration, and risk in a compact format.")),
+                        React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#2F6FB3", textTransform: "uppercase", letterSpacing: ".12em" } }, "KPI support matrix")),
                     React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#5F766C", background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 999, padding: "5px 9px" } }, "Scope SFC / WO")),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "repeat(2,minmax(0,1fr))" : "repeat(6,minmax(0,1fr))" } },
                     [
@@ -29054,16 +29327,6 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("div", { style: { fontSize: 9.5, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, k.l),
                         React.createElement("div", { style: { fontSize: isMobile() ? 25 : 29, fontWeight: 900, color: k.c, lineHeight: 1, marginTop: 9, letterSpacing: "-.04em" } }, k.v),
                         React.createElement("div", { style: { fontSize: 10.5, color: "#6A6560", marginTop: 7, lineHeight: 1.25 } }, k.m)); })) ),
-            React.createElement("div", { style: { background: "#FBFDFF", border: "1px dashed #C9DAF5", borderRadius: 14, padding: "12px 14px", fontSize: 11, color: "#5F766C", lineHeight: 1.55 } },
-                "Yield Flow Source: ",
-                React.createElement("span", { style: { fontWeight: 800, color: "#102A43" } }, TRACEOPS_YIELD_IMPORT_META.source),
-                ". Local mode: the imported Excel file is not retained; reloading returns to the sample/base dataset. To reset manually, edit ",
-                React.createElement("span", { style: { fontWeight: 800, color: "#102A43" } }, "TRACEOPS_YIELD_FLOW_TRACKER"),
-                ", ",
-                React.createElement("span", { style: { fontWeight: 800, color: "#102A43" } }, "TRACEOPS_YIELD_BY_WO_ROWS"),
-                " and ",
-                React.createElement("span", { style: { fontWeight: 800, color: "#102A43" } }, "TRACEOPS_RISK_SUMMARY_ROWS"),
-                "."),
             React.createElement("section", { style: { background: "#F5F7FB", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "12px 14px" : "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,.04)" } },
                 (function () {
                     var weekOptions = (yieldFlowModel.options && yieldFlowModel.options.week) || [];
@@ -29429,42 +29692,6 @@ body:has(#recovery-section) .main-content.expanded{
                         area.serials && area.serials.length ? React.createElement("button", { type: "button", onClick: function () { setYieldSerialModal({ title: area.testArea, subtitle: "FT failed serials · latest terminal result by SN/station", rows: area.serials.map(function (r) { var corr = r.repairCorrelation || null; return Object.assign({}, r, { symptom: r.failingTestName, station: r.testArea, location: corr ? (corr.refdes + " · " + corr.responsibleArea) : (r.machine || "N/D") }); }) }); }, style: { marginTop: 9, fontSize: 9, fontWeight: 800, padding: "4px 8px", borderRadius: 999, background: "#EAF2FF", color: "#1F3A5F", border: "1px solid #CFE0FB", cursor: "pointer" } }, "View SN " + traceOpsYieldFlowFmt(area.serials.length)) : null);
                 }) : React.createElement("div", { style: { gridColumn: "1 / -1", border: "1px dashed #D9E6F7", borderRadius: 12, padding: "14px", fontSize: 11.5, color: "#5F766C", background: "#FBFDFF" } }, "No Cesium / FT data for the active SFC scope."))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
-                React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" } },
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Flow governance map"),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Compact view of operational layers and accountable teams.")),
-                    React.createElement("span", { style: { fontSize: 10, fontWeight: 900, padding: "5px 9px", borderRadius: 999, background: "#EEF5FF", color: "#1F3A5F", border: "1px solid #CFE0FB" } }, "2 diagrams")),
-                React.createElement("div", { style: { padding: "14px 18px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "1fr 1fr", gap: 12 } },
-                    React.createElement("div", { style: { border: "1px solid #E7EEF9", borderRadius: 14, background: "#FBFDFF", padding: 12 } },
-                        React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#1F3A5F", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 } }, "Operational flow"),
-                        [
-                            { n: "1", t: "Process Output", d: "Detects escape vs queue", chips: ["SFC", "Repair", "Cause"], c: "#B87820", bg: "#FFF9EE", bd: "#F5E4A0" },
-                            { n: "2", t: "Reintegration", d: "Measures return to flow", chips: ["Debug", "Retest", "Stockin"], c: "#1F3A5F", bg: "#F7FAFF", bd: "#D9E6F7" },
-                            { n: "3", t: "SMT a FT", d: "Expone aging oculto", chips: ["Lead time", "FT", "Backlog"], c: "#6B2DA8", bg: "#FAF7FF", bd: "#DBCDF8" }
-                        ].map(function (x, idx) { return React.createElement("div", { key: "opflow_" + x.n, style: { display: "grid", gridTemplateColumns: "32px 1fr", gap: 10, alignItems: "start", marginBottom: idx === 2 ? 0 : 10 } },
-                            React.createElement("div", { style: { width: 30, height: 30, borderRadius: "50%", background: x.bg, border: "1px solid " + x.bd, color: x.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900 } }, x.n),
-                            React.createElement("div", { style: { border: "1px solid " + x.bd, background: x.bg, borderRadius: 12, padding: "9px 10px" } },
-                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline", flexWrap: "wrap" } },
-                                    React.createElement("div", { style: { fontSize: 11.5, fontWeight: 900, color: "#102A43" } }, x.t),
-                                    React.createElement("div", { style: { fontSize: 9.5, color: x.c, fontWeight: 800 } }, x.d)),
-                                React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 } }, x.chips.map(function (chip) { return React.createElement("span", { key: chip, style: { fontSize: 9, fontWeight: 800, padding: "3px 7px", borderRadius: 999, background: "#fff", color: x.c, border: "1px solid " + x.bd } }, chip); })))); })),
-                    React.createElement("div", { style: { border: "1px solid #E7EEF9", borderRadius: 14, background: "#FBFDFF", padding: 12 } },
-                        React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#1F3A5F", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 } }, "Role governance"),
-                        [
-                            { r: "PM / Project", d: "Orquesta prioridad", chips: ["Prioriza", "Escala", "Salida"], icon: "01" },
-                            { r: "Supervision / Production", d: "Moves the unit", chips: ["Repair", "Track", "Reintegrate"], icon: "02" },
-                            { r: "Process / Test / Mantto", d: "Confirma condicion", chips: ["Diagnostica", "Valida", "Libera"], icon: "03" },
-                            { r: "Quality", d: "Closes with evidence", chips: ["Evaluate", "Document", "Prevent"], icon: "04" }
-                        ].map(function (x, idx) { return React.createElement("div", { key: "roleflow_" + x.r, style: { position: "relative", display: "grid", gridTemplateColumns: "34px 1fr", gap: 10, alignItems: "start", marginBottom: idx === 3 ? 0 : 9 } },
-                            React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" } },
-                                React.createElement("div", { style: { width: 30, height: 30, borderRadius: "50%", background: "#EEF5FF", border: "1px solid #CFE0FB", color: "#1F3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 } }, x.icon),
-                                idx < 3 ? React.createElement("div", { style: { width: 1, height: 18, background: "#D9E6F7", marginTop: 5 } }) : null),
-                            React.createElement("div", { style: { border: "1px solid #D9E6F7", background: "#fff", borderRadius: 12, padding: "9px 10px" } },
-                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" } },
-                                    React.createElement("div", { style: { fontSize: 11.5, fontWeight: 900, color: "#102A43", textTransform: "uppercase" } }, x.r),
-                                    React.createElement("div", { style: { fontSize: 9.5, color: "#5F766C", fontWeight: 800 } }, x.d)),
-                                React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 } }, x.chips.map(function (chip) { return React.createElement("span", { key: chip, style: { fontSize: 9, fontWeight: 800, padding: "3px 7px", borderRadius: 999, background: "#F7FAFF", color: "#1F3A5F", border: "1px solid #D9E6F7" } }, chip); })))); })))),
-            React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
                     React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", flexWrap: "wrap" } },
                         React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Process / Work Order Tracker"),
@@ -29476,8 +29703,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 "showing ",
                                 traceOpsYieldFlowFmt(trackerRowsView.length),
                                 " / ",
-                                traceOpsYieldFlowFmt((yieldFlowModel.trackerRows || []).length)) : null)),
-                    React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Compact timeline view: station movement, AOI4 → VI1 delta, Wave Solder exposure risk and repair-driven evidence by serial number.")),
+                                traceOpsYieldFlowFmt((yieldFlowModel.trackerRows || []).length)) : null))),
                 React.createElement("div", { style: { padding: "12px 16px", display: "flex", flexDirection: "column", gap: 12 } }, trackerRowsView.length ? trackerRowsView.map(function (item) {
                     var leadHours = traceOpsYieldFlowHoursBetween(item.startSmt, item.firstFunctional);
                     var woSeverity = traceOpsYieldWoSeverity(item);
@@ -29543,8 +29769,7 @@ body:has(#recovery-section) .main-content.expanded{
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "1.15fr .85fr", gap: 14 } },
                 React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                     React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
-                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Yield by Work Order"),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Consolidated readout by family, volume, clean yield and repair-touch rate. Risk is aligned with impacted repair SNs.")),
+                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Yield by Work Order")),
                     React.createElement("div", { style: { padding: "12px 16px", overflowX: "auto" } },
                         React.createElement("table", { className: "toq-mini-table", style: { minWidth: 560 } },
                             React.createElement("thead", null,
@@ -29582,8 +29807,7 @@ body:has(#recovery-section) .main-content.expanded{
                             }))))),
                 React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                     React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF" } },
-                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Top risk SKU"),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Risk concentration and dominant symptom.")),
+                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Top risk SKU")),
                     React.createElement("div", { style: { padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 } }, yieldFlowModel.topRiskSku.map(function (item) {
                         return React.createElement("div", { key: item.sku, style: { border: "1px solid #E7EEF9", borderRadius: 12, padding: "10px 11px", background: "#FBFDFF" } },
                             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" } },
@@ -29599,8 +29823,7 @@ body:has(#recovery-section) .main-content.expanded{
             ), React.createElement("section", { style: { background: "#fff", border: "1px solid #D9E6F7", borderRadius: 16, overflow: "hidden" } },
                 React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #ECF3FF", background: "#F7FAFF", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" } },
                     React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Serial Number Traceability"),
-                        React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, "Review a serial number's status and route: SFC → Repair → Cesium FT.")),
+                        React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#102A43" } }, "Serial Number Traceability")),
                     React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
                         React.createElement("input", { type: "text", value: snSearchInput, onChange: function(e) { setSnSearchInput(e.target.value); }, onKeyDown: function(e) { if (e.key === "Enter") traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, placeholder: "Enter one or more serial numbers...", title: "Paste multiple serial numbers separated by commas, spaces, or line breaks", style: { border: "1px solid #C8D8F0", borderRadius: 999, padding: "7px 12px", fontSize: 11, width: 260, outline: "none", fontFamily: "monospace" } }),
                         React.createElement("button", { type: "button", onClick: function() { traceOpsYieldSetSerialSearch(snSearchInput, setSnSearchQuery); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 999, padding: "7px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" } }, "Search"),
@@ -32565,6 +32788,9 @@ body:has(#recovery-section) .main-content.expanded{
         var selectedWoSummary = traceOpsCmaBuildWoSummaryFromRows(snList.length ? snList : (selectedStat.rows || selectedSnRows || []));
         var selectedShiftSummary = traceOpsCmaBuildShiftSummaryFromRows(snList.length ? snList : (selectedStat.rows || selectedSnRows || []));
         var ccItems = traceOpsBoardFindCriticalCharacteristics({ ref: selectedRef, selectedStat: selectedStat, stat: selectedStat, rows: snList.length ? snList : rows, sku: (snList[0] && (snList[0].sku || snList[0].SKU || snList[0].skuno || snList[0].moduleno)) || ctx.sku || ctx.skuno || ctx.moduleno, model: (snList[0] && (snList[0].family || snList[0].model || snList[0].ModelName)) || ctx.family || ctx.model });
+        function syncBoardImpactKnowledgeState() {
+            window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] };
+        }
         function snCard(row, idx) {
             var sn = traceOpsBoardSnValue(row, idx);
             var sev = traceOpsBoardSeverityForCount(idx === 0 ? selectedStat.qty : Math.max(1, selectedStat.qty - idx), selectedStat.pct, idx);
@@ -32602,10 +32828,7 @@ body:has(#recovery-section) .main-content.expanded{
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
                     h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #C9DAF5", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Back to Yield Flow"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #B7CBEA", background: "#102A43", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
-                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.buildQualityAlertMarkdownFromState && window.downloadMarkdownFile) { var result = window.buildQualityAlertMarkdownFromState(); window.downloadMarkdownFile(result.filename, result.markdown); } }, style: { border: "1px solid rgba(134,217,255,.42)", background: "linear-gradient(135deg,#1F6FEB,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generate Markdown"),
-                    h("button", { type: "button", onClick: function () { window.__SMTINEL_BOARD_IMPACT_MD_STATE = { ctx: ctx || {}, selectedRef: selectedRef || "", selectedStat: selectedStat || {}, selectedSeverity: selectedSeverity || {}, snList: Array.isArray(snList) ? snList : [], modeOptions: Array.isArray(modeOptions) ? modeOptions : [], affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState || {}, ccItems: Array.isArray(ccItems) ? ccItems : [], uniqueRefs: Array.isArray(uniqueRefs) ? uniqueRefs : [], activeMode: activeMode || "", yieldFilters: yieldFilters || {}, activeBoardSnFilters: Array.isArray(activeBoardSnFilters) ? activeBoardSnFilters : [], activeBoardPartFilters: Array.isArray(activeBoardPartFilters) ? activeBoardPartFilters : [], activeBoardRefFilters: Array.isArray(activeBoardRefFilters) ? activeBoardRefFilters : [] }; if (window.downloadObsidianKnowledgePackFromState) { window.downloadObsidianKnowledgePackFromState(); } }, style: { border: "1px solid rgba(242,184,75,.52)", background: "linear-gradient(135deg,#F2B84B,#102A43)", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: "0 10px 24px rgba(16,42,67,.18)" } }, "Generate Knowledge Pack"),
                     h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #F1C04E", background: "linear-gradient(135deg,#FFF7D8,#FFFFFF)", color: "#8A5A00", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
-                    h("button", { type: "button", onClick: function () { var v = prompt("Search RefDes in PDF", selectedRef || ""); if (v) { setBoardDetailZoom(true); setBoardSelectedRef(v.trim()); } }, style: { border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Search RefDes"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
 
             h("section", { key: "board-impact-export-center", id: "board-impact-export-center", className: "traceops-board-export-center", style: { background: "#FFFFFF", border: "1px solid #D9E6F7", borderRadius: 18, padding: isMobile() ? "14px" : "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
@@ -32663,7 +32886,7 @@ body:has(#recovery-section) .main-content.expanded{
                             ["top", "bottom"].map(function (side) { return h("button", { key: side, type: "button", onClick: function () { setBoardSide(side); }, style: { border: 0, padding: "9px 15px", background: boardSide === side ? "#1F6FEB" : "#fff", color: boardSide === side ? "#fff" : "#1F3A5F", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, side.toUpperCase()); })),
                         h("button", { type: "button", onClick: function () { setBoardDetailZoom(false); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#fff" : "#1F6FEB", color: boardDetailZoom ? "#1F3A5F" : "#fff", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Overview"),
                         h("button", { type: "button", onClick: function () { setBoardDetailZoom(true); }, style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, background: boardDetailZoom ? "#1F6FEB" : "#fff", color: boardDetailZoom ? "#fff" : "#1F3A5F", padding: "0 12px", fontSize: 11, fontWeight: 900, cursor: "pointer" } }, "Detail"),
-                        h("input", { value: selectedRef, onChange: function (e) { setBoardSelectedRef(e.target.value); }, onKeyDown: function (e) { if (e.key === "Enter") { setBoardDetailZoom(true); setBoardSelectedRef(e.currentTarget.value.trim()); } }, placeholder: "Search RefDes", style: { height: 38, border: "1px solid #C9DAF5", borderRadius: 999, padding: "0 12px", fontSize: 12, fontWeight: 800, color: "#102A43", outline: "none", minWidth: 150 } }))),
+                        h("button", { type: "button", onClick: function () { var v = prompt("Search RefDes in PDF", selectedRef || ""); if (v) { var ref = String(v).trim(); if (ref) { setBoardDetailZoom(true); setBoardSelectedRef(ref); } } }, style: { height: 38, border: 0, background: "#1F6FEB", color: "#fff", borderRadius: 999, padding: "0 14px", fontSize: 11, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" } }, "Search RefDes"))),
                 h("div", { style: { padding: isMobile() ? "12px" : "16px" } },
                     h("div", { id: "traceops-board-pdf-stage", style: { position: "relative", width: "100%", height: isMobile() ? "72svh" : (boardDetailZoom ? 740 : 680), maxHeight: isMobile() ? "760px" : (boardDetailZoom ? 740 : 680), overflow: "auto", border: "1px solid #D8D8DC", borderRadius: isMobile() ? 26 : 22, background: "#D1D1D6", display: "block", textAlign: "center", WebkitOverflowScrolling: "touch", boxShadow: "inset 0 1px 0 rgba(255,255,255,.45)", overscrollBehavior: "contain" } },
                         h("div", { style: { position: "sticky", top: 14, left: 0, width: "100%", zIndex: 3, display: "flex", justifyContent: "center", pointerEvents: "none" } },
@@ -32819,11 +33042,11 @@ body:has(#recovery-section) .main-content.expanded{
             h("section", { key: "hero", style: { border: "1px solid #D9E6F7", background: "linear-gradient(135deg,#0B1F33,#1F3A5F)", color: "#fff", borderRadius: 22, padding: isMobile() ? 16 : 22, overflow: "hidden" } }, [
                 h("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", opacity: .74 } }, "Critical Characteristics · CC Register"),
                 h("h2", { style: { margin: "8px 0 0", fontSize: isMobile() ? 24 : 32, lineHeight: 1.05 } }, "Características Críticas del producto"),
-                h("p", { style: { margin: "10px 0 0", maxWidth: 880, fontSize: 13.5, lineHeight: 1.55, opacity: .86 } }, "Módulo independiente de CMA para registrar restricciones críticas de producto/proceso: proveedores que no deben mezclarse, sensibilidad térmica, zonas críticas de PCB, variables especiales y validaciones obligatorias antes de liberar unidades.")
+                h("p", { style: { margin: "10px 0 0", maxWidth: 880, fontSize: 13.5, lineHeight: 1.55, opacity: .86 } }, "Módulo independiente de CMA / Critical Model Analysis para registrar restricciones críticas de producto/proceso: proveedores que no deben mezclarse, sensibilidad térmica, zonas críticas de PCB, variables especiales y validaciones obligatorias antes de liberar unidades.")
             ]),
             h("section", { key: "form", style: { border: "1px solid #D9E6F7", background: "#fff", borderRadius: 22, padding: isMobile() ? 14 : 18 } }, [
                 h("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 14 } }, [
-                    h("div", null, [h("h3", { style: { margin: 0, color: "#102A43", fontSize: 20 } }, "Registrar / administrar CC"), h("p", { style: { margin: "5px 0 0", color: "#5F766C", fontSize: 12.5 } }, "Estas reglas viven separadas del cálculo estadístico CMA.")]),
+                    h("div", null, [h("h3", { style: { margin: 0, color: "#102A43", fontSize: 20 } }, "Registrar / administrar CC"), h("p", { style: { margin: "5px 0 0", color: "#5F766C", fontSize: 12.5 } }, "Estas reglas viven separadas del cálculo estadístico CMA / Critical Model Analysis.")]),
                     h("span", { style: { border: "1px solid #CFE0FB", background: "#EAF2FF", color: "#1F3A5F", borderRadius: 999, padding: "7px 10px", fontSize: 10.5, fontWeight: 900 } }, rows.length + " CC activas")
                 ]),
                 h("form", { onSubmit: submit, style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(0,1fr))", gap: 12 } }, [
@@ -34634,7 +34857,7 @@ body:has(#recovery-section) .main-content.expanded{
                 h("div", { key:"pulse3", className:"smtinel-cc-pulse p3" })
             ]),
             h("div", { key:"routes", className:"smtinel-cc-routes" }, [
-                routeButton("Load ZIP now", "upload", "primary", "yield"),
+                routeButton("Import ZIP", "upload", "primary", "yield"),
                 routeButton("Open Yield Flow", "yieldflow", "", "yield"),
                 routeButton("Open Board Impact", "boardimpact", "", "board"),
                 routeButton("Recovery Intelligence", "recovery", "", "recovery"),
@@ -34770,7 +34993,7 @@ body:has(#recovery-section) .main-content.expanded{
         var patternType = narrative && narrative.patternType ? narrative.patternType : 'BALANCED';
         var woSummary = g.woSummary && g.woSummary.length ? g.woSummary : (narrative && narrative.woSummary ? narrative.woSummary : traceOpsCmaBuildWoSummaryFromRows(g.sourceRows || []));
         var shiftSummary = g.shiftSummary && g.shiftSummary.length ? g.shiftSummary : (narrative && narrative.shiftSummary ? narrative.shiftSummary : traceOpsCmaBuildShiftSummaryFromRows(g.sourceRows || []));
-        var openCmaBoardImpact = function () { var cmaRows = (g.sourceRows || []); if (!cmaRows.length) { alert("No row-level records available for Board Impact from this CMA group."); return; } openBoardImpactFromYield({ type: "Critical Model Analysis", title: (g.sku || "SKU") + " · " + (g.line || "Line"), mode: "CMA findings", rows: cmaRows, ref: cmaRows[0] && (cmaRows[0].ref || cmaRows[0].refdes) }); setCriticalModelDetail(null); };
+        var openCmaBoardImpact = function () { var cmaRows = (g.sourceRows || []); if (!cmaRows.length) { alert("No row-level records available for Board Impact from this CMA / Critical Model Analysis group."); return; } openBoardImpactFromYield({ type: "Critical Model Analysis", title: (g.sku || "SKU") + " · " + (g.line || "Line"), mode: "CMA / Critical Model Analysis findings", rows: cmaRows, ref: cmaRows[0] && (cmaRows[0].ref || cmaRows[0].refdes) }); setCriticalModelDetail(null); };
         return React.createElement("div", { style: { position: "fixed", inset: 0, zIndex: 99998, background: "rgba(8,18,32,.42)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }, onClick: function () { setCriticalModelDetail(null); } },
             React.createElement("div", { style: { width: "min(720px,96vw)", maxHeight: "86vh", overflow: "auto", background: "#fff", border: "1px solid #D9E6F7", borderRadius: 22, boxShadow: "0 24px 80px rgba(8,18,32,.25)" }, onClick: function (ev) { ev.stopPropagation(); } },
                 React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #ECF3FF", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" } },
@@ -37666,8 +37889,8 @@ function stageText(stages){return Object.keys(stages||{}).sort(function(a,b){ret
 function supportAction(group,focus){if(!group)return'No current population is available for prioritization.';var context=group.family+' on '+group.line+' ['+reportBuLabel(group.bu)+']';if(focus==='QUALITY')return group.level==='HIGH'?'Assign additional Quality and Process support to '+context+'.':'Monitor '+context+' and keep containment readiness.';return group.level==='HIGH'?'Escalate cross-functional support for '+context+'.':'Keep '+context+' under management watch; no immediate escalation from current-scope data.'}
 function executiveBuWorkOrderBreakdown(groups,role,td,th){var buGroups=reportBuGroups(groups);if(!buGroups.length)return'<div style="padding:18px;color:#60758f">No business-unit population is available in the current loaded scope.</div>';return buGroups.map(function(b){var warning=b.bu==='BU NOT MAPPED',banner=warning?'#fff8e8':role.soft,border=warning?'#e0a21a':role.border,text=warning?'#825600':role.color;var rows=b.groups.slice(0,5).map(function(g,i){var plan=validatedPlanText(g.plan,g.units),priorityColor=g.level==='HIGH'?role.color:(g.level==='MEDIUM'?'#9a6700':'#1d6b42');return'<tr><td style="'+td+'text-align:right"><b>'+(i+1)+'</b></td><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'"><b style="color:'+role.color+'">'+esc(g.family)+'</b></td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+reportWorkOrderSerialsHtml(g.wo,g.sns,role.color)+'</td><td style="'+td+'text-align:right">'+esc(plan)+'</td><td style="'+td+'text-align:right"><b>'+g.units.toLocaleString()+'</b></td><td style="'+td+'">'+topStationText(g.stations)+'</td><td style="'+td+'text-align:right;color:'+(g.repair?role.color:'#526a82')+'"><b>'+g.repair.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(g.cost)+'</td><td style="'+td+'"><b style="color:'+priorityColor+'">'+g.level+'</b><div style="font-size:10px;color:#60758f">Score '+g.priority+'/100</div></td></tr>'}).join('');var note=b.groups.length>5?'<div style="padding:7px 10px;color:#60758f;font-size:10px;border-top:1px solid '+border+'">Showing the five highest-attention work orders of '+b.groups.length+' in this business unit.</div>':'';return'<div style="margin:10px 0 14px;border:1px solid '+border+';border-radius:7px;overflow:hidden;background:#fff"><table role="presentation" style="border-collapse:collapse;width:100%;background:'+banner+';border-bottom:1px solid '+border+'"><tr><td style="padding:10px 12px;text-align:left"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:'+text+'">BUSINESS UNIT</div><div style="font-size:18px;font-weight:700;color:'+text+';margin-top:2px">'+esc(b.bu)+'</div></td><td style="padding:10px 12px;text-align:right;font-size:11px;line-height:1.5;color:#536b86;white-space:nowrap"><b>'+b.woCount.toLocaleString()+' WO</b> | '+b.units.toLocaleString()+' units | '+b.repair.toLocaleString()+' repair | '+money(b.cost)+' WIP'+(b.high?' | <b style="color:'+role.color+'">'+b.high+' high attention</b>':'')+'</td></tr></table><div style="overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Rank</th><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Plan</th><th style="'+th+'">Current scope</th><th style="'+th+'">Current position</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP value</th><th style="'+th+'">Support priority</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+note+'</div>'}).join('')}
 function qualityRunFollowupSection(groups,role,td,th){var ordered=(groups||[]).slice().sort(function(a,b){return Number(b.flowCounts&&b.flowCounts.SMT_RUNNING||0)-Number(a.flowCounts&&a.flowCounts.SMT_RUNNING||0)||String(reportBuLabel(a.bu)).localeCompare(String(reportBuLabel(b.bu)))||String(a.line).localeCompare(String(b.line),undefined,{numeric:true})||String(a.family).localeCompare(String(b.family))||String(a.wo).localeCompare(String(b.wo))});var rowsHtml=ordered.map(function(g){var plan=validatedPlanText(g.plan,g.units),rate=g.units?(g.repair/g.units*100).toFixed(1)+'%':'0.0%',tone=reportFlowTone(g),lineStyle=td+'border-left:4px solid '+tone.color+';background:'+tone.bg;return'<tr><td style="'+td+'"><b>'+esc(reportBuLabel(g.bu))+'</b></td><td style="'+lineStyle+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'"><b style="color:'+role.color+'">'+esc(g.family)+'</b></td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+reportWorkOrderSerialsHtml(g.wo,g.sns,'#082b63')+'</td><td style="'+td+'text-align:right">'+esc(plan)+'</td><td style="'+td+'text-align:right"><b>'+g.units.toLocaleString()+'</b></td><td style="'+td+'">'+reportFlowBadgeHtml(g)+'</td><td style="'+td+'">'+topStationText(g.stations)+'</td><td style="'+td+'text-align:right;color:'+(g.repair?role.color:'#526a82')+'"><b>'+g.repair.toLocaleString()+'</b><div style="font-size:10px;color:#60758f">'+rate+'</div></td><td style="'+td+'text-align:right">'+money(g.repairCost||0)+'</td><td style="'+td+'text-align:right">'+money(g.cost)+'</td></tr>'}).join('');if(!rowsHtml)rowsHtml='<tr><td colspan="12" style="'+td+'color:#60758f">No work-order population is available in the current loaded scope.</td></tr>';return'<div style="margin-top:14px;border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('3','Production Run Follow-up',role.color)+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.4">All loaded work orders are shown for execution follow-up. Expand the WO arrow to review or copy the serial population currently linked to the run. A green SMT RUNNING badge identifies runs that still have serials at SMTLOADING, AOI2 or AOI4. Downstream population is classified separately without hiding mixed flow. Plan is displayed only when the available target is equal to or greater than the serial-number population; otherwise it is reported as Plan not available because the source may contain only the remaining target.'+reportFlowLegendHtml()+'</div><div style="padding:6px 12px 12px;overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">BU</th><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Plan</th><th style="'+th+'">Current units</th><th style="'+th+'">Flow status</th><th style="'+th+'">Current position</th><th style="'+th+'">Repair</th><th style="'+th+'">Repair exposure</th><th style="'+th+'">WIP value</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div></div>'}
-function reportRoleSection(role,groups,td,th){var color=role.color;if(selectedReportFocus==='QUALITY'){var patterns=reportPatterns(),rowsHtml=patterns.map(function(p,i){return'<tr><td style="'+td+'text-align:right"><b>'+(i+1)+'</b></td><td style="'+td+'"><b>'+esc(p.model)+'</b></td><td style="'+td+'"><b style="color:'+color+'">'+esc(p.refdes)+'</b></td><td style="'+td+'">'+esc(p.mode)+'</td><td style="'+td+'"><b>'+esc(p.partNumber||'Not specified')+'</b></td><td style="'+td+'"><b>'+p.qty.toLocaleString()+' SN</b>'+reportSerialDetailsHtml(p.serials,color)+'</td></tr>'}).join('');if(!rowsHtml)rowsHtml='<tr><td colspan="6" style="'+td+'color:#60758f">No linked non-retest repair patterns were found in the current scope.</td></tr>';return qualityRunFollowupSection(groups,role,td,th)+'<div style="margin-top:14px;border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('4','CMA / Quality Decision Signal',color)+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.4">Current-scope repair evidence used to identify the first failure patterns to investigate. RefDes sharing the same failure mode and Part Number are consolidated as one cause. Expand the affected serial list in the downloaded HTML to begin unit-level investigation. This is not yet the historical CMA score.</div><div style="padding:6px 12px 12px"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Rank</th><th style="'+th+'">Model</th><th style="'+th+'">RefDes</th><th style="'+th+'">Failure mode</th><th style="'+th+'">Part Number</th><th style="'+th+'">Affected serials</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div></div>'}return'<div style="padding:18px;color:#60758f">No role-specific section is available.</div>'}
-function weeklyReportHtml(){var role=reportRole(),current=reportSnapshot(),groups=reportGroups(),executiveCurrent=current.filter(function(r){return reportBuLabel(r&&r.bu)!=='BU NOT MAPPED'}),executiveGroups=groups.filter(function(g){return reportBuLabel(g&&g.bu)!=='BU NOT MAPPED'}),reportCurrent=selectedReportFocus==='EXECUTIVE'?executiveCurrent:current,reportScopeGroups=selectedReportFocus==='EXECUTIVE'?executiveGroups:groups,buGroups=reportBuGroups(groups),top=reportScopeGroups[0]||null,stations=summarizeStations(reportCurrent),totalCost=reportCurrent.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=reportCurrent.filter(function(r){return r.repair}).length,repairCost=reportCurrent.filter(function(r){return r.repair}).reduce(function(a,r){return a+Number(r.cost||0)},0),woCount=reportScopeGroups.filter(function(g){return g.wo!=='N/D'}).length,critical=reportScopeGroups.filter(function(g){return g.level==='HIGH'}).length,notes=document.getElementById('shiftNotes').value.trim(),cut=new Date();var td='font-family:Arial,Helvetica,sans-serif;padding:8px 10px;border:1px solid #d7e0ea;vertical-align:top;font-size:12px;line-height:1.35;text-align:left;';var th=td+'background:'+role.soft+';color:'+role.color+';font-size:10px;text-transform:uppercase;letter-spacing:.04em;';var metrics;if(selectedReportFocus==='QUALITY')metrics=[['WORK ORDERS',woCount],['REPAIR UNITS',repair],['REPAIR EXPOSURE',money(repairCost)],['HIGH PRIORITY',critical],['CURRENT POPULATION',current.length.toLocaleString()]];else metrics=[['BUSINESS UNITS',buGroups.length],['WORK ORDERS',woCount],['HIGH ATTENTION',critical],['REPAIR EXPOSURE',money(repairCost)],['WIP VALUE',money(totalCost)]];var metricHtml=metrics.map(function(m){return reportMetric(m[0],String(m[1]),m[0].indexOf('REPAIR')>=0||m[0].indexOf('HIGH')>=0?role.color:'#172b43')}).join('');var standardRows=groups.slice(0,10).map(function(g,i){var plan=validatedPlanText(g.plan,g.units),priorityColor=g.level==='HIGH'?role.color:(g.level==='MEDIUM'?'#9a6700':'#1d6b42');return'<tr><td style="'+td+'text-align:right"><b>'+(i+1)+'</b></td><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'"><b style="color:'+role.color+'">'+esc(g.family)+'</b></td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+reportWorkOrderSerialsHtml(g.wo,g.sns,'#082b63')+'</td><td style="'+td+'text-align:right">'+esc(plan)+'</td><td style="'+td+'text-align:right"><b>'+g.units.toLocaleString()+'</b></td><td style="'+td+'">'+topStationText(g.stations)+'</td><td style="'+td+'text-align:right;color:'+(g.repair?role.color:'#526a82')+'"><b>'+g.repair.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(g.cost)+'</td><td style="'+td+'"><b style="color:'+priorityColor+'">'+g.level+'</b><div style="font-size:10px;color:#60758f">Score '+g.priority+'/100</div></td></tr>'}).join('');if(!standardRows)standardRows='<tr><td colspan="11" style="'+td+'color:#60758f">No work-order population is available in the current loaded scope.</td></tr>';var decision=supportAction(top,selectedReportFocus),reason=top?('Current priority score '+top.priority+'/100 from repair burden, population concentration and WIP exposure. Current position: '+orderedStationKeys(top.stations,3).map(function(st){return emailStationLabel(st)+' '+top.stations[st]}).join(', ')+'.'+(selectedReportFocus==='EXECUTIVE'?' Scope includes '+buGroups.length+' business units and '+reportCurrent.length.toLocaleString()+' current units.':'')):'No data is available for a support recommendation.';var scopeWarning=reportFiscalScopeHtml(role);var breakdownTitle=selectedReportFocus==='EXECUTIVE'?'Work Order Breakdown by Business Unit':'Quality Priority Ranking';var breakdownDescription=selectedReportFocus==='EXECUTIVE'?'Each business unit is separated into its own table. Within every BU, the five highest-attention work orders are ranked using repair evidence, population concentration and WIP exposure.':'The ten highest-priority work orders are ranked for Quality using repair evidence, repair rate, population concentration and WIP exposure. Complete run tracking is provided in the next section.';var breakdownBody=selectedReportFocus==='EXECUTIVE'?executiveBuWorkOrderBreakdown(groups,role,td,th):'<div style="padding:6px 12px 12px;overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Rank</th><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Plan</th><th style="'+th+'">Current scope</th><th style="'+th+'">Current position</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP value</th><th style="'+th+'">Support priority</th></tr></thead><tbody>'+standardRows+'</tbody></table></div>';return'<div style="font-family:Arial,Helvetica,sans-serif;color:#172b43;max-width:1180px;margin:0 auto;background:#fff;border:1px solid #c8d4df"><table role="presentation" style="border-collapse:collapse;width:100%;background:#fff"><tr><td style="padding:16px 20px 12px;text-align:left"><div style="display:inline-block;min-width:50px;height:50px;line-height:50px;text-align:center;border-radius:14px;background:'+role.soft+';color:'+role.color+';font-size:25px;vertical-align:middle;margin-right:12px">'+role.icon+'</div><div style="display:inline-block;vertical-align:middle"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:'+role.color+'">'+role.short+' FOCUS</div><div style="font-size:24px;font-weight:700;color:#202328;margin-top:2px">SMTinel Weekly Execution Review</div><div style="font-size:12px;color:#5f6b78;margin-top:4px">'+esc(reportPeriod())+' | '+esc(reportPeriodRange())+' | '+esc(reportLineLabel())+' | '+esc(reportScopeLabel())+' | Generated '+esc(cut.toLocaleString())+'</div></div></td><td style="padding:12px 20px 8px;text-align:right;white-space:nowrap"><img src="'+EMAIL_FII_LOGO+'" alt="Foxconn Industrial Internet" width="150" style="display:inline-block;width:150px;height:auto;border:0"></td></tr></table><div style="margin:0 20px 12px;padding:10px 12px;background:'+role.color+';color:#fff;text-align:left;font-size:14px;font-weight:700;border-radius:5px">'+esc(role.purpose)+'</div><div style="padding:0 20px 18px"><div style="border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('1','Weekly Decision Overview',role.color)+'<table role="presentation" style="border-collapse:collapse;width:100%"><tr>'+metricHtml+'</tr></table><div style="padding:11px 12px;background:'+role.soft+';border-top:1px solid '+role.border+';font-size:12px;line-height:1.5"><b style="color:'+role.color+'">Decision focus:</b> '+esc(decision)+'<br><span style="color:#536b86">'+esc(reason)+'</span></div></div>'+scopeWarning+(notes?'<div style="margin-top:10px;padding:10px 12px;border-left:5px solid #d28b16;background:#fff8e8;font-size:12px;line-height:1.45"><b style="color:#8a5a00">Management notes</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'<div style="margin-top:14px;border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('2',breakdownTitle,role.color)+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.4">'+esc(breakdownDescription)+'</div>'+breakdownBody+'</div>'+reportRoleSection(role,groups,td,th)+'<div style="margin-top:12px;padding:10px 11px;background:#f5f8fc;border:1px solid #d7e0ea;font-size:11px;line-height:1.45;color:#536b86"><b>Source and limits:</b> Current SMTinel SFC/Yield Flow snapshot, work-order plan mapping, Common DB cost mapping and normalized Repair Record evidence. Business-unit assignment accepts only a valid BU from SFC or the Common DB model mapping. Station and process labels are rejected, and unresolved rows are omitted from Executive Focus. Plan is shown only when the available target is not lower than the serial-number population; a lower target is treated as remaining quantity and displayed as Plan not available. The selected fiscal week filters the current SFC population by fiscal label or build-start date. This is a current-position snapshot, not a historical throughput ledger, and it does not yet include the historical CMA score.</div></div><table role="presentation" style="border-collapse:collapse;width:100%;background:'+role.color+';color:#fff"><tr><td style="padding:7px 12px;font-size:10px;text-align:left">Fii Confidential. Internal manufacturing decision support.</td><td style="padding:7px 12px;text-align:right;font-size:10px">'+esc(cut.toLocaleDateString())+'</td></tr></table></div>'}
+function reportRoleSection(role,groups,td,th){var color=role.color;if(selectedReportFocus==='QUALITY'){var patterns=reportPatterns(),rowsHtml=patterns.map(function(p,i){return'<tr><td style="'+td+'text-align:right"><b>'+(i+1)+'</b></td><td style="'+td+'"><b>'+esc(p.model)+'</b></td><td style="'+td+'"><b style="color:'+color+'">'+esc(p.refdes)+'</b></td><td style="'+td+'">'+esc(p.mode)+'</td><td style="'+td+'"><b>'+esc(p.partNumber||'Not specified')+'</b></td><td style="'+td+'"><b>'+p.qty.toLocaleString()+' SN</b>'+reportSerialDetailsHtml(p.serials,color)+'</td></tr>'}).join('');if(!rowsHtml)rowsHtml='<tr><td colspan="6" style="'+td+'color:#60758f">No linked non-retest repair patterns were found in the current scope.</td></tr>';return qualityRunFollowupSection(groups,role,td,th)+'<div style="margin-top:14px;border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('4','CMA / Critical Model Analysis - Quality Decision Signal',color)+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.4">Current-scope repair evidence used to identify the first failure patterns to investigate. RefDes sharing the same failure mode and Part Number are consolidated as one cause. Expand the affected serial list in the downloaded HTML to begin unit-level investigation. This is not yet the historical CMA / Critical Model Analysis score.</div><div style="padding:6px 12px 12px"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Rank</th><th style="'+th+'">Model</th><th style="'+th+'">RefDes</th><th style="'+th+'">Failure mode</th><th style="'+th+'">Part Number</th><th style="'+th+'">Affected serials</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div></div>'}return'<div style="padding:18px;color:#60758f">No role-specific section is available.</div>'}
+function weeklyReportHtml(){var role=reportRole(),current=reportSnapshot(),groups=reportGroups(),executiveCurrent=current.filter(function(r){return reportBuLabel(r&&r.bu)!=='BU NOT MAPPED'}),executiveGroups=groups.filter(function(g){return reportBuLabel(g&&g.bu)!=='BU NOT MAPPED'}),reportCurrent=selectedReportFocus==='EXECUTIVE'?executiveCurrent:current,reportScopeGroups=selectedReportFocus==='EXECUTIVE'?executiveGroups:groups,buGroups=reportBuGroups(groups),top=reportScopeGroups[0]||null,stations=summarizeStations(reportCurrent),totalCost=reportCurrent.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=reportCurrent.filter(function(r){return r.repair}).length,repairCost=reportCurrent.filter(function(r){return r.repair}).reduce(function(a,r){return a+Number(r.cost||0)},0),woCount=reportScopeGroups.filter(function(g){return g.wo!=='N/D'}).length,critical=reportScopeGroups.filter(function(g){return g.level==='HIGH'}).length,notes=document.getElementById('shiftNotes').value.trim(),cut=new Date();var td='font-family:Arial,Helvetica,sans-serif;padding:8px 10px;border:1px solid #d7e0ea;vertical-align:top;font-size:12px;line-height:1.35;text-align:left;';var th=td+'background:'+role.soft+';color:'+role.color+';font-size:10px;text-transform:uppercase;letter-spacing:.04em;';var metrics;if(selectedReportFocus==='QUALITY')metrics=[['WORK ORDERS',woCount],['REPAIR UNITS',repair],['REPAIR EXPOSURE',money(repairCost)],['HIGH PRIORITY',critical],['CURRENT POPULATION',current.length.toLocaleString()]];else metrics=[['BUSINESS UNITS',buGroups.length],['WORK ORDERS',woCount],['HIGH ATTENTION',critical],['REPAIR EXPOSURE',money(repairCost)],['WIP VALUE',money(totalCost)]];var metricHtml=metrics.map(function(m){return reportMetric(m[0],String(m[1]),m[0].indexOf('REPAIR')>=0||m[0].indexOf('HIGH')>=0?role.color:'#172b43')}).join('');var standardRows=groups.slice(0,10).map(function(g,i){var plan=validatedPlanText(g.plan,g.units),priorityColor=g.level==='HIGH'?role.color:(g.level==='MEDIUM'?'#9a6700':'#1d6b42');return'<tr><td style="'+td+'text-align:right"><b>'+(i+1)+'</b></td><td style="'+td+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'"><b style="color:'+role.color+'">'+esc(g.family)+'</b></td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+reportWorkOrderSerialsHtml(g.wo,g.sns,'#082b63')+'</td><td style="'+td+'text-align:right">'+esc(plan)+'</td><td style="'+td+'text-align:right"><b>'+g.units.toLocaleString()+'</b></td><td style="'+td+'">'+topStationText(g.stations)+'</td><td style="'+td+'text-align:right;color:'+(g.repair?role.color:'#526a82')+'"><b>'+g.repair.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(g.cost)+'</td><td style="'+td+'"><b style="color:'+priorityColor+'">'+g.level+'</b><div style="font-size:10px;color:#60758f">Score '+g.priority+'/100</div></td></tr>'}).join('');if(!standardRows)standardRows='<tr><td colspan="11" style="'+td+'color:#60758f">No work-order population is available in the current loaded scope.</td></tr>';var decision=supportAction(top,selectedReportFocus),reason=top?('Current priority score '+top.priority+'/100 from repair burden, population concentration and WIP exposure. Current position: '+orderedStationKeys(top.stations,3).map(function(st){return emailStationLabel(st)+' '+top.stations[st]}).join(', ')+'.'+(selectedReportFocus==='EXECUTIVE'?' Scope includes '+buGroups.length+' business units and '+reportCurrent.length.toLocaleString()+' current units.':'')):'No data is available for a support recommendation.';var scopeWarning=reportFiscalScopeHtml(role);var breakdownTitle=selectedReportFocus==='EXECUTIVE'?'Work Order Breakdown by Business Unit':'Quality Priority Ranking';var breakdownDescription=selectedReportFocus==='EXECUTIVE'?'Each business unit is separated into its own table. Within every BU, the five highest-attention work orders are ranked using repair evidence, population concentration and WIP exposure.':'The ten highest-priority work orders are ranked for Quality using repair evidence, repair rate, population concentration and WIP exposure. Complete run tracking is provided in the next section.';var breakdownBody=selectedReportFocus==='EXECUTIVE'?executiveBuWorkOrderBreakdown(groups,role,td,th):'<div style="padding:6px 12px 12px;overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Rank</th><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Plan</th><th style="'+th+'">Current scope</th><th style="'+th+'">Current position</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP value</th><th style="'+th+'">Support priority</th></tr></thead><tbody>'+standardRows+'</tbody></table></div>';return'<div style="font-family:Arial,Helvetica,sans-serif;color:#172b43;max-width:1180px;margin:0 auto;background:#fff;border:1px solid #c8d4df"><table role="presentation" style="border-collapse:collapse;width:100%;background:#fff"><tr><td style="padding:16px 20px 12px;text-align:left"><div style="display:inline-block;min-width:50px;height:50px;line-height:50px;text-align:center;border-radius:14px;background:'+role.soft+';color:'+role.color+';font-size:25px;vertical-align:middle;margin-right:12px">'+role.icon+'</div><div style="display:inline-block;vertical-align:middle"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:'+role.color+'">'+role.short+' FOCUS</div><div style="font-size:24px;font-weight:700;color:#202328;margin-top:2px">SMTinel Weekly Execution Review</div><div style="font-size:12px;color:#5f6b78;margin-top:4px">'+esc(reportPeriod())+' | '+esc(reportPeriodRange())+' | '+esc(reportLineLabel())+' | '+esc(reportScopeLabel())+' | Generated '+esc(cut.toLocaleString())+'</div></div></td><td style="padding:12px 20px 8px;text-align:right;white-space:nowrap"><img src="'+EMAIL_FII_LOGO+'" alt="Foxconn Industrial Internet" width="150" style="display:inline-block;width:150px;height:auto;border:0"></td></tr></table><div style="margin:0 20px 12px;padding:10px 12px;background:'+role.color+';color:#fff;text-align:left;font-size:14px;font-weight:700;border-radius:5px">'+esc(role.purpose)+'</div><div style="padding:0 20px 18px"><div style="border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('1','Weekly Decision Overview',role.color)+'<table role="presentation" style="border-collapse:collapse;width:100%"><tr>'+metricHtml+'</tr></table><div style="padding:11px 12px;background:'+role.soft+';border-top:1px solid '+role.border+';font-size:12px;line-height:1.5"><b style="color:'+role.color+'">Decision focus:</b> '+esc(decision)+'<br><span style="color:#536b86">'+esc(reason)+'</span></div></div>'+scopeWarning+(notes?'<div style="margin-top:10px;padding:10px 12px;border-left:5px solid #d28b16;background:#fff8e8;font-size:12px;line-height:1.45"><b style="color:#8a5a00">Management notes</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'<div style="margin-top:14px;border:1px solid '+role.border+';border-radius:7px;overflow:hidden;background:#fff">'+reportSectionTitle('2',breakdownTitle,role.color)+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px;line-height:1.4">'+esc(breakdownDescription)+'</div>'+breakdownBody+'</div>'+reportRoleSection(role,groups,td,th)+'<div style="margin-top:12px;padding:10px 11px;background:#f5f8fc;border:1px solid #d7e0ea;font-size:11px;line-height:1.45;color:#536b86"><b>Source and limits:</b> Current SMTinel SFC/Yield Flow snapshot, work-order plan mapping, Common DB cost mapping and normalized Repair Record evidence. Business-unit assignment accepts only a valid BU from SFC or the Common DB model mapping. Station and process labels are rejected, and unresolved rows are omitted from Executive Focus. Plan is shown only when the available target is not lower than the serial-number population; a lower target is treated as remaining quantity and displayed as Plan not available. The selected fiscal week filters the current SFC population by fiscal label or build-start date. This is a current-position snapshot, not a historical throughput ledger, and it does not yet include the historical CMA / Critical Model Analysis score.</div></div><table role="presentation" style="border-collapse:collapse;width:100%;background:'+role.color+';color:#fff"><tr><td style="padding:7px 12px;font-size:10px;text-align:left">Fii Confidential. Internal manufacturing decision support.</td><td style="padding:7px 12px;text-align:right;font-size:10px">'+esc(cut.toLocaleDateString())+'</td></tr></table></div>'}
 function finalShiftReportHtml(){var current=currentSnapshot(),move=movementFor(current),stations=summarizeStations(current),groups=reportGroups(),buGroups=reportBuGroups(groups),cut=new Date(),scopeLabel=scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters',selectedLine=document.getElementById('line').value,notes=document.getElementById('shiftNotes').value.trim();var totalCost=current.reduce(function(a,r){return a+Number(r.cost||0)},0),repair=current.filter(function(r){return r.repair}).length,repairCost=current.filter(function(r){return r.repair}).reduce(function(a,r){return a+Number(r.cost||0)},0),topQueue=stations.slice().sort(function(a,b){return b.units-a.units})[0]||{station:'N/D',units:0},topRisk=groups[0]||null;var processed=move.available?move.moved.toLocaleString():'N/D',baseline=move.available?new Date(move.capturedAt).toLocaleString():'Not captured - current snapshot only',movement=move.available?(move.entered.toLocaleString()+' / '+move.exited.toLocaleString()):'N/D';var td='font-family:Arial,Helvetica,sans-serif;padding:8px 9px;border:1px solid #b9cbe3;vertical-align:top;font-size:11px;line-height:1.35;text-align:left;',th=td+'background:#eaf2ff;color:#082b63;font-size:10px;text-transform:uppercase;letter-spacing:.04em;';var metric=function(label,value,color){return'<td style="font-family:Arial,Helvetica,sans-serif;width:20%;padding:11px 12px;border:1px solid #b9cbe3;background:#fff;vertical-align:top;text-align:left"><div style="font-size:10px;font-weight:700;letter-spacing:.06em;color:#60758f">'+label+'</div><div style="font-size:21px;font-weight:700;color:'+(color||'#082b63')+';margin-top:4px">'+value+'</div></td>'};var sectionTitle=function(number,title,color){color=color||'#082b63';return'<div style="padding:8px 11px;background:'+color+';color:#fff;font-size:15px;font-weight:700;text-align:left"><span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:#fff;color:'+color+';margin-right:7px">'+number+'</span>'+title+'</div>'};var unmapped=current.filter(function(r){return r.station==='UNMAPPED / REVIEW'}).length,missingCost=current.filter(function(r){return Number(r.cost||0)<=0}).length,alerts='';if(unmapped)alerts+='<div style="margin-top:10px;padding:10px 12px;border-left:5px solid #c8202f;background:#fff1f2;font-size:12px;line-height:1.4;color:#8f2630"><b>Station mapping review:</b> '+unmapped.toLocaleString()+' serials remain under UNMAPPED / REVIEW.</div>';if(missingCost)alerts+='<div style="margin-top:8px;padding:10px 12px;border-left:5px solid #d28b16;background:#fff8e8;font-size:12px;line-height:1.4;color:#825600"><b>Cost mapping review:</b> '+missingCost.toLocaleString()+' serials have no matched SKU cost in the current Common DB.</div>';var repairByBu={};current.forEach(function(r){var bu=reportBuLabel(r&&r.bu);if(bu==='BU NOT MAPPED'||!r.repair)return;repairByBu[bu]=(repairByBu[bu]||0)+Number(r.cost||0)});var buRows=buGroups.map(function(b){var top=b.top,topRiskText=top?(esc(top.family)+' | '+esc(top.line)+' | WO '+esc(top.wo)):'No current risk';return'<tr><td style="'+td+'"><b style="color:#172b43">'+esc(b.bu)+'</b></td><td style="'+td+'text-align:right">'+b.woCount.toLocaleString()+'</td><td style="'+td+'text-align:right"><b>'+b.units.toLocaleString()+'</b></td><td style="'+td+'text-align:right;color:'+(b.repair?'#c8202f':'#526a82')+'"><b>'+b.repair.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(repairByBu[b.bu]||0)+'</td><td style="'+td+'text-align:right">'+money(b.cost)+'</td><td style="'+td+'text-align:right"><b style="color:'+(b.high?'#c8202f':'#1d6b42')+'">'+b.high.toLocaleString()+'</b></td><td style="'+td+'">'+topRiskText+'</td></tr>'}).join('');if(!buRows)buRows='<tr><td colspan="8" style="'+td+'color:#60758f">No mapped business-unit population is available.</td></tr>';var runRows=groups.slice().sort(function(a,b){return Number(b.flowCounts&&b.flowCounts.SMT_RUNNING||0)-Number(a.flowCounts&&a.flowCounts.SMT_RUNNING||0)||String(reportBuLabel(a.bu)).localeCompare(String(reportBuLabel(b.bu)))||String(a.line).localeCompare(String(b.line),undefined,{numeric:true})||String(a.family).localeCompare(String(b.family))||String(a.wo).localeCompare(String(b.wo))}).map(function(g){var plan=validatedPlanText(g.plan,g.units),priorityColor=g.level==='HIGH'?'#c8202f':(g.level==='MEDIUM'?'#9a6700':'#1d6b42'),tone=reportFlowTone(g),lineStyle=td+'border-left:4px solid '+tone.color+';background:'+tone.bg;return'<tr><td style="'+td+'"><b>'+esc(reportBuLabel(g.bu))+'</b></td><td style="'+lineStyle+'"><b>'+esc(g.line)+'</b></td><td style="'+td+'"><b style="color:#082b63">'+esc(g.family)+'</b></td><td style="'+td+'">'+esc(g.sku)+'</td><td style="'+td+'">'+reportWorkOrderSerialsHtml(g.wo,g.sns,'#082b63')+'</td><td style="'+td+'text-align:right">'+esc(plan)+'</td><td style="'+td+'text-align:right"><b>'+g.units.toLocaleString()+'</b></td><td style="'+td+'">'+reportFlowBadgeHtml(g)+'</td><td style="'+td+'">'+topStationText(g.stations)+'</td><td style="'+td+'text-align:right;color:'+(g.repair?'#c8202f':'#526a82')+'"><b>'+g.repair.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(g.repairCost||0)+'</td><td style="'+td+'text-align:right">'+money(g.cost)+'</td><td style="'+td+'"><b style="color:'+priorityColor+'">'+g.level+'</b></td></tr>'}).join('');if(!runRows)runRows='<tr><td colspan="13" style="'+td+'color:#60758f">No work-order population is available.</td></tr>';var stationRows=stations.map(function(st){var share=current.length?(st.units/current.length*100).toFixed(1):'0.0';return'<tr><td style="'+td+'"><b style="color:#082b63">'+esc(emailStationLabel(st.station))+'</b></td><td style="'+td+'text-align:right"><b>'+st.units.toLocaleString()+'</b></td><td style="'+td+'text-align:right;color:'+(st.repair?'#c8202f':'#526a82')+'">'+st.repair.toLocaleString()+'</td><td style="'+td+'text-align:right">'+money(st.cost)+'</td><td style="'+td+'text-align:right">'+share+'%</td></tr>'}).join('');var models=summarizeModelRepairs(),modelCost={};current.forEach(function(r){if(!r.repair)return;var key=String(r.family||r.sku||'N/D').trim().toUpperCase();modelCost[key]=(modelCost[key]||0)+Number(r.cost||0)});var qualityRows=models.map(function(g){var refs=g.topRefs.map(function(ref,i){return'<div style="margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid #edf2f7"><b style="color:#b42318">'+(i+1)+'. '+esc(ref.refdes)+'</b> - '+esc(ref.mode)+' <span style="color:#60758f">('+ref.qty+' SN)</span><div style="font-size:10px;color:#60758f;margin-top:2px"><b>Part Number:</b> '+esc(ref.partNumber||'Not specified')+'</div>'+reportSerialDetailsHtml(ref.serials,'#b42318')+'</div>'}).join('');return'<tr><td style="'+td+'"><b style="color:#b42318">'+esc(g.model)+'</b></td><td style="'+td+'text-align:right"><b>'+g.repairQty.toLocaleString()+'</b></td><td style="'+td+'text-align:right">'+money(modelCost[String(g.model).toUpperCase()]||0)+'</td><td style="'+td+'">'+(refs||'No non-retest repair causes available')+'</td></tr>'}).join('');if(!qualityRows)qualityRows='<tr><td colspan="4" style="'+td+'color:#60758f">No linked repair references were found for the current scope.</td></tr>';var focus='The largest queue is '+emailStationLabel(topQueue.station)+' with '+topQueue.units.toLocaleString()+' units.'+(topRisk?' Highest support priority: '+topRisk.family+' on '+topRisk.line+' ['+reportBuLabel(topRisk.bu)+'], score '+topRisk.priority+'/100.':'');return'<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;text-align:left;color:#172b43;max-width:1180px;margin:0 auto;background:#fff;border:1px solid #b7c6d8"><table role="presentation" style="border-collapse:collapse;width:100%;background:#fff"><tr><td style="padding:16px 20px 10px;text-align:left"><div style="font-size:24px;font-weight:700;color:#202328">SMTinel End-of-Shift Execution Review</div><div style="font-size:12px;color:#5f6b78;margin-top:5px">Cut-off: '+esc(cut.toLocaleString())+' | Scope: '+esc(scopeLabel)+' | Line: '+esc(selectedLine)+' | Shift baseline: '+esc(baseline)+'</div></td><td style="padding:12px 20px 8px;text-align:right;white-space:nowrap"><img src="'+EMAIL_FII_LOGO+'" alt="Foxconn Industrial Internet" width="150" style="display:inline-block;width:150px;height:auto;border:0"></td></tr></table><div style="margin:0 20px 12px;padding:9px 12px;background:#0a3d83;color:#fff;font-size:15px;font-weight:700;border-radius:4px">SHIFT HANDOFF - EXECUTION, QUALITY AND MANAGEMENT FOCUS</div><div style="padding:0 20px 18px"><div style="border:1px solid #7fa4d4;border-radius:6px;overflow:hidden;background:#fff">'+sectionTitle('1','Shift Overview')+'<table role="presentation" style="border-collapse:collapse;width:100%"><tr>'+metric('CURRENT SCOPE',current.length.toLocaleString())+metric('PROCESSED / MOVED',processed)+metric('ENTERED / EXITED',movement)+metric('REPAIR UNITS',repair.toLocaleString(),repair?'#c8202f':'#082b63')+metric('WIP VALUE',money(totalCost),'#a56600')+'</tr></table><div style="padding:10px 12px;background:#f5f8fc;border-top:1px solid #b9cbe3;font-size:12px;line-height:1.45"><b style="color:#082b63">Handoff focus:</b> '+esc(focus)+' '+(move.available?move.moved.toLocaleString()+' serials changed station since shift start.':'Capture Shift Start at the beginning of the shift to calculate movement accurately.')+'</div></div>'+(notes?'<div style="margin-top:10px;padding:10px 12px;border-left:5px solid #d28b16;background:#fff8e8;font-size:12px;line-height:1.45"><b style="color:#8a5a00">Shift status / notes</b><br>'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+alerts+'<div style="margin-top:14px;border:1px solid #c9d4df;border-radius:6px;overflow:hidden;background:#fff">'+sectionTitle('2','Executive Snapshot by Business Unit','#172b43')+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px">Compact management view. The detailed Executive Focus report remains available separately.</div><div style="padding:6px 12px 12px;overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">BU</th><th style="'+th+'">WO</th><th style="'+th+'">Current units</th><th style="'+th+'">Repair</th><th style="'+th+'">Repair exposure</th><th style="'+th+'">WIP value</th><th style="'+th+'">High attention</th><th style="'+th+'">Top current risk</th></tr></thead><tbody>'+buRows+'</tbody></table></div></div><div style="margin-top:14px;border:1px solid #7fa4d4;border-radius:6px;overflow:hidden;background:#fff">'+sectionTitle('3','Production Run Follow-up')+'<div style="padding:10px 12px 6px;color:#536b86;font-size:12px">Every loaded work order is tracked by BU, line and current station distribution. Expand the WO arrow to review or copy the current serial population. A green SMT RUNNING badge identifies WOs with serials still at SMTLOADING, AOI2 or AOI4. PTH, PRE-PCBA and PCBA-ETE populations remain visible as separate badges. Plan is hidden when it is lower than the serial-number population because the source can represent only the remaining target.'+reportFlowLegendHtml()+'</div><div style="padding:6px 12px 12px;overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">BU</th><th style="'+th+'">Line</th><th style="'+th+'">Model</th><th style="'+th+'">SKU</th><th style="'+th+'">WO</th><th style="'+th+'">Plan</th><th style="'+th+'">Current units</th><th style="'+th+'">Flow status</th><th style="'+th+'">Current position</th><th style="'+th+'">Repair</th><th style="'+th+'">Repair exposure</th><th style="'+th+'">WIP value</th><th style="'+th+'">Priority</th></tr></thead><tbody>'+runRows+'</tbody></table></div></div><div style="margin-top:14px;border:1px solid #7fa4d4;border-radius:6px;overflow:hidden;background:#fff">'+sectionTitle('4','Current Station Status')+'<div style="padding:10px 12px"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Station</th><th style="'+th+'">Units</th><th style="'+th+'">Repair</th><th style="'+th+'">WIP value</th><th style="'+th+'">Share</th></tr></thead><tbody>'+stationRows+'</tbody></table></div></div><div style="margin-top:14px;border:1px solid #f2b8bd;border-radius:6px;overflow:hidden;background:#fff">'+sectionTitle('5','Quality Focus - Repair and Failure Signal','#b42318')+'<table role="presentation" style="border-collapse:collapse;width:100%"><tr>'+metric('REPAIR UNITS',repair.toLocaleString(),'#b42318')+metric('REPAIR EXPOSURE',money(repairCost),'#b42318')+metric('AFFECTED MODELS',models.length.toLocaleString(),'#172b43')+metric('HIGH PRIORITY WO',groups.filter(function(g){return g.level==='HIGH'}).length.toLocaleString(),'#b42318')+metric('CURRENT POPULATION',current.length.toLocaleString(),'#172b43')+'</tr></table><div style="padding:10px 12px 6px;color:#536b86;font-size:12px">Repair totals preserve RETEST. The cause ranking excludes RETEST and consolidates different RefDes when they share the same failure mode and component Part Number. When the Part Number is absent, SMTinel reports Not specified and keeps the RefDes separated. The downloaded HTML includes an expandable affected-serial list for each top cause.</div><div style="padding:6px 12px 12px"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="'+th+'">Model</th><th style="'+th+'">Repair units</th><th style="'+th+'">Repair exposure</th><th style="'+th+'">Top repair causes / Part Number / Serials</th></tr></thead><tbody>'+qualityRows+'</tbody></table></div></div><div style="margin-top:12px;padding:10px 11px;background:#f5f8fc;border:1px solid #b9cbe3;font-size:11px;line-height:1.45;color:#536b86"><b>Source and interpretation:</b> Current SFC station snapshot, captured shift baseline, Common DB cost mapping and normalized Repair Record evidence. Plan is displayed only when the available work-order target is equal to or greater than the current serial population. If it is lower, SMTinel reports Plan not available because the value may be the remaining target rather than the original run plan.</div></div><table role="presentation" style="border-collapse:collapse;width:100%;background:#073b7a;color:#fff"><tr><td style="padding:7px 12px;font-size:10px">Fii Confidential. Internal manufacturing execution and quality handoff.</td><td style="padding:7px 12px;text-align:right;font-size:10px">'+esc(cut.toLocaleDateString())+'</td></tr></table></div>'}
 
 shiftReportHtml=finalShiftReportHtml;
@@ -37887,7 +38110,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       'Production Run Follow-up',
       'Current Station Status',
       'Quality Focus - Repair and Failure Signal',
-      'CMA / Quality Decision Signal',
+      'CMA / Critical Model Analysis - Quality Decision Signal',
       'Repair Location Map by Model',
       'EXECUTIVE QUALITY READOUT',
       'EVIDENCE AND CORRELATION MATRIX',
@@ -38440,7 +38663,7 @@ ${'</scr'+'ipt>'}
         {
             key: "yieldflow",
             label: "Yield Flow",
-            shortLabel: "Yield by WO, station progress, and NGFW risk focus",
+            shortLabel: "",
             count: yieldFlowModel.kpi.orders,
             anchorId: "yieldflow-section",
             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
@@ -38504,7 +38727,7 @@ ${'</scr'+'ipt>'}
         {
             key: "criticalmodel",
             label: "CMA / Critical Model Analysis",
-            shortLabel: "Motor CMA: yield loss, defect frequency, unit impact e IQR/outliers",
+            shortLabel: "CMA / Critical Model Analysis: yield loss, defect frequency, unit impact e IQR/outliers",
             count: criticalModelGroupCount,
             anchorId: "criticalmodel-section",
             tone: { bg: "#FFF7F5", border: "#F1B5AE", color: "#A43B2E" }
@@ -39192,7 +39415,7 @@ ${'</scr'+'ipt>'}
                         progStep === 0 && "> READING_XLSX...",
                         progStep === 1 && "> NORMALIZING_WO...",
                         progStep === 2 && "> SCANNING_RISK...",
-                        progStep === 3 && "> CMA_ENGINE...",
+                        progStep === 3 && "> CMA / Critical Model Analysis ENGINE...",
                         progStep === 4 && "> EXPORT_READY..."),
                     React.createElement("div", { className: "smtinel-loader-sub" }, "Temporary local import: validating ZIP/Excel and extracting target sheets only..."),
                     msgStats && React.createElement("div", { className: "smtinel-loader-stats" },
@@ -43861,7 +44084,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"boardimpact",label:"Board Impact",icon:icons.board,aliases:["Board Impact"]},
     {key:"recovery",label:"Recovery Intel",icon:icons.recovery,aliases:["Recovery Intelligence","Recovery Intel"]},
     {key:"criticalchars",label:"Características Críticas",icon:icons.critical,aliases:["Características Críticas","Caracteristicas Criticas","Critical Characteristics","CC Register"]},
-    {key:"criticalmodel",label:"CMA",icon:icons.critical,aliases:["CMA","Critical Model Analysis","Critical Analysis","Análisis Crítico","Analisis Critico"]},
+    {key:"criticalmodel",label:"CMA / Critical Model Analysis",icon:icons.critical,aliases:["CMA","Critical Model Analysis","Critical Analysis","Análisis Crítico","Analisis Critico"]},
     {key:"issueimpact",label:"Issue Impact Analyzer",icon:icons.issue||icons.signal,aliases:["Issue Impact Analyzer","Issue Impact","Issue Time Impact","Time Impact"]},
     {key:"intellog",label:"Intel Log",icon:icons.log,aliases:["Intel Log","Maintenance Log"]}
   ];
@@ -62206,6 +62429,215 @@ window.TRACEOPS_PRODUCT_IMPROVEMENT_MODULE_VERSION=VERSION;window.TRACEOPS_PRODU
   }
 }
 </style>
+<script id="smtinel-apple-production-ui-patch">
+(function(){
+  'use strict';
+  var PATCH_FLAG='__SMTINEL_APPLE_PROD_UI_V1__';
+  if(window[PATCH_FLAG]) return;
+  window[PATCH_FLAG]=true;
+
+  function norm(s){return String(s||'').replace(/\s+/g,' ').trim();}
+  function setBody(){
+    if(document.body){
+      document.body.classList.add('smtinel-apple-production');
+      document.body.setAttribute('data-smtinel-ui','production-apple');
+    }
+  }
+
+  var replacements=[
+    [/^SMTinel import engine$/i,'SMTinel'],
+    [/^Cargando archivos ZIP$/i,'Loading data'],
+    [/^Cargando ZIP$/i,'Loading data'],
+    [/^Load ZIP\/Excel$/i,'Import ZIP'],
+    [/^Cargar ZIP\/Excel$/i,'Import ZIP'],
+    [/^Cargar ZIP ahora$/i,'Import ZIP'],
+    [/^Import ZIP \/ Excel$/i,'Import data'],
+    [/^ZIP \/ Excel Import$/i,'Import data'],
+    [/^Suelta aquí el ZIP o haz clic para seleccionarlo$/i,'Drop ZIP or click to upload'],
+    [/^Drop the ZIP Here or Click to Select It$/i,'Drop ZIP or click to upload'],
+    [/^Campos listos para poblar desde Excel \/ ZIP$/i,'Ready'],
+    [/^Fields Ready to Populate from Excel \/ ZIP$/i,'Ready'],
+    [/^Validando paquete local y preparando extracción de datos\.\.\.$/i,'Preparing data...'],
+    [/^Leyendo paquete ZIP\/XLSX y extrayendo datos válidos para Yield Flow\.\.\.$/i,'Reading data...'],
+    [/^Reading the ZIP\/XLSX Package and Extracting Valid Yield Flow Data\.\.\.$/i,'Reading data...'],
+    [/^Validating Local ZIP\/Excel and Preparing Target Sheet Extraction\.\.\.$/i,'Preparing data...'],
+    [/^Temporary Local Import: Validating ZIP\/Excel and Extracting Target Sheets Only\.\.\.$/i,'Preparing data...'],
+    [/^Cancelando importación local\. Espera a que termine la etapa actual\.\.\.$/i,'Cancelling...'],
+    [/^Abortar$/i,'Abort'],
+    [/^Tiempo$/i,'Time']
+  ];
+
+  var hideExact=[
+    'ZIP Loading Is Located in the Main Header so It Is Never Blocked by the Drawer.',
+    'La carga de ZIP vive en el header principal para que nunca quede bloqueada por el drawer.',
+    'Session Saved Locally; Refresh Restores It without Reloading the ZIP.',
+    'Sesion guardada localmente; en refresh se restaura sin recargar ZIP.',
+    'Serial-by-serial detail was removed. This view shows how many units the lot has by process using raw Cesium TXT. Use the FJZ prefix filter to isolate the latest run or review units from another week without mixing noise from previous runs.'
+  ];
+
+  var hidePatterns=[
+    /\bthis (module|view|email|report) uses data\b/i,
+    /\bdata already available in SMTinel\b/i,
+    /\bsource:\s*(SMTinel|ZIP|Yield|local|Common DB)/i,
+    /\bscope:\s*(active|yield|current|loaded)/i,
+    /\buse the .* filter to\b/i,
+    /\bload .* Common DB .* Repair_Record/i,
+    /\bNo Dynamic Matches\. Load the Common DB ZIP/i,
+    /\bSerial-by-serial detail was removed\b/i,
+    /\bThis view shows how many units\b/i,
+    /\bLocal-first mode avoids blocking\b/i,
+    /\bSupabase\b.*\bZIP parsing\b/i,
+    /\bexplaining|instruction|how to use\b/i
+  ];
+
+  function replaceElementText(el){
+    if(!el || !el.childNodes || el.childNodes.length!==1 || el.childNodes[0].nodeType!==3) return;
+    var t=norm(el.textContent);
+    if(!t) return;
+    for(var i=0;i<replacements.length;i++){
+      if(replacements[i][0].test(t)){
+        el.textContent=replacements[i][1];
+        return;
+      }
+    }
+  }
+
+  function shouldHideCopy(el){
+    if(!el || el.dataset && el.dataset.smtinelKeep==='true') return false;
+    if(el.closest && (el.closest('table') || el.closest('.dbn-unit-table') || el.closest('.traceops-material-table'))) return false;
+    var t=norm(el.textContent);
+    if(!t || t.length<42) return false;
+    for(var i=0;i<hideExact.length;i++) if(t===hideExact[i]) return true;
+    for(var j=0;j<hidePatterns.length;j++) if(hidePatterns[j].test(t)) return true;
+    return false;
+  }
+
+  function compactUploadCopy(root){
+    var scope=root||document;
+    var uploadTitles=scope.querySelectorAll('.up h3,.saas-upload-card h3,[data-upload-title]');
+    uploadTitles.forEach(function(el){
+      var t=norm(el.textContent);
+      if(/zip|excel|archivo|file|upload|import/i.test(t)) el.textContent='Load production data';
+    });
+    var uploadButtons=scope.querySelectorAll('.up-btn,.saas-upload-card button,.saas-upload-card a,#yieldflow-section button');
+    uploadButtons.forEach(function(el){
+      var t=norm(el.textContent||el.getAttribute('aria-label')||'');
+      if(/load zip|cargar zip|zip\/excel|import zip/i.test(t)){
+        if(el.childNodes && el.childNodes.length===1 && el.childNodes[0].nodeType===3) el.textContent='Import ZIP';
+        else if(el.textContent) el.textContent='Import ZIP';
+        el.setAttribute('aria-label','Import ZIP');
+      }
+    });
+  }
+
+  function addProductionBadge(){
+    try{
+      var hosts=document.querySelectorAll('.saas-hero-actions,.saas-topbar-actions,.hero-actions');
+      for(var i=0;i<hosts.length;i++){
+        var h=hosts[i];
+        if(h.querySelector('.smtinel-production-badge')) continue;
+        var b=document.createElement('span');
+        b.className='smtinel-production-badge';
+        b.textContent='Production';
+        h.insertBefore(b,h.firstChild||null);
+        break;
+      }
+    }catch(_){}
+  }
+
+  function scrub(root){
+    setBody();
+    var scope=root&&root.querySelectorAll?root:document;
+    var textNodes=scope.querySelectorAll('p,small,span,div,summary,h3,button,a,label');
+    textNodes.forEach(function(el){
+      replaceElementText(el);
+      if(shouldHideCopy(el)) el.setAttribute('data-smtinel-prod-hidden','true');
+    });
+    var directHide=scope.querySelectorAll('.api-note,.up p,.up .chip,.saas-hero-desc,.saas-upload-card p');
+    directHide.forEach(function(el){el.setAttribute('data-smtinel-prod-hidden','true');});
+    compactUploadCopy(scope);
+    addProductionBadge();
+  }
+
+  function start(){
+    scrub(document);
+    var pending=false;
+    try{
+      var mo=new MutationObserver(function(list){
+        if(pending) return;
+        pending=true;
+        requestAnimationFrame(function(){
+          pending=false;
+          for(var i=0;i<list.length;i++){
+            if(list[i].addedNodes && list[i].addedNodes.length){ scrub(document); break; }
+          }
+        });
+      });
+      mo.observe(document.documentElement,{childList:true,subtree:true});
+    }catch(_){ setInterval(function(){scrub(document);},1600); }
+    [300,900,1800,3200,5200].forEach(function(ms){setTimeout(function(){scrub(document);},ms);});
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
+})();
+</script>
+
+<style id="smtinel-yieldflow-import-polish-v2">
+/* Yield Flow production import polish: no generic import bars, no onboarding copy. */
+body.smtinel-apple-production #yieldflow-section > div:first-child button{display:none!important;}
+body.smtinel-apple-production #yieldflow-section > section:first-of-type > div:first-child > div:first-child > div:nth-child(2){display:none!important;}
+body.smtinel-apple-production #yieldflow-section > section:first-of-type > div:nth-child(2){grid-template-columns:1fr!important;}
+body.smtinel-apple-production #yieldflow-section > section:first-of-type > div:nth-child(2) > div:nth-child(2){display:none!important;}
+body.smtinel-apple-production #yieldflow-section > section:first-of-type button{background:linear-gradient(135deg,#0b2f59,#147c73)!important;color:#fff!important;border:0!important;box-shadow:0 10px 22px rgba(11,47,89,.16)!important;min-height:38px!important;padding:9px 15px!important;}
+body.smtinel-apple-production #yieldflow-section [data-smtinel-import-cleaned="true"]{display:none!important;}
+</style>
+<script id="smtinel-yieldflow-import-polish-v2-script">
+(function(){
+  'use strict';
+  var FLAG='__SMTINEL_YIELDFLOW_IMPORT_POLISH_V2__';
+  if(window[FLAG]) return; window[FLAG]=true;
+  function norm(s){return String(s||'').replace(/\s+/g,' ').trim();}
+  function isYieldHeroButton(el){try{var hero=document.querySelector('#yieldflow-section > div:first-child');return !!(hero&&el&&hero.contains(el));}catch(_){return false;}}
+  function polish(){
+    try{
+      document.querySelectorAll('button,a,[role="button"]').forEach(function(el){
+        var t=norm(el.textContent||el.getAttribute('aria-label')||'');
+        if(/^Load data$/i.test(t)){
+          var importSection=document.querySelector('#yieldflow-section > section:first-of-type');
+          if(importSection && importSection.contains(el)){
+            el.textContent='Import ZIP';
+            el.setAttribute('aria-label','Import ZIP');
+          }else{
+            el.setAttribute('data-smtinel-import-cleaned','true');
+            el.style.display='none';
+          }
+        }
+        if(/^Load ZIP\/Excel$/i.test(t)||/^Cargar ZIP\/Excel$/i.test(t)||/^Load ZIP now$/i.test(t)||/^Cargar ZIP ahora$/i.test(t)){
+          el.textContent='Import ZIP';el.setAttribute('aria-label','Import ZIP');
+        }
+      });
+      var importSection=document.querySelector('#yieldflow-section > section:first-of-type');
+      if(importSection){
+        var nodes=[].slice.call(importSection.querySelectorAll('div'));
+        var title=nodes.filter(function(x){return /^Import data$/i.test(norm(x.textContent))||/^Importar datos$/i.test(norm(x.textContent));})[0];
+        if(title) title.textContent='Import';
+        var status=nodes.filter(function(x){return /^Import Status$/i.test(norm(x.textContent));})[0];
+        if(status) status.textContent='Status';
+        var imported=nodes.filter(function(x){return /^Imported Data$/i.test(norm(x.textContent));})[0];
+        if(imported&&imported.parentElement) imported.parentElement.style.display='none';
+      }
+    }catch(_){}
+  }
+  function start(){
+    polish();
+    try{var pending=false;new MutationObserver(function(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;polish();});}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});}
+    catch(_){setInterval(polish,1200);}
+    [200,600,1200,2500,4500].forEach(function(ms){setTimeout(polish,ms);});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+
 </body>
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
