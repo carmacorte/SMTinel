@@ -196,6 +196,13 @@ window.ensurePdfTools = function() {
   return window.__traceopsPdfReady;
 };
 
+/* Prewarm the PDF.js runtime during idle time so Board Impact opens faster. */
+(function(){
+  var warm = function(){ try { window.ensurePdfTools && window.ensurePdfTools().catch(function(){}); } catch (_) {} };
+  if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2500 });
+  else setTimeout(warm, 1800);
+})();
+
 function traceOpsShouldSuppressGlobalScriptError(msg, src, line, col, err) {
   var m = String(msg || '').trim();
   var s = String(src || '').trim();
@@ -28516,32 +28523,105 @@ body:has(#recovery-section) .main-content.expanded{
             ctx.restore();
         }
     }
+    /* Board Impact PDF performance cache: reuse document, page, text extraction and rendered rasters. */
+    window.__traceopsBoardPdfDocCache = window.__traceopsBoardPdfDocCache || Object.create(null);
+    window.__traceopsBoardPdfPageCache = window.__traceopsBoardPdfPageCache || new Map();
+    window.__traceopsBoardPdfTextCache = window.__traceopsBoardPdfTextCache || new Map();
+    window.__traceopsBoardPdfRasterCache = window.__traceopsBoardPdfRasterCache || new Map();
+    function traceOpsBoardCacheTrim(map, limit) {
+        try {
+            while (map && map.size > limit) {
+                var first = map.keys().next();
+                if (first.done) break;
+                map.delete(first.value);
+            }
+        } catch (_) {}
+    }
+    async function traceOpsBoardGetPdfCached() {
+        await window.ensurePdfTools();
+        var urls = traceOpsBoardTryPdfUrls();
+        var lastErr = null;
+        for (var i = 0; i < urls.length; i++) {
+            var url = urls[i];
+            try {
+                if (!window.__traceopsBoardPdfDocCache[url]) {
+                    window.__traceopsBoardPdfDocCache[url] = window.pdfjsLib.getDocument({
+                        url: url,
+                        disableAutoFetch: false,
+                        disableStream: false,
+                        disableRange: false,
+                        rangeChunkSize: 262144
+                    }).promise.then(function(pdf){ return pdf; }).catch(function(err){
+                        try { delete window.__traceopsBoardPdfDocCache[url]; } catch (_) {}
+                        throw err;
+                    });
+                }
+                return { pdf: await window.__traceopsBoardPdfDocCache[url], url: url };
+            } catch (err) { lastErr = err; }
+        }
+        throw new Error("Unable to load board PDF: " + (urls[0] || "N/D") + (lastErr && lastErr.message ? " | " + lastErr.message : ""));
+    }
+    function traceOpsBoardPageKey(url, pageNo) { return String(url || '') + '|p' + Number(pageNo || 1); }
+    async function traceOpsBoardGetPageCached(pdf, url, pageNo) {
+        var key = traceOpsBoardPageKey(url, pageNo);
+        if (!window.__traceopsBoardPdfPageCache.has(key)) {
+            window.__traceopsBoardPdfPageCache.set(key, Promise.resolve(pdf.getPage(pageNo)).catch(function(err){
+                window.__traceopsBoardPdfPageCache.delete(key); throw err;
+            }));
+            traceOpsBoardCacheTrim(window.__traceopsBoardPdfPageCache, 12);
+        }
+        return await window.__traceopsBoardPdfPageCache.get(key);
+    }
+    async function traceOpsBoardGetTextCached(pdf, url, pageNo) {
+        var key = traceOpsBoardPageKey(url, pageNo) + '|text';
+        if (!window.__traceopsBoardPdfTextCache.has(key)) {
+            window.__traceopsBoardPdfTextCache.set(key, (async function(){
+                var page = await traceOpsBoardGetPageCached(pdf, url, pageNo);
+                return await page.getTextContent();
+            })().catch(function(err){ window.__traceopsBoardPdfTextCache.delete(key); throw err; }));
+            traceOpsBoardCacheTrim(window.__traceopsBoardPdfTextCache, 12);
+        }
+        return await window.__traceopsBoardPdfTextCache.get(key);
+    }
+    async function traceOpsBoardGetRasterCached(page, url, pageNo, viewport) {
+        var w = Math.max(1, Math.floor(viewport.width));
+        var h = Math.max(1, Math.floor(viewport.height));
+        var key = traceOpsBoardPageKey(url, pageNo) + '|r|' + w + 'x' + h;
+        if (!window.__traceopsBoardPdfRasterCache.has(key)) {
+            var promise = (async function(){
+                var c = document.createElement('canvas');
+                c.width = w; c.height = h;
+                var c2 = c.getContext('2d', { alpha: false });
+                c2.fillStyle = '#fff'; c2.fillRect(0, 0, w, h);
+                await page.render({ canvasContext: c2, viewport: viewport }).promise;
+                return c;
+            })().catch(function(err){ window.__traceopsBoardPdfRasterCache.delete(key); throw err; });
+            window.__traceopsBoardPdfRasterCache.set(key, promise);
+            traceOpsBoardCacheTrim(window.__traceopsBoardPdfRasterCache, 6);
+        }
+        return await window.__traceopsBoardPdfRasterCache.get(key);
+    }
     React.useEffect(function () {
         if (activeModule !== "boardimpact") return;
         var cancelled = false;
         var renderSeq = Date.now() + "_" + Math.random();
         window.__traceopsBoardPdfSeq = renderSeq;
         async function getPdfDocument() {
-            await window.ensurePdfTools();
-            var urls = traceOpsBoardTryPdfUrls();
-            var lastErr = null;
-            for (var i = 0; i < urls.length; i++) {
-                try { return { pdf: await window.pdfjsLib.getDocument({ url: urls[i], disableAutoFetch: false, disableStream: false }).promise, url: urls[i] }; }
-                catch (err) { lastErr = err; }
-            }
-            throw new Error("Unable to load board PDF: " + urls[0] + (lastErr && lastErr.message ? " | " + lastErr.message : ""));
+            return await traceOpsBoardGetPdfCached();
         }
         function findTextItem(textContent, ref) {
             var matches = traceOpsBoardFindTextItemsForRef(textContent, ref, 1);
             return matches.length ? matches[0] : null;
         }
-        async function searchPdf(pdf, ref) {
+        async function searchPdf(pdf, url, ref) {
             var target = traceOpsBoardNormalizeRef(ref);
             if (!target) return null;
             var maxPages = Math.min(pdf.numPages || 1, 2);
+            var jobs = [];
+            for (var p = 1; p <= maxPages; p++) jobs.push(traceOpsBoardGetTextCached(pdf, url, p));
+            var texts = await Promise.all(jobs);
             for (var pageNo = 1; pageNo <= maxPages; pageNo++) {
-                var page = await pdf.getPage(pageNo);
-                var text = await page.getTextContent();
+                var text = texts[pageNo - 1];
                 var item = findTextItem(text, target);
                 if (item) return { pageNo: pageNo, item: item, textContent: text };
             }
@@ -28557,12 +28637,12 @@ body:has(#recovery-section) .main-content.expanded{
                 var ref = traceOpsBoardNormalizeRef(boardSelectedRef || (boardImpactContext && boardImpactContext.refdes) || "");
                 var manualBox = ref ? traceOpsBoardGetManualBox(ref) : null;
                 var manualPage = manualBox && manualBox.bounding_box && manualBox.bounding_box.page ? Number(manualBox.bounding_box.page) : null;
-                var hit = ref && !manualBox ? await searchPdf(pdf, ref) : null;
+                var hit = ref && !manualBox ? await searchPdf(pdf, loaded.url, ref) : null;
                 if (cancelled || window.__traceopsBoardPdfSeq !== renderSeq) return;
                 if (manualPage && manualPage !== desiredPage) { setBoardSide(manualPage === 2 ? "bottom" : "top"); return; }
                 if (!manualBox && hit && hit.pageNo && hit.pageNo !== desiredPage) { setBoardSide(hit.pageNo === 2 ? "bottom" : "top"); return; }
                 var pageNo = manualPage || (hit && hit.pageNo ? hit.pageNo : desiredPage);
-                var page = await pdf.getPage(pageNo);
+                var page = await traceOpsBoardGetPageCached(pdf, loaded.url, pageNo);
                 var container = document.getElementById("traceops-board-pdf-stage");
                 var canvas = document.getElementById("traceops-board-pdf-canvas");
                 var overlay = document.getElementById("traceops-board-pdf-overlay");
@@ -28573,14 +28653,19 @@ body:has(#recovery-section) .main-content.expanded{
                 var zoomFactor = boardDetailZoom ? (isMobile() ? 1.65 : 2.05) : 1;
                 var scale = Math.max(.45, Math.min(isMobile() ? 2.05 : 3.35, fitScale * zoomFactor));
                 var viewport = page.getViewport({ scale: scale });
-                canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
+                /* High detail keeps its full CSS size, but rasterization is capped for a faster first paint. */
+                var rasterScale = Math.min(scale, isMobile() ? 1.85 : 2.20);
+                var rasterViewport = page.getViewport({ scale: rasterScale });
+                canvas.width = Math.floor(rasterViewport.width); canvas.height = Math.floor(rasterViewport.height);
                 canvas.style.width = Math.floor(viewport.width) + "px"; canvas.style.height = Math.floor(viewport.height) + "px";
-                overlay.width = canvas.width; overlay.height = canvas.height;
-                overlay.style.width = canvas.style.width; overlay.style.height = canvas.style.height;
+                overlay.width = Math.floor(viewport.width); overlay.height = Math.floor(viewport.height);
+                overlay.style.width = Math.floor(viewport.width) + "px"; overlay.style.height = Math.floor(viewport.height) + "px";
                 overlay.style.left = canvas.offsetLeft + "px"; overlay.style.top = canvas.offsetTop + "px";
-                var ctx2d = canvas.getContext("2d");
+                var ctx2d = canvas.getContext("2d", { alpha: false });
+                var raster = await traceOpsBoardGetRasterCached(page, loaded.url, pageNo, rasterViewport);
+                if (cancelled || window.__traceopsBoardPdfSeq !== renderSeq) return;
                 ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0, 0, canvas.width, canvas.height);
-                await page.render({ canvasContext: ctx2d, viewport: viewport }).promise;
+                ctx2d.drawImage(raster, 0, 0, canvas.width, canvas.height);
                 if (cancelled || window.__traceopsBoardPdfSeq !== renderSeq) return;
                 var over = overlay.getContext("2d");
                 over.clearRect(0,0,overlay.width,overlay.height);
@@ -28597,7 +28682,7 @@ body:has(#recovery-section) .main-content.expanded{
                     var heatSelectedRefMap = {};
                     heatVisualRefs.forEach(function(x){ heatSelectedRefMap[traceOpsBoardNormalizeRef(x)] = true; });
                     var heatHasGroupSelection = Object.keys(heatSelectedRefMap).length > 1;
-                    var textForHeat = await page.getTextContent();
+                    var textForHeat = await traceOpsBoardGetTextCached(pdf, loaded.url, pageNo);
                     heatRefs.slice(0, 90).forEach(function(stat, idx) {
                         var refKey = traceOpsBoardNormalizeRef(stat.ref);
                         if (!refKey) return;
@@ -63139,7 +63224,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -63369,7 +63454,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -63468,7 +63553,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -67915,7 +68000,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -68180,7 +68265,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -68427,7 +68512,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -68623,7 +68708,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -68866,7 +68951,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -69096,7 +69181,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.65 - Board Impact Light Deep Contrast - 2026-08-12';
+  var VERSION='SMTinel V13.14.66 - Board PDF Fast Cache - 2026-08-12';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
