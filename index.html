@@ -16025,8 +16025,12 @@ function App() {
                     : "Step 2/2 complete: " + ((summary.rows && summary.rows.workOrders) || 0) + " WO · " + ((summary.rows && summary.rows.sfc) || 0) + " SFC rows · " + ((summary.rows && summary.rows.repairs) || 0) + " repair rows · " + ((summary.rows && summary.rows.cesiumInScope) || 0) + " Cesium FT rows. This dashboard uses only the Common DB and SFC + Cesium files from the current iteration. No ZIP data or dataset is retained for the next cycle.";
                 setYieldImportState({ status: "ok", progress: 100, phase: commonOnly ? "COMMON_READY" : "READY", message: completionMessage, summary: summary });
                 if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(100, commonOnly ? "COMMON_READY" : "READY", commonOnly ? "Common DB ready. Load SFC + Cesium next." : "Fresh paired import complete. Preparing dashboard...");
-                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(650);
-                traceOpsScheduleCriticalModelAnalysis();
+                if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(commonOnly ? 180 : 650);
+                if (commonOnly) {
+                    setCriticalModelAnalysisState({ status: 'idle', message: 'Common DB ready. Critical Model Analysis will run after SFC + Cesium is loaded.', result: null });
+                } else {
+                    traceOpsScheduleCriticalModelAnalysis();
+                }
             }).catch(function (err) {
                 setYieldImportState({ status: "error", message: err && err.message ? err.message : String(err), summary: null, progress: 0, phase: "ERROR" });
                 if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(250);
@@ -52141,17 +52145,19 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
     return false;
   }
   async function saveCommon(parsed, sourceName){
+    /* Common DB is consumed once by the next SFC + Cesium package. Keep the
+       parsed arrays by reference instead of cloning tens of thousands of rows. */
     var common = {
       savedAt: new Date().toISOString(),
       sourceName: sourceName || '',
       cycle: ++sessionCommonCycle,
-      wo: (parsed.wo || []).slice(),
-      repair: (parsed.repair || []).slice(),
-      calendar: (parsed.calendar || []).slice(),
-      dbmodel: (parsed.dbmodel || []).slice(),
-      skucost: (parsed.skucost || []).slice(),
-      bom: (parsed.bom || []).slice(),
-      stations: (parsed.stations || []).slice()
+      wo: parsed.wo || [],
+      repair: parsed.repair || [],
+      calendar: parsed.calendar || [],
+      dbmodel: parsed.dbmodel || [],
+      skucost: parsed.skucost || [],
+      bom: parsed.bom || [],
+      stations: parsed.stations || []
     };
     sessionCommon = common;
     try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, storage: 'session-memory', consumed: false, cycle: common.cycle, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
@@ -52275,8 +52281,46 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       await yieldThread();
     }
     if (hasCommon(parsed) && !hasBu(parsed)) {
-      progress(options, 68, 'COMMON_SESSION', 'Step 1/2: replacing Common DB in session memory...');
-      await saveCommon(parsed, file.name);
+      progress(options, 92, 'COMMON_SESSION', 'Step 1/2: storing the current Common DB in session memory...');
+      var savedCommon = await saveCommon(parsed, file.name);
+      var commonSummary = {
+        source: 'CURRENT COMMON DB · session only',
+        mode: 'common-session-v13.14.8',
+        fileName: file.name,
+        workbookName: 'COMMON DB package',
+        container: file.name,
+        sheets: pulled,
+        importStartMs: (options && options.importStartMs) || started,
+        importMs: Date.now() - started,
+        rows: {
+          workOrders: (parsed.wo || []).length,
+          sfc: 0,
+          repairs: (parsed.repair || []).length,
+          calendar: (parsed.calendar || []).length,
+          dbModel: (parsed.dbmodel || []).length,
+          skuCost: (parsed.skucost || []).length,
+          bom: (parsed.bom || []).length,
+          stations: (parsed.stations || []).length,
+          cesium: 0,
+          cesiumInScope: 0
+        },
+        commonRows: commonRows(savedCommon),
+        notes: 'Current Common DB stored in session memory. Dataset build is deferred until the SFC + Cesium package is loaded.'
+      };
+      try {
+        window.TRACEOPS_YIELD_IMPORT_META = commonSummary;
+        window.TRACEOPS_YIELD_IMPORT_CYCLE = {
+          status: 'waiting-sfc-cesium',
+          cycle: savedCommon && savedCommon.cycle || sessionCommonCycle,
+          commonSource: savedCommon && savedCommon.sourceName || file.name,
+          buSource: '',
+          residualDataCleared: true,
+          commonReadyAt: new Date().toISOString()
+        };
+      } catch(_) {}
+      progress(options, 100, 'COMMON_READY', 'Step 1/2 complete. Common DB is ready. Load the current SFC + Cesium ZIP.');
+      try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(180); } catch(_) {}
+      return commonSummary;
     }
     var common = await mergeCommon(parsed);
     if (hasBu(parsed) && !common) {
@@ -52286,10 +52330,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
       progress(options, 74, 'COMMON_MERGED', 'Step 2/2: current Common DB connected to the current SFC + Cesium package...');
       await yieldThread();
     }
-    if (!hasBu(parsed) && hasCommon(parsed)) {
-      progress(options, 100, 'COMMON_READY', 'Step 1/2 complete. Current Common DB is held in session memory only. Now load the updated SFC + Cesium ZIP.');
-      try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
-    } else if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) {
+    if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) {
       sessionCommon = null;
       try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded:false, storage:'session-memory', consumed:true, reason:'Recognized files contained no usable rows; reload current Common DB' }; } catch(_) {}
       throw new Error('The ZIP does not contain recognizable SFC, Cesium, Repair_Record, or Station_on_line_report data.');
@@ -63275,7 +63316,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -63505,7 +63546,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -63604,7 +63645,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -68051,7 +68092,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -68316,7 +68357,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -68563,7 +68604,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -68759,7 +68800,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -69002,7 +69043,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -69232,7 +69273,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.71 - Hierarchical SMT Running - 2026-08-13';
+  var VERSION='SMTinel V13.14.72 - Fast Common DB + Hierarchical SMT Running - 2026-08-13';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
