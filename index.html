@@ -2,6 +2,189 @@
 
 <html lang="es">
 <head>
+<script id="smtinel-v63-8d-adaptive-themes">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_V63_8D_ADAPTIVE_THEMES__) return;
+  window.__SMTINEL_V63_8D_ADAPTIVE_THEMES__ = true;
+
+  function imp(el, prop, value){
+    if(el) try{ el.style.setProperty(prop, value, 'important'); }catch(_){ }
+  }
+  function rgb(value){
+    var m=String(value||'').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    return m ? {r:+m[1],g:+m[2],b:+m[3]} : null;
+  }
+  function lum(c){ return c ? (0.2126*c.r + 0.7152*c.g + 0.0722*c.b) : 255; }
+  function saturatedStatus(c){
+    if(!c) return false;
+    var max=Math.max(c.r,c.g,c.b), min=Math.min(c.r,c.g,c.b);
+    if(max-min < 45) return false;
+    if(c.r>145 && c.g<125) return true;
+    if(c.g>105 && c.r<135) return true;
+    if(c.r>135 && c.g>85 && c.b<105) return true;
+    if(c.b>120 && c.r>70 && c.g<125) return true;
+    return false;
+  }
+  function isLightTheme(){
+    return document.documentElement.classList.contains('smtinel-theme-light');
+  }
+  function isField(tag){ return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'; }
+
+  var DARK={
+    root:'#080808', shell:'#080808', header:'#090909', header2:'#0d0d0c',
+    toolbar:'#0d0d0d', surface:'#151515', surface2:'#111111', input:'#0d0d0d',
+    border:'#2a2a27', border2:'#33332f', text:'#f1f1ed', muted:'#a5a59f', meta:'#8f918a',
+    olive:'#91a264', primary:'#59663a', primaryBorder:'#78864d', button:'#171717',
+    shadow:'0 10px 26px rgba(0,0,0,.40)'
+  };
+  var LIGHT={
+    root:'#EEF1EC', shell:'#F4F6F2', header:'#F8FAF7', header2:'#F2F5F0',
+    toolbar:'#F5F7F3', surface:'#FFFFFF', surface2:'#F8FAF7', input:'#FBFCFA',
+    border:'#CCD5C9', border2:'#BFCABE', text:'#182019', muted:'#59645A', meta:'#6B766C',
+    olive:'#687747', primary:'#66763F', primaryBorder:'#71834A', button:'#F2F5F0',
+    shadow:'0 10px 28px rgba(38,48,39,.10)'
+  };
+
+  function applyTitle(root,p){
+    var kicker=root.querySelector('.smtinel-8d-kicker');
+    imp(kicker,'color',p.olive); imp(kicker,'-webkit-text-fill-color',p.olive);
+    var title=root.querySelector('.smtinel-8d-case-title');
+    imp(title,'color',p.text); imp(title,'-webkit-text-fill-color',p.text); imp(title,'text-shadow','none');
+    imp(title,'font-size',(window.innerWidth<760?'16px':'20px')); imp(title,'font-weight','850'); imp(title,'line-height','1.14');
+    imp(title,'display','-webkit-box'); imp(title,'-webkit-line-clamp','2'); imp(title,'-webkit-box-orient','vertical'); imp(title,'overflow','hidden'); imp(title,'max-width','1020px');
+    var meta=root.querySelector('.smtinel-8d-meta');
+    imp(meta,'color',p.meta); imp(meta,'-webkit-text-fill-color',p.meta); imp(meta,'font-size','9.25px');
+    imp(meta,'white-space',(window.innerWidth<760?'normal':'nowrap')); imp(meta,'overflow','hidden'); imp(meta,'text-overflow','ellipsis'); imp(meta,'max-width','1120px');
+  }
+
+  function styleButton(el,p,light){
+    if(!el) return;
+    var txt=(el.textContent||'').trim().toLowerCase();
+    var primary=(txt==='save draft'||txt.indexOf('ppt 8d foxconn')>=0);
+    imp(el,'border-radius','999px');
+    if(primary){
+      imp(el,'background',p.primary); imp(el,'background-image','linear-gradient(180deg,'+(light?'#74844B':'#667442')+' 0%,'+p.primary+' 100%)');
+      imp(el,'border-color',p.primaryBorder); imp(el,'color','#fff'); imp(el,'-webkit-text-fill-color','#fff');
+      imp(el,'box-shadow',light?'0 4px 12px rgba(72,88,55,.18)':'0 4px 14px rgba(0,0,0,.30)');
+    }else{
+      imp(el,'background',p.button); imp(el,'background-image','none'); imp(el,'border-color',p.border2);
+      imp(el,'color',light?'#344036':p.text); imp(el,'-webkit-text-fill-color',light?'#344036':p.text);
+      imp(el,'box-shadow','none');
+    }
+  }
+
+  function normalizeDark(el,p){
+    if(!el||el.nodeType!==1) return;
+    var tag=(el.tagName||'').toUpperCase(), cs;
+    try{cs=getComputedStyle(el);}catch(_){return;}
+    var bg=rgb(cs.backgroundColor), text=rgb(cs.color), bc=rgb(cs.borderTopColor);
+    if(isField(tag)){
+      imp(el,'background',p.input); imp(el,'background-image','none'); imp(el,'color',p.text); imp(el,'-webkit-text-fill-color',p.text);
+      imp(el,'caret-color',p.text); imp(el,'border-color',p.border); imp(el,'box-shadow','none'); return;
+    }
+    if(tag==='BUTTON'){ styleButton(el,p,false); return; }
+    if(bg && lum(bg)>185){ imp(el,'background',p.surface); imp(el,'background-image','none'); }
+    if(bc && lum(bc)>155) imp(el,'border-color',p.border);
+    if(text && !saturatedStatus(text)){
+      if(lum(text)<80) {imp(el,'color',p.text); imp(el,'-webkit-text-fill-color',p.text);}
+      else if(lum(text)<170) {imp(el,'color',p.muted); imp(el,'-webkit-text-fill-color',p.muted);}
+    }
+  }
+
+  function normalizeLight(el,p){
+    if(!el||el.nodeType!==1) return;
+    var tag=(el.tagName||'').toUpperCase(), cs;
+    try{cs=getComputedStyle(el);}catch(_){return;}
+    var bg=rgb(cs.backgroundColor), text=rgb(cs.color), bc=rgb(cs.borderTopColor);
+    if(isField(tag)){
+      imp(el,'background',p.input); imp(el,'background-image','none'); imp(el,'color',p.text); imp(el,'-webkit-text-fill-color',p.text);
+      imp(el,'caret-color',p.text); imp(el,'border-color',p.border); imp(el,'box-shadow','inset 0 1px 0 rgba(255,255,255,.9)'); return;
+    }
+    if(tag==='BUTTON'){ styleButton(el,p,true); return; }
+    if(bg && lum(bg)<75){
+      var cls=String(el.className||'');
+      var target=(cls.indexOf('smtinel-8d-side-stack')>=0)?p.root:p.surface;
+      imp(el,'background',target); imp(el,'background-image','none');
+    }
+    if(bc && lum(bc)<90) imp(el,'border-color',p.border);
+    if(text && !saturatedStatus(text)){
+      if(lum(text)>205){ imp(el,'color',p.text); imp(el,'-webkit-text-fill-color',p.text); }
+      else if(lum(text)>135){ imp(el,'color',p.muted); imp(el,'-webkit-text-fill-color',p.muted); }
+    }
+  }
+
+  function apply(){
+    var root=document.querySelector('[data-traceops-eightd-editor="1"]');
+    if(!root) return;
+    var light=isLightTheme(), p=light?LIGHT:DARK;
+    root.setAttribute('data-smtinel-8d-theme',light?'light':'dark');
+
+    imp(root,'background',p.root); imp(root,'background-image','none'); imp(root,'color',p.text); imp(root,'color-scheme',light?'light':'dark');
+    var shell=root.firstElementChild;
+    imp(shell,'background',p.shell); imp(shell,'background-image','none'); imp(shell,'color',p.text);
+
+    var bar=root.querySelector('.smtinel-8d-commandbar');
+    if(bar){
+      imp(bar,'background',p.header); imp(bar,'background-image','linear-gradient(180deg,'+p.header+' 0%,'+p.header2+' 100%)');
+      imp(bar,'color',p.text); imp(bar,'border-bottom-color',p.border); imp(bar,'box-shadow',p.shadow);
+    }
+    imp(root.querySelector('.smtinel-8d-commandtop'),'background','transparent');
+    imp(root.querySelector('.smtinel-8d-commandtop'),'color',p.text);
+    imp(root.querySelector('.smtinel-8d-titlebox'),'background','transparent');
+    applyTitle(root,p);
+
+    var toolbar=root.querySelector('.smtinel-8d-toolbar');
+    if(toolbar){
+      imp(toolbar,'background',p.toolbar); imp(toolbar,'background-image','none');
+      imp(toolbar,'border-top-color',p.border); imp(toolbar,'border-bottom-color',p.border);
+    }
+
+    var content=shell && shell.children && shell.children[1];
+    if(content){ imp(content,'background',p.root); imp(content,'background-image','none'); imp(content,'color',p.text); }
+
+    var nodes=root.querySelectorAll('*');
+    for(var i=0;i<nodes.length;i++) (light?normalizeLight:normalizeDark)(nodes[i],p);
+
+    // Reassert major containers after generic normalization.
+    if(bar){ imp(bar,'background',p.header); imp(bar,'background-image','linear-gradient(180deg,'+p.header+' 0%,'+p.header2+' 100%)'); }
+    if(toolbar){ imp(toolbar,'background',p.toolbar); }
+    if(content){ imp(content,'background',p.root); }
+    applyTitle(root,p);
+
+    // Premium cards and sidebar surfaces.
+    var cards=root.querySelectorAll('.smtinel-8d-side-stack>div, [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div');
+    for(var c=0;c<cards.length;c++){
+      imp(cards[c],'background',p.surface); imp(cards[c],'border-color',p.border); imp(cards[c],'box-shadow',light?'0 7px 20px rgba(38,48,39,.06)':'0 8px 22px rgba(0,0,0,.20)');
+    }
+
+    var buttons=root.querySelectorAll('button');
+    for(var b=0;b<buttons.length;b++) styleButton(buttons[b],p,light);
+  }
+
+  var scheduled=false;
+  function schedule(){
+    if(scheduled) return;
+    scheduled=true;
+    requestAnimationFrame(function(){scheduled=false;apply();});
+  }
+  var observer=new MutationObserver(function(mutations){
+    for(var i=0;i<mutations.length;i++){
+      var m=mutations[i];
+      if(m.type==='childList'||m.type==='attributes'){schedule();break;}
+    }
+  });
+  function start(){
+    try{observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});}catch(_){ }
+    apply(); setTimeout(apply,50); setTimeout(apply,250); setTimeout(apply,1000);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
+  window.addEventListener('smtinel:themechange',schedule);
+  window.addEventListener('smtinel:theme-changed',schedule);
+  window.addEventListener('resize',schedule);
+})();
+</script>
+
 <script>window.__SMTINEL_MORE_PALETTE_V21__=true;</script>
 <script>window.__SMTINEL_HANDOFF_ADAPTIVE_QUALITY_V23__=true;</script>
 <style id="smtinel-retired-modules-guard-v14">
@@ -3984,7 +4167,7 @@ async function signUp(email, password){
     "Modo local activo":"Local mode active",
     "Modo local · sin backend":"Local mode · no backend",
     "Modo admin":"Admin mode",
-    "Modo admin activo":"Admin mode active",
+    "Admin mode active":"Admin mode active",
     "Nuevo":"New",
     "Nuevo analisis":"New analysis",
     "Ver análisis recientes":"View recent analyses",
@@ -4043,14 +4226,14 @@ async function signUp(email, password){
     "Todas las semanas":"All weeks",
     "All prefixes":"All prefixes",
     "Todo el dia":"All day",
-    "Desde":"From",
-    "Hasta":"To",
+    "From":"From",
+    "To":"To",
     "Inicio":"Start",
     "Fin":"End",
-    "Rango":"Range",
+    "Range":"Range",
     "Rango visible":"Visible range",
     "Ventana visible actual":"Current visible window",
-    "Semana":"Week",
+    "Week":"Week",
     "Semanas":"Weeks",
     "Dia":"Day",
     "DIA":"DAY",
@@ -4113,7 +4296,7 @@ async function signUp(email, password){
     "Por linea":"By Line",
     "Por modelo":"By Model",
     "Por prioridad":"By Priority",
-    "Por semana":"By Week",
+    "By week":"By Week",
     "Por tipo":"By Type",
     "Filtro de analisis":"Analysis Filter",
     "Filtro por persona":"Filter by Person",
@@ -4173,7 +4356,7 @@ async function signUp(email, password){
     "Año":"Year",
     "día":"day",
     "días":"days",
-    "Ver":"View",
+    "View":"View",
     "más":"more",
     "fecha":"date",
     "estado":"status",
@@ -4204,12 +4387,12 @@ async function signUp(email, password){
     "D4 Causa raíz":"D4 Root Cause",
     "Open bitácora":"Open Log",
     "Sin Test Info":"No Test Info",
-    "Yokoten débil":"Weak Yokoten",
+    "Weak Yokoten":"Weak Yokoten",
     "Lote pendiente":"Pending Lot",
     "Rango amplio:":"Wide Range:",
     "sesión ocupada":"session busy",
     "fuera de rango":"out of range",
-    "Caso sin modelo":"Case with No Model",
+    "Case without model":"Case with No Model",
     "D6 Verificación":"D6 Verification",
     "Pipeline actual":"Current Pipeline",
     "Sin descripcion":"No description",
@@ -4229,7 +4412,7 @@ async function signUp(email, password){
     "imagenes en rango":"images in range",
     "Base real de falla":"Actual Failure Basis",
     "Correo electrónico":"Email",
-    "Evidencia faltante":"Missing Evidence",
+    "Missing evidence":"Missing Evidence",
     "Generar desde RCCA":"Generate from RCCA",
     "Realtime con error":"Realtime Error",
     "Sin sesion en nube":"No Cloud Session",
@@ -4249,7 +4432,7 @@ async function signUp(email, password){
     "mapa de calor por RefDes":"RefDes Heatmap",
     "Sin bloqueadores mayores":"No Major Blockers",
     "Sin evidencia suficiente":"Insufficient Evidence",
-    "Borrar todo el historial?":"Delete all history?",
+    "Clear all history?":"Delete all history?",
     "Detalle de no conformidad":"Nonconformance Detail",
     "Sin patron fuerte visible":"No Strong Pattern Visible",
     "alerta predictiva y riesgo":"predictive alert and risk",
@@ -4349,8 +4532,8 @@ async function signUp(email, password){
     "Mide si el fix es local o transformacional. Este bloque convierte fallas en mejora sistémica.":"Measures Whether the Fix Is Local or Transformational. This Block Converts Failures into Systemic Improvement.",
     "Tu operacion ya tiene las senales. El siguiente paso es cierre disciplinado con trazabilidad.":"Your Operation Already Has the Signals. The Next Step Is Disciplined Closure with Traceability.",
     "Log sugerida para asignar seguimiento, analisis, RCCA e ideas de mejora desde Yield Flow.":"Suggested Log to Assign Follow-up, Analysis, RCCA, and Improvement Ideas from Yield Flow.",
-    "Este rango incrementa consumo de tokens y ruido. Recomendado: 3 a 5 dias o separar por semana.":"This Range Increases Token Consumption and Noise. Recommended: 3 to 5 Days or Split by Week.",
-    "Se ignoran advertencias de rango y se usa techo alto de salida para pruebas en este dispositivo.":"Range Warnings Are Ignored and a High Output Limit Is Used for Testing on This Device.",
+    "This range increases token usage and noise. Recommended: 3 to 5 days or split by week.":"This Range Increases Token Consumption and Noise. Recommended: 3 to 5 Days or Split by Week.",
+    "Range warnings are bypassed and a higher output ceiling is used for testing on this device.":"Range Warnings Are Ignored and a High Output Limit Is Used for Testing on This Device.",
     "No permitir cierre si falta lote afectado, evidencia de implementacion, validacion D6 o aprobacion QA.":"Do Not Allow Closure if the Affected Lot, Implementation Evidence, D6 Validation, or QA Approval Is Missing.",
     "La lógica de análisis queda separada de la narrativa final del 8D para reducir rechazos y contradicciones.":"Analysis Logic Remains Separate from the Final 8D Narrative to Reduce Rejections and Contradictions.",
     "Override local para este dispositivo. Omite advertencias de rango y sube el limite de salida para pruebas.":"Local Override for This Device. Skips Range Warnings and Raises the Output Limit for Testing."
@@ -4360,10 +4543,10 @@ async function signUp(email, password){
     "sin":"without",
     "dias":"days",
     "registros":"records",
-    "D4 sin D5":"D4 without D5",
-    "D4 sin D7":"D4 without D7",
-    "D5 sin D4":"D5 without D4",
-    "D5 sin D6":"D5 without D6",
+    "D4 without D5":"D4 without D5",
+    "D4 without D7":"D4 without D7",
+    "D5 without D4":"D5 without D4",
+    "D5 without D6":"D5 without D6",
     "Aceptación estimada":"Estimated Acceptance",
     "evidencia(s) vinculada(s) ·":"linked evidence ·",
     "Sesion guardada localmente; en refresh se restaura sin recargar ZIP.":"Session Saved Locally; Refresh Restores It without Reloading the ZIP.",
@@ -10365,7 +10548,7 @@ function traceOpsGetWindowDays(filterMode, days, dateFrom, dateTo, weekNum, week
 }
 function traceOpsBuildRangeLabel(filterMode, days, dateFrom, dateTo, weekNum, weekYear) {
     if (filterMode === "quick")
-        return "Ultimos " + Math.max(1, parseInt(days, 10) || 3) + " dias";
+        return "Ultimos " + Math.max(1, parseInt(days, 10) || 3) + " days";
     if (filterMode === "week")
         return "Semana " + (weekNum || "") + " / " + (weekYear || "");
     if (filterMode === "range")
@@ -11353,7 +11536,7 @@ function traceOpsYieldFiscalWeekRangeLabel(week, lang) {
     return traceOpsYieldFiscalMonthName(a, langKey) + " " + a.getUTCDate() + ", " + a.getUTCFullYear() + "-" + traceOpsYieldFiscalMonthName(b, langKey) + " " + b.getUTCDate() + ", " + b.getUTCFullYear();
 }
 function traceOpsYieldResolveCiscoWeek(row, calendarMap) {
-    var direct = String(traceOpsYieldPick(row, ["WFCSY", "Cisco Week", "Fiscal Week", "Cisco Fiscal Week", "Week Cisco Full", "Week", "Semana"]) || "").trim();
+    var direct = String(traceOpsYieldPick(row, ["WFCSY", "Cisco Week", "Fiscal Week", "Cisco Fiscal Week", "Week Cisco Full", "Week", "Week"]) || "").trim();
     if (/FY\d{4}.*W[- ]?\d{1,3}/i.test(direct))
         return direct;
     var dateValue = traceOpsYieldPick(row, ["Build Start Date", "Build Start Date (Month)", "Start Date", "Date", "Fecha", "WO Start Time", "Time Start", "lasteditdt", "Last Edit DT", "Current Event Time"]);
@@ -26900,7 +27083,7 @@ body:has(#recovery-section) .main-content.expanded{
             React.createElement("select", { value: form[p.k], onChange: function (e) { upd(p.k, e.target.value); }, style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "#1A1714", outline: "none", background: "#fff" } },
                 React.createElement("option", { value: "" }, "-"),
                 p.opts.map(function (opt) { return React.createElement("option", { key: opt.v, value: opt.v }, opt.l); })))); }
-        return (React.createElement("div", { "data-traceops-rcca-form": "1", style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.62)", zIndex: 2147483000, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }, onClick: function () { onClose(); } },
+        return (React.createElement("div", { "data-traceops-rcca-form": "1", style: { position: "fixed", inset: 0, background: "#EEF1EE", zIndex: 2147483000, display: "flex", alignItems: "stretch", justifyContent: "center", padding: 0 }, onClick: function (e) { e.stopPropagation(); } },
             React.createElement("div", { style: { background: "#fff", borderRadius: 18, width: "100%", maxWidth: 1480, maxHeight: "94vh", overflow: "auto", paddingBottom: 32, boxShadow: "0 24px 70px rgba(0,0,0,.28)" }, onClick: function (e) { e.stopPropagation(); } },
                 React.createElement("div", { style: { position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #EEECEA", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 1 } },
                     React.createElement("div", null,
@@ -26928,7 +27111,7 @@ body:has(#recovery-section) .main-content.expanded{
                     React.createElement("div", { style: { background: "#F8F7F5", border: "1px solid #DDDBD7", borderRadius: 8, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 } },
                         React.createElement("span", { style: { fontSize: 9.5, color: "#8A8580", fontWeight: 600, textTransform: "uppercase" } }, "RCCA ID:"),
                         React.createElement("span", { style: { fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: "#1F3A5F" } }, form.rcca_id)),
-                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, [{ k: "modelo", l: "Model / N-P" }, { k: "linea", l: "Line" }, { k: "fecha", l: "Date" }].map(function (f) {
+                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, [{ k: "modelo", l: "Model / P/N" }, { k: "linea", l: "Line" }, { k: "fecha", l: "Date" }].map(function (f) {
                         return (React.createElement("div", { key: f.k },
                             React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: "#6A6560", marginBottom: 3 } }, f.l),
                             React.createElement("input", { value: form[f.k], onChange: function (e) { upd(f.k, e.target.value); }, style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "#1A1714", outline: "none" } })));
@@ -27177,10 +27360,10 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" } },
                             React.createElement("span", { style: { fontSize: 9, fontWeight: 800, borderRadius: 999, padding: "4px 8px", background: manual ? "#F5F0FE" : "#EAF2FF", color: manual ? "#6B2DA8" : "#1F3A5F", border: "1px solid " + (manual ? "#DBCDF8" : "#C7DBF7") } }, manual ? "Edited in 8D" : "Auto from RCCA"),
                             React.createElement("button", { onClick: addD1TeamMember, style: { background: "#EEF6FF", border: "1px solid #C7DBF7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#1F3A5F", cursor: "pointer" } }, "Add Row"),
-                            members.length > traceOpsEightdDefaultTeamRoles().length && React.createElement("button", { onClick: removeLastD1TeamMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Eliminar \u00FAltima"),
+                            members.length > traceOpsEightdDefaultTeamRoles().length && React.createElement("button", { onClick: removeLastD1TeamMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Remove last"),
                             sourceRcca && (React.createElement("button", { onClick: function () { refreshDraftFieldFromRcca('d1_team'); }, style: { background: "#fff", border: "1px solid #DDDBD7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#6A6560", cursor: "pointer" } }, "Refresh field"))))),
                 React.createElement("div", { style: { padding: mobile ? 10 : 12, display: "flex", flexDirection: "column", gap: 10 } },
-                    React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Llena las 3 columnas y el resultado se reflejar\u00E1 en la tabla D1 del 8D exportado."),
+                    React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Complete all three columns. The result will be reflected in the D1 table of the exported 8D."),
                     React.createElement("div", { style: { border: "1px solid #E5E2DC", borderRadius: 12, overflow: "hidden", background: "#FCFCFB" } },
                         React.createElement("div", { style: { display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1.2fr 1.35fr", background: "#F8F7F5", borderBottom: "1px solid #E5E2DC" } },
                             React.createElement("div", { style: { padding: "10px 12px", fontSize: 10, fontWeight: 800, color: "#6A6560", textTransform: "uppercase", letterSpacing: ".08em" } }, "Role"),
@@ -27193,23 +27376,23 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { padding: 10 } },
                                     React.createElement("input", { value: member.name || '', onChange: function (e) { updateD1TeamMember(idx, 'name', e.target.value); }, placeholder: "Name", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })),
                                 React.createElement("div", { style: { padding: 10 } },
-                                    React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1TeamMember(idx, 'email', e.target.value); }, placeholder: "correo@empresa.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
+                                    React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1TeamMember(idx, 'email', e.target.value); }, placeholder: "name@company.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
                         })),
                     React.createElement("div", { style: { background: manual ? "#FCFAFF" : "#F8F7F5", border: "1px solid " + (manual ? "#DBCDF8" : "#E5E2DC"), borderRadius: 12, padding: mobile ? 10 : 12 } },
                         React.createElement("div", { style: { fontSize: 9.5, fontWeight: 800, color: manual ? "#6B2DA8" : "#6A6560", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 } }, "D1 summary preview"),
-                        React.createElement("textarea", { value: form.d1_team || '', rows: mobile ? 5 : 6, onChange: function (e) { upd('d1_team', e.target.value); }, style: { width: "100%", border: "1.5px solid " + (manual ? "#CDBAF7" : "#DDDBD7"), borderRadius: 10, padding: mobile ? "10px" : "10px 12px", fontSize: mobile ? 11.5 : 12, color: "#1A1714", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.55, background: "#fff" } })),
+                        React.createElement("textarea", { value: form.d1_team || '', rows: 4, onChange: function (e) { upd('d1_team', e.target.value); }, style: { width: "100%", border: "1.5px solid " + (manual ? "#CDBAF7" : "#DDDBD7"), borderRadius: 10, padding: mobile ? "10px" : "10px 12px", fontSize: mobile ? 11.5 : 12, color: "#1A1714", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.55, background: "#fff" } })),
                     React.createElement("div", { style: { background: "#FCFCFB", border: "1px solid #E5E2DC", borderRadius: 12, padding: mobile ? 10 : 12, display: "flex", flexDirection: "column", gap: 10 } },
                         React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" } },
                             React.createElement("div", { style: { minWidth: 0, flex: 1 } },
                                 React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#1A1714", lineHeight: 1.2 } }, "Escalation"),
-                                React.createElement("div", { style: { fontSize: 10, color: "#8A8580", marginTop: 2, lineHeight: 1.35 } }, "Saldr\u00E1 en un salto de p\u00E1gina / slide propio del export, no dentro de D1-D2.")),
+                                React.createElement("div", { style: { fontSize: 10, color: "#8A8580", marginTop: 2, lineHeight: 1.35 } }, "This section is exported on its own page / slide, not inside D1-D2.")),
                             React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" } },
                                 React.createElement("span", { style: { fontSize: 9, fontWeight: 800, borderRadius: 999, padding: "4px 8px", background: escalationManual ? "#F5F0FE" : "#EAF2FF", color: escalationManual ? "#6B2DA8" : "#1F3A5F", border: "1px solid " + (escalationManual ? "#DBCDF8" : "#C7DBF7") } }, escalationManual ? "Edited in 8D" : "Auto from RCCA"),
                                 React.createElement("button", { onClick: copyEscalationFromTeam, style: { background: "#EEF6FF", border: "1px solid #C7DBF7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#1F3A5F", cursor: "pointer" } }, "Copy from Team"),
                                 React.createElement("button", { onClick: addD1EscalationMember, style: { background: "#EEF6FF", border: "1px solid #C7DBF7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#1F3A5F", cursor: "pointer" } }, "Add Row"),
-                                escalationMembers.length > traceOpsEightdDefaultEscalationRoles().length && React.createElement("button", { onClick: removeLastD1EscalationMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Eliminar \u00FAltima"),
+                                escalationMembers.length > traceOpsEightdDefaultEscalationRoles().length && React.createElement("button", { onClick: removeLastD1EscalationMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Remove last"),
                                 sourceRcca && (React.createElement("button", { onClick: function () { refreshDraftFieldFromRcca('d1_escalation'); }, style: { background: "#fff", border: "1px solid #DDDBD7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#6A6560", cursor: "pointer" } }, "Refresh field")))),
-                        React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Roles est\u00E1ndar nivel coordinador / manager. Puedes copiar nombres y correos desde Team sin duplicar la secci\u00F3n en el editor."),
+                        React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Standard coordinator / manager roles. You can copy names and email addresses from Team without duplicating the section in the editor."),
                         React.createElement("div", { style: { border: "1px solid #E5E2DC", borderRadius: 12, overflow: "hidden", background: "#fff" } },
                             React.createElement("div", { style: { display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1.2fr 1.35fr", background: "#F8F7F5", borderBottom: "1px solid #E5E2DC" } },
                                 React.createElement("div", { style: { padding: "10px 12px", fontSize: 10, fontWeight: 800, color: "#6A6560", textTransform: "uppercase", letterSpacing: ".08em" } }, "Role"),
@@ -27222,7 +27405,7 @@ body:has(#recovery-section) .main-content.expanded{
                                     React.createElement("div", { style: { padding: 10 } },
                                         React.createElement("input", { value: member.name || '', onChange: function (e) { updateD1EscalationMember(idx, 'name', e.target.value); }, placeholder: "Name", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })),
                                     React.createElement("div", { style: { padding: 10 } },
-                                        React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1EscalationMember(idx, 'email', e.target.value); }, placeholder: "correo@empresa.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
+                                        React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1EscalationMember(idx, 'email', e.target.value); }, placeholder: "name@company.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
                             }))))));
         }
         function renderD1EscalationField(title, subtitle) {
@@ -27238,10 +27421,10 @@ body:has(#recovery-section) .main-content.expanded{
                             React.createElement("span", { style: { fontSize: 9, fontWeight: 800, borderRadius: 999, padding: "4px 8px", background: manual ? "#F5F0FE" : "#EAF2FF", color: manual ? "#6B2DA8" : "#1F3A5F", border: "1px solid " + (manual ? "#DBCDF8" : "#C7DBF7") } }, manual ? "Edited in 8D" : "Auto from RCCA"),
                             React.createElement("button", { onClick: copyEscalationFromTeam, style: { background: "#EEF6FF", border: "1px solid #C7DBF7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#1F3A5F", cursor: "pointer" } }, "Copy from Team"),
                             React.createElement("button", { onClick: addD1EscalationMember, style: { background: "#EEF6FF", border: "1px solid #C7DBF7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#1F3A5F", cursor: "pointer" } }, "Add Row"),
-                            members.length > traceOpsEightdDefaultEscalationRoles().length && React.createElement("button", { onClick: removeLastD1EscalationMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Eliminar \u00FAltima"),
+                            members.length > traceOpsEightdDefaultEscalationRoles().length && React.createElement("button", { onClick: removeLastD1EscalationMember, style: { background: "#fff", border: "1px solid #F0C4BE", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#C0392B", cursor: "pointer" } }, "Remove last"),
                             sourceRcca && (React.createElement("button", { onClick: function () { refreshDraftFieldFromRcca('d1_escalation'); }, style: { background: "#fff", border: "1px solid #DDDBD7", borderRadius: 999, padding: "4px 10px", fontSize: 9.5, fontWeight: 800, color: "#6A6560", cursor: "pointer" } }, "Refresh field"))))),
                 React.createElement("div", { style: { padding: mobile ? 10 : 12, display: "flex", flexDirection: "column", gap: 10 } },
-                    React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Escalation usa niveles coordinador / manager. Copiar desde Team llena nombres y correos, manteniendo roles de escalaci\u00F3n estandarizados."),
+                    React.createElement("div", { style: { fontSize: 11.5, color: "#8A8580", padding: "2px 2px 4px" } }, "Escalation uses coordinator / manager levels. Copy from Team fills names and email addresses while preserving standardized escalation roles."),
                     React.createElement("div", { style: { border: "1px solid #E5E2DC", borderRadius: 12, overflow: "hidden", background: "#FCFCFB" } },
                         React.createElement("div", { style: { display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1.2fr 1.35fr", background: "#F8F7F5", borderBottom: "1px solid #E5E2DC" } },
                             React.createElement("div", { style: { padding: "10px 12px", fontSize: 10, fontWeight: 800, color: "#6A6560", textTransform: "uppercase", letterSpacing: ".08em" } }, "Role"),
@@ -27254,11 +27437,11 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { padding: 10 } },
                                     React.createElement("input", { value: member.name || '', onChange: function (e) { updateD1EscalationMember(idx, 'name', e.target.value); }, placeholder: "Name", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })),
                                 React.createElement("div", { style: { padding: 10 } },
-                                    React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1EscalationMember(idx, 'email', e.target.value); }, placeholder: "correo@empresa.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
+                                    React.createElement("input", { value: member.email || '', onChange: function (e) { updateD1EscalationMember(idx, 'email', e.target.value); }, placeholder: "name@company.com", style: { width: "100%", border: "1.5px solid #DDDBD7", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "#1A1714", outline: "none", fontFamily: "inherit", background: "#fff" } })));
                         })),
                     React.createElement("div", { style: { background: manual ? "#FCFAFF" : "#F8F7F5", border: "1px solid " + (manual ? "#DBCDF8" : "#E5E2DC"), borderRadius: 12, padding: mobile ? 10 : 12 } },
                         React.createElement("div", { style: { fontSize: 9.5, fontWeight: 800, color: manual ? "#6B2DA8" : "#6A6560", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 } }, "Escalation export note"),
-                        React.createElement("div", { style: { fontSize: 11.5, lineHeight: 1.55, color: "#1A1714" } }, "El export genera un salto de p\u00E1gina / slide exclusivo para Escalation, evitando duplicarlo dentro de D1-D2.")))));
+                        React.createElement("div", { style: { fontSize: 11.5, lineHeight: 1.55, color: "#1A1714" } }, "The export creates a dedicated page / slide for Escalation so it is not duplicated inside D1-D2.")))));
         }
         function renderDraftOverlayField(sec) {
             var key = sec[0];
@@ -27388,42 +27571,32 @@ body:has(#recovery-section) .main-content.expanded{
                     item.linea_estacion && React.createElement("span", { style: { fontSize: 8.8, background: "#EAF2FF", color: "#1F3A5F", borderRadius: 999, padding: "3px 7px", fontWeight: 700 } }, item.linea_estacion),
                     item.defecto_smt && item.defecto_smt !== "N/A" && React.createElement("span", { style: { fontSize: 8.8, background: "#F5F0FE", color: "#6B2DA8", borderRadius: 999, padding: "3px 7px", fontWeight: 700 } }, item.defecto_smt)));
         })));
-        return (React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.58)", zIndex: 9996, display: "flex", alignItems: mobile ? "stretch" : "center", justifyContent: "center", padding: mobile ? 0 : 16 }, onClick: function () { props.onClose(); } },
-            React.createElement("div", { style: { background: "#fff", borderRadius: mobile ? 0 : 18, maxWidth: 1480, width: "100%", height: mobile ? "100svh" : "94vh", maxHeight: mobile ? "100svh" : "94vh", overflow: "auto", boxShadow: mobile ? "none" : "0 20px 60px rgba(0,0,0,.24)" }, onClick: function (e) { e.stopPropagation(); } },
-                React.createElement("div", { style: { position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #EEECEA", padding: mobile ? "12px 12px 10px" : "16px 20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", zIndex: 2 } },
-                    React.createElement("div", { style: { minWidth: 0, flex: mobile ? "1 1 100%" : "1 1 auto" } },
-                        React.createElement("div", { style: { fontSize: 10.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: "#2F6FB3" } }, "8D Draft Generator"),
-                        React.createElement("div", { style: { fontSize: mobile ? 16 : 18, fontWeight: 800, color: "#1A1714", marginTop: 4, lineHeight: 1.15, overflowWrap: "anywhere" } }, form.source_title || form.source_rcca_id || "Draft 8D"),
-                        React.createElement("div", { style: { fontSize: 10, color: "#6A6560", marginTop: 4, fontFamily: "monospace", overflowWrap: "anywhere" } },
-                            form.eightd_id,
-                            " \u00B7 Source RCCA ",
-                            form.source_rcca_id || "N/D"),
-                        mobile && React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 } },
-                            form.modelo && badge("#EAF2FF", "#1F3A5F", form.modelo),
-                            form.linea && badge("#EAF2FF", "#1F3A5F", form.linea),
-                            form.status && badge("#EAF2FF", "#2F6FB3", form.status))),
-                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: mobile ? "repeat(2,minmax(0,1fr))" : "repeat(" + (sourceRcca ? "5" : "4") + ",auto)", gap: 8, justifyContent: mobile ? "stretch" : "flex-end", width: mobile ? "100%" : "auto", alignItems: "stretch" } },
-                        React.createElement("div", { style: { gridColumn: mobile ? "1 / -1" : "auto", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", justifyContent: mobile ? "flex-start" : "flex-end" } },
-                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, background: readiness.overallScore >= 85 ? "#EAF2FF" : readiness.overallScore >= 60 ? "#FEF9E8" : "#FDF0EE", color: readiness.overallScore >= 85 ? "#1F3A5F" : readiness.overallScore >= 60 ? "#B87820" : "#C0392B", border: "1px solid " + (readiness.overallScore >= 85 ? "#C7DBF7" : readiness.overallScore >= 60 ? "#F5E4A0" : "#F0C4BE"), borderRadius: 999, padding: mobile ? "8px 10px" : "6px 10px" } },
-                                "Maturity ",
-                                readiness.overallScore,
-                                "%"),
-                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, background: "#EEF6FF", color: "#145A28", border: "1px solid #A0DEB4", borderRadius: 999, padding: mobile ? "8px 10px" : "6px 10px" } },
-                                "Structure ",
-                                readiness.structureScore,
-                                "%"),
-                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, background: readiness.evidenceScore >= 70 ? "#EAF2FF" : "#FEF9E8", color: readiness.evidenceScore >= 70 ? "#2F6FB3" : "#B87820", border: "1px solid " + (readiness.evidenceScore >= 70 ? "#C7DBF7" : "#F5E4A0"), borderRadius: 999, padding: mobile ? "8px 10px" : "6px 10px" } },
-                                "Evidence ",
-                                readiness.evidenceScore,
-                                "%"),
-                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, background: readiness.canPromote ? "#EEF6FF" : "#FDF0EE", color: readiness.canPromote ? "#145A28" : "#C0392B", border: "1px solid " + (readiness.canPromote ? "#A0DEB4" : "#F0C4BE"), borderRadius: 999, padding: mobile ? "8px 10px" : "6px 10px" } }, readiness.stage)),
-                        React.createElement("button", { onClick: function () { props.onSave(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%" } }, mobile ? "Save" : "Save Draft"),
-                        React.createElement("button", { onClick: function () { exportEightdPpt(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#FEF9E8", border: "1px solid #F5E4A0", color: "#B87820", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%" } }, mobile ? "PPT" : "Export PPT"),
-                        React.createElement("button", { onClick: function () { exportEightdFoxconnPpt(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#003B7A", border: "1px solid #003B7A", color: "#FFFFFF", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%" } }, mobile ? "8D Foxconn" : "PPT 8D Foxconn"),
-                        React.createElement("button", { onClick: function () { exportEightdHtml(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#EAF2FF", border: "1px solid #C8D7F8", color: "#2F6FB3", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%" } }, mobile ? "HTML" : "Export HTML"),
-                        sourceRcca && React.createElement("button", { onClick: function () { props.onRefresh(sourceRcca); }, style: { background: "#F5F0FE", border: "1px solid #DBCDF8", color: "#6B2DA8", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%" } }, mobile ? "Refresh" : "Refresh from RCCA"),
-                        React.createElement("button", { onClick: props.onClose, style: { background: "#F8F7F5", border: "1px solid #DDDBD7", color: "#6A6560", borderRadius: 10, padding: mobile ? "11px 12px" : "10px 14px", fontSize: mobile ? 11 : 12, fontWeight: 700, cursor: "pointer", width: "100%", gridColumn: mobile && (!sourceRcca) ? "1 / -1" : "auto" } }, mobile ? "Close" : "Close"))),
-                React.createElement("div", { style: { padding: mobile ? "12px" : "18px 20px", display: "grid", gridTemplateColumns: mobile ? "1fr" : "1.55fr .95fr", gap: 12 } },
+        return (React.createElement("div", { "data-traceops-eightd-editor": "1", style: { position: "fixed", inset: 0, background: "#080808", color: "#F1F1ED", colorScheme: "dark", zIndex: 9996, display: "flex", alignItems: "stretch", justifyContent: "center", padding: 0 }, onClick: function (e) { e.stopPropagation(); } },
+            React.createElement("div", { style: { background: "#080808", color: "#F1F1ED", borderRadius: mobile ? 0 : 18, maxWidth: 1480, width: "100%", height: mobile ? "100svh" : "94vh", maxHeight: mobile ? "100svh" : "94vh", overflow: "auto", boxShadow: mobile ? "none" : "0 20px 60px rgba(0,0,0,.42)" }, onClick: function (e) { e.stopPropagation(); } },
+                React.createElement("div", { className: "smtinel-8d-commandbar", style: { position: "sticky", top: 0, background: "#090909", color: "#F1F1ED", borderBottom: "1px solid #262626", padding: mobile ? "10px 12px" : "12px 20px", display: "flex", flexDirection: "column", gap: 9, zIndex: 2, boxShadow: "0 10px 28px rgba(0,0,0,.38)" } },
+                    React.createElement("div", { className: "smtinel-8d-commandtop", style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: mobile ? "wrap" : "nowrap" } },
+                        React.createElement("div", { className: "smtinel-8d-titlebox", style: { minWidth: 0, flex: "1 1 auto" } },
+                            React.createElement("div", { className: "smtinel-8d-kicker", style: { fontSize: 9.5, fontWeight: 900, letterSpacing: ".13em", textTransform: "uppercase", color: "#91A264" } }, "8D Draft Generator"),
+                            React.createElement("div", { className: "smtinel-8d-case-title", title: form.source_title || form.source_rcca_id || "Draft 8D", style: { fontSize: mobile ? 16 : 20, fontWeight: 850, color: "#F1F1ED", marginTop: 3, lineHeight: 1.14, overflowWrap: "anywhere", maxWidth: 1020, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } }, form.source_title || form.source_rcca_id || "Draft 8D"),
+                            React.createElement("div", { className: "smtinel-8d-meta", style: { fontSize: 9.25, color: "#8F918A", marginTop: 4, fontFamily: "monospace", whiteSpace: mobile ? "normal" : "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 1120 } },
+                                form.eightd_id || "8D Draft",
+                                " · Source RCCA ", form.source_rcca_id || "N/D",
+                                form.modelo ? " · " + form.modelo : "",
+                                form.linea ? " · " + form.linea : "",
+                                form.status ? " · " + form.status : "")),
+                        React.createElement("div", { className: "smtinel-8d-readiness", style: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: mobile ? "flex-start" : "flex-end", alignItems: "center", flex: "0 0 auto", maxWidth: mobile ? "100%" : 560 } },
+                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 900, background: readiness.overallScore >= 85 ? "#EAF2FF" : readiness.overallScore >= 60 ? "#FEF9E8" : "#FDF0EE", color: readiness.overallScore >= 85 ? "#1F3A5F" : readiness.overallScore >= 60 ? "#B87820" : "#C0392B", border: "1px solid " + (readiness.overallScore >= 85 ? "#C7DBF7" : readiness.overallScore >= 60 ? "#F5E4A0" : "#F0C4BE"), borderRadius: 999, padding: "5px 9px" } }, "Maturity ", readiness.overallScore, "%"),
+                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 900, background: "#EEF6FF", color: "#145A28", border: "1px solid #A0DEB4", borderRadius: 999, padding: "5px 9px" } }, "Structure ", readiness.structureScore, "%"),
+                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 900, background: readiness.evidenceScore >= 70 ? "#EAF2FF" : "#FEF9E8", color: readiness.evidenceScore >= 70 ? "#2F6FB3" : "#B87820", border: "1px solid " + (readiness.evidenceScore >= 70 ? "#C7DBF7" : "#F5E4A0"), borderRadius: 999, padding: "5px 9px" } }, "Evidence ", readiness.evidenceScore, "%"),
+                            React.createElement("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 900, background: readiness.canPromote ? "#EEF6FF" : "#FDF0EE", color: readiness.canPromote ? "#145A28" : "#C0392B", border: "1px solid " + (readiness.canPromote ? "#A0DEB4" : "#F0C4BE"), borderRadius: 999, padding: "5px 9px" } }, readiness.stage))),
+                    React.createElement("div", { className: "smtinel-8d-toolbar", style: { display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", paddingTop: 8, borderTop: "1px solid #262626", background: "#0D0D0D" } },
+                        React.createElement("button", { onClick: function () { props.onSave(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#59633B", color: "#fff", border: "1px solid #75804D", borderRadius: 999, padding: "8px 13px", fontSize: 10.5, fontWeight: 800, cursor: "pointer" } }, mobile ? "Save" : "Save Draft"),
+                        React.createElement("button", { onClick: function () { exportEightdPpt(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#171717", border: "1px solid #353532", color: "#D9D9D3", borderRadius: 999, padding: "8px 13px", fontSize: 10.5, fontWeight: 800, cursor: "pointer" } }, mobile ? "PPT" : "Export PPT"),
+                        React.createElement("button", { onClick: function () { exportEightdFoxconnPpt(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#59633B", border: "1px solid #75804D", color: "#FFFFFF", borderRadius: 999, padding: "8px 13px", fontSize: 10.5, fontWeight: 800, cursor: "pointer" } }, mobile ? "8D Foxconn" : "PPT 8D Foxconn"),
+                        React.createElement("button", { onClick: function () { exportEightdHtml(Object.assign({}, form, { readiness_score: readiness.overallScore, structure_readiness_score: readiness.structureScore, evidence_readiness_score: readiness.evidenceScore, case_maturity_score: readiness.overallScore, missing_fields: readiness.structureMissing, escalation_blockers: readiness.blockers, can_promote: readiness.canPromote, draft_stage: readiness.stage })); }, style: { background: "#171717", border: "1px solid #353532", color: "#D9D9D3", borderRadius: 999, padding: "8px 13px", fontSize: 10.5, fontWeight: 800, cursor: "pointer" } }, mobile ? "HTML" : "Export HTML"),
+                        sourceRcca && React.createElement("button", { className: "smtinel-8d-refresh", onClick: function () { props.onRefresh(sourceRcca); }, style: { background: "#171717", border: "1px solid #353532", color: "#D9D9D3", borderRadius: 999, padding: "8px 12px", fontSize: 10.5, fontWeight: 800, cursor: "pointer" } }, mobile ? "Refresh" : "Refresh from RCCA"),
+                        React.createElement("button", { className: "smtinel-8d-close", onClick: props.onClose, style: { background: "#111111", border: "1px solid #353532", color: "#D9D9D3", borderRadius: 999, padding: "8px 12px", fontSize: 10.5, fontWeight: 800, cursor: "pointer", marginLeft: mobile ? 0 : "auto" } }, "Close"))),
+                React.createElement("div", { style: { padding: mobile ? "12px" : "18px 20px", display: "grid", gridTemplateColumns: mobile ? "1fr" : "1.55fr .95fr", gap: 12, background: "#080808", color: "#F1F1ED" } },
                     mobile && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
                         sourcePanel,
                         missingPanel,
@@ -27440,7 +27613,7 @@ body:has(#recovery-section) .main-content.expanded{
                                 React.createElement("div", { style: { padding: mobile ? 10 : 12, display: "flex", flexDirection: "column", gap: 12 } }, supplementalSectionDefs.map(function (sec) {
                                     return renderDraftOverlayField(sec);
                                 }))))),
-                    !mobile && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
+                    !mobile && React.createElement("div", { className: "smtinel-8d-side-stack", style: { display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 12, alignSelf: "start", maxHeight: "calc(100vh - 205px)", overflowY: "auto", paddingRight: 2 } },
                         sourcePanel,
                         missingPanel,
                         eventsPanel)))));
@@ -29370,7 +29543,7 @@ body:has(#recovery-section) .main-content.expanded{
                         )
                     ),
                     React.createElement("div", { style: { marginTop: 16, display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(auto-fit,minmax(190px,1fr))", gap: 10 } }, [
-                        detailCard({ l: "Rango", v: shortTrendWeekLabel(rowsForChart[rangeA] && rowsForChart[rangeA].week) + " - " + shortTrendWeekLabel(rowsForChart[rangeB] && rowsForChart[rangeB].week), c: "#006D63", bg: "#E4F6F3", icon: "□" }),
+                        detailCard({ l: "Range", v: shortTrendWeekLabel(rowsForChart[rangeA] && rowsForChart[rangeA].week) + " - " + shortTrendWeekLabel(rowsForChart[rangeB] && rowsForChart[rangeB].week), c: "#006D63", bg: "#E4F6F3", icon: "□" }),
                         detailCard({ l: "Focus clean", v: traceOpsYieldFlowFmt(rangeClean) + " / " + traceOpsYieldFlowFmt(rangeTotal), c: "#0F6B3E", bg: "#EAF7F3", icon: "✦" }),
                         detailCard({ l: "Focus risk", v: traceOpsYieldFlowFmt(rangeRisk), c: rangeRisk > 0 ? "#B3261E" : "#0F6B3E", bg: "#FFF1EC", icon: "△" }),
                         detailCard({ l: "Selected", v: selectedRow ? selectedRow.week : "N/D", c: "#1F5FBF", bg: "#EAF1FF", icon: "□" }),
@@ -35305,12 +35478,12 @@ body:has(#recovery-section) .main-content.expanded{
         var d7 = traceOpsEightdAnalyzerText(item, ["d7_prevention", "report_positioning", "pattern_detected"]);
         var yokotenStrong = traceOpsEightdAnalyzerHasAny(d7, ["yokoten", "horizontal", "sistem", "systemic", "deployment", "standard", "pfmea", "control plan", "coverage"]);
         var contradiction = [];
-        if (!d4 && d5) contradiction.push("D5 sin D4");
-        if (d4 && !d5) contradiction.push("D4 sin D5");
-        if (d5 && !d6) contradiction.push("D5 sin D6");
-        if (d4 && !d7) contradiction.push("D4 sin D7");
-        if (d7 && !yokotenStrong) contradiction.push("Yokoten débil");
-        if (!evidenceCount) contradiction.push("Evidencia faltante");
+        if (!d4 && d5) contradiction.push("D5 without D4");
+        if (d4 && !d5) contradiction.push("D4 without D5");
+        if (d5 && !d6) contradiction.push("D5 without D6");
+        if (d4 && !d7) contradiction.push("D4 without D7");
+        if (d7 && !yokotenStrong) contradiction.push("Weak Yokoten");
+        if (!evidenceCount) contradiction.push("Missing evidence");
         var ymi = 1;
         if (d7) ymi = 2;
         if (yokotenStrong) ymi = 3;
@@ -35325,7 +35498,7 @@ body:has(#recovery-section) .main-content.expanded{
             ymi: ymi,
             por: por,
             acceptance: Math.max(5, 100 - por),
-            riskLevel: por >= 70 ? "ALTO" : (por >= 42 ? "MEDIO" : "BAJO"),
+            riskLevel: por >= 70 ? "HIGH" : (por >= 42 ? "MEDIUM" : "LOW"),
             discipline: {
                 d1: traceOpsEightdAnalyzerScoreText(traceOpsEightdAnalyzerText(item, ["d1_team", "d1_team_members"]), 95),
                 d2: traceOpsEightdAnalyzerScoreText(traceOpsEightdAnalyzerText(item, ["d2_problem", "d2_traceability", "d2_5w2h"]), 150),
@@ -35344,8 +35517,8 @@ body:has(#recovery-section) .main-content.expanded{
         var blocked = Math.max(0, cases.length - ready);
         var avg = function (arr, fn) { if (!arr.length) return 0; return arr.reduce(function(s,x){ return s + Number(fn(x) || 0); }, 0) / arr.length; };
         var disciplineKeys = ["d1","d2","d3","d4","d5","d6","d7","d8"];
-        var labels = { d1:"D1 Equipo", d2:"D2 Problema", d3:"D3 Contención", d4:"D4 Causa raíz", d5:"D5 Acciones", d6:"D6 Verificación", d7:"D7 Prevención / Yokoten", d8:"D8 Cierre" };
-        var rows = disciplineKeys.map(function(k){ var val = avg(cases, function(c){ return c.discipline[k]; }); return { key:k, label:labels[k], score: Number(val.toFixed(1)), risk: val < 3 ? "Crítico" : (val < 4 ? "Medio" : "Bajo") }; });
+        var labels = { d1:"D1 Team", d2:"D2 Problem", d3:"D3 Containment", d4:"D4 Root Cause", d5:"D5 Actions", d6:"D6 Verification", d7:"D7 Prevention / Yokoten", d8:"D8 Closure" };
+        var rows = disciplineKeys.map(function(k){ var val = avg(cases, function(c){ return c.discipline[k]; }); return { key:k, label:labels[k], score: Number(val.toFixed(1)), risk: val < 3 ? "Critical" : (val < 4 ? "Medium" : "Low") }; });
         var rejection = Math.round(avg(cases, function(c){ return c.por; }));
         var ymi = Math.round(avg(cases, function(c){ return c.ymi; }) * 10) / 10;
         return { cases: cases, rows: rows, ready: ready, blocked: blocked, rejection: rejection || 0, ymi: ymi || 0, avgAcceptance: Math.max(0, 100 - (rejection || 0)) };
@@ -35434,7 +35607,6 @@ body:has(#recovery-section) .main-content.expanded{
         ];
         var ymiNames = ["Reactive", "Basic", "Proactive", "Advanced", "Predictive"];
         return h("div", { id:"eightd-section", className:"smtinel-8da" }, [
-            eightdDetail && h(EightdDraftEditor, { init: eightdDetail, sourceRcca: (eightdDetail && eightdDetail.source_rcca_id) ? (rccaList.find(function (item) { return item.rcca_id === eightdDetail.source_rcca_id; }) || eightdDetail.source_snapshot || null) : null, onSave: saveEightdDraft, onRefresh: function (source) { openEightdDraftFromRcca(source, true); }, onClose: function () { setEightdDetail(null); } }),
             h("section", { className:"smtinel-8da-hero", key:"hero" }, [
                 h("div", { className:"smtinel-8da-eyebrow" }, "SMTinel 8D Analyzer · Operational Quality Intelligence"),
                 h("h2", null, "Zero rejections. Zero surprises. Operational excellence."),
@@ -35473,9 +35645,9 @@ body:has(#recovery-section) .main-content.expanded{
                 h("section", { className:"smtinel-8da-panel" }, [
                     h("div", { className:"smtinel-8da-panel-head" }, [h("div", null, [h("h3", null, "Top Detected Risks"), h("p", null, "Blockers with the highest probability of rejection.")])]),
                     h("div", { className:"smtinel-8da-body smtinel-8da-risk-list" }, cases.length ? cases.slice(0,5).map(function(c, idx){ var item = c.item; return h("div", { className:"smtinel-8da-risk" + (idx===0 ? " top" : ""), key:item.eightd_id || idx }, [
-                        h("b", null, (item.eightd_id || "8D") + " · " + (item.modelo || item.source_title || "Caso sin modelo")),
-                        h("span", null, "PoR " + c.por + "% · Aceptación estimada " + c.acceptance + "% · Riesgo " + c.riskLevel),
-                        h("div", { className:"smtinel-8da-chiprow" }, (c.contradictions.length ? c.contradictions : ["No critical blocker detected"]).slice(0,4).map(function(x){ return h("span", { className:"smtinel-8da-chip" + (x.indexOf("faltante")>=0 || x.indexOf("sin")>=0 ? " crit" : " warn"), key:x }, x); }))
+                        h("b", null, (item.eightd_id || "8D") + " · " + (item.modelo || item.source_title || "Case without model")),
+                        h("span", null, "PoR " + c.por + "% · Estimated acceptance " + c.acceptance + "% · Risk " + c.riskLevel),
+                        h("div", { className:"smtinel-8da-chiprow" }, (c.contradictions.length ? c.contradictions : ["No critical blocker detected"]).slice(0,4).map(function(x){ return h("span", { className:"smtinel-8da-chip" + (x.toLowerCase().indexOf("missing")>=0 || x.toLowerCase().indexOf("without")>=0 ? " crit" : " warn"), key:x }, x); }))
                     ]); }) : h("div", { className:"smtinel-8da-empty" }, "No 8D drafts yet. Create an RCCA and use the 8D action to activate the analyzer.") )
                 ])
             ]),
@@ -35495,7 +35667,7 @@ body:has(#recovery-section) .main-content.expanded{
                     h("div", { style:{ flex:"1 1 320px", minWidth:0 } }, [h("div", { className:"smtinel-8da-case-title" }, item.source_title || item.eightd_title || item.eightd_id), h("div", { className:"smtinel-8da-case-sub" }, (item.eightd_id || "8D") + " · RCCA " + (item.source_rcca_id || "N/D") + " · " + (item.modelo || "Model N/D") + " · " + (item.linea || "Line N/D")), h("div", { className:"smtinel-8da-meter" }, h("span", { style:{ width: Math.max(2, Math.min(100, maturity.overallScore || 0)) + "%" } }))]),
                     h("div", { className:"smtinel-8da-chiprow", style:{ justifyContent:"flex-end" } }, [h("span", { className:"smtinel-8da-chip" }, "Overall " + (maturity.overallScore || 0) + "%"), h("span", { className:"smtinel-8da-chip" + (c.por >= 70 ? " crit" : (c.por >= 42 ? " warn" : "")) }, "PoR " + c.por + "%"), h("span", { className:"smtinel-8da-chip" }, "YMI " + c.ymi + "/5")]),
                     h("div", { style:{ display:"flex", gap:6, flexWrap:"wrap" } }, [h("button", { className:"smtinel-8da-btn", onClick:function(){ setEightdDetail(item); } }, "Open"), source && h("button", { className:"smtinel-8da-btn", onClick:function(){ openEightdDraftFromRcca(source, true); } }, "Refresh"), h("button", { className:"smtinel-8da-btn warn", onClick:function(){ exportEightdPpt(item); } }, "PPT"), h("button", { className:"smtinel-8da-btn warn", onClick:function(){ exportEightdFoxconnPpt(item); } }, "8D Foxconn"), h("button", { className:"smtinel-8da-btn", onClick:function(){ exportEightdHtml(item); } }, "HTML"), h("button", { className:"smtinel-8da-btn danger", onClick:function(){ deleteEightdDraft(item.eightd_id); } }, "Delete")])
-                ]); })) : h("div", { className:"smtinel-8da-empty" }, ["No hay Drafts 8D todavía. ", rccaList.length ? h("button", { className:"smtinel-8da-btn primary", onClick:function(){ openEightdDraftFromRcca(rccaList[0], false); } }, "Create First 8D from RCCA") : h("button", { className:"smtinel-8da-btn primary", onClick:function(){ setActiveModule("rcca"); } }, "Create RCCA")]))
+                ]); })) : h("div", { className:"smtinel-8da-empty" }, ["No 8D drafts yet. ", rccaList.length ? h("button", { className:"smtinel-8da-btn primary", onClick:function(){ openEightdDraftFromRcca(rccaList[0], false); } }, "Create First 8D from RCCA") : h("button", { className:"smtinel-8da-btn primary", onClick:function(){ setActiveModule("rcca"); } }, "Create RCCA")]))
             ])
         ]);
     }
@@ -39503,6 +39675,14 @@ ${'</scr'+'ipt>'}
                                 React.createElement("div", { className: "picker-sender" }, meta2.sender ? meta2.sender.split(" ")[0] : fname))));
                     })))))));
     }
+    function traceOpsWorkspacePortal(node) {
+        try {
+            if (window.ReactDOM && typeof ReactDOM.createPortal === "function" && document && document.body)
+                return ReactDOM.createPortal(node, document.body);
+        }
+        catch (_) { }
+        return node;
+    }
     var serialModalRows = yieldSerialModal ? traceOpsYieldSerialModalRows(yieldSerialModal.rows || [], serialModalFilter, serialModalSort) : [];
     var closeYieldSerialModal = function () { setSerialModalFilter(""); setSerialModalSort("source"); setYieldSerialModal(null); };
     return (React.createElement("div", null,
@@ -39532,7 +39712,7 @@ ${'</scr'+'ipt>'}
                         React.createElement("div", { style: { display: "flex", gap: 6 } },
                             React.createElement("button", { className: "sidebar-btn" + (authMode === "signin" ? " active" : ""), style: { flex: 1, justifyContent: "center" }, onClick: function () { setAuthMode("signin"); } }, "Entrar"),
                             React.createElement("button", { className: "sidebar-btn" + (authMode === "signup" ? " active" : ""), style: { flex: 1, justifyContent: "center" }, onClick: function () { setAuthMode("signup"); } }, "Crear cuenta")),
-                        React.createElement("input", { "aria-label": "Correo electr\u00F3nico", className: "sidebar-api-input", type: "email", placeholder: "correo@empresa.com", value: authEmail, onChange: function (e) { setAuthEmail(e.target.value); } }),
+                        React.createElement("input", { "aria-label": "Correo electr\u00F3nico", className: "sidebar-api-input", type: "email", placeholder: "name@company.com", value: authEmail, onChange: function (e) { setAuthEmail(e.target.value); } }),
                         React.createElement("input", { "aria-label": "Contrase\u00F1a", className: "sidebar-api-input", type: "password", placeholder: "Contrasena", value: authPassword, onChange: function (e) { setAuthPassword(e.target.value); } }),
                         React.createElement("button", { className: "sidebar-btn active", onClick: handleAuthSubmit, disabled: syncBusy, style: { justifyContent: "center", opacity: syncBusy ? .65 : 1 } }, syncBusy ? "Procesando..." : (authMode === "signup" ? "Crear cuenta y sincronizar" : "Entrar y sincronizar")))),
                     authUser && (React.createElement(React.Fragment, null,
@@ -39737,10 +39917,10 @@ ${'</scr'+'ipt>'}
                         React.createElement("button", { className: "lb-close", onClick: function () { setLightbox(null); } }, "x")),
                     React.createElement("div", { className: "lb-img-wrap" },
                         React.createElement("img", { src: lightbox.src, alt: lightbox.name }))))),
-            rccaForm && React.createElement(RccaForm, { init: rccaForm, onSave: saveRcca, onClose: function () { setRccaForm(null); } }),
-            eightdDetail && React.createElement(EightdDraftEditor, { init: eightdDetail, sourceRcca: (eightdDetail && eightdDetail.source_rcca_id) ? (rccaList.find(function (item) { return item.rcca_id === eightdDetail.source_rcca_id; }) || eightdDetail.source_snapshot || null) : null, onSave: saveEightdDraft, onRefresh: function (source) { openEightdDraftFromRcca(source, true); }, onClose: function () { setEightdDetail(null); } }),
-            rccaDetail && (React.createElement("div", { "data-traceops-rcca-detail": "1", style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 1000002, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: function () { setRccaDetail(null); } },
-                React.createElement("div", { style: { background: "#fff", borderRadius: 16, maxWidth: 720, width: "100%", maxHeight: "85vh", overflow: "auto" }, onClick: function (e) { e.stopPropagation(); } },
+            rccaForm && traceOpsWorkspacePortal(React.createElement(RccaForm, { init: rccaForm, onSave: saveRcca, onClose: function () { setRccaForm(null); } })),
+            eightdDetail && traceOpsWorkspacePortal(React.createElement(EightdDraftEditor, { init: eightdDetail, sourceRcca: (eightdDetail && eightdDetail.source_rcca_id) ? (rccaList.find(function (item) { return item.rcca_id === eightdDetail.source_rcca_id; }) || eightdDetail.source_snapshot || null) : null, onSave: saveEightdDraft, onRefresh: function (source) { openEightdDraftFromRcca(source, true); }, onClose: function () { setEightdDetail(null); } })),
+            rccaDetail && traceOpsWorkspacePortal(React.createElement("div", { "data-traceops-rcca-detail": "1", style: { position: "fixed", inset: 0, background: "#EEF1EE", zIndex: 1000002, display: "flex", alignItems: "stretch", justifyContent: "center", padding: 0 }, onClick: function (e) { e.stopPropagation(); } },
+                React.createElement("div", { style: { background: "#fff", borderRadius: 0, maxWidth: 1380, width: "100%", height: "100%", maxHeight: "100%", overflow: "hidden" }, onClick: function (e) { e.stopPropagation(); } },
                     React.createElement("div", { style: { position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #EEECEA", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 } },
                         React.createElement("div", null,
                             React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#1A1714" } }, "RCCA Detail"),
@@ -39778,11 +39958,38 @@ ${'</scr'+'ipt>'}
                             React.createElement("div", { style: { background: "#EAF2FF", border: "1px solid #C7DBF7", borderRadius: 10, padding: "10px 8px", textAlign: "center" } },
                                 React.createElement("div", { style: { fontSize: 9, fontWeight: 700, color: "#1F3A5F", textTransform: "uppercase" } }, "Events"),
                                 React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#1F3A5F" } }, rccaDetail.event_ids && rccaDetail.event_ids.length ? rccaDetail.event_ids.length : "0"))),
-                        [{ l: "Problem", v: rccaDetail.problema, color: "#C0392B", bg: "#FEF0EE" }, { l: "Hypothesis", v: rccaDetail.hipotesis, color: "#6B2DA8", bg: "#F5F0FE" }, { l: "Root Cause", v: rccaDetail.causa_raiz, color: "#2F6FB3", bg: "#EAF2FF" }, { l: "Evidence Summary", v: rccaDetail.evidencia_resumen, color: "#1F3A5F", bg: "#EAF2FF" }, { l: "Validation", v: rccaDetail.validacion, color: "#2F6FB3", bg: "#EAF2FF" }, { l: "Scope / Exposure", v: rccaDetail.alcance_exposicion, color: "#B87820", bg: "#FEF9E8" }, { l: "Affected Material", v: rccaDetail.material_afectado, color: "#6A6560", bg: "#F8F7F5" }, { l: "Containment", v: rccaDetail.contencion, color: "#B87820", bg: "#FEF9E8" }, { l: "Corrective Action", v: rccaDetail.accion_correctiva, color: "#1A7A3C", bg: "#EEF6FF" }, { l: "Preventive Action", v: rccaDetail.accion_preventiva, color: "#2F6FB3", bg: "#EAF2FF" }, { l: "Pattern", v: rccaDetail.patron_detectado, color: "#6B2DA8", bg: "#F5F0FE" }, { l: "Lesson Learned", v: rccaDetail.leccion_aprendida, color: "#1A1714", bg: "#F8F7F5" }].filter(function (f) { return f.v; }).map(function (f) {
-                            return (React.createElement("div", { key: f.l, style: { background: f.bg, border: "1px solid " + f.color + "30", borderRadius: 8, padding: "10px 14px" } },
-                                React.createElement("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".07em", color: f.color, marginBottom: 5 } }, f.l),
-                                React.createElement("div", { style: { fontSize: 12, color: "#1A1714", lineHeight: 1.5 } }, f.v)));
-                        }),
+                        React.createElement("div", { className: "smtinel-rcca-detail-groups" }, [
+                            { title: "Investigation", subtitle: "Problem definition, evidence, confirmed cause and exposure.", tone: "core", fields: [
+                                { l: "Problem", v: rccaDetail.problema, color: "#C0392B", bg: "#FEF0EE" },
+                                { l: "Hypothesis", v: rccaDetail.hipotesis, color: "#6B2DA8", bg: "#F5F0FE" },
+                                { l: "Root Cause", v: rccaDetail.causa_raiz, color: "#2F6FB3", bg: "#EAF2FF" },
+                                { l: "Evidence Summary", v: rccaDetail.evidencia_resumen, color: "#1F3A5F", bg: "#EAF2FF" },
+                                { l: "Validation", v: rccaDetail.validacion, color: "#2F6FB3", bg: "#EAF2FF" },
+                                { l: "Scope / Exposure", v: rccaDetail.alcance_exposicion, color: "#B87820", bg: "#FEF9E8" },
+                                { l: "Affected Material", v: rccaDetail.material_afectado, color: "#6A6560", bg: "#F8F7F5" }
+                            ] },
+                            { title: "Actions", subtitle: "Containment, permanent correction and recurrence prevention.", tone: "action", fields: [
+                                { l: "Containment", v: rccaDetail.contencion, color: "#B87820", bg: "#FEF9E8" },
+                                { l: "Corrective Action", v: rccaDetail.accion_correctiva, color: "#1A7A3C", bg: "#EEF6FF" },
+                                { l: "Preventive Action", v: rccaDetail.accion_preventiva, color: "#2F6FB3", bg: "#EAF2FF" }
+                            ] },
+                            { title: "Reusable Knowledge", subtitle: "Patterns and lessons preserved for future RCCA / Yokoten use.", tone: "knowledge", fields: [
+                                { l: "Pattern", v: rccaDetail.patron_detectado, color: "#6B2DA8", bg: "#F5F0FE" },
+                                { l: "Lesson Learned", v: rccaDetail.leccion_aprendida, color: "#1A1714", bg: "#F8F7F5" }
+                            ] }
+                        ].map(function (group) {
+                            var visible = group.fields.filter(function (f) { return f.v; });
+                            if (!visible.length) return null;
+                            return React.createElement("section", { key: group.title, className: "smtinel-rcca-detail-group smtinel-rcca-detail-group-" + group.tone },
+                                React.createElement("div", { className: "smtinel-rcca-detail-group-head" },
+                                    React.createElement("div", { className: "smtinel-rcca-detail-group-title" }, group.title),
+                                    React.createElement("div", { className: "smtinel-rcca-detail-group-sub" }, group.subtitle)),
+                                React.createElement("div", { className: "smtinel-rcca-detail-group-body" }, visible.map(function (f) {
+                                    return React.createElement("div", { key: f.l, className: "smtinel-rcca-detail-field", style: { background: f.bg, borderColor: f.color + "30" } },
+                                        React.createElement("div", { className: "smtinel-rcca-detail-field-label", style: { color: f.color } }, f.l),
+                                        React.createElement("div", { className: "smtinel-rcca-detail-field-value" }, f.v));
+                                })));
+                        })),
                         rccaDetail.meta_files && rccaDetail.meta_files.length > 0 && (React.createElement("div", { style: { background: "#F7FAFF", border: "1px solid #D8E1F7", borderRadius: 10, padding: "12px 14px" } },
                             React.createElement("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", color: "#1F3A5F", marginBottom: 8 } }, "Evidence Files"),
                             React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, rccaDetail.meta_files.map(function (file) {
@@ -39849,28 +40056,28 @@ ${'</scr'+'ipt>'}
                         React.createElement("div", { style: { fontSize: 13, color: "#9A9590", marginBottom: 20 } }, t("uploadSubtitle")),
                         React.createElement("button", { style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 99, padding: "10px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(30,92,72,.25)" }, onClick: function (e) { e.stopPropagation(); fileRef.current.click(); } }, t("selectFile")))),
                 React.createElement("div", { id: "evidence-section", style: { background: "#fff", border: "1px solid #DDDBD7", borderRadius: 14, overflow: "hidden", marginBottom: 14 } },
-                    React.createElement("div", { style: { display: "flex", borderBottom: "1px solid #EEECEA" } }, [["quick", "Rapido"], ["week", "Por semana"], ["range", "Rango"]].map(function (tab) { var active = filterMode === tab[0]; return React.createElement("button", { key: tab[0], style: { flex: 1, padding: "10px 6px", border: "none", borderBottom: active ? "2px solid #1F3A5F" : "2px solid transparent", background: "transparent", fontSize: 12, fontWeight: active ? 700 : 500, color: active ? "#1F3A5F" : "#8A8580", cursor: "pointer" }, onClick: function () { setFilterMode(tab[0]); } }, tab[1]); })),
+                    React.createElement("div", { style: { display: "flex", borderBottom: "1px solid #EEECEA" } }, [["quick", "Quick"], ["week", "By week"], ["range", "Range"]].map(function (tab) { var active = filterMode === tab[0]; return React.createElement("button", { key: tab[0], style: { flex: 1, padding: "10px 6px", border: "none", borderBottom: active ? "2px solid #1F3A5F" : "2px solid transparent", background: "transparent", fontSize: 12, fontWeight: active ? 700 : 500, color: active ? "#1F3A5F" : "#8A8580", cursor: "pointer" }, onClick: function () { setFilterMode(tab[0]); } }, tab[1]); })),
                     filterMode === "quick" && React.createElement("div", { style: { padding: "12px 16px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
-                        React.createElement("span", { style: { fontSize: 11.5, fontWeight: 500, color: "#8A8580", marginRight: 4 } }, "Ultimos:"),
+                        React.createElement("span", { style: { fontSize: 11.5, fontWeight: 500, color: "#8A8580", marginRight: 4 } }, "Last:"),
                         [1, 3, 7, 14, 30].map(function (d) { return React.createElement("button", { key: d, style: { border: days === d ? "none" : "1.5px solid #DDDBD7", background: days === d ? "#1F3A5F" : "#fff", color: days === d ? "#fff" : "#6A6560", borderRadius: 99, padding: "5px 14px", fontSize: 12, fontWeight: days === d ? 700 : 500, cursor: "pointer" }, onClick: function () { setDays(d); } },
                             d,
                             "d"); })),
                     filterMode === "week" && React.createElement("div", { style: { padding: "12px 16px" } },
                         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 } },
                             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "Semana"),
+                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "Week"),
                                 React.createElement("input", { type: "number", min: "1", max: "53", value: weekNum, onChange: function (e) { setWeekNum(e.target.value); }, style: { width: 60, border: "1.5px solid #DDDBD7", borderRadius: 8, padding: "6px 10px", fontSize: 13, fontWeight: 700, color: "#1A1714", textAlign: "center", outline: "none" } })),
                             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "A\u00F1o"),
+                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "Year"),
                                 React.createElement("input", { type: "number", min: "2020", max: "2030", value: weekYear, onChange: function (e) { setWeekYear(e.target.value); }, style: { width: 76, border: "1.5px solid #DDDBD7", borderRadius: 8, padding: "6px 10px", fontSize: 13, color: "#1A1714", textAlign: "center", outline: "none" } }))),
                         React.createElement(WeekPreview, { weekNum: weekNum, weekYear: weekYear, setWeekNum: setWeekNum, setWeekYear: setWeekYear })),
                     filterMode === "range" && React.createElement("div", { style: { padding: "12px 16px" } },
                         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 } },
                             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "Desde"),
+                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "From"),
                                 React.createElement("input", { type: "date", value: dateFrom, onChange: function (e) { setDateFrom(e.target.value); }, style: { border: "1.5px solid #DDDBD7", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#1A1714", outline: "none", background: "#fff" } })),
                             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "Hasta"),
+                                React.createElement("span", { style: { fontSize: 12, color: "#8A8580" } }, "To"),
                                 React.createElement("input", { type: "date", value: dateTo, onChange: function (e) { setDateTo(e.target.value); }, style: { border: "1.5px solid #DDDBD7", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#1A1714", outline: "none", background: "#fff" } }))),
                         dateFrom && dateTo && React.createElement("div", { style: { background: "#EAF2FF", border: "1px solid #C7DBF7", borderRadius: 8, padding: "7px 12px", display: "inline-flex", alignItems: "center", gap: 6 } },
                             React.createElement("span", { style: { fontSize: 10, color: "#2F6FB3", fontWeight: 700, fontFamily: "monospace" } }, dateFrom),
@@ -39878,20 +40085,20 @@ ${'</scr'+'ipt>'}
                             React.createElement("span", { style: { fontSize: 10, color: "#2F6FB3", fontWeight: 700, fontFamily: "monospace" } }, dateTo),
                             React.createElement("span", { style: { fontSize: 9, color: "#6A8060", marginLeft: 4 } },
                                 Math.round(Math.abs(new Date(dateTo) - new Date(dateFrom)) / 86400000) + 1,
-                                " dias")))),
+                                " days")))),
                 analysisWindowDays > 7 && !adminOverride && React.createElement("div", { style: { background: "#FEF9E8", border: "1px solid #F5E4A0", borderRadius: 12, padding: "10px 14px", marginBottom: 14 } },
                     React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#8B6A1E", marginBottom: 3 } },
-                        "Rango amplio: ",
+                        "Wide range: ",
                         analysisWindowDays,
-                        " dias"),
-                    React.createElement("div", { style: { fontSize: 10.5, color: "#8B6A1E" } }, "Este rango incrementa consumo de tokens y ruido. Recomendado: 3 a 5 dias o separar por semana.")),
+                        " days"),
+                    React.createElement("div", { style: { fontSize: 10.5, color: "#8B6A1E" } }, "This range increases token usage and noise. Recommended: 3 to 5 days or split by week.")),
                 adminOverride && React.createElement("div", { style: { background: "#FEF0EE", border: "1px solid #F4C7C3", borderRadius: 12, padding: "10px 14px", marginBottom: 14 } },
-                    React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#9B2C22", marginBottom: 3 } }, "Modo admin activo"),
-                    React.createElement("div", { style: { fontSize: 10.5, color: "#9B2C22" } }, "Se ignoran advertencias de rango y se usa techo alto de salida para pruebas en este dispositivo.")))),
+                    React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#9B2C22", marginBottom: 3 } }, "Admin mode active"),
+                    React.createElement("div", { style: { fontSize: 10.5, color: "#9B2C22" } }, "Range warnings are bypassed and a higher output ceiling is used for testing on this device.")))),
             React.createElement("div", { id: "recent-analyses" }, state === "idle" && history.length > 0 && (React.createElement("div", { style: { marginTop: 8 } },
                 React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, paddingLeft: 2 } },
                     React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: "#3D3A36", letterSpacing: ".04em", textTransform: "uppercase" } }, "Recent analyses"),
-                    React.createElement("button", { onClick: function () { if (window.confirm("Borrar todo el historial?")) {
+                    React.createElement("button", { onClick: function () { if (window.confirm("Clear all history?")) {
                             localStorage.removeItem(HIST_KEY);
                             setHistory([]);
                         } }, style: { fontSize: 10, color: "#8A8580", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" } }, "Clear all")),
@@ -39908,13 +40115,13 @@ ${'</scr'+'ipt>'}
                             React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
                                 React.createElement("span", { style: { fontSize: 9.5, fontWeight: 600, color: "#1F3A5F", background: "#EAF2FF", borderRadius: 4, padding: "2px 6px" } },
                                     h.totalEventos,
-                                    " eventos"),
+                                    " events"),
                                 React.createElement("span", { style: { fontSize: 9.5, fontWeight: 600, color: cc, background: h.criticos > 0 ? "#FEF0EE" : "#EEF6FF", borderRadius: 4, padding: "2px 6px" } },
                                     h.criticos,
-                                    " criticos"),
+                                    " critical"),
                                 React.createElement("span", { style: { fontSize: 9.5, color: "#8A8580", background: "#F8F7F5", borderRadius: 4, padding: "2px 6px" } },
                                     h.pendientes,
-                                    " pendientes"),
+                                    " pending"),
                                 h.imgs > 0 && React.createElement("span", { style: { fontSize: 9.5, color: "#6B2DA8", background: "#F5F0FE", borderRadius: 4, padding: "2px 6px" } },
                                     h.imgs,
                                     " imgs"),
@@ -39929,7 +40136,7 @@ ${'</scr'+'ipt>'}
                                 String(Math.floor(h.durationSecs / 60)).padStart(2, "0"),
                                 ":",
                                 String(h.durationSecs % 60).padStart(2, "0")),
-                            React.createElement("button", { onClick: function () { loadFromHistory(h); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" } }, "Ver"),
+                            React.createElement("button", { onClick: function () { loadFromHistory(h); }, style: { background: "#1F3A5F", color: "#fff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" } }, "View"),
                             React.createElement("button", { onClick: function () { deleteFromHistory(h.id); }, style: { background: "none", border: "1px solid #DDDBD7", borderRadius: 7, padding: "4px 10px", fontSize: 10, color: "#8A8580", cursor: "pointer" } }, "x"))));
                 })))),
             state === "loading" && (React.createElement("div", { className: "smtinel-import-loader-card" },
@@ -40117,7 +40324,7 @@ ${'</scr'+'ipt>'}
                         React.createElement("div", { className: "traceops-context-chips" },
                             React.createElement("span", null,
                                 React.createElement("strong", null,
-                                    lang === "zh" ? "范围" : "Rango",
+                                    lang === "zh" ? "范围" : "Range",
                                     ":"),
                                 "\u00A0",
                                 analysisRangeLabel || "N/D"),
@@ -40766,7 +40973,7 @@ ${'</scr'+'ipt>'}
                                 visibleEventCount,
                                 " de ",
                                 totalEventCount,
-                                " eventos"),
+                                " events"),
                             hasViewFilter() && React.createElement("button", { onClick: clearViewFilters, style: { background: "none", border: "1px solid #DDDBD7", borderRadius: 7, padding: "4px 11px", fontSize: 10, color: "#6A6560", cursor: "pointer" } }, "Limpiar"))),
                     React.createElement("div", { style: { padding: "12px 16px", display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(4,minmax(0,1fr))", gap: 10, borderBottom: "1px solid #EEECEA" } },
                         React.createElement("label", { style: { display: "flex", flexDirection: "column", gap: 5 } },
@@ -41378,7 +41585,7 @@ ${'</scr'+'ipt>'}
                         activeModule === "intellog" && renderMaintenanceSection(),
                         activeModule === "rcca" && renderRccaLandingSection(),
                         activeModule === "8d" && renderEightdAnalyzerSection(),
-                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
+                activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "rcca" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Log de eventos (",
@@ -49318,7 +49525,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.83 · DBN Master Station Order - 2026-08-13";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.89 · RCCA Visual Polish - 2026-08-17";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
 
   function cleanSnLocal(v){
@@ -63974,6 +64181,316 @@ html.smtinel-theme-light body #yieldflow-section .smtinel-light-dark-anchor *,
 html.smtinel-theme-light body #yieldflow-section .smtinel-light-dark-anchor-v17,
 html.smtinel-theme-light body #yieldflow-section .smtinel-light-dark-anchor-v17 *{color:#FFFFFF!important;}
 </style>
+
+<style id="smtinel-rcca-workspace-v49">
+/* RCCA landing: actual app stylesheet. V48 accidentally placed its landing CSS inside an export template. */
+.smtinel-rcca-landing{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;max-width:none!important;margin:0 0 28px!important;color:#172018!important}
+.smtinel-rcca-landing *{box-sizing:border-box}
+.smtinel-rcca-land-hero{position:relative;overflow:hidden;border:1px solid #263428;border-radius:24px;padding:26px 28px;background:radial-gradient(circle at 86% -10%,rgba(88,166,104,.30),transparent 34%),linear-gradient(135deg,#07100A 0%,#101A12 55%,#1E2F20 100%);color:#F2F5F0;box-shadow:0 18px 44px rgba(10,20,12,.14)}
+.smtinel-rcca-land-eyebrow{font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#8CC49A}.smtinel-rcca-land-hero h2{margin:8px 0 0;font-size:clamp(30px,3.4vw,48px);line-height:1.02;letter-spacing:-.045em;color:#fff}.smtinel-rcca-land-hero p{margin:12px 0 0;max-width:1050px;color:#B8C2B9;font-size:13px;line-height:1.6}.smtinel-rcca-land-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.smtinel-rcca-land-btn{border:1px solid #C8D2CA;background:#fff;color:#33472D;border-radius:999px;padding:10px 15px;font-size:11px;font-weight:900;cursor:pointer}.smtinel-rcca-land-btn.primary{background:#4EB477;border-color:#4EB477;color:#08110A}.smtinel-rcca-land-btn.ghost{background:rgba(255,255,255,.06);border-color:#475849;color:#E9F0E9}.smtinel-rcca-land-btn:disabled{opacity:.42;cursor:not-allowed}
+.smtinel-rcca-land-kpis{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px!important}.smtinel-rcca-land-kpi{border:1px solid #D7DED7!important;background:#fff!important;border-radius:17px!important;padding:14px 15px!important;min-height:96px!important;box-shadow:0 8px 22px rgba(27,44,29,.045)!important}.smtinel-rcca-land-kpi small{display:block;color:#68716A;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.smtinel-rcca-land-kpi b{display:block;margin-top:7px;color:#172018;font-size:28px;line-height:1}.smtinel-rcca-land-kpi span{display:block;margin-top:7px;color:#758079;font-size:9.5px;line-height:1.35}
+.smtinel-rcca-land-nav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}.smtinel-rcca-land-nav button{appearance:none;text-align:left;border:1px solid #D7DED7;background:#fff;border-radius:17px;padding:15px;cursor:pointer;min-height:118px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.smtinel-rcca-land-nav button:hover{transform:translateY(-1px);border-color:#8CB091;box-shadow:0 10px 24px rgba(27,44,29,.08)}.smtinel-rcca-land-nav .num{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#E8F2E8;color:#36523A;font-size:10px;font-weight:900}.smtinel-rcca-land-nav b{display:block;margin-top:10px;color:#172018;font-size:12px}.smtinel-rcca-land-nav span{display:block;margin-top:5px;color:#6B746D;font-size:10px;line-height:1.4}
+.smtinel-rcca-land-grid{display:grid!important;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)!important;gap:16px!important;align-items:start!important}.smtinel-rcca-land-panel{background:#fff!important;border:1px solid #D7DED7!important;border-radius:20px!important;overflow:hidden!important;box-shadow:0 2px 12px rgba(27,44,29,.035)!important}.smtinel-rcca-land-panel-head{padding:15px 17px!important;border-bottom:1px solid #E7ECE7!important;background:#F7F9F6!important;display:flex!important;justify-content:space-between!important;gap:12px!important;align-items:center!important;flex-wrap:wrap!important}.smtinel-rcca-land-panel-head h3{margin:0;color:#172018;font-size:16px}.smtinel-rcca-land-panel-head p{margin:4px 0 0;color:#6B746D;font-size:10.5px;line-height:1.4}.smtinel-rcca-land-panel-body{padding:14px 16px!important}.smtinel-rcca-land-workflow{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important}.smtinel-rcca-land-step{position:relative;border:1px solid #DCE3DC;border-radius:14px;padding:12px;background:#fff;min-height:98px}.smtinel-rcca-land-step b{font-size:10.5px;color:#172018}.smtinel-rcca-land-step span{display:block;margin-top:5px;font-size:9.5px;line-height:1.35;color:#6B746D}.smtinel-rcca-land-search{width:100%;border:1px solid #CBD4CB;border-radius:10px;padding:10px 12px;font-size:12px;color:#172018;background:#fff;outline:none}.smtinel-rcca-land-empty{border:1px dashed #CBD4CB;border-radius:15px;padding:22px;text-align:center;color:#707A72;font-size:11px;line-height:1.5;background:#FAFBF9}.smtinel-rcca-land-memory{display:flex!important;flex-direction:column!important;gap:9px!important;margin-top:10px!important}
+
+/* RCCA editor: page workspace instead of legacy contained modal. */
+html body [data-traceops-rcca-form="1"]{position:fixed!important;inset:70px 0 0 0!important;width:100vw!important;height:auto!important;padding:0!important;background:#F2F4F1!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;display:block!important;overflow:hidden!important;z-index:2147483000!important}
+html body [data-traceops-rcca-form="1"]>div{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;background:#F2F4F1!important;padding-bottom:0!important}
+html body [data-traceops-rcca-form="1"]>div>div:first-child{flex:0 0 auto!important;padding:14px 24px!important;background:#fff!important;border-bottom:1px solid #D8DDD8!important}
+html body [data-traceops-rcca-form="1"]>div>div:nth-child(2){flex:1 1 auto!important;min-height:0!important;overflow:auto!important;padding:18px 24px 110px!important;max-width:1540px!important;width:100%!important;margin:0 auto!important}
+html body [data-traceops-rcca-form="1"] textarea{min-height:72px!important;line-height:1.45!important}
+html body [data-traceops-rcca-form="1"] [style*="grid-template-columns"]{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important}
+
+/* 8D editor: same full workspace treatment. */
+html body [data-traceops-eightd-editor="1"]{position:fixed!important;inset:70px 0 0 0!important;width:100vw!important;height:auto!important;padding:0!important;background:#EEF1EE!important;display:block!important;overflow:hidden!important;z-index:2147483001!important}
+html body [data-traceops-eightd-editor="1"]>div{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;background:#F5F7F4!important}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child{flex:0 0 auto!important;padding:14px 24px!important;background:#fff!important;border-bottom:1px solid #D8DDD8!important}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){flex:1 1 auto!important;min-height:0!important;overflow:auto!important;padding:18px 24px 110px!important;grid-template-columns:minmax(0,1.65fr) minmax(360px,.85fr)!important;max-width:1600px!important;width:100%!important;margin:0 auto!important}
+html body [data-traceops-eightd-editor="1"] textarea{line-height:1.45!important}
+
+html.smtinel-trueblack-premium .smtinel-rcca-land-kpi,html.smtinel-trueblack-premium .smtinel-rcca-land-nav button,html.smtinel-trueblack-premium .smtinel-rcca-land-panel,html.smtinel-trueblack-premium .smtinel-rcca-land-step{background:#111!important;border-color:#292D29!important;color:#EDEFEA!important}html.smtinel-trueblack-premium .smtinel-rcca-land-kpi b,html.smtinel-trueblack-premium .smtinel-rcca-land-nav b,html.smtinel-trueblack-premium .smtinel-rcca-land-panel-head h3,html.smtinel-trueblack-premium .smtinel-rcca-land-step b{color:#F0F1ED!important}html.smtinel-trueblack-premium .smtinel-rcca-land-kpi small,html.smtinel-trueblack-premium .smtinel-rcca-land-kpi span,html.smtinel-trueblack-premium .smtinel-rcca-land-nav span,html.smtinel-trueblack-premium .smtinel-rcca-land-panel-head p,html.smtinel-trueblack-premium .smtinel-rcca-land-step span{color:#9AA19A!important}html.smtinel-trueblack-premium .smtinel-rcca-land-panel-head{background:#0D0E0D!important;border-color:#292D29!important}html.smtinel-trueblack-premium .smtinel-rcca-land-search{background:#0B0C0B!important;color:#F0F1ED!important;border-color:#343934!important}
+
+@media(max-width:1200px){.smtinel-rcca-land-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}.smtinel-rcca-land-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}.smtinel-rcca-land-grid{grid-template-columns:1fr!important}.smtinel-rcca-land-workflow{grid-template-columns:repeat(3,minmax(0,1fr))!important}html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){grid-template-columns:1fr!important}}
+@media(max-width:760px){.smtinel-rcca-land-hero{padding:18px;border-radius:20px}.smtinel-rcca-land-kpis,.smtinel-rcca-land-nav,.smtinel-rcca-land-workflow{grid-template-columns:1fr!important}.smtinel-rcca-land-btn{width:100%}html body [data-traceops-rcca-form="1"],html body [data-traceops-eightd-editor="1"]{inset:0!important}html body [data-traceops-rcca-form="1"]>div>div:nth-child(2),html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){padding:12px 12px 90px!important}html body [data-traceops-rcca-form="1"] [style*="grid-template-columns"]{grid-template-columns:1fr!important}}
+</style>
+
+<style id="smtinel-rcca-native-workspace-v50">
+/* V50: RCCA editors are viewport workspaces mounted through React portals. */
+html body [data-traceops-rcca-form="1"],
+html body [data-traceops-rcca-detail="1"],
+html body [data-traceops-eightd-editor="1"]{
+  position:fixed!important;inset:70px 0 0 0!important;width:100vw!important;height:calc(100dvh - 70px)!important;
+  max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;
+  background:#EEF1EE!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  display:flex!important;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;
+  z-index:2147483005!important;overscroll-behavior:contain!important;
+}
+html body [data-traceops-rcca-form="1"]>div,
+html body [data-traceops-rcca-detail="1"]>div,
+html body [data-traceops-eightd-editor="1"]>div{
+  position:relative!important;isolation:isolate!important;display:flex!important;flex-direction:column!important;
+  width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;
+  margin:0!important;padding:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;
+  background:#F5F7F4!important;transform:none!important;
+}
+html body [data-traceops-rcca-form="1"]>div>div:first-child,
+html body [data-traceops-rcca-detail="1"]>div>div:first-child,
+html body [data-traceops-eightd-editor="1"]>div>div:first-child{
+  flex:0 0 auto!important;position:sticky!important;top:0!important;z-index:5!important;background:#fff!important;
+  border-bottom:1px solid #D8DDD8!important;padding:14px max(22px,calc((100vw - 1600px)/2 + 22px))!important;
+}
+html body [data-traceops-rcca-form="1"]>div>div:nth-child(2),
+html body [data-traceops-rcca-detail="1"]>div>div:nth-child(2),
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){
+  flex:1 1 auto!important;min-height:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;
+  width:min(1600px,100%)!important;max-width:1600px!important;margin:0 auto!important;
+  padding:20px 26px 120px!important;box-sizing:border-box!important;
+}
+html body [data-traceops-rcca-detail="1"]>div>div:nth-child(2){width:min(1380px,100%)!important;max-width:1380px!important;}
+html body [data-traceops-rcca-form="1"] [style*="position: sticky"][style*="bottom"]{margin:10px 0 0!important;}
+html body [data-traceops-rcca-form="1"] input,html body [data-traceops-rcca-form="1"] select,html body [data-traceops-rcca-form="1"] textarea,
+html body [data-traceops-eightd-editor="1"] input,html body [data-traceops-eightd-editor="1"] select,html body [data-traceops-eightd-editor="1"] textarea{font-size:13px!important;}
+/* Dark landing contrast: remove white header strips with white text. */
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-panel,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-panel-head,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-panel-body,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-empty{background:#101110!important;border-color:#2A2E2A!important;color:#EFF1ED!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-panel-head h3{color:#F3F4F0!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-panel-head p,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-empty{color:#A2AAA2!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-land-search{background:#090A09!important;color:#F3F4F0!important;border-color:#343934!important;}
+@media(max-width:760px){
+ html body [data-traceops-rcca-form="1"],html body [data-traceops-rcca-detail="1"],html body [data-traceops-eightd-editor="1"]{inset:0!important;height:100dvh!important;}
+ html body [data-traceops-rcca-form="1"]>div>div:first-child,html body [data-traceops-rcca-detail="1"]>div>div:first-child,html body [data-traceops-eightd-editor="1"]>div>div:first-child{padding:10px 12px!important;}
+ html body [data-traceops-rcca-form="1"]>div>div:nth-child(2),html body [data-traceops-rcca-detail="1"]>div>div:nth-child(2),html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){padding:12px 12px 96px!important;}
+}
+</style>
+
+<style id="smtinel-rcca-visual-polish-v51">
+/* V51: compact 8D command header + stable contrast in both themes. */
+html body [data-traceops-eightd-editor="1"]>div>div:first-child{
+  min-height:0!important;padding:9px max(20px,calc((100vw - 1600px)/2 + 20px))!important;
+  background:#FFFFFF!important;color:#141818!important;border-bottom:1px solid #D8DDD8!important;
+  align-items:center!important;flex-wrap:nowrap!important;gap:16px!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child{min-width:260px!important;flex:1 1 520px!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(1){color:#2F6FB3!important;font-size:9px!important;margin:0!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(2){color:#141818!important;font-size:16px!important;line-height:1.13!important;margin-top:2px!important;max-width:920px!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(3){color:#646D66!important;font-size:9px!important;margin-top:2px!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:nth-child(2){display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important;grid-template-columns:none!important;flex:0 1 auto!important;max-width:760px!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:nth-child(2)>div:first-child{display:flex!important;gap:5px!important;flex-wrap:wrap!important;justify-content:flex-end!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child button{min-height:30px!important;padding:7px 11px!important;border-radius:999px!important;font-size:10px!important;width:auto!important;white-space:nowrap!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:first-child span{font-size:9px!important;padding:5px 8px!important;white-space:nowrap!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){padding-top:14px!important;}
+/* Dark theme must not wash out the deliberately light command header. */
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"]>div>div:first-child,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"]>div>div:first-child *{text-shadow:none!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(2){color:#141818!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(3){color:#646D66!important;}
+/* RCCA Detail visual hierarchy. */
+html body [data-traceops-rcca-detail="1"]>div>div:first-child{padding-top:10px!important;padding-bottom:10px!important;}
+html body [data-traceops-rcca-detail="1"]>div>div:nth-child(2){padding-top:16px!important;}
+.smtinel-rcca-detail-groups{display:flex!important;flex-direction:column!important;gap:14px!important;}
+.smtinel-rcca-detail-group{border:1px solid #D7DED7;border-radius:16px;overflow:hidden;background:#fff;}
+.smtinel-rcca-detail-group-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid #E5EAE5;background:#F7F9F6;}
+.smtinel-rcca-detail-group-title{font-size:12px;font-weight:900;letter-spacing:.035em;color:#172018;}
+.smtinel-rcca-detail-group-sub{font-size:9.5px;line-height:1.35;color:#6B746D;text-align:right;max-width:640px;}
+.smtinel-rcca-detail-group-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;}
+.smtinel-rcca-detail-field{border:1px solid #D9DEDA;border-radius:11px;padding:11px 13px;min-width:0;}
+.smtinel-rcca-detail-field-label{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.075em;margin-bottom:5px;}
+.smtinel-rcca-detail-field-value{font-size:12px;line-height:1.48;color:#1A1714;overflow-wrap:anywhere;}
+.smtinel-rcca-detail-group-core .smtinel-rcca-detail-field:first-child,
+.smtinel-rcca-detail-group-core .smtinel-rcca-detail-field:nth-child(3){grid-column:1 / -1;}
+.smtinel-rcca-detail-group-action .smtinel-rcca-detail-group-body{grid-template-columns:repeat(3,minmax(0,1fr));}
+.smtinel-rcca-detail-group-knowledge .smtinel-rcca-detail-group-body{grid-template-columns:repeat(2,minmax(0,1fr));}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-group{background:#111!important;border-color:#2A2E2A!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-group-head{background:#0D0E0D!important;border-color:#2A2E2A!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-group-title{color:#F2F4F0!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-group-sub{color:#9EA69E!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-field{background:#151715!important;border-color:#303530!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body .smtinel-rcca-detail-field-value{color:#E7EAE5!important;}
+@media(max-width:1200px){
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child{flex-wrap:wrap!important;}
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:nth-child(2){max-width:none!important;width:100%!important;justify-content:flex-start!important;}
+ .smtinel-rcca-detail-group-action .smtinel-rcca-detail-group-body{grid-template-columns:1fr!important;}
+}
+@media(max-width:760px){
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child{padding:8px 10px!important;gap:8px!important;}
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:first-child>div:nth-child(2){font-size:14px!important;}
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:nth-child(2){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child>div:nth-child(2)>div:first-child{grid-column:1 / -1!important;justify-content:flex-start!important;}
+ html body [data-traceops-eightd-editor="1"]>div>div:first-child button{width:100%!important;}
+ .smtinel-rcca-detail-group-head{display:block!important;}
+ .smtinel-rcca-detail-group-sub{text-align:left!important;margin-top:3px!important;}
+ .smtinel-rcca-detail-group-body,.smtinel-rcca-detail-group-action .smtinel-rcca-detail-group-body,.smtinel-rcca-detail-group-knowledge .smtinel-rcca-detail-group-body{grid-template-columns:1fr!important;}
+ .smtinel-rcca-detail-group-core .smtinel-rcca-detail-field:first-child,.smtinel-rcca-detail-group-core .smtinel-rcca-detail-field:nth-child(3){grid-column:auto!important;}
+}
+</style>
+<style id="smtinel-8d-header-polish-v52">
+/* V52: explicit two-level 8D command hierarchy. */
+html body [data-traceops-eightd-editor="1"]>div>div.smtinel-8d-commandbar{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;
+  min-height:0!important;padding:10px max(20px,calc((100vw - 1600px)/2 + 20px))!important;gap:8px!important;
+  background:#fff!important;color:#141818!important;border-bottom:1px solid #D8DDD8!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div.smtinel-8d-commandbar>div.smtinel-8d-commandtop{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important;width:100%!important;max-width:none!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-titlebox{min-width:0!important;flex:1 1 auto!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#2F6FB3!important;font-size:9px!important;margin:0!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#141818!important;font-size:21px!important;line-height:1.1!important;margin-top:2px!important;max-width:1040px!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#646D66!important;font-size:9px!important;margin-top:3px!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness{display:flex!important;gap:5px!important;flex-wrap:wrap!important;justify-content:flex-end!important;max-width:560px!important;width:auto!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span{font-size:9px!important;padding:5px 8px!important;white-space:nowrap!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important;width:100%!important;max-width:none!important;padding-top:7px!important;border-top:1px solid #E7EBE7!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{width:auto!important;min-height:29px!important;padding:6px 11px!important;border-radius:999px!important;font-size:10px!important;white-space:nowrap!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh{padding-left:10px!important;padding-right:10px!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{margin-left:auto!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack{scrollbar-width:thin;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar *{text-shadow:none!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#141818!important;}
+html.smtinel-trueblack-premium:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#646D66!important;}
+@media(max-width:1100px){
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop{flex-wrap:wrap!important;}
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness{justify-content:flex-start!important;max-width:none!important;width:100%!important;}
+}
+@media(max-width:760px){
+ html body [data-traceops-eightd-editor="1"]>div>div.smtinel-8d-commandbar{padding:8px 10px!important;}
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{font-size:15px!important;}
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{width:100%!important;}
+ html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{margin-left:0!important;}
+}
+</style>
+
+
+<style id="smtinel-8d-premium-charcoal-v56">
+/* V56 · true-dark premium palette. Visual-only override on top of V55. */
+html body [data-traceops-eightd-editor="1"],
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]{
+  --p8-bg:#080808!important;--p8-bg2:#0c0c0c!important;--p8-card:#111111!important;--p8-card2:#151515!important;
+  --p8-field:#0b0b0b!important;--p8-line:#2b2b28!important;--p8-line-soft:#20201e!important;
+  --p8-text:#f2f1ed!important;--p8-muted:#96958f!important;--p8-blue:#7f8f4e!important;--p8-blue2:#5d6b38!important;
+  --p8-green:#8fa15b!important;--p8-amber:#c79a37!important;--p8-red:#c75b4f!important;
+  background:radial-gradient(circle at 80% 5%,rgba(127,143,78,.08),transparent 28%),radial-gradient(circle at 14% 82%,rgba(143,161,91,.045),transparent 27%),linear-gradient(180deg,#080808 0%,#050505 100%)!important;
+  color:#f2f1ed!important;color-scheme:dark!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{
+  background:linear-gradient(180deg,#11110f 0%,#0b0b0a 100%)!important;border-bottom:1px solid #2a2b25!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.36)!important;color:#f2f1ed!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{
+  color:#f2f1ed!important;border-right-color:#34342f!important;background:linear-gradient(135deg,rgba(127,143,78,.16),rgba(127,143,78,.04)) left 1px top 0/31px 31px no-repeat!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{color:#85867f!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#9caf69!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#f4f3ef!important;-webkit-text-fill-color:#f4f3ef!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#93938d!important;-webkit-text-fill-color:#93938d!important;}
+
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span{
+  background:#11110f!important;border-color:#36362f!important;color:#d9d8d2!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 4px 12px rgba(0,0,0,.2)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(1),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(1){color:#d4aa50!important;border-color:#5a4925!important;background:#17140c!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(2),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(2){color:#a6bc73!important;border-color:#48542f!important;background:#11160d!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(3),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(3){color:#d4aa50!important;border-color:#5a4925!important;background:#17140c!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(4),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(4){color:#d96d5f!important;border-color:#61352d!important;background:#1b100e!important;}
+
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{border-top-color:#292925!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{
+  background:linear-gradient(180deg,#1b1b19,#121211)!important;color:#deddd8!important;-webkit-text-fill-color:#deddd8!important;border-color:#383832!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 16px rgba(0,0,0,.22)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover{border-color:#676950!important;background:linear-gradient(180deg,#24241f,#171714)!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3){
+  background:linear-gradient(180deg,#6f7f43,#4d5b2d)!important;border-color:#82944f!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh{color:#c4c4bd!important;-webkit-text-fill-color:#c4c4bd!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{background:#111110!important;border-color:#343430!important;color:#d9d8d2!important;-webkit-text-fill-color:#d9d8d2!important;}
+
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2),html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){background:transparent!important;scrollbar-color:#4c4c45 transparent!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]){
+  background:linear-gradient(180deg,#131312,#0e0e0d)!important;color:#efeee9!important;border-color:#2d2d29!important;box-shadow:0 14px 30px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child{background:linear-gradient(180deg,#191917,#141413)!important;border-bottom-color:#282824!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before{background:linear-gradient(180deg,#8fa15b,#5f6f39)!important;opacity:.9!important;}
+
+html body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"],html body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"]{color:#f1f0eb!important;-webkit-text-fill-color:#f1f0eb!important;}
+html body [data-traceops-eightd-editor="1"] div[style*="color: #6A6560"],html body [data-traceops-eightd-editor="1"] div[style*="color: #8A8580"],
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #6A6560"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #8A8580"]{color:#989790!important;-webkit-text-fill-color:#989790!important;}
+
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea),html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea){background:linear-gradient(180deg,#0d0d0c,#090909)!important;color:#ecebe6!important;-webkit-text-fill-color:#ecebe6!important;border-color:#31312d!important;}
+html body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder{color:#6f6f69!important;-webkit-text-fill-color:#6f6f69!important;}
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus{border-color:#849452!important;box-shadow:0 0 0 3px rgba(132,148,82,.13),inset 0 1px 0 rgba(255,255,255,.018)!important;}
+html body [data-traceops-eightd-editor="1"] table,html body [data-traceops-eightd-editor="1"] tr,html body [data-traceops-eightd-editor="1"] td,html body [data-traceops-eightd-editor="1"] th,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] table,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] tr,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] td,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th{border-color:#2b2b27!important;}
+html body [data-traceops-eightd-editor="1"] th,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th{background:#151514!important;color:#b8b7b0!important;-webkit-text-fill-color:#b8b7b0!important;}
+
+html body [data-traceops-eightd-editor="1"] [style*="background: #F8F7F5"],html body [data-traceops-eightd-editor="1"] [style*="background:#F8F7F5"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #F8F7F5"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#F8F7F5"]{background:#0d0d0c!important;border-color:#2b2b27!important;}
+html body [data-traceops-eightd-editor="1"] [style*="background: #EAF2FF"],html body [data-traceops-eightd-editor="1"] [style*="background:#EAF2FF"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #EAF2FF"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#EAF2FF"]{background:#12130f!important;border-color:#383c29!important;}
+html body [data-traceops-eightd-editor="1"] [style*="background: #F5F0FE"],html body [data-traceops-eightd-editor="1"] [style*="background:#F5F0FE"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #F5F0FE"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#F5F0FE"]{background:#151114!important;border-color:#49383e!important;}
+
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button,html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button{background:linear-gradient(180deg,#1c1c19,#131311)!important;border-color:#37372f!important;color:#deddd7!important;-webkit-text-fill-color:#deddd7!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover,html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover{border-color:#66674f!important;background:#24241f!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack span,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack span{border-color:#393930!important;}
+</style>
+<script id="smtinel-v56-build-version">
+(function(){'use strict';var VERSION='SMTinel V13.14.92 - 8D True Charcoal - 2026-08-17';function sync(){window.SMTINEL_BUILD_VERSION=VERSION;window.SMTINEL_BUILD_BADGE=VERSION;window.SMTINEL_VERSION_TEXT=VERSION;['smtinel-build-version-badge','smtinel-build-badge'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=VERSION;});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();window.addEventListener('smtinel:themechange',sync);window.addEventListener('smtinel:theme-changed',sync);setTimeout(sync,250);setTimeout(sync,1200);})();
+</script>
+
+\n<style id="smtinel-v57-8d-true-charcoal">\n/* V57 · hard visual override: premium true charcoal, no navy/blue surfaces. */\nhtml body [data-traceops-eightd-editor="1"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]{\n  --p8-bg:#080808!important;--p8-bg2:#0b0b0b!important;--p8-card:#111111!important;--p8-card2:#151515!important;\n  --p8-field:#0d0d0d!important;--p8-line:#2d2d2a!important;--p8-line-soft:#20201e!important;\n  --p8-text:#f1f1ed!important;--p8-muted:#969790!important;--p8-blue:#66744b!important;--p8-blue2:#4e5a39!important;\n  --p8-green:#7c8b5a!important;--p8-amber:#d0a12f!important;--p8-red:#d85b4a!important;\n  background:\n    radial-gradient(circle at 80% 8%,rgba(116,129,78,.08),transparent 28%),\n    radial-gradient(circle at 16% 82%,rgba(116,129,78,.04),transparent 34%),\n    linear-gradient(180deg,#090909 0%,#060606 100%)!important;\n  color:#f1f1ed!important;color-scheme:dark!important;\n}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{\n  background:linear-gradient(180deg,#10100f,#090909)!important;\n  border-bottom-color:#292925!important;box-shadow:0 12px 30px rgba(0,0,0,.42)!important;color:#f2f2ee!important;\n}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{\n  color:#f2f2ee!important;border-right-color:#34342f!important;\n  background:linear-gradient(135deg,rgba(113,128,76,.18),rgba(77,86,58,.08)) left 1px top 0/31px 31px no-repeat!important;\n}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{color:#8d8f86!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#7f9160!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#f2f2ee!important;-webkit-text-fill-color:#f2f2ee!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#94968f!important;-webkit-text-fill-color:#94968f!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span{background:#11110f!important;border-color:#35352f!important;color:#dedfd9!important;}\n\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{border-top-color:#252522!important;background:transparent!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{\n  background:linear-gradient(180deg,#1b1b19,#121211)!important;color:#dedfd9!important;-webkit-text-fill-color:#dedfd9!important;\n  border-color:#363630!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 16px rgba(0,0,0,.26)!important;\n}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover{background:linear-gradient(180deg,#24241f,#181815)!important;border-color:#68734e!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3){\n  background:linear-gradient(180deg,#68764c,#4c5738)!important;border-color:#77875a!important;color:#fff!important;-webkit-text-fill-color:#fff!important;\n}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh{color:#d5d6d0!important;-webkit-text-fill-color:#d5d6d0!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{background:#151513!important;border-color:#3a3a34!important;color:#eeeeea!important;-webkit-text-fill-color:#eeeeea!important;}\n\nhtml body [data-traceops-eightd-editor="1"]>div>div:nth-child(2),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){background:transparent!important;scrollbar-color:#45463f transparent!important;}\nhtml body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]){background:linear-gradient(180deg,#151513,#10100f)!important;color:#eeeeea!important;border-color:#2d2d29!important;}\nhtml body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div{\n  background:linear-gradient(180deg,#151513,#10100f)!important;border-color:#2e2e2a!important;\n  box-shadow:0 12px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.02)!important;\n}\nhtml body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child{background:linear-gradient(180deg,#191917,#141412)!important;border-bottom-color:#292925!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before{background:linear-gradient(180deg,#839361,#5f6e45)!important;opacity:.82!important;}\n\nhtml body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),\nhtml body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"]{color:#f1f1ed!important;-webkit-text-fill-color:#f1f1ed!important;}\nhtml body [data-traceops-eightd-editor="1"] div[style*="color: #6A6560"],\nhtml body [data-traceops-eightd-editor="1"] div[style*="color:#6A6560"],\nhtml body [data-traceops-eightd-editor="1"] div[style*="color: #8A8580"],\nhtml body [data-traceops-eightd-editor="1"] div[style*="color:#8A8580"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #6A6560"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color:#6A6560"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #8A8580"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color:#8A8580"]{color:#97988f!important;-webkit-text-fill-color:#97988f!important;}\n\nhtml body [data-traceops-eightd-editor="1"] :is(input,select,textarea),\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea){background:linear-gradient(180deg,#10100f,#0b0b0a)!important;color:#eeeeea!important;-webkit-text-fill-color:#eeeeea!important;border-color:#33332f!important;}\nhtml body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder{color:#74766f!important;-webkit-text-fill-color:#74766f!important;}\nhtml body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus{border-color:#748356!important;box-shadow:0 0 0 3px rgba(116,131,86,.14),inset 0 1px 0 rgba(255,255,255,.02)!important;}\nhtml body [data-traceops-eightd-editor="1"] table,html body [data-traceops-eightd-editor="1"] tr,html body [data-traceops-eightd-editor="1"] td,html body [data-traceops-eightd-editor="1"] th,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] table,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] tr,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] td,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th{border-color:#2d2d29!important;}\nhtml body [data-traceops-eightd-editor="1"] th,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th{background:#151513!important;color:#b7b8b0!important;-webkit-text-fill-color:#b7b8b0!important;}\nhtml body [data-traceops-eightd-editor="1"] [style*="background: #F8F7F5"],html body [data-traceops-eightd-editor="1"] [style*="background:#F8F7F5"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #F8F7F5"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#F8F7F5"]{background:#11110f!important;border-color:#2e2e2a!important;}\nhtml body [data-traceops-eightd-editor="1"] [style*="background: #EAF2FF"],html body [data-traceops-eightd-editor="1"] [style*="background:#EAF2FF"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #EAF2FF"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#EAF2FF"]{background:#141411!important;border-color:#38382f!important;}\nhtml body [data-traceops-eightd-editor="1"] [style*="background: #F5F0FE"],html body [data-traceops-eightd-editor="1"] [style*="background:#F5F0FE"],\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background: #F5F0FE"],html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="background:#F5F0FE"]{background:#15130f!important;border-color:#3e392d!important;}\n\nhtml body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button{background:linear-gradient(180deg,#1b1b18,#141412)!important;border-color:#37372f!important;color:#dedfd9!important;-webkit-text-fill-color:#dedfd9!important;}\nhtml body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover{background:#22221d!important;border-color:#6f7d52!important;}\nhtml body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack span,\nhtml.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack span{border-color:#3a3a32!important;}\n</style>\n
+<style id="smtinel-v62-8d-title-clamp">
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{
+  font-size:20px!important;font-weight:850!important;line-height:1.14!important;max-width:1020px!important;
+  display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;
+  overflow:hidden!important;overflow-wrap:anywhere!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{
+  font-size:9.25px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:1120px!important;
+}
+@media(max-width:759px){
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{font-size:16px!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{white-space:normal!important;}
+}
+</style>
+
+<style id="smtinel-v63-8d-adaptive-theme-css">
+/* Dark skin */
+html:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"]{background:#080808!important;color:#F1F1ED!important;color-scheme:dark!important}
+html:not(.smtinel-theme-light) body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{background:linear-gradient(180deg,#0d0d0c,#090909)!important;border-bottom-color:#2A2A27!important}
+/* Light skin */
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]{background:#EEF1EC!important;color:#182019!important;color-scheme:light!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div{background:#F4F6F2!important;color:#182019!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{background:linear-gradient(180deg,#F8FAF7,#F2F5F0)!important;border-bottom:1px solid #CCD5C9!important;box-shadow:0 10px 28px rgba(38,48,39,.10)!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#182019!important;-webkit-text-fill-color:#182019!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#6B766C!important;-webkit-text-fill-color:#6B766C!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#687747!important;-webkit-text-fill-color:#687747!important}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{background:#F5F7F3!important;border-color:#CCD5C9!important}
+</style>
 </body>
 
 
@@ -69447,3 +69964,452 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
   setTimeout(sync,1200);
 })();
 </script>
+
+<style id="smtinel-8d-premium-workspace-v55">
+/* V55 · premium 8D workspace. Visual-only override; no RCCA/8D data logic changes. */
+html body [data-traceops-eightd-editor="1"]{
+  --p8-bg:#07111b;
+  --p8-bg2:#091522;
+  --p8-card:#0d1824;
+  --p8-card2:#101d2b;
+  --p8-field:#09131e;
+  --p8-line:#223448;
+  --p8-line-soft:#18293a;
+  --p8-text:#eef5fb;
+  --p8-muted:#92a2b3;
+  --p8-blue:#1f72d8;
+  --p8-blue2:#0b4f9f;
+  --p8-green:#28c789;
+  --p8-amber:#e1a82d;
+  --p8-red:#ef6859;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  background:
+    radial-gradient(circle at 78% 10%,rgba(31,114,216,.13),transparent 30%),
+    radial-gradient(circle at 16% 80%,rgba(40,199,137,.07),transparent 30%),
+    linear-gradient(180deg,#07111b 0%,#060d14 100%)!important;
+  color:var(--p8-text)!important;
+  font-family:"Segoe UI",Arial,sans-serif!important;
+  color-scheme:dark!important;
+  overflow:hidden!important;
+}
+html body [data-traceops-eightd-editor="1"]>div{
+  width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;
+  margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  background:transparent!important;overflow:hidden!important;
+}
+
+/* Premium command center */
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{
+  position:sticky!important;top:0!important;z-index:30!important;
+  min-height:0!important;
+  padding:14px 22px 12px!important;
+  gap:10px!important;
+  background:linear-gradient(180deg,rgba(9,25,39,.985),rgba(7,18,29,.985))!important;
+  border-bottom:1px solid #203247!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.28)!important;
+  color:var(--p8-text)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+  isolation:isolate!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{
+  content:"SMTinel";
+  position:absolute;left:22px;top:17px;
+  width:150px;padding:1px 0 23px 42px;
+  font-size:20px;font-weight:900;letter-spacing:-.035em;color:#f2f7fb;
+  border-right:1px solid #294157;
+  background:
+    linear-gradient(135deg,rgba(40,199,137,.18),rgba(31,114,216,.16)) left 1px top 0/31px 31px no-repeat;
+  border-radius:8px 0 0 8px;
+  pointer-events:none;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{
+  content:"TRACE · MONITOR · PROTECT";
+  position:absolute;left:64px;top:43px;
+  font-size:7px;font-weight:800;letter-spacing:.13em;color:#7f94a8;
+  pointer-events:none;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop{
+  padding-left:178px!important;
+  gap:24px!important;
+  align-items:center!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-titlebox{padding:0!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{
+  color:#49dfa5!important;font-size:9px!important;letter-spacing:.16em!important;font-weight:900!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{
+  color:#f4f8fb!important;-webkit-text-fill-color:#f4f8fb!important;
+  font-size:22px!important;line-height:1.05!important;letter-spacing:-.02em!important;
+  max-width:980px!important;margin-top:3px!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{
+  color:#8fa1b2!important;-webkit-text-fill-color:#8fa1b2!important;
+  font-size:9px!important;letter-spacing:.01em!important;margin-top:5px!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness{
+  max-width:600px!important;gap:7px!important;align-self:center!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span{
+  min-height:28px!important;padding:6px 11px!important;border-radius:999px!important;
+  background:#0c1722!important;border:1px solid #283a4c!important;color:#dbe6ef!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 4px 12px rgba(0,0,0,.18)!important;
+  font-size:9px!important;font-weight:900!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(1){color:#f2b52f!important;border-color:#5d481b!important;background:#17180f!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(2){color:#38d99a!important;border-color:#1d5b45!important;background:#0d1d18!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(3){color:#f2b52f!important;border-color:#5d481b!important;background:#17180f!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-readiness span:nth-child(4){color:#ff7768!important;border-color:#673127!important;background:#21120f!important;}
+
+/* Toolbar */
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{
+  min-height:0!important;padding:10px 0 0!important;margin:0!important;
+  border-top:1px solid #1d3042!important;gap:9px!important;
+  background:transparent!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{
+  min-height:36px!important;padding:8px 15px!important;border-radius:9px!important;
+  background:linear-gradient(180deg,#122236,#0d1b2a)!important;
+  color:#dce8f4!important;-webkit-text-fill-color:#dce8f4!important;
+  border:1px solid #2a4056!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 6px 16px rgba(0,0,0,.18)!important;
+  font-size:10px!important;font-weight:800!important;letter-spacing:.005em!important;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover{
+  transform:translateY(-1px)!important;border-color:#3d5c77!important;background:linear-gradient(180deg,#172b42,#102235)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3){
+  background:linear-gradient(180deg,#1268c8,#08478f)!important;border-color:#1c76d4!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-refresh{
+  color:#b9cbe0!important;-webkit-text-fill-color:#b9cbe0!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{
+  margin-left:auto!important;background:#0d1925!important;border-color:#26384a!important;color:#dbe7f1!important;-webkit-text-fill-color:#dbe7f1!important;
+}
+
+/* Main workspace */
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){
+  width:min(1600px,100%)!important;max-width:1600px!important;margin:0 auto!important;
+  min-height:0!important;height:calc(100dvh - 128px)!important;
+  padding:16px 18px 42px!important;gap:16px!important;
+  background:transparent!important;overflow:auto!important;
+  grid-template-columns:minmax(0,1.72fr) minmax(360px,.78fr)!important;
+  scrollbar-color:#344a5e transparent!important;scrollbar-width:thin!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:first-of-type{gap:14px!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack{
+  top:4px!important;gap:14px!important;max-height:calc(100dvh - 164px)!important;padding:0 2px 10px 0!important;
+}
+
+/* Premium cards: override React inline light surfaces */
+html body [data-traceops-eightd-editor="1"] :is(
+  div[style*="background: rgb(255, 255, 255)"],
+  div[style*="background: #fff"],
+  div[style*="background:#fff"]
+){
+  background:linear-gradient(180deg,rgba(15,28,42,.97),rgba(11,23,35,.97))!important;
+  color:var(--p8-text)!important;border-color:var(--p8-line)!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div{
+  border:1px solid var(--p8-line)!important;border-radius:14px!important;overflow:hidden!important;
+  background:linear-gradient(180deg,rgba(15,28,42,.98),rgba(10,21,32,.98))!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child{
+  background:linear-gradient(180deg,#101d2a,#0e1925)!important;
+  border-bottom:1px solid var(--p8-line-soft)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div{position:relative!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,#2bd194,#1977db);opacity:.72;
+}
+
+/* Text hierarchy */
+html body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b){color:#f0f5f9!important;-webkit-text-fill-color:#f0f5f9!important;}
+html body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"],
+html body [data-traceops-eightd-editor="1"] div[style*="color:#1A1714"]{color:#edf4f9!important;-webkit-text-fill-color:#edf4f9!important;}
+html body [data-traceops-eightd-editor="1"] div[style*="color: #6A6560"],
+html body [data-traceops-eightd-editor="1"] div[style*="color:#6A6560"],
+html body [data-traceops-eightd-editor="1"] div[style*="color: #8A8580"],
+html body [data-traceops-eightd-editor="1"] div[style*="color:#8A8580"]{color:#91a1b0!important;-webkit-text-fill-color:#91a1b0!important;}
+
+/* Inputs / textareas / table-like rows */
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea){
+  background:linear-gradient(180deg,#09141f,#08121b)!important;
+  color:#e8f0f6!important;-webkit-text-fill-color:#e8f0f6!important;
+  border:1px solid #283d52!important;border-radius:9px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018)!important;
+  outline:none!important;
+}
+html body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder{color:#708193!important;-webkit-text-fill-color:#708193!important;opacity:1!important;}
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus{
+  border-color:#2e84de!important;box-shadow:0 0 0 3px rgba(46,132,222,.14),inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+html body [data-traceops-eightd-editor="1"] table,
+html body [data-traceops-eightd-editor="1"] tr,
+html body [data-traceops-eightd-editor="1"] td,
+html body [data-traceops-eightd-editor="1"] th{border-color:#223448!important;}
+html body [data-traceops-eightd-editor="1"] th{color:#aebdcb!important;-webkit-text-fill-color:#aebdcb!important;background:#0e1b29!important;letter-spacing:.08em!important;}
+
+/* Nested preview blocks */
+html body [data-traceops-eightd-editor="1"] [style*="background: #F8F7F5"],
+html body [data-traceops-eightd-editor="1"] [style*="background:#F8F7F5"]{
+  background:#0b1621!important;border-color:#223448!important;
+}
+html body [data-traceops-eightd-editor="1"] [style*="background: #EAF2FF"],
+html body [data-traceops-eightd-editor="1"] [style*="background:#EAF2FF"]{
+  background:#0d1c2b!important;border-color:#27435d!important;
+}
+html body [data-traceops-eightd-editor="1"] [style*="background: #F5F0FE"],
+html body [data-traceops-eightd-editor="1"] [style*="background:#F5F0FE"]{
+  background:#171526!important;border-color:#3f355f!important;
+}
+
+/* Secondary action buttons inside cards */
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button{
+  border-radius:8px!important;background:linear-gradient(180deg,#142333,#101b29)!important;
+  border:1px solid #2a3d50!important;color:#d9e5ef!important;-webkit-text-fill-color:#d9e5ef!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover{border-color:#3c5a73!important;background:#172a3d!important;}
+
+/* Maturity side card semantics */
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack span{
+  border:1px solid #293e52!important;box-shadow:none!important;
+}
+
+/* Light theme premium counterpart */
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]{
+  --p8-bg:#eef3f6;--p8-card:#ffffff;--p8-field:#f7fafb;--p8-line:#d5e0e7;--p8-text:#17212b;--p8-muted:#697985;
+  background:linear-gradient(180deg,#eaf0f3,#f4f7f8)!important;color:#17212b!important;color-scheme:light!important;
+}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{
+  background:linear-gradient(180deg,#f9fbfc,#f3f7f9)!important;border-bottom-color:#d5e0e7!important;box-shadow:0 10px 28px rgba(38,57,72,.09)!important;
+}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{color:#17212b!important;border-right-color:#d6e1e7!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{color:#758591!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#17212b!important;-webkit-text-fill-color:#17212b!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#6b7b87!important;-webkit-text-fill-color:#6b7b87!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]){
+  background:linear-gradient(180deg,#fff,#fbfdfe)!important;color:#17212b!important;border-color:#d5e0e7!important;box-shadow:0 10px 26px rgba(38,57,72,.07)!important;
+}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child{background:#f5f8fa!important;border-bottom-color:#dce5ea!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] div[style*="color: #1A1714"]{color:#17212b!important;-webkit-text-fill-color:#17212b!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea){background:#f8fbfc!important;color:#17212b!important;-webkit-text-fill-color:#17212b!important;border-color:#cbd8df!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder{color:#87959f!important;-webkit-text-fill-color:#87959f!important;}
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button{background:#f7fafb!important;border-color:#cedae1!important;color:#344450!important;-webkit-text-fill-color:#344450!important;}
+
+@media(max-width:1100px){
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{display:none!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop{padding-left:0!important;}
+  html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){grid-template-columns:1fr!important;height:calc(100dvh - 152px)!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack{position:static!important;max-height:none!important;overflow:visible!important;}
+}
+@media(max-width:760px){
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{padding:10px!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{font-size:17px!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{width:100%!important;}
+  html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){height:calc(100dvh - 205px)!important;padding:10px 10px 36px!important;}
+}
+</style>
+<script id="smtinel-v55-build-version">
+(function(){
+  'use strict';
+  var VERSION='SMTinel V13.14.92 - 8D True Charcoal - 2026-08-17';
+  function sync(){
+    window.SMTINEL_BUILD_VERSION=VERSION;window.SMTINEL_BUILD_BADGE=VERSION;window.SMTINEL_VERSION_TEXT=VERSION;
+    ['smtinel-build-version-badge','smtinel-build-badge'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=VERSION;});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();
+  window.addEventListener('smtinel:themechange',sync);window.addEventListener('smtinel:theme-changed',sync);setTimeout(sync,250);setTimeout(sync,1200);
+})();
+</script>
+
+
+<style id="smtinel-v58-8d-final-charcoal">
+/* V58 · final visual authority for the 8D workspace. True charcoal, no navy surfaces. */
+html body [data-traceops-eightd-editor="1"],
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"],
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]{
+  --p8-bg:#080808!important;--p8-card:#121212!important;--p8-field:#0d0d0d!important;
+  --p8-line:#2b2b28!important;--p8-text:#f1f1ed!important;--p8-muted:#96968f!important;
+  --p8-blue:#68764b!important;--p8-blue2:#4d5937!important;--p8-green:#8a9a5a!important;
+  background:linear-gradient(180deg,#080808 0%,#050505 100%)!important;
+  color:#f1f1ed!important;color-scheme:dark!important;
+}
+html body [data-traceops-eightd-editor="1"]>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div{
+  background:#080808!important;color:#f1f1ed!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{
+  background:linear-gradient(180deg,#111110 0%,#090909 100%)!important;
+  border-bottom:1px solid #2b2b27!important;color:#f2f2ed!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.42)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{
+  color:#efefe9!important;border-right-color:#34342f!important;
+  background:linear-gradient(135deg,rgba(116,130,77,.18),rgba(116,130,77,.04)) left 1px top 0/31px 31px no-repeat!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{color:#8b8c84!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#91a264!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#f4f4ef!important;-webkit-text-fill-color:#f4f4ef!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#96968f!important;-webkit-text-fill-color:#96968f!important;}
+
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{
+  background:#0b0b0b!important;border-top-color:#292925!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button{
+  background:linear-gradient(180deg,#1b1b19,#121211)!important;border-color:#383832!important;
+  color:#deddd8!important;-webkit-text-fill-color:#deddd8!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 16px rgba(0,0,0,.26)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3),
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(1),
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:nth-child(3){
+  background:linear-gradient(180deg,#6f7e47,#4d5933)!important;border-color:#829252!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar button:hover{background:#22221e!important;border-color:#6d7651!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar .smtinel-8d-close{background:#101010!important;border-color:#353531!important;color:#d9d9d3!important;-webkit-text-fill-color:#d9d9d3!important;}
+
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2),
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2){background:#080808!important;scrollbar-color:#4a4a45 #0a0a0a!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar{width:10px;height:10px;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-track,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-track,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-track{background:#0a0a0a!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-thumb,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-thumb,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)::-webkit-scrollbar-thumb{background:#42423d!important;border:2px solid #0a0a0a!important;border-radius:999px;}
+
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div,
+html body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(div[style*="background: rgb(255, 255, 255)"],div[style*="background: #fff"],div[style*="background:#fff"]){
+  background:linear-gradient(180deg,#141413,#10100f)!important;color:#efeee9!important;border-color:#2d2d29!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2)>div:not(.smtinel-8d-side-stack)>div>div:first-child,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div>div:first-child{background:#171716!important;border-bottom-color:#282824!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-side-stack>div:before{background:linear-gradient(180deg,#8b9b59,#5e6b3d)!important;opacity:.92!important;}
+
+html body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b),
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] :is(h1,h2,h3,h4,strong,b){color:#f1f0eb!important;-webkit-text-fill-color:#f1f0eb!important;}
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea),
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea),
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] :is(input,select,textarea){
+  background:#0d0d0d!important;color:#ecebe6!important;-webkit-text-fill-color:#ecebe6!important;border-color:#30302d!important;
+}
+html body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] :is(input,textarea)::placeholder{color:#707069!important;-webkit-text-fill-color:#707069!important;}
+html body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] :is(input,select,textarea):focus{border-color:#83924f!important;box-shadow:0 0 0 3px rgba(131,146,79,.14)!important;outline:none!important;}
+html body [data-traceops-eightd-editor="1"] table,html body [data-traceops-eightd-editor="1"] tr,html body [data-traceops-eightd-editor="1"] td,html body [data-traceops-eightd-editor="1"] th,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] table,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] tr,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] td,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th{border-color:#292926!important;}
+html body [data-traceops-eightd-editor="1"] th,html.smtinel-theme-light body [data-traceops-eightd-editor="1"] th,html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] th{background:#151514!important;color:#b9b8b1!important;-webkit-text-fill-color:#b9b8b1!important;}
+
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button{background:#181817!important;border-color:#373733!important;color:#deddd7!important;-webkit-text-fill-color:#deddd7!important;}
+html body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"]>div>div:nth-child(2) button:hover{background:#22221f!important;border-color:#6c7651!important;}
+
+/* Neutralize residual blue UI tokens inside the 8D only. */
+html body [data-traceops-eightd-editor="1"] [style*="#1977db"],
+html body [data-traceops-eightd-editor="1"] [style*="#2e84de"],
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="#1977db"],
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] [style*="#2e84de"]{border-color:#6f7d4b!important;}
+</style>
+<script id="smtinel-v58-build-version">
+(function(){'use strict';var VERSION='SMTinel V13.14.98 - 8D Adaptive Premium Themes - 2026-08-17';function sync(){window.SMTINEL_BUILD_VERSION=VERSION;window.SMTINEL_BUILD_BADGE=VERSION;window.SMTINEL_VERSION_TEXT=VERSION;['smtinel-build-version-badge','smtinel-build-badge'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=VERSION;});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();window.addEventListener('smtinel:themechange',sync);window.addEventListener('smtinel:theme-changed',sync);setTimeout(sync,250);setTimeout(sync,1200);})();
+</script>
+
+<style id="smtinel-v59-8d-unified-dark-header">
+/* V59: renderer-safe final header authority. Header + toolbar + workspace = one charcoal surface. */
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar{
+  background:#090909!important;background-image:linear-gradient(180deg,#0d0d0c,#090909)!important;
+  color:#f1f1ed!important;border-bottom:1px solid #262626!important;box-shadow:0 10px 26px rgba(0,0,0,.40)!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandtop{background:transparent!important;color:#f1f1ed!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-titlebox,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-titlebox,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-titlebox{background:transparent!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{
+  background:#0d0d0d!important;border-top:1px solid #262626!important;border-bottom:0!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:before{
+  color:#f1f1ed!important;-webkit-text-fill-color:#f1f1ed!important;border-right-color:#30302c!important;opacity:1!important;
+}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-commandbar:after{color:#8f918a!important;-webkit-text-fill-color:#8f918a!important;opacity:1!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-case-title{color:#f1f1ed!important;-webkit-text-fill-color:#f1f1ed!important;text-shadow:none!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-meta{color:#8f918a!important;-webkit-text-fill-color:#8f918a!important;}
+html body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,
+html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker,
+html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#91a264!important;-webkit-text-fill-color:#91a264!important;}
+</style>
+
