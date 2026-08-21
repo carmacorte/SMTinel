@@ -1,3 +1,4 @@
+<!-- SMTinel V81.1 Quality Terminal General Dashboard - Syntax Fix -->
 <!-- SMTinel V80 Semantic Metrics + Covered Population FR + Global DBN Shell -->
 <!DOCTYPE html>
 
@@ -35363,7 +35364,7 @@ body:has(#recovery-section) .main-content.expanded{
             try {
                 if (context) {
                     sessionStorage.setItem("smtinelCommandCenterContext", JSON.stringify({
-                        source: "SMTinel Command Center",
+                        source: "SMTinel Quality Terminal",
                         route: key,
                         context: context,
                         ts: new Date().toISOString()
@@ -35375,10 +35376,27 @@ body:has(#recovery-section) .main-content.expanded{
             if (key === "u8300") { openModule("boardimpact"); return; }
             openModule(key);
         }
-        function fmt(n) {
+        function fmt(n, digits) {
             var v = Number(n || 0);
             if (!isFinite(v)) v = 0;
-            return v.toLocaleString ? v.toLocaleString() : String(v);
+            return v.toLocaleString(undefined, { maximumFractionDigits: digits == null ? 0 : digits, minimumFractionDigits: digits == null ? 0 : digits });
+        }
+        function pct(n, digits) { return fmt(n, digits == null ? 1 : digits) + "%"; }
+        function pick(obj, keys, fallback) {
+            obj = obj || {};
+            for (var i = 0; i < keys.length; i++) {
+                var v = obj[keys[i]];
+                if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+            }
+            return fallback == null ? "N/D" : fallback;
+        }
+        function num(obj, keys) {
+            obj = obj || {};
+            for (var i = 0; i < keys.length; i++) {
+                var v = Number(obj[keys[i]]);
+                if (isFinite(v)) return v;
+            }
+            return 0;
         }
         function icon(kind) {
             var attrs = { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.2", strokeLinecap: "round", strokeLinejoin: "round" };
@@ -35390,67 +35408,314 @@ body:has(#recovery-section) .main-content.expanded{
             if (kind === "raven") return h("svg", attrs, [h("path", { key:"a", d:"M4 14c5-7 10-9 16-5-4 1-6 3-7 6 3-1 5-1 7 1-5 2-9 2-13 0l-3 2" }),h("circle", { key:"b", cx:"15", cy:"10", r:".8" })]);
             return h("svg", attrs, [h("circle", { key:"a", cx:"12", cy:"12", r:"9" }),h("path", { key:"b", d:"M12 8v4l3 3" })]);
         }
-        function kpi(label, value, tone) {
-            return h("button", { key:label, type:"button", className:"smtinel-cc-kpi " + (tone || ""), onClick:function(){ openTraceModule(label.indexOf("Recovery") >= 0 ? "recovery" : label.indexOf("Ref") >= 0 ? "boardimpact" : "yieldflow"); } }, [
-                h("span", { key:"l" }, label),
-                h("b", { key:"v" }, value)
-            ]);
+        function routeButton(label, route, tone, ico) {
+            return h("button", { key:label, type:"button", className:"smtinel-cc-route " + (tone || ""), onClick:function(){ openTraceModule(route); } }, [icon(ico), h("span", null, label)]);
         }
         function hotspot(cls, label, sub, route, ico, context) {
-            return h("button", { key:cls, type:"button", className:"smtinel-cc-hotspot " + cls, onClick:function(){ openTraceModule(route, context); }, title:label + " — " + sub, "data-label": label }, [
+            return h("button", { key:cls, type:"button", className:"smtinel-cc-hotspot " + cls, onClick:function(){ openTraceModule(route, context); }, title:label + " - " + sub, "data-label": label }, [
                 h("span", { key:"glass", className:"smtinel-cc-hotspot-glass" }, [
                     h("i", { key:"i" }, icon(ico)),
                     h("span", { key:"txt" }, [h("b", { key:"b" }, label), h("em", { key:"e" }, sub)])
                 ])
             ]);
         }
-        function routeButton(label, route, tone, ico) {
-            return h("button", { key:label, type:"button", className:"smtinel-cc-route " + (tone || ""), onClick:function(){ openTraceModule(route); } }, [icon(ico), h("span", null, label)]);
+        function riskQty(row) {
+            try { if (typeof traceOpsYieldWoRiskCount === "function") return Number(traceOpsYieldWoRiskCount(row) || 0); } catch (_) {}
+            return num(row, ["risk","failed","failures","failQty","defects"]);
         }
+        function totalQty(row) {
+            try { if (typeof traceOpsYieldWoTotalCount === "function") return Number(traceOpsYieldWoTotalCount(row) || 0); } catch (_) {}
+            return num(row, ["total","lotQty","units","qty","builtUnits"]);
+        }
+        function severityFor(row) {
+            try { if (typeof traceOpsYieldWoSeverity === "function") return traceOpsYieldWoSeverity(row); } catch (_) {}
+            var total = totalQty(row), risk = riskQty(row), rate = total > 0 ? risk / total * 100 : 0;
+            return { rate:rate, short: rate >= 15 ? "Critical" : rate >= 5 ? "Degraded" : rate >= 1.5 ? "Watch" : "OK" };
+        }
+        function valueFromPattern(p) { return num(p, ["units","risk","count","qty","snCount"]); }
+        function labelFromPattern(p) { return pick(p, ["pattern","cause","failure","failureMode","name","testName"], "Unclassified"); }
+        function woLabel(row) { return pick(row, ["wo","workOrder","workorder","WO"], "N/D"); }
+        function lineLabel(row) { return pick(row, ["line","stationLine","Line"], "N/D"); }
+        function familyLabel(row) { return pick(row, ["family","model","productFamily","sku"], "N/D"); }
+        function refLabel(row) { return pick(row, ["refdes","refDes","reference","ref","location","Reference"], "N/D"); }
+        function snLabel(row) { return pick(row, ["sn","SN","serial","serialNumber","sernum"], ""); }
+        function componentPn(row) { return pick(row, ["componentPn","componentPN","partNumber","pn","componentPartNumber"], ""); }
+        function shortText(v, max) { var s = String(v == null ? "" : v); return s.length > max ? s.slice(0, Math.max(1,max-1)) + "..." : s; }
+        function termPanel(key, title, sub, body, action) {
+            return h("section", { key:key, className:"sqt-panel " + key }, [
+                h("header", { key:"h", className:"sqt-panel-head" }, [
+                    h("div", { key:"t" }, [h("b", null, title), h("span", null, sub)]),
+                    action ? h("button", { key:"a", type:"button", onClick:action }, "OPEN") : null
+                ]),
+                h("div", { key:"b", className:"sqt-panel-body" }, body)
+            ]);
+        }
+        function terminalMetric(label, value, tone, sub) {
+            return h("div", { key:label, className:"sqt-metric " + (tone || "") }, [
+                h("span", null, label),
+                h("b", null, value),
+                sub ? h("em", null, sub) : null
+            ]);
+        }
+        function empty(message) { return h("div", { className:"sqt-empty" }, message); }
+
         var k = (yieldFlowModel && yieldFlowModel.kpi) || {};
+        var rows = (yieldFlowModel && Array.isArray(yieldFlowModel.rows)) ? yieldFlowModel.rows : [];
+        var boardRows = (boardImpactContext && Array.isArray(boardImpactContext.rows)) ? boardImpactContext.rows : [];
+        var patternSource = (yieldFlowModel && ((yieldFlowModel.failurePatterns && yieldFlowModel.failurePatterns.length && yieldFlowModel.failurePatterns) || yieldFlowModel.causeSummary)) || [];
+        var weeklySource = (yieldFlowModel && Array.isArray(yieldFlowModel.weeklyTrend)) ? yieldFlowModel.weeklyTrend : [];
         var refs = (boardImpactContext && boardImpactContext.refs) ? boardImpactContext.refs.length : 0;
         var rccaCount = (rccaList && rccaList.length) || 0;
         var eightDCount = (eightdList && eightdList.length) || 0;
         var maintenanceCount = (maintenanceRecords && maintenanceRecords.length) || 0;
         var risk = Number(k.risk || 0);
-        return h("section", { id:"smtinel-command-center", className:"smtinel-command-center" }, [
-            h("div", { key:"hero", className:"smtinel-cc-canvas", role:"img", "aria-label":"SMTinel manufacturing command center interactive map" }, [
-                h("div", { key:"shade", className:"smtinel-cc-vignette" }),
-                h("div", { key:"title", className:"smtinel-cc-title" }, [
-                    h("span", null, "PROCESS"), h("b", null, "→"), h("span", null, "SIGNAL"), h("b", null, "→"), h("span", null, "IMPACT"), h("b", null, "→"), h("span", null, "DECISION")
+        var hasData = !!(rows.length || boardRows.length || risk || Number(k.orders || 0) || patternSource.length);
+        var now = new Date();
+        var clockText = now.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false });
+        var dateText = now.toLocaleDateString(undefined, { year:"numeric", month:"2-digit", day:"2-digit" });
+        var scopeParts = [];
+        [["BU",yieldFilters && yieldFilters.bu],["FAMILY",yieldFilters && yieldFilters.family],["LINE",yieldFilters && yieldFilters.line],["WO",yieldFilters && yieldFilters.wo],["CW",yieldFilters && yieldFilters.week]].forEach(function(x){ if (x[1] && x[1] !== "ALL") scopeParts.push(x[0] + ":" + x[1]); });
+        var scopeText = scopeParts.length ? scopeParts.join(" | ") : "ALL ACTIVE DATA";
+
+        var woStats = { healthy:0, watch:0, degraded:0, critical:0, noQty:0, valid:0 };
+        var woRows = rows.map(function(row){
+            var total = totalQty(row), rq = riskQty(row), sev = severityFor(row), rate = total > 0 ? rq / total * 100 : Number(sev.rate || 0);
+            if (total <= 0) woStats.noQty++;
+            else {
+                woStats.valid++;
+                if (rate >= 15) woStats.critical++;
+                else if (rate >= 5) woStats.degraded++;
+                else if (rate >= 1.5) woStats.watch++;
+                else woStats.healthy++;
+            }
+            return { raw:row, wo:woLabel(row), line:lineLabel(row), family:familyLabel(row), total:total, risk:rq, rate:rate, status: total <= 0 ? "NO QTY" : (rate >= 15 ? "CRITICAL" : rate >= 5 ? "DEGRADED" : rate >= 1.5 ? "WATCH" : "HEALTHY") };
+        }).sort(function(a,b){ return b.rate - a.rate || b.risk - a.risk; });
+        var woCoverage = rows.length ? (woStats.valid / rows.length * 100) : 0;
+
+        var lineMap = {};
+        rows.forEach(function(row){
+            var line = lineLabel(row);
+            if (!lineMap[line]) lineMap[line] = { line:line, total:0, risk:0, orders:0 };
+            lineMap[line].total += totalQty(row);
+            lineMap[line].risk += riskQty(row);
+            lineMap[line].orders += 1;
+        });
+        var lineRows = Object.keys(lineMap).map(function(key){ var r=lineMap[key]; r.rate=r.total ? r.risk/r.total*100 : 0; return r; }).sort(function(a,b){ return b.rate-a.rate || b.risk-a.risk; }).slice(0,7);
+        var maxLineRate = Math.max.apply(null, [1].concat(lineRows.map(function(x){return x.rate;})));
+
+        var failureItems = (patternSource || []).map(function(p){ return { label:labelFromPattern(p), value:valueFromPattern(p), impact:num(p,["impact","sharePct"]), criticality:pick(p,["criticality","severity"],""), raw:p }; }).filter(function(x){return x.value>0;}).sort(function(a,b){return b.value-a.value;}).slice(0,10);
+        if (!failureItems.length && rows.length) {
+            var fm = {};
+            rows.forEach(function(row){ var label=pick(row,["cause","symptom","topSymptom","failureMode","failure","rootCause"],""); var v=riskQty(row); if(label && label!=="N/D" && v>0) fm[label]=(fm[label]||0)+v; });
+            failureItems = Object.keys(fm).map(function(key){return {label:key,value:fm[key],impact:0,criticality:"",raw:null};}).sort(function(a,b){return b.value-a.value;}).slice(0,10);
+        }
+        var failureTotal = failureItems.reduce(function(a,b){return a+b.value;},0);
+        failureItems.forEach(function(x){ if(!x.impact) x.impact=failureTotal?x.value/failureTotal*100:0; });
+
+        var componentMap = {};
+        boardRows.forEach(function(row){
+            var ref = refLabel(row); if (!ref || ref === "N/D") return;
+            if (!componentMap[ref]) componentMap[ref] = { ref:ref, pn:componentPn(row), serials:{}, count:0, modes:{} };
+            var sn = snLabel(row); if (sn) componentMap[ref].serials[sn] = true; else componentMap[ref].count += 1;
+            var mode = pick(row,["failureMode","failure","symptom","rootCause","defect"],""); if(mode) componentMap[ref].modes[mode]=(componentMap[ref].modes[mode]||0)+1;
+        });
+        var componentRows = Object.keys(componentMap).map(function(key){
+            var r=componentMap[key], modes=Object.keys(r.modes).sort(function(a,b){return r.modes[b]-r.modes[a];});
+            return { ref:r.ref, pn:r.pn, sn:Object.keys(r.serials).length || r.count, mode:modes[0] || "N/D" };
+        }).sort(function(a,b){return b.sn-a.sn;}).slice(0,7);
+
+        var trendRows = weeklySource.map(function(row,idx){
+            var label = pick(row,["week","ciscoWeek","label","period"],"#"+(idx+1));
+            var y = num(row,["yield","yieldPct","fpy","passRate","value"]);
+            if (!y) {
+                var total=num(row,["total","units","built"]), rr=num(row,["risk","failures","failed"]);
+                if(total>0) y=Math.max(0,100-(rr/total*100));
+            }
+            return { label:label, value:y };
+        }).filter(function(x){return x.value>0;}).slice(-12);
+
+        var wire = [];
+        if (woStats.critical) wire.push({tag:"CRITICAL", tone:"red", text:woStats.critical+" WO"+(woStats.critical===1?"":"s")+" at or above 15% risk rate"});
+        if (failureItems[0]) wire.push({tag:"FAILURE", tone:"amber", text:failureItems[0].label+" leads current failure landscape with "+fmt(failureItems[0].value)+" risk units"});
+        if (lineRows[0] && lineRows[0].risk>0) wire.push({tag:"LINE", tone:"cyan", text:lineRows[0].line+" is highest visible line at "+pct(lineRows[0].rate,1)+" risk rate"});
+        if (woStats.noQty) wire.push({tag:"DATA", tone:"amber", text:woStats.noQty+" WO"+(woStats.noQty===1?"":"s")+" without positive quantity; excluded from rate interpretation"});
+        if (componentRows[0]) wire.push({tag:"REFDES", tone:"green", text:componentRows[0].ref+" leads Board Impact with "+fmt(componentRows[0].sn)+" affected SN"});
+        if (rccaCount || eightDCount) wire.push({tag:"MEMORY", tone:"green", text:fmt(rccaCount)+" RCCA and "+fmt(eightDCount)+" 8D knowledge objects available"});
+        if (!wire.length) wire.push({tag:"SYSTEM", tone:"muted", text:"Load SFC / Common DB / Cesium or open Board Impact to populate live quality signals"});
+
+        function renderTreemap() {
+            if (!failureItems.length) return empty("No failure pattern data in the active scope.");
+            return h("div", { className:"sqt-treemap" }, failureItems.map(function(item,idx){
+                var cls = idx===0 ? "xl" : idx<3 ? "lg" : idx<6 ? "md" : "sm";
+                var tone = item.criticality === "Critical" ? "red" : item.criticality === "High" ? "amber" : idx===0 ? "red" : idx<4 ? "amber" : "green";
+                return h("button", { key:item.label+idx, type:"button", className:"sqt-tree-cell "+cls+" "+tone, onClick:function(){ openTraceModule("yieldflow", { failureMode:item.label }); } }, [
+                    h("b", null, shortText(item.label,34)),
+                    h("strong", null, fmt(item.value)),
+                    h("span", null, pct(item.impact,1)+" of displayed failure risk")
+                ]);
+            }));
+        }
+        function renderBreadth() {
+            var totalWo = rows.length;
+            return h("div", { className:"sqt-breadth" }, [
+                h("div", { className:"sqt-breadth-grid" }, [
+                    terminalMetric("HEALTHY",fmt(woStats.healthy),"green","< 1.5%"),
+                    terminalMetric("WATCH",fmt(woStats.watch),"cyan","1.5 - 5%"),
+                    terminalMetric("DEGRADED",fmt(woStats.degraded),"amber","5 - 15%"),
+                    terminalMetric("CRITICAL",fmt(woStats.critical),"red",">= 15%")
                 ]),
-                h("div", { key:"strip", className:"smtinel-cc-kpi-strip" }, [
-                    kpi("WOs impacted", fmt(k.orders || 44), "risk"),
-                    kpi("Serials affected", fmt(k.risk || 482), "warning"),
-                    kpi("Unique refs", fmt(refs || 14), "signal"),
-                    kpi("Yield / Clean", (k.cleanYield != null ? Number(k.cleanYield).toFixed(1) + "%" : "98.4%"), "ok"),
-                    kpi("RCCA memory", fmt(rccaCount), "memory")
+                h("div", { className:"sqt-ratio-row" }, [h("span", null, "VALID QTY COVERAGE"),h("b", null, totalWo ? pct(woCoverage,1) : "N/D")]),
+                h("div", { className:"sqt-ratio-row" }, [h("span", null, "NO POSITIVE QTY"),h("b", { className:woStats.noQty?"warn":"" }, fmt(woStats.noQty))]),
+                h("div", { className:"sqt-ratio-row" }, [h("span", null, "ACTIVE WORK ORDERS"),h("b", null, fmt(totalWo || k.orders || 0))])
+            ]);
+        }
+        function renderWire() {
+            return h("div", { className:"sqt-wire" }, wire.slice(0,8).map(function(item,idx){
+                return h("div", { key:idx, className:"sqt-wire-row" }, [
+                    h("span", { className:"sqt-wire-tag "+item.tone }, item.tag),
+                    h("b", null, item.text)
+                ]);
+            }));
+        }
+        function renderTrend() {
+            if (trendRows.length < 2) return empty("Weekly trend will appear after Yield Flow contains at least two valid periods.");
+            var W=720,H=210,P=24;
+            var vals=trendRows.map(function(x){return x.value;});
+            var min=Math.min.apply(null,vals), max=Math.max.apply(null,vals); if(max-min<1){min=Math.max(0,min-1);max=Math.min(100,max+1);}
+            var pts=trendRows.map(function(x,i){ var px=P+(W-P*2)*(i/Math.max(1,trendRows.length-1)); var py=H-P-(H-P*2)*((x.value-min)/Math.max(.01,max-min)); return {x:px,y:py,row:x}; });
+            var path=pts.map(function(p,i){return (i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1);}).join(" ");
+            return h("div", { className:"sqt-chart-wrap" }, [
+                h("div", { className:"sqt-chart-kpi" }, [h("b", null, pct(trendRows[trendRows.length-1].value,2)),h("span", null, trendRows[trendRows.length-1].label)]),
+                h("svg", { viewBox:"0 0 "+W+" "+H, preserveAspectRatio:"none", className:"sqt-chart", role:"img", "aria-label":"Yield trend" }, [
+                    h("line", { key:"mid", x1:P, x2:W-P, y1:H/2, y2:H/2, className:"grid" }),
+                    h("path", { key:"area", d:path+" L"+pts[pts.length-1].x+" "+(H-P)+" L"+pts[0].x+" "+(H-P)+" Z", className:"area" }),
+                    h("path", { key:"path", d:path, className:"line" }),
+                    pts.map(function(p,i){return h("circle",{key:"p"+i,cx:p.x,cy:p.y,r:3.5,className:"point"});})
                 ]),
-                hotspot("hs-yield", "Yield Flow Overview", "salida, avance y riesgo por WO", "yieldflow", "yield"),
-                hotspot("hs-signal", "Traceability Flow", "station path → re-entry → recovery", "recovery", "memory"),
-                hotspot("hs-board", "Board Impact View", "mapa de calor por RefDes", "boardimpact", "board"),
-                hotspot("hs-ref", "U8300 / Reference Details", "abrir contexto de componente", "u8300", "board", { refdes:"U8300", defect:"Damaged Component", severity:"Critical" }),
-                hotspot("hs-pareto", "Defect Pareto", "prioriza causa dominante", "criticalmodel", "risk"),
-                hotspot("hs-recovery", "Recovery Intelligence", "bonepile, re-entry y sangrado", "recovery", "recovery"),
-                hotspot("hs-maint", "Intel Log", "recurrencia máquina / parte", "intellog", "memory"),
-                hotspot("hs-huginn", "Huginn", "alerta predictiva y riesgo", "criticalmodel", "raven"),
-                hotspot("hs-muninn", "RCCA Memory", "memoria, evidencias, 8D", "rcca", "raven"),
-                h("div", { key:"pulse1", className:"smtinel-cc-pulse p1" }),
-                h("div", { key:"pulse2", className:"smtinel-cc-pulse p2" }),
-                h("div", { key:"pulse3", className:"smtinel-cc-pulse p3" })
+                h("div", { className:"sqt-chart-labels" }, trendRows.map(function(x,i){return h("span",{key:i},shortText(x.label,12));}))
+            ]);
+        }
+        function renderLines() {
+            if (!lineRows.length) return empty("No line-level data in active scope.");
+            return h("div", { className:"sqt-bars" }, lineRows.map(function(row){
+                return h("button", { key:row.line, type:"button", className:"sqt-bar-row", onClick:function(){ openTraceModule("yieldflow", { line:row.line }); } }, [
+                    h("span", null, row.line),
+                    h("i", null, h("em", { style:{width:Math.max(2,row.rate/maxLineRate*100)+"%"} })),
+                    h("b", { className:row.rate>=15?"red":row.rate>=5?"amber":"green" }, pct(row.rate,1)),
+                    h("small", null, fmt(row.risk)+" risk / "+fmt(row.total)+" units")
+                ]);
+            }));
+        }
+        function renderComponents() {
+            if (!componentRows.length) return empty("Open Board Impact or load component-level evidence to populate RefDes monitoring.");
+            return h("div", { className:"sqt-component-list" }, componentRows.map(function(row,idx){
+                return h("button", { key:row.ref, type:"button", onClick:function(){ openTraceModule("boardimpact", { refdes:row.ref }); } }, [
+                    h("span", { className:"rank" }, String(idx+1).padStart(2,"0")),
+                    h("div", null, [h("b", null, row.ref),h("small", null, shortText(row.pn || row.mode,28))]),
+                    h("strong", null, fmt(row.sn)+" SN")
+                ]);
+            }));
+        }
+        function renderScopeTable() {
+            if (!woRows.length) return empty("No Work Order rows available.");
+            return h("div", { className:"sqt-table-wrap" }, h("table", { className:"sqt-table" }, [
+                h("thead", null, h("tr", null, ["WO","LINE","MODEL / FAMILY","UNITS","RISK","RATE","STATE"].map(function(x){return h("th",{key:x},x);}))),
+                h("tbody", null, woRows.slice(0,10).map(function(row){return h("tr",{key:row.wo+row.line},[
+                    h("td",null,row.wo),h("td",null,row.line),h("td",null,shortText(row.family,30)),h("td",null,fmt(row.total)),h("td",null,fmt(row.risk)),h("td",null,row.total>0?pct(row.rate,2):"N/D"),h("td",null,h("span",{className:"sqt-state "+row.status.toLowerCase().replace(/\s+/g,"-")},row.status))
+                ]);}))
+            ]));
+        }
+
+        var topFailure = failureItems[0] ? failureItems[0].label : "N/D";
+        var cleanYield = k.cleanYield != null ? Number(k.cleanYield) : (k.yield != null ? Number(k.yield) : 0);
+        var totalUnits = Number(k.units || rows.reduce(function(sum,row){return sum+totalQty(row);},0));
+        var riskUnits = Number(k.risk || rows.reduce(function(sum,row){return sum+riskQty(row);},0));
+        var topLine = lineRows[0] ? lineRows[0].line : "N/D";
+
+        return h("section", { id:"smtinel-command-center", className:"smtinel-command-center sqt-command-center" }, [
+            h("details", { key:"map", className:"sqt-system-map", open:true }, [
+                h("summary", null, [h("b", null, "SYSTEM MAP"),h("span", null, "Open the original Huginn / Muninn process map and navigation hotspots")]),
+                h("div", { key:"hero", className:"smtinel-cc-canvas", role:"img", "aria-label":"SMTinel manufacturing command center interactive map" }, [
+                    h("div", { key:"shade", className:"smtinel-cc-vignette" }),
+                    h("div", { key:"title", className:"smtinel-cc-title" }, [h("span", null, "PROCESS"),h("b", null, "->"),h("span", null, "SIGNAL"),h("b", null, "->"),h("span", null, "IMPACT"),h("b", null, "->"),h("span", null, "DECISION")]),
+                    h("div", { key:"strip", className:"smtinel-cc-kpi-strip" }, [
+                        h("button", { className:"smtinel-cc-kpi risk", type:"button", onClick:function(){openTraceModule("yieldflow");} }, [h("span",null,"WOs impacted"),h("b",null,fmt(Number(k.orders || rows.length)))]),
+                        h("button", { className:"smtinel-cc-kpi warning", type:"button", onClick:function(){openTraceModule("yieldflow");} }, [h("span",null,"Risk units"),h("b",null,fmt(riskUnits))]),
+                        h("button", { className:"smtinel-cc-kpi signal", type:"button", onClick:function(){openTraceModule("boardimpact");} }, [h("span",null,"Unique refs"),h("b",null,fmt(refs || componentRows.length))]),
+                        h("button", { className:"smtinel-cc-kpi ok", type:"button", onClick:function(){openTraceModule("yieldflow");} }, [h("span",null,"Yield / Clean"),h("b",null,cleanYield?pct(cleanYield,1):"N/D")]),
+                        h("button", { className:"smtinel-cc-kpi memory", type:"button", onClick:function(){openTraceModule("rcca");} }, [h("span",null,"RCCA memory"),h("b",null,fmt(rccaCount))])
+                    ]),
+                    hotspot("hs-yield", "Yield Flow Overview", "output, progress and WO risk", "yieldflow", "yield"),
+                    hotspot("hs-signal", "Traceability Flow", "station path -> re-entry -> recovery", "recovery", "memory"),
+                    hotspot("hs-board", "Board Impact View", "heat map by RefDes", "boardimpact", "board"),
+                    hotspot("hs-ref", "U8300 / Reference Details", "open component context", "u8300", "board", { refdes:"U8300", defect:"Damaged Component", severity:"Critical" }),
+                    hotspot("hs-pareto", "Defect Pareto", "prioritize dominant cause", "criticalmodel", "risk"),
+                    hotspot("hs-recovery", "Recovery Intelligence", "bonepile, re-entry and bleeding", "recovery", "recovery"),
+                    hotspot("hs-maint", "Intel Log", "machine / part recurrence", "intellog", "memory"),
+                    hotspot("hs-huginn", "Huginn", "predictive alert and risk", "criticalmodel", "raven"),
+                    hotspot("hs-muninn", "RCCA Memory", "memory, evidence, 8D", "rcca", "raven"),
+                    h("div", { key:"pulse1", className:"smtinel-cc-pulse p1" }),h("div", { key:"pulse2", className:"smtinel-cc-pulse p2" }),h("div", { key:"pulse3", className:"smtinel-cc-pulse p3" })
+                ])
             ]),
-            h("div", { key:"routes", className:"smtinel-cc-routes" }, [
+            h("section", { key:"terminal", className:"sqt-shell" }, [
+                h("header", { key:"header", className:"sqt-header" }, [
+                    h("div", { className:"sqt-brand" }, [
+                        h("b", null, "SMTINEL // QUALITY TERMINAL"),
+                        h("span", null, "GENERAL OPERATIONS DASHBOARD")
+                    ]),
+                    h("div", { className:"sqt-head-meta" }, [
+                        h("span", { className:hasData?"live":"offline" }, hasData?"DATA READY":"WAITING DATA"),
+                        h("b", null, clockText),
+                        h("small", null, dateText)
+                    ])
+                ]),
+                h("div", { key:"cmd", className:"sqt-commandbar" }, [
+                    h("span", null, "SCOPE: "+scopeText),
+                    h("div", null, [
+                        h("button", { type:"button", onClick:function(){openTraceModule("yieldflow");} }, "[Y] YIELD"),
+                        h("button", { type:"button", onClick:function(){openTraceModule("boardimpact");} }, "[B] BOARD"),
+                        h("button", { type:"button", onClick:function(){openTraceModule("recovery");} }, "[R] RECOVERY"),
+                        h("button", { type:"button", onClick:function(){openTraceModule("rcca");} }, "[C] RCCA"),
+                        h("button", { type:"button", onClick:function(){openTraceModule("upload");} }, "[D] DATA")
+                    ])
+                ]),
+                h("div", { key:"ticker", className:"sqt-ticker" }, [
+                    terminalMetric("WORK ORDERS",fmt(Number(k.orders || rows.length)),"",rows.length?"active scope":""),
+                    terminalMetric("UNITS",fmt(totalUnits),"", "exposure"),
+                    terminalMetric("RISK UNITS",fmt(riskUnits),riskUnits>0?"red":"green",totalUnits?pct(riskUnits/Math.max(1,totalUnits)*100,1)+" of units":""),
+                    terminalMetric("CLEAN YIELD",cleanYield?pct(cleanYield,2):"N/D",cleanYield>=98?"green":cleanYield>=95?"amber":"red","Yield Flow"),
+                    terminalMetric("TOP FAILURE",shortText(topFailure,22),failureItems.length?"amber":"",failureItems[0]?fmt(failureItems[0].value)+" risk":""),
+                    terminalMetric("TOP LINE",topLine,lineRows[0]&&lineRows[0].rate>=15?"red":"cyan",lineRows[0]?pct(lineRows[0].rate,1):""),
+                    terminalMetric("REFDES",fmt(refs || componentRows.length),"cyan","Board Impact"),
+                    terminalMetric("RCCA MEMORY",fmt(rccaCount),"green",fmt(eightDCount)+" 8D")
+                ]),
+                h("div", { key:"grid", className:"sqt-grid" }, [
+                    termPanel("landscape","01 FAILURE LANDSCAPE","area = failure risk | color = operational severity",renderTreemap(),function(){openTraceModule("yieldflow");}),
+                    termPanel("breadth","02 QUALITY BREADTH","WO health and denominator readiness",renderBreadth(),function(){openTraceModule("yieldflow");}),
+                    termPanel("wire","03 QUALITY WIRE","current-scope signals generated from loaded evidence",renderWire(),null),
+                    termPanel("trend","04 YIELD / CLEAN TREND","weekly performance from Yield Flow",renderTrend(),function(){openTraceModule("yieldflow");}),
+                    termPanel("lines","05 LINE PERFORMANCE","normalized risk rate by active line",renderLines(),function(){openTraceModule("yieldflow");}),
+                    termPanel("components","06 CRITICAL COMPONENT MONITOR","RefDes concentration from Board Impact",renderComponents(),function(){openTraceModule("boardimpact");}),
+                    termPanel("scope","07 GLOBAL QUALITY TICKER","highest-risk Work Orders in the current scope",renderScopeTable(),function(){openTraceModule("yieldflow");})
+                ]),
+                h("footer", { key:"foot", className:"sqt-footer" }, [
+                    h("span", null, "PROCESS -> SIGNAL -> IMPACT -> DECISION"),
+                    h("span", null, "DATA: SFC + COMMON DB + CESIUM + BOARD IMPACT"),
+                    h("span", null, "MEMORY: "+fmt(rccaCount+eightDCount+maintenanceCount)+" OBJECTS")
+                ])
+            ]),
+            h("div", { key:"routes", className:"smtinel-cc-routes sqt-routes" }, [
                 routeButton("Import ZIP", "upload", "primary", "yield"),
                 routeButton("Open Yield Flow", "yieldflow", "", "yield"),
                 routeButton("Open Board Impact", "boardimpact", "", "board"),
                 routeButton("Recovery Intelligence", "recovery", "", "recovery"),
                 routeButton("Critical Model Analysis", "criticalmodel", "danger", "risk"),
-                routeButton("Características Críticas", "criticalchars", "", "risk")
+                routeButton("Critical Characteristics", "criticalchars", "", "risk")
             ]),
-            h("div", { key:"system", className:"smtinel-cc-system" }, [
-                h("div", { className:"smtinel-cc-system-card thought" }, [h("span", null, "HUGINN / THOUGHT"), h("b", null, risk > 0 ? fmt(risk) + " risk units under watch" : "No active signal noise"), h("p", null, "Predictive path: abnormal yield, defect concentration and outlier model detection." )]),
-                h("div", { className:"smtinel-cc-system-card pipeline" }, [h("span", null, "SIGNAL PIPELINE"), h("b", null, "Raw ZIP → XLSX → Sheets → Signal → Flow"), h("p", null, "The Fibonacci signal lane represents data cleaning, correlation and decision readiness." )]),
-                h("div", { className:"smtinel-cc-system-card memory" }, [h("span", null, "RCCA / MEMORY"), h("b", null, fmt(rccaCount + eightDCount + maintenanceCount) + " knowledge objects"), h("p", null, "RCCA, 8D, evidence archive and maintenance history are treated as operational memory." )])
+            h("div", { key:"system", className:"smtinel-cc-system sqt-system" }, [
+                h("div", { className:"smtinel-cc-system-card thought" }, [h("span", null, "HUGINN / THOUGHT"),h("b", null, riskUnits > 0 ? fmt(riskUnits)+" risk units under watch" : "No active signal noise"),h("p", null, "Predictive path: abnormal yield, defect concentration and outlier model detection.")]),
+                h("div", { className:"smtinel-cc-system-card pipeline" }, [h("span", null, "SIGNAL PIPELINE"),h("b", null, "Raw ZIP -> XLSX -> Sheets -> Signal -> Flow"),h("p", null, "The operational terminal exposes the same cleaned signal as a dense monitoring workspace.")]),
+                h("div", { className:"smtinel-cc-system-card memory" }, [h("span", null, "RCCA / MEMORY"),h("b", null, fmt(rccaCount+eightDCount+maintenanceCount)+" knowledge objects"),h("p", null, "RCCA, 8D, evidence archive and maintenance history remain the operational memory layer.")])
             ])
         ]);
     }
@@ -40293,7 +40558,7 @@ ${'</scr'+'ipt>'}
                     React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
                         React.createElement("path", { d: "M3 3v18h18M3 15h18M3 9h18M9 3v18M15 3v18" })),
                     React.createElement("span", { className: "hide-mobile" }, "📊 " + t("statisticalAnalysis"))))),
-        React.createElement("div", { className: "main-content" + ((!sidebarOpen || isMobile()) ? " expanded" : "") },
+        React.createElement("div", { className: "main-content" + ((!sidebarOpen || isMobile()) ? " expanded" : "") + (state === "idle" ? " smtinel-home-terminal-only" : "") },
             yieldSerialModal && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.48)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: closeYieldSerialModal },
                 React.createElement("div", { style: { background: "#fff", borderRadius: 18, maxWidth: 920, width: "100%", maxHeight: "86vh", overflow: "hidden", boxShadow: "0 20px 70px rgba(0,0,0,.28)", border: "1px solid #D9E6F7" }, onClick: function (e) { e.stopPropagation(); } },
                     React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #E7EEF9", background: "#F7FAFF", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 } },
@@ -40455,6 +40720,7 @@ ${'</scr'+'ipt>'}
                         rccaDetail.event_ids && rccaDetail.event_ids.length > 0 && (React.createElement("div", null,
                             React.createElement("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", color: "#2F6FB3", marginBottom: 5 } }, "Linked Events"),
                             React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, rccaDetail.event_ids.map(function (id) { return React.createElement("span", { key: id, style: { fontSize: 11, fontFamily: "monospace", background: "#EAF2FF", color: "#2F6FB3", borderRadius: 6, padding: "3px 9px", fontWeight: 600 } }, id); })))))))),
+            state === "idle" && renderSMTinelHomeHub(),
             React.createElement("div", { className: "ops-hero" },
                 React.createElement("div", { className: "ops-hero-bg", style: {
                         backgroundImage: 'linear-gradient(90deg, rgba(5,12,18,.88) 0%, rgba(5,12,18,.58) 42%, rgba(5,12,18,.22) 100%), radial-gradient(circle at 72% 44%, rgba(74,144,226,.22), transparent 48%), url("' + TRACEOPS_NIGHT_OPS_HERO + '")'
@@ -40484,7 +40750,6 @@ ${'</scr'+'ipt>'}
                                 target.scrollIntoView({ behavior: "smooth", block: "start" }); } }, t("recentAnalyses")))),
                     React.createElement("div", { className: "ops-hero-chips" }, t("chipsHero").map(function (item) { return React.createElement("span", { key: item }, item); })))),
             state === "idle" && (React.createElement("div", null,
-                renderSMTinelHomeHub(),
                 React.createElement("div", { className: "traceops-context" },
                     React.createElement("div", { className: "traceops-context-main" },
                         React.createElement("span", { className: "traceops-context-kicker" }, t("contextKicker")),
@@ -41833,7 +42098,16 @@ ${'</scr'+'ipt>'}
                                 React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "5px 8px", borderRadius: 999, background: active ? "#FFFFFF" : item.tone.bg, color: item.tone.color, border: "1px solid " + item.tone.border, flexShrink: 0 } }, item.count)));
                         }))),
                     React.createElement("div", { style: { padding: "16px 16px 16px" } },
-                        activeModule === "sentinelux" && renderSMTinelHomeHub(),
+                        activeModule === "sentinelux" && React.createElement("section", { className: "smtinel-command-center-relocated" },
+                            React.createElement("div", { className: "smtinel-command-center-relocated-copy" },
+                                React.createElement("div", { className: "smtinel-command-center-relocated-kicker" }, "GENERAL DASHBOARD"),
+                                React.createElement("h3", null, "Quality Terminal now lives on Home"),
+                                React.createElement("p", null, "The general factory cockpit is rendered on the SMTinel landing workspace. Command Center remains a navigation and system-intelligence entry point instead of duplicating the dashboard.")),
+                            React.createElement("div", { className: "smtinel-command-center-relocated-actions" },
+                                React.createElement("button", { type: "button", className: "primary", onClick: function () { setState("idle"); if (isMobile()) setSidebarOpen(false); setTimeout(function(){ window.scrollTo({top:0,behavior:"smooth"}); },10); } }, "Open General Dashboard"),
+                                React.createElement("button", { type: "button", onClick: function () { openTraceModule("yieldflow"); } }, "Yield Flow"),
+                                React.createElement("button", { type: "button", onClick: function () { openTraceModule("boardimpact"); } }, "Board Impact"),
+                                React.createElement("button", { type: "button", onClick: function () { openTraceModule("rcca"); } }, "RCCA"))),
                         activeModule === "storyline" && renderStorylineSection(),
                         false && activeModule === "nccapa" && React.createElement("div", { id: "nccapa-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } },
                             React.createElement("div", { style: { background: "linear-gradient(135deg,#102A43 0%,#1F3A5F 100%)", borderRadius: 18, padding: "18px 20px", color: "#fff", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" } },
@@ -52833,71 +53107,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 })();
 </script>
 
-<script id="traceops-v13-2-16-transparent-smt-icons-badge-sync">
-(function(){
-  var VERSION_TEXT='SMTinel V13.2.16 - PPT 8D Transparent SMT Process Icons - 2026-05-23';
-  function sync(){
-    try{
-      var nodes=document.querySelectorAll('.traceops-version-badge,.smtinel-version-badge,[data-version-badge],.version-badge');
-      nodes.forEach(function(n){ if(n && /SMTinel V/i.test(n.textContent||'')) n.textContent=VERSION_TEXT; });
-      var all=document.querySelectorAll('body *');
-      for(var i=0;i<all.length;i++){
-        var el=all[i];
-        if(el && el.children && el.children.length===0 && /SMTinel V13\./.test(el.textContent||'')) el.textContent=VERSION_TEXT;
-      }
-    }catch(e){}
-  }
-  window.TRACEOPS_SMTINEL_VERSION_TEXT=VERSION_TEXT;
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', sync); else sync();
-  setTimeout(sync,800); setTimeout(sync,2500);
-})();
-</script>
 
-<!-- SMTinel V13.2.17 - Fast typed Yield Flow filters -->
-<script>
-(function(){
-  var VERSION_TEXT = 'SMTinel V13.2.17 - Fast Typed Yield Flow Filters + Transparent SMT Icons - 2026-05-23';
-  window.SMTINEL_BUILD_VERSION = VERSION_TEXT;
-  window.SMTINEL_BUILD_BADGE = VERSION_TEXT;
-  window.TRACEOPS_YIELD_TYPED_FILTERS = { active: true, mode: 'type-to-filter-on-blur', reason: 'Avoid rendering thousands of select options in Yield Flow filters.' };
-  function syncBadge(){
-    try {
-      var all = document.querySelectorAll('body *');
-      for (var i = 0; i < all.length; i++) {
-        var el = all[i];
-        if (el && el.children && el.children.length === 0 && /SMTinel V13\./.test(el.textContent || '')) {
-          el.textContent = VERSION_TEXT;
-        }
-      }
-    } catch(_) {}
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge);
-  else syncBadge();
-  setTimeout(syncBadge, 800);
-  setTimeout(syncBadge, 2500);
-})();
-</script>
 
-<script id="smtinel-v13-2-18-safe-ppt-icons-sync">
-(function(){
-  var VERSION_TEXT = 'SMTinel V13.2.18 - PPT Safe Transparent SMT Icons + Fast Typed Filters - 2026-05-23';
-  window.SMTINEL_VERSION_TEXT = VERSION_TEXT;
-  function syncBadge(){
-    try{
-      var nodes = document.querySelectorAll('body *');
-      for(var i=0;i<nodes.length;i++){
-        var el = nodes[i];
-        if(el && el.childNodes && el.childNodes.length === 1 && /SMTinel V13\./.test(el.textContent || '')){
-          el.textContent = VERSION_TEXT;
-        }
-      }
-    }catch(e){}
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge); else syncBadge();
-  setTimeout(syncBadge, 500);
-  setTimeout(syncBadge, 1500);
-})();
-</script>
 
 <script>
 (function(){
@@ -52917,6 +53128,17 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 })();
 </script>
 
+
+<script id="smtinel-yield-typed-filter-bootstrap-safe">
+(function(){
+  'use strict';
+  window.TRACEOPS_YIELD_TYPED_FILTERS = {
+    active: true,
+    mode: 'type-to-filter-on-blur',
+    reason: 'Avoid rendering thousands of select options in Yield Flow filters.'
+  };
+})();
+</script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
   var VERSION_LABEL = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
@@ -64941,6 +65163,911 @@ html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-meta
 html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#687747!important;-webkit-text-fill-color:#687747!important}
 html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-toolbar{background:#F5F7F3!important;border-color:#CCD5C9!important}
 </style>
+<!-- SMTinel V81.2 Quality Terminal dark-lock + viewport layout polish -->
+<style id="smtinel-quality-terminal-v81-2-polish">
+/* The Quality Terminal is an intentional dark operational workspace in both app themes. */
+html body #smtinel-command-center.sqt-command-center{
+  width:100%!important;max-width:none!important;overflow:visible!important;
+}
+html body #smtinel-command-center .sqt-shell{
+  width:min(1860px,calc(100vw - 28px))!important;max-width:none!important;
+  margin-left:50%!important;margin-right:0!important;transform:translateX(-50%)!important;
+  background:linear-gradient(180deg,#070a08 0%,#030504 100%)!important;
+  background-image:linear-gradient(180deg,#070a08 0%,#030504 100%)!important;
+  color:#e5eee9!important;border-color:#26302b!important;
+  box-shadow:0 18px 54px rgba(0,0,0,.28)!important;color-scheme:dark!important;
+}
+html body #smtinel-command-center .sqt-shell :is(section,article,div,header,footer){border-color:#26302b;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-shell :is(.sqt-panel,[class*="sqt-panel"]),
+html body #smtinel-command-center .sqt-panel{
+  background:#0a0e0c!important;background-image:none!important;color:#e5eee9!important;
+  border-color:#26302b!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-grid{
+  background:#030504!important;background-image:none!important;
+  grid-template-columns:minmax(0,1.62fr) minmax(360px,.62fr)!important;
+}
+html body #smtinel-command-center .sqt-header{
+  background:#050807!important;background-image:none!important;color:#e5eee9!important;border-color:#39443e!important;
+}
+html body #smtinel-command-center .sqt-brand b,
+html body #smtinel-command-center .sqt-head-meta b{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-brand span,
+html body #smtinel-command-center .sqt-head-meta small{color:#76827b!important;}
+html body #smtinel-command-center .sqt-head-meta>span{border-color:#39443e!important;}
+html body #smtinel-command-center .sqt-head-meta>span.live{background:#00c983!important;color:#04110c!important;border-color:#00c983!important;}
+html body #smtinel-command-center .sqt-head-meta>span.offline{background:#ff9d00!important;color:#160d00!important;border-color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-commandbar{
+  background:#ff9d00!important;background-image:none!important;color:#110b00!important;border-color:#7c5000!important;
+}
+html body #smtinel-command-center .sqt-commandbar>span{color:#110b00!important;}
+html body #smtinel-command-center .sqt-commandbar button{
+  border-radius:1px!important;background:rgba(0,0,0,.10)!important;background-image:none!important;
+  color:#110b00!important;border-color:rgba(0,0,0,.38)!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-commandbar button:hover{background:#0a0e0c!important;color:#ff9d00!important;border-color:#0a0e0c!important;}
+html body #smtinel-command-center .sqt-ticker{background:#050807!important;background-image:none!important;border-color:#26302b!important;}
+html body #smtinel-command-center .sqt-metric{
+  background:transparent!important;background-image:none!important;border-color:#26302b!important;box-shadow:none!important;color:#e5eee9!important;
+}
+html body #smtinel-command-center .sqt-metric span{color:#76827b!important;}
+html body #smtinel-command-center .sqt-metric b{color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-metric em{color:#76827b!important;}
+html body #smtinel-command-center .sqt-metric.green b{color:#00c983!important;}
+html body #smtinel-command-center .sqt-metric.red b{color:#ff4b55!important;}
+html body #smtinel-command-center .sqt-metric.amber b{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-metric.cyan b{color:#45c7cf!important;}
+html body #smtinel-command-center .sqt-panel-head{
+  background:#070a08!important;background-image:none!important;color:#e5eee9!important;border-color:#26302b!important;
+}
+html body #smtinel-command-center .sqt-panel-head b{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-panel-head span{color:#66736c!important;}
+html body #smtinel-command-center .sqt-panel-head button{
+  border-radius:1px!important;background:#050807!important;background-image:none!important;color:#ff9d00!important;
+  border-color:#39443e!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-panel-head button:hover{background:#0d1310!important;color:#fff1cd!important;border-color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-panel-body{background:#0a0e0c!important;background-image:none!important;color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-empty{
+  min-height:118px!important;
+  background:repeating-linear-gradient(135deg,#070a08 0,#070a08 10px,#080d0a 10px,#080d0a 20px)!important;
+  color:#637068!important;border-color:#334039!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.012)!important;
+}
+html body #smtinel-command-center .sqt-breadth-grid{background:#050807!important;border-color:#26302b!important;}
+html body #smtinel-command-center .sqt-breadth-grid .sqt-metric{background:#070a08!important;border-color:#26302b!important;}
+html body #smtinel-command-center .sqt-ratio-row{color:#76827b!important;border-color:#26302b!important;}
+html body #smtinel-command-center .sqt-ratio-row b{color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-ratio-row b.warn{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-wire-row{border-color:#26302b!important;}
+html body #smtinel-command-center .sqt-wire-row b{color:#cdd7d1!important;}
+html body #smtinel-command-center .sqt-wire-tag.red{color:#ff4b55!important;}
+html body #smtinel-command-center .sqt-wire-tag.amber{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-wire-tag.cyan{color:#45c7cf!important;}
+html body #smtinel-command-center .sqt-wire-tag.green{color:#00c983!important;}
+html body #smtinel-command-center .sqt-wire-tag.muted{color:#76827b!important;}
+html body #smtinel-command-center .sqt-chart-kpi b{color:#00c983!important;}
+html body #smtinel-command-center .sqt-chart-kpi span{color:#76827b!important;}
+html body #smtinel-command-center .sqt-chart .grid{stroke:#1e2923!important;}
+html body #smtinel-command-center .sqt-chart .line{stroke:#00c983!important;}
+html body #smtinel-command-center .sqt-chart .area{fill:rgba(0,201,131,.08)!important;}
+html body #smtinel-command-center .sqt-chart .point{fill:#00c983!important;stroke:#07100c!important;}
+html body #smtinel-command-center .sqt-chart-labels{color:#67736c!important;}
+html body #smtinel-command-center .sqt-bar-row{
+  background:transparent!important;background-image:none!important;color:#e5eee9!important;border-radius:0!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-bar-row>span{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-bar-row>i{background:#050807!important;border-color:#39443e!important;}
+html body #smtinel-command-center .sqt-bar-row>i>em{background:#00c983!important;}
+html body #smtinel-command-center .sqt-bar-row>b{color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-bar-row>b.red{color:#ff4b55!important;}
+html body #smtinel-command-center .sqt-bar-row>b.amber{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-bar-row>b.green{color:#00c983!important;}
+html body #smtinel-command-center .sqt-bar-row>small{color:#5e6963!important;}
+html body #smtinel-command-center .sqt-component-list button{
+  border-radius:1px!important;background:#070a08!important;background-image:none!important;color:#e5eee9!important;
+  border-color:#26302b!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-component-list button:hover{background:#0d1310!important;border-color:#45c7cf!important;}
+html body #smtinel-command-center .sqt-component-list .rank{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-component-list b{color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-component-list small{color:#76827b!important;}
+html body #smtinel-command-center .sqt-component-list strong{color:#45c7cf!important;}
+html body #smtinel-command-center .sqt-tree-cell{
+  border-radius:1px!important;box-shadow:none!important;
+}
+html body #smtinel-command-center .sqt-tree-cell.green{background:#083728!important;color:#e6fff5!important;border-color:#12674c!important;}
+html body #smtinel-command-center .sqt-tree-cell.amber{background:#4a3005!important;color:#fff1cd!important;border-color:#8c5f0a!important;}
+html body #smtinel-command-center .sqt-tree-cell.red{background:#552126!important;color:#ffe8ea!important;border-color:#91363d!important;}
+html body #smtinel-command-center .sqt-tree-cell :is(b,strong,span){color:inherit!important;}
+html body #smtinel-command-center .sqt-table-wrap{background:#070a08!important;}
+html body #smtinel-command-center .sqt-table{background:#070a08!important;color:#e5eee9!important;}
+html body #smtinel-command-center .sqt-table th{background:#070a08!important;color:#ff9d00!important;border-color:#39443e!important;}
+html body #smtinel-command-center .sqt-table td{background:#0a0e0c!important;color:#bdc9c2!important;border-color:#17201b!important;}
+html body #smtinel-command-center .sqt-table tr:nth-child(even) td{background:#080c0a!important;}
+html body #smtinel-command-center .sqt-table tr:hover td{background:#0d1310!important;}
+html body #smtinel-command-center .sqt-state.critical{color:#ff4b55!important;}
+html body #smtinel-command-center .sqt-state.degraded,
+html body #smtinel-command-center .sqt-state.no-qty{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-state.watch{color:#45c7cf!important;}
+html body #smtinel-command-center .sqt-state.healthy{color:#00c983!important;}
+html body #smtinel-command-center .sqt-footer{background:#050807!important;color:#56625b!important;border-color:#26302b!important;}
+/* Generic light-theme text rewrites are intentionally neutralized inside the terminal. */
+html.smtinel-theme-light body #smtinel-command-center .sqt-shell :is(h1,h2,h3,h4,h5,h6,strong,b,th){color:#e5eee9!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-shell :is(p,small,label,.sub,.desc,.description,.muted){color:#76827b!important;}
+/* Reassert semantic colors after generic text lock. */
+html.smtinel-theme-light body #smtinel-command-center .sqt-brand b,
+html.smtinel-theme-light body #smtinel-command-center .sqt-head-meta b,
+html.smtinel-theme-light body #smtinel-command-center .sqt-panel-head b,
+html.smtinel-theme-light body #smtinel-command-center .sqt-table th{color:#ff9d00!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-metric.green b{color:#00c983!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-metric.red b{color:#ff4b55!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-metric.amber b{color:#ff9d00!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-metric.cyan b{color:#45c7cf!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-component-list strong{color:#45c7cf!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-chart-kpi b{color:#00c983!important;}
+html.smtinel-theme-light body #smtinel-command-center .sqt-tree-cell :is(b,strong,span){color:inherit!important;}
+/* Make the terminal the primary command-center surface; legacy system cards appear only with System Map open. */
+html body #smtinel-command-center .sqt-routes,
+html body #smtinel-command-center .sqt-system-map,
+html body #smtinel-command-center .sqt-system{
+  width:min(1860px,calc(100vw - 28px))!important;max-width:none!important;
+  margin-left:50%!important;margin-right:0!important;transform:translateX(-50%)!important;
+}
+html body #smtinel-command-center .sqt-system-map:not([open]) + .sqt-system{display:none!important;}
+html body #smtinel-command-center .sqt-system-map{
+  background:#0a0e0c!important;border-color:#26302b!important;color-scheme:dark!important;
+}
+html body #smtinel-command-center .sqt-system-map>summary{
+  background:#070a08!important;color:#e5eee9!important;border-color:#26302b!important;font-family:"Courier New",Consolas,monospace!important;
+}
+html body #smtinel-command-center .sqt-system-map>summary b{color:#ff9d00!important;}
+html body #smtinel-command-center .sqt-system-map>summary span{color:#76827b!important;}
+@media(max-width:1180px){
+  html body #smtinel-command-center .sqt-grid{grid-template-columns:1fr 1fr!important;grid-template-areas:"landscape landscape" "breadth wire" "trend trend" "lines components" "scope scope"!important;}
+}
+@media(max-width:760px){
+  html body #smtinel-command-center .sqt-shell,
+  html body #smtinel-command-center .sqt-routes,
+  html body #smtinel-command-center .sqt-system-map,
+  html body #smtinel-command-center .sqt-system{width:calc(100vw - 12px)!important;}
+}
+</style>
+
+<!-- SMTinel V81.4.1: Quality Terminal landing + legacy V13 bootstrap cleanup -->
+<style id="smtinel-v81-4-quality-terminal-landing">
+/* General dashboard is the first operational surface on the application landing page. */
+html body #root #smtinel-command-center.sqt-command-center{
+  margin-top:0!important;
+  margin-bottom:18px!important;
+}
+html body #root #smtinel-command-center.sqt-command-center + .ops-hero{
+  margin-top:18px!important;
+}
+@media(max-width:760px){
+  html body #root #smtinel-command-center.sqt-command-center{margin-bottom:12px!important;}
+  html body #root #smtinel-command-center.sqt-command-center + .ops-hero{margin-top:12px!important;}
+}
+</style>
+
+<!-- SMTinel V81.4.2: Quality Terminal landing-only placement -->
+<style id="smtinel-quality-terminal-landing-only-v81-4-2">
+.smtinel-command-center-relocated{
+  border:1px solid #d9deda;border-radius:20px;background:#f7f8f6;padding:24px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  box-shadow:0 8px 24px rgba(38,48,39,.06);
+}
+.smtinel-command-center-relocated-copy{min-width:260px;max-width:760px;flex:1;}
+.smtinel-command-center-relocated-kicker{font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#788476;margin-bottom:7px;}
+.smtinel-command-center-relocated h3{margin:0;color:#182019;font-size:20px;line-height:1.15;}
+.smtinel-command-center-relocated p{margin:8px 0 0;color:#59645a;font-size:12px;line-height:1.6;}
+.smtinel-command-center-relocated-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.smtinel-command-center-relocated-actions button{border:1px solid #c9d1c8;background:#fff;color:#33472d;border-radius:999px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;}
+.smtinel-command-center-relocated-actions button.primary{background:#33472d;color:#fff;border-color:#33472d;}
+.smtinel-command-center-relocated-actions button:hover{border-color:#788476;background:#eef1ed;}
+.smtinel-command-center-relocated-actions button.primary:hover{background:#263824;color:#fff;}
+/* In the internal Home/Landing state the Quality Terminal is the first operational surface. */
+html body #smtinel-command-center.sqt-command-center{margin-top:0!important;}
+@media(max-width:760px){.smtinel-command-center-relocated{padding:18px}.smtinel-command-center-relocated-actions{width:100%}.smtinel-command-center-relocated-actions button{flex:1 1 140px}}
+</style>
+
+<!-- SMTinel V81.4.3 Quality Terminal wide landscape dashboard -->
+<style id="smtinel-quality-terminal-v81-4-3-landscape">
+/* Break the landing dashboard out of old centered module widths. */
+html body .main-content > #smtinel-command-center.sqt-command-center,
+html body.traceops-premium-shell .main-content > #smtinel-command-center.sqt-command-center{
+  width:calc(100vw - 24px)!important;
+  max-width:none!important;
+  margin-left:calc(50% - 50vw + 12px)!important;
+  margin-right:0!important;
+  padding:0 0 112px!important;
+  box-sizing:border-box!important;
+}
+html body #smtinel-command-center .sqt-shell{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  border-radius:18px!important;
+}
+/* True cockpit layout: 3 columns x 2 primary rows. */
+html body #smtinel-command-center .sqt-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.75fr) minmax(250px,.62fr) minmax(250px,.68fr)!important;
+  grid-template-areas:
+    "landscape breadth wire"
+    "trend lines components"
+    "scope scope scope"!important;
+  grid-template-rows:auto auto auto!important;
+  align-items:stretch!important;
+}
+html body #smtinel-command-center .sqt-panel.landscape{grid-area:landscape!important;}
+html body #smtinel-command-center .sqt-panel.breadth{grid-area:breadth!important;}
+html body #smtinel-command-center .sqt-panel.wire{grid-area:wire!important;}
+html body #smtinel-command-center .sqt-panel.trend{grid-area:trend!important;}
+html body #smtinel-command-center .sqt-panel.lines{grid-area:lines!important;}
+html body #smtinel-command-center .sqt-panel.components{grid-area:components!important;}
+html body #smtinel-command-center .sqt-panel.scope{grid-area:scope!important;}
+/* Compact panels: monitor density, not report-page density. */
+html body #smtinel-command-center .sqt-panel-head{
+  min-height:34px!important;
+  padding:6px 9px!important;
+}
+html body #smtinel-command-center .sqt-panel-body{
+  padding:7px!important;
+  min-height:0!important;
+}
+html body #smtinel-command-center .sqt-treemap{
+  min-height:238px!important;
+  grid-auto-rows:minmax(70px,auto)!important;
+  gap:4px!important;
+}
+html body #smtinel-command-center .sqt-tree-cell{
+  padding:9px!important;
+  border-radius:9px!important;
+}
+html body #smtinel-command-center .sqt-tree-cell strong{font-size:17px!important;}
+html body #smtinel-command-center .sqt-tree-cell b{font-size:9px!important;}
+html body #smtinel-command-center .sqt-tree-cell span{font-size:7px!important;}
+html body #smtinel-command-center .sqt-breadth{
+  min-height:238px!important;
+  gap:5px!important;
+}
+html body #smtinel-command-center .sqt-breadth-grid .sqt-metric{
+  min-height:64px!important;
+  padding:7px 8px!important;
+}
+html body #smtinel-command-center .sqt-breadth-grid .sqt-metric b{font-size:21px!important;}
+html body #smtinel-command-center .sqt-ratio-row{
+  padding:6px 1px!important;
+  font-size:7.5px!important;
+}
+html body #smtinel-command-center .sqt-ratio-row b{font-size:10px!important;}
+html body #smtinel-command-center .sqt-wire{
+  min-height:238px!important;
+  max-height:238px!important;
+  overflow:auto!important;
+}
+html body #smtinel-command-center .sqt-wire-row{
+  grid-template-columns:58px 1fr!important;
+  gap:6px!important;
+  padding:6px 1px!important;
+}
+html body #smtinel-command-center .sqt-wire-row b{font-size:8px!important;}
+html body #smtinel-command-center .sqt-wire-tag{font-size:7px!important;}
+html body #smtinel-command-center .sqt-chart-wrap{
+  min-height:238px!important;
+  height:238px!important;
+  padding:5px 3px 0!important;
+  overflow:hidden!important;
+}
+html body #smtinel-command-center .sqt-chart{
+  height:178px!important;
+  margin-top:22px!important;
+}
+html body #smtinel-command-center .sqt-chart-kpi b{font-size:20px!important;}
+html body #smtinel-command-center .sqt-chart-labels{font-size:6.5px!important;}
+html body #smtinel-command-center .sqt-bars{
+  min-height:238px!important;
+  max-height:238px!important;
+  overflow:auto!important;
+  gap:5px!important;
+}
+html body #smtinel-command-center .sqt-bar-row{
+  grid-template-columns:34px minmax(58px,1fr) 40px!important;
+  gap:3px 5px!important;
+  padding:3px 0!important;
+}
+html body #smtinel-command-center .sqt-bar-row>small{
+  padding-left:39px!important;
+  font-size:6.5px!important;
+}
+html body #smtinel-command-center .sqt-component-list{
+  min-height:238px!important;
+  max-height:238px!important;
+  overflow:auto!important;
+  grid-template-columns:1fr!important;
+  gap:4px!important;
+}
+html body #smtinel-command-center .sqt-component-list button{
+  padding:6px!important;
+  border-radius:8px!important;
+}
+/* Empty component evidence should not become a giant white-space block. */
+html body #smtinel-command-center .sqt-panel.components .sqt-empty{
+  min-height:224px!important;
+  height:224px!important;
+}
+/* Global ticker becomes a compact terminal strip instead of another page. */
+html body #smtinel-command-center .sqt-panel.scope .sqt-panel-body{
+  padding:6px!important;
+}
+html body #smtinel-command-center .sqt-table-wrap{
+  max-height:210px!important;
+  min-height:0!important;
+  border-radius:8px!important;
+}
+html body #smtinel-command-center .sqt-table th,
+html body #smtinel-command-center .sqt-table td{
+  padding:5px 7px!important;
+  font-size:7.5px!important;
+}
+html body #smtinel-command-center .sqt-table th{font-size:7px!important;}
+html body #smtinel-command-center .sqt-empty{min-height:96px!important;}
+/* System map is a drill-down concept, not landing-page real estate. */
+html body #smtinel-command-center .sqt-system-map,
+html body #smtinel-command-center .sqt-routes,
+html body #smtinel-command-center .sqt-system{
+  display:none!important;
+}
+/* Wider KPI strip to reinforce horizontal scanning. */
+html body #smtinel-command-center .sqt-ticker{
+  grid-template-columns:repeat(8,minmax(0,1fr))!important;
+  overflow:hidden!important;
+}
+html body #smtinel-command-center .sqt-metric{
+  min-width:0!important;
+  padding:7px 9px!important;
+}
+html body #smtinel-command-center .sqt-metric b{font-size:14px!important;}
+html body #smtinel-command-center .sqt-metric span,
+html body #smtinel-command-center .sqt-metric em{font-size:6.5px!important;}
+@media(max-width:1320px){
+  html body #smtinel-command-center .sqt-grid{
+    grid-template-columns:minmax(0,1.5fr) minmax(240px,.72fr)!important;
+    grid-template-areas:
+      "landscape breadth"
+      "trend wire"
+      "lines components"
+      "scope scope"!important;
+  }
+}
+@media(max-width:900px){
+  html body .main-content > #smtinel-command-center.sqt-command-center,
+  html body.traceops-premium-shell .main-content > #smtinel-command-center.sqt-command-center{
+    width:calc(100vw - 12px)!important;
+    margin-left:calc(50% - 50vw + 6px)!important;
+  }
+  html body #smtinel-command-center .sqt-grid{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"landscape" "breadth" "wire" "trend" "lines" "components" "scope"!important;
+  }
+  html body #smtinel-command-center .sqt-ticker{
+    grid-template-columns:repeat(4,minmax(120px,1fr))!important;
+    overflow-x:auto!important;
+  }
+}
+</style>
+
+
+<!-- SMTinel V81.4.6: true full-landing mode, hide external injected docks only on Home/Idle -->
+<style id="smtinel-v81-4-6-true-full-landing">
+html body.smtinel-home-dashboard-active{
+  background:#050807!important;
+}
+/* These two utilities are mounted outside React/main-content, so hide them only while Home is the dashboard. */
+html body.smtinel-home-dashboard-active .smt-ictx,
+html body.smtinel-home-dashboard-active [data-smt-ictx="true"],
+html body.smtinel-home-dashboard-active #traceops-live-dock,
+html body.smtinel-home-dashboard-active .traceops-live-dock{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+}
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only{
+  padding:0 0 118px!important;
+  margin:0!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:calc(100dvh - 64px)!important;
+  background:#050807!important;
+}
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only #smtinel-command-center.sqt-command-center{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+}
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-shell{
+  width:100%!important;
+  max-width:none!important;
+  min-height:calc(100dvh - 64px)!important;
+  margin:0!important;
+  border-radius:0!important;
+  border-left:0!important;
+  border-right:0!important;
+  box-shadow:none!important;
+}
+/* Make Home feel like a cockpit, not a card sitting in a page. */
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-header{
+  border-radius:0!important;
+}
+@media(max-width:900px){
+  html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only{
+    padding:0 0 110px!important;
+  }
+  html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-shell{
+    min-height:0!important;
+    border-radius:0!important;
+  }
+}
+</style>
+<script id="smtinel-v81-4-6-home-dashboard-state">
+(function(){
+  function syncHomeDashboardState(){
+    try{
+      var active=!!document.querySelector('.main-content.smtinel-home-terminal-only #smtinel-command-center.sqt-command-center');
+      document.body.classList.toggle('smtinel-home-dashboard-active',active);
+    }catch(e){}
+  }
+  syncHomeDashboardState();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',syncHomeDashboardState,{once:true});
+  var root=document.getElementById('root')||document.body;
+  try{
+    var mo=new MutationObserver(syncHomeDashboardState);
+    mo.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  }catch(e){}
+  window.addEventListener('hashchange',syncHomeDashboardState);
+  window.addEventListener('popstate',syncHomeDashboardState);
+})();
+</script>
+
+
+<!-- SMTinel V81.5 Premium Hero Dashboard Theme -->
+<style id="smtinel-v81-5-premium-hero-dashboard">
+:root{
+  --smt-v815-bg:#060908;
+  --smt-v815-shell:#0A0F0C;
+  --smt-v815-card:#101612;
+  --smt-v815-card2:#0D120F;
+  --smt-v815-line:#263129;
+  --smt-v815-line2:#354338;
+  --smt-v815-ink:#F0F3EF;
+  --smt-v815-muted:#8E9A91;
+  --smt-v815-green:#789861;
+  --smt-v815-green-bright:#9AC778;
+  --smt-v815-olive:#526448;
+  --smt-v815-cyan:#70C8D3;
+  --smt-v815-red:#EF405A;
+  --smt-v815-blue:#3879BD;
+  --smt-v815-gold:#B69A59;
+}
+
+/* HOME COMPOSITION: utility docks -> hero -> operational dashboard */
+html body.smtinel-home-dashboard-active{
+  background:var(--smt-v815-bg)!important;
+}
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only{
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:18px clamp(12px,1.8vw,30px) 120px!important;
+  background:var(--smt-v815-bg)!important;
+  min-height:100dvh!important;
+  overflow:visible!important;
+}
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only > :not(#smtinel-command-center){
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center.sqt-command-center{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:16px!important;
+  width:100%!important;
+  max-width:1700px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  color:var(--smt-v815-ink)!important;
+}
+
+/* Restore utility docks on Home, matching the generated premium concept. */
+html body.smtinel-home-dashboard-active .smt-ictx,
+html body.smtinel-home-dashboard-active [data-smt-ictx="true"],
+html body.smtinel-home-dashboard-active #traceops-live-dock,
+html body.smtinel-home-dashboard-active .traceops-live-dock{
+  display:block!important;
+  visibility:visible!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:visible!important;
+  pointer-events:auto!important;
+  margin:12px clamp(12px,1.8vw,30px)!important;
+  padding:0!important;
+  border:0!important;
+  opacity:1!important;
+}
+html body.smtinel-home-dashboard-active .smt-ictx > *,
+html body.smtinel-home-dashboard-active [data-smt-ictx="true"] > *,
+html body.smtinel-home-dashboard-active #traceops-live-dock > *,
+html body.smtinel-home-dashboard-active .traceops-live-dock > *{
+  border-radius:18px!important;
+  border-color:#222A25!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.22)!important;
+}
+
+/* HERO: use the existing Huginn/Muninn Command Center artwork. */
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map{
+  display:block!important;
+  order:-2!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(117,150,91,.46)!important;
+  border-radius:26px!important;
+  overflow:hidden!important;
+  background:#080D0A!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 0 1px rgba(149,195,112,.04)!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>summary{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:clamp(430px,52vw,690px)!important;
+  max-height:72vh!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:24px!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  box-shadow:none!important;
+}
+/* Keep the hero image visually clean on the landing. Interactive overlays remain available in module views. */
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-title,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-kpi-strip,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-hotspot,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-pulse{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-vignette{
+  background:linear-gradient(180deg,rgba(4,8,6,.03),rgba(4,8,6,.14))!important;
+}
+
+/* QUALITY TERMINAL becomes the operational dashboard below the hero. */
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-shell{
+  order:1!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:0!important;
+  margin:0!important;
+  transform:none!important;
+  overflow:hidden!important;
+  border:1px solid var(--smt-v815-line)!important;
+  border-radius:24px!important;
+  background:linear-gradient(180deg,#0B100D 0%,#060908 100%)!important;
+  color:var(--smt-v815-ink)!important;
+  box-shadow:0 20px 58px rgba(0,0,0,.24)!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-header{
+  min-height:60px!important;
+  padding:13px 18px!important;
+  background:linear-gradient(90deg,#090E0B,#0D1410)!important;
+  border-bottom:1px solid var(--smt-v815-line)!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-brand b{
+  color:var(--smt-v815-ink)!important;
+  font-size:16px!important;
+  letter-spacing:.02em!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-brand span,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta small{
+  color:var(--smt-v815-muted)!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta b{color:var(--smt-v815-green-bright)!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta>span.live{
+  background:#263B26!important;color:#DDF3D5!important;border-color:#52724B!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta>span.offline{
+  background:#30372F!important;color:#D6DDD5!important;border-color:#556056!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar{
+  min-height:42px!important;
+  padding:8px 14px!important;
+  background:linear-gradient(90deg,#273823 0%,#405439 55%,#2A3827 100%)!important;
+  color:#F2F5F1!important;
+  border-color:#26382A!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar>span{color:#F2F5F1!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar button{
+  border-radius:999px!important;
+  background:#0B100D!important;
+  color:#E9EEEA!important;
+  border:1px solid #455248!important;
+  padding:5px 10px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar button:hover{
+  background:#152018!important;
+  color:#B8DA9E!important;
+  border-color:#708769!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-ticker{
+  background:#080C0A!important;
+  border-color:#1E2821!important;
+  grid-template-columns:repeat(8,minmax(116px,1fr))!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric{
+  min-height:72px!important;
+  padding:11px 12px!important;
+  border-right:1px solid #1D2720!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric span,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric em{color:#7E8A81!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric b{color:#F0F3EF!important;font-size:18px!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric.green b{color:#9BCB7D!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric.red b{color:#F25A68!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric.amber b{color:#C7AA68!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric.cyan b{color:#79CAD2!important;}
+
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.55fr) minmax(320px,.62fr)!important;
+  grid-template-areas:
+    "landscape breadth wire"
+    "trend lines components"
+    "scope scope scope"!important;
+  align-items:stretch!important;
+  background:#060908!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel{
+  min-width:0!important;
+  background:#0B100D!important;
+  color:var(--smt-v815-ink)!important;
+  border-color:#202B23!important;
+  box-shadow:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head{
+  min-height:39px!important;
+  padding:8px 12px!important;
+  background:#0E1411!important;
+  border-color:#222E26!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head b{color:#E5EAE6!important;font-size:10.5px!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head span{color:#728078!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head button{
+  background:#111713!important;color:#DDE4DE!important;border:1px solid #3A473D!important;border-radius:999px!important;padding:4px 10px!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head button:hover{background:#1B261E!important;color:#A6CF86!important;border-color:#657B5F!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-body{background:#0A0F0C!important;color:#DDE4DE!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-empty{
+  background:repeating-linear-gradient(135deg,#090D0B 0,#090D0B 12px,#0B100D 12px,#0B100D 24px)!important;
+  border-color:#354239!important;
+  color:#718077!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-tree-cell{
+  border-radius:14px!important;
+  border-width:1px!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-tree-cell.green{background:linear-gradient(180deg,#172A1E,#102018)!important;border-color:#3F6248!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-tree-cell.amber{background:linear-gradient(180deg,#2A2C21,#20231B)!important;border-color:#62664A!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-tree-cell.red{background:linear-gradient(180deg,#351C21,#251316)!important;border-color:#7B3D46!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-chart .line{stroke:var(--smt-v815-cyan)!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-chart .point{fill:var(--smt-v815-cyan)!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-chart .area{fill:rgba(112,200,211,.10)!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-bar-row>i>em{background:linear-gradient(90deg,#62BCC7,#8BBE70)!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table-wrap{
+  max-height:320px!important;
+  border-radius:14px!important;
+  border:1px solid #273229!important;
+  background:#080D0A!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table th{background:#101612!important;color:#B8C4B9!important;border-color:#2B372E!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table td{background:#0A0F0C!important;color:#C5CEC6!important;border-color:#1E2821!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-footer{background:#070B09!important;color:#68746B!important;border-color:#1D2720!important;}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-routes,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{display:none!important;}
+
+/* DARK utility surfaces, inspired by the other module screenshots. */
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active .smt-ictx,
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active [data-smt-ictx="true"],
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active #traceops-live-dock,
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active .traceops-live-dock{
+  color:#E7ECE8!important;
+}
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active .smt-ictx *,
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active [data-smt-ictx="true"] *,
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active #traceops-live-dock *,
+html:not(.smtinel-theme-light) body.smtinel-home-dashboard-active .traceops-live-dock *{
+  border-color:#29312C!important;
+}
+
+/* LIGHT counterpart: clean white/sage UI while the hero remains cinematic. */
+html.smtinel-theme-light body.smtinel-home-dashboard-active{
+  background:#EEF2EC!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only{
+  background:#EEF2EC!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-shell{
+  background:#F8FAF7!important;
+  color:#172018!important;
+  border-color:#CBD5C9!important;
+  box-shadow:0 18px 48px rgba(38,50,39,.10)!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-header{
+  background:#FCFDFB!important;border-color:#D4DDD2!important;color:#172018!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-brand b,
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta b{color:#172018!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-brand span,
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-head-meta small{color:#6D796E!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar{
+  background:linear-gradient(90deg,#33472D,#53684B)!important;color:#fff!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-commandbar button{
+  background:#F8FAF7!important;color:#33472D!important;border-color:#D4DDD2!important;
+}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-ticker{background:#F6F8F5!important;border-color:#D5DDD3!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric{border-color:#D8E0D6!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric b{color:#1B261D!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric span,
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-metric em{color:#6F7B70!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-grid{background:#EEF2EC!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel{background:#FCFDFB!important;color:#172018!important;border-color:#D2DBD0!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head{background:#F5F8F3!important;border-color:#D2DBD0!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head b{color:#243026!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head span{color:#6E7A70!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-head button{background:#FFFFFF!important;color:#33472D!important;border-color:#C9D4C7!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-panel-body{background:#FCFDFB!important;color:#1B251D!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-empty{background:#F6F8F5!important;color:#758176!important;border-color:#C6D1C4!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-breadth-grid{background:#F7F9F6!important;border-color:#D0DAD0!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-breadth-grid .sqt-metric{background:#FCFDFB!important;border-color:#D8E0D6!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-ratio-row,
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-wire-row{border-color:#D6DED4!important;color:#667168!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-wire-row b{color:#273129!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table-wrap{background:#FFFFFF!important;border-color:#CBD5C9!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table th{background:#EAF0E7!important;color:#33472D!important;border-color:#CDD7CB!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-table td{background:#FCFDFB!important;color:#263027!important;border-color:#DCE3D9!important;}
+html.smtinel-theme-light body.smtinel-home-dashboard-active #smtinel-command-center .sqt-footer{background:#F0F4EE!important;color:#667168!important;border-color:#D4DDD2!important;}
+
+@media(max-width:1320px){
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-grid{
+    grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr)!important;
+    grid-template-areas:"landscape breadth" "wire wire" "trend lines" "components components" "scope scope"!important;
+  }
+}
+@media(max-width:900px){
+  html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only{padding:10px 8px 108px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center{gap:10px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map{border-radius:18px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{min-height:340px!important;border-radius:17px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-shell{border-radius:18px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-grid{grid-template-columns:1fr!important;grid-template-areas:"landscape" "breadth" "wire" "trend" "lines" "components" "scope"!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-ticker{grid-template-columns:repeat(4,minmax(132px,1fr))!important;overflow-x:auto!important;}
+}
+</style>
+
+
+<!-- SMTinel V81.5.1 FINAL HERO RESTORE: must remain after legacy V81.4.x CSS -->
+<style id="smtinel-v81-5-1-final-hero-restore">
+/* Final cascade authority for Home composition: utilities -> HERO -> dashboard. */
+html body.smtinel-home-dashboard-active .main-content.smtinel-home-terminal-only > #smtinel-command-center.sqt-command-center,
+html body.smtinel-home-dashboard-active #smtinel-command-center.sqt-command-center{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:18px!important;
+  width:100%!important;
+  max-width:1700px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  transform:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map{
+  display:block!important;
+  visibility:visible!important;
+  order:-10!important;
+  width:100%!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(120,152,97,.46)!important;
+  border-radius:28px!important;
+  overflow:hidden!important;
+  background:#080D0A!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 0 1px rgba(149,195,112,.05)!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>summary{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+  display:block!important;
+  visibility:visible!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:none!important;
+  height:clamp(480px,49vw,720px)!important;
+  min-height:480px!important;
+  max-height:720px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:27px!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+/* Hero stays cinematic on Home. Hotspots and old overlay labels are module-only details. */
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-title,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-kpi-strip,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-hotspot,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-pulse{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-vignette{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,rgba(3,7,5,.02),rgba(3,7,5,.16))!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-shell{
+  display:block!important;
+  order:10!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:0!important;
+  margin:0!important;
+  transform:none!important;
+  border-radius:24px!important;
+}
+/* Legacy support surfaces remain hidden below the premium Home composition. */
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-routes,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
+  display:none!important;
+}
+@media(max-width:1100px){
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+    height:clamp(380px,56vw,560px)!important;
+    min-height:380px!important;
+  }
+}
+@media(max-width:760px){
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map{
+    border-radius:18px!important;
+  }
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+    height:340px!important;
+    min-height:340px!important;
+    border-radius:17px!important;
+    background-position:center center!important;
+  }
+}
+</style>
+
 </body>
 
 
@@ -65128,6 +66255,54 @@ html.smtinel-theme-light body :is(.smtinel-more-sheet,#smtinel-more-drawer-v8) :
 
 
 <!-- SMTinel V13.14.65 - DBN Vertical Generator From Index - 2026-08-12 -->
+
+<!-- SMTinel V81.4.4: true full-landing viewport breakout -->
+<style id="smtinel-quality-terminal-v81-4-4-full-landing">
+/* The dashboard lives inside nested landing wrappers. Break out from any parent max-width/padding. */
+html body #root #smtinel-command-center.sqt-command-center,
+html body #smtinel-command-center.sqt-command-center{
+  position:relative!important;
+  left:50%!important;
+  width:calc(100vw - 12px)!important;
+  max-width:calc(100vw - 12px)!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  transform:translateX(-50%)!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+}
+html body #smtinel-command-center .sqt-shell{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  transform:none!important;
+  border-radius:16px!important;
+}
+/* Keep all cockpit columns available across normal desktop widths. */
+@media(min-width:1321px){
+  html body #smtinel-command-center .sqt-grid{
+    grid-template-columns:minmax(0,1.7fr) minmax(270px,.64fr) minmax(290px,.72fr)!important;
+  }
+}
+/* Reduce landing-side gutters further on wide screens. */
+@media(min-width:1700px){
+  html body #root #smtinel-command-center.sqt-command-center,
+  html body #smtinel-command-center.sqt-command-center{
+    width:calc(100vw - 6px)!important;
+    max-width:calc(100vw - 6px)!important;
+  }
+  html body #smtinel-command-center .sqt-shell{border-radius:12px!important;}
+}
+@media(max-width:900px){
+  html body #root #smtinel-command-center.sqt-command-center,
+  html body #smtinel-command-center.sqt-command-center{
+    width:calc(100vw - 8px)!important;
+    max-width:calc(100vw - 8px)!important;
+  }
+}
+</style>
+
 </html>
 <!-- SMTinel V13.2.43 - Recovery Intelligence Export Fix: top Recovery Export button now downloads active scope CSV. -->
 
@@ -70863,3 +72038,423 @@ html.smtinel-theme-light body [data-traceops-eightd-editor="1"] .smtinel-8d-kick
 html.smtinel-theme-dark body [data-traceops-eightd-editor="1"] .smtinel-8d-kicker{color:#91a264!important;-webkit-text-fill-color:#91a264!important;}
 </style>
 
+
+
+<!-- SMTinel V81.1: Quality Terminal CSS moved outside JavaScript string literals -->
+<style id="smtinel-quality-terminal-v81">
+/* SMTinel V81 - General Quality Terminal */
+#smtinel-command-center.sqt-command-center{gap:14px!important;margin-top:10px!important;}
+#smtinel-command-center .sqt-shell{
+  --qt-bg:#050807;--qt-bg2:#090d0b;--qt-panel:#0a0e0c;--qt-line:#26302b;--qt-line2:#39443e;
+  --qt-amber:#ff9d00;--qt-green:#00c983;--qt-red:#ff4b55;--qt-cyan:#45c7cf;--qt-text:#e5eee9;--qt-muted:#76827b;
+  width:100%;max-width:1680px;margin:0 auto;border:1px solid #26302b;background:linear-gradient(180deg,#070a08,#030504);
+  color:var(--qt-text);font-family:"Courier New",Consolas,monospace;box-shadow:0 24px 70px rgba(5,8,7,.22);overflow:hidden;
+}
+#smtinel-command-center .sqt-header{min-height:48px;padding:8px 12px;border-bottom:1px solid #39443e;background:#050807;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+#smtinel-command-center .sqt-brand{display:flex;align-items:baseline;gap:12px;min-width:0;}
+#smtinel-command-center .sqt-brand b{font-size:14px;color:var(--qt-amber);letter-spacing:.04em;white-space:nowrap;}
+#smtinel-command-center .sqt-brand span{font-size:9px;color:var(--qt-muted);letter-spacing:.12em;}
+#smtinel-command-center .sqt-head-meta{display:flex;align-items:center;gap:9px;white-space:nowrap;font-size:10px;}
+#smtinel-command-center .sqt-head-meta>span{padding:4px 7px;border:1px solid var(--qt-line2);font-weight:900;}
+#smtinel-command-center .sqt-head-meta>span.live{color:#06110d;background:var(--qt-green);border-color:var(--qt-green);}
+#smtinel-command-center .sqt-head-meta>span.offline{color:#180b03;background:var(--qt-amber);border-color:var(--qt-amber);}
+#smtinel-command-center .sqt-head-meta b{font-size:13px;color:var(--qt-amber);}
+#smtinel-command-center .sqt-head-meta small{font-size:9px;color:var(--qt-muted);}
+#smtinel-command-center .sqt-commandbar{min-height:36px;padding:5px 10px;border-bottom:1px solid var(--qt-line);background:#ff9d00;color:#110b00;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10px;font-weight:900;overflow:hidden;}
+#smtinel-command-center .sqt-commandbar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#smtinel-command-center .sqt-commandbar>div{display:flex;gap:4px;flex-shrink:0;}
+#smtinel-command-center .sqt-commandbar button{border:1px solid rgba(0,0,0,.35);background:rgba(0,0,0,.08);color:#110b00;padding:4px 7px;font:inherit;font-size:9px;font-weight:900;cursor:pointer;border-radius:0;box-shadow:none;}
+#smtinel-command-center .sqt-commandbar button:hover{background:#111;color:#ff9d00;}
+#smtinel-command-center .sqt-ticker{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));border-bottom:1px solid var(--qt-line);background:#050807;overflow-x:auto;}
+#smtinel-command-center .sqt-metric{min-width:120px;padding:8px 10px;border-right:1px solid var(--qt-line);display:grid;gap:2px;background:transparent!important;}
+#smtinel-command-center .sqt-metric span{font-size:8px;color:var(--qt-muted);font-weight:900;letter-spacing:.08em;}
+#smtinel-command-center .sqt-metric b{font-size:15px;line-height:1.05;color:var(--qt-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#smtinel-command-center .sqt-metric em{font-style:normal;font-size:8px;color:var(--qt-muted);}
+#smtinel-command-center .sqt-metric.green b{color:var(--qt-green);}#smtinel-command-center .sqt-metric.red b{color:var(--qt-red);}#smtinel-command-center .sqt-metric.amber b{color:var(--qt-amber);}#smtinel-command-center .sqt-metric.cyan b{color:var(--qt-cyan);}
+#smtinel-command-center .sqt-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);grid-template-areas:"landscape breadth" "trend wire" "trend lines" "components lines" "scope scope";background:#030504;}
+#smtinel-command-center .sqt-panel{min-width:0;border-right:1px solid var(--qt-line);border-bottom:1px solid var(--qt-line);background:var(--qt-panel);}
+#smtinel-command-center .sqt-panel.landscape{grid-area:landscape;}#smtinel-command-center .sqt-panel.breadth{grid-area:breadth;}#smtinel-command-center .sqt-panel.wire{grid-area:wire;}#smtinel-command-center .sqt-panel.trend{grid-area:trend;}#smtinel-command-center .sqt-panel.lines{grid-area:lines;}#smtinel-command-center .sqt-panel.components{grid-area:components;}#smtinel-command-center .sqt-panel.scope{grid-area:scope;}
+#smtinel-command-center .sqt-panel-head{min-height:32px;padding:5px 8px;border-bottom:1px solid var(--qt-line);display:flex;align-items:center;justify-content:space-between;gap:8px;background:#070a08;}
+#smtinel-command-center .sqt-panel-head>div{min-width:0;display:flex;align-items:baseline;gap:8px;}
+#smtinel-command-center .sqt-panel-head b{font-size:9px;color:var(--qt-amber);letter-spacing:.04em;white-space:nowrap;}
+#smtinel-command-center .sqt-panel-head span{font-size:7.5px;color:#5d6862;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#smtinel-command-center .sqt-panel-head button{border:1px solid var(--qt-line2);background:#050807;color:var(--qt-muted);font:inherit;font-size:8px;font-weight:900;padding:3px 6px;border-radius:0;cursor:pointer;box-shadow:none;}
+#smtinel-command-center .sqt-panel-head button:hover{color:var(--qt-amber);border-color:var(--qt-amber);}
+#smtinel-command-center .sqt-panel-body{min-height:0;padding:8px;}
+#smtinel-command-center .sqt-empty{min-height:104px;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;border:1px dashed var(--qt-line2);color:var(--qt-muted);font-size:9px;line-height:1.45;}
+#smtinel-command-center .sqt-treemap{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:minmax(84px,auto);gap:3px;min-height:286px;}
+#smtinel-command-center .sqt-tree-cell{position:relative;border:1px solid var(--qt-line2);padding:8px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;overflow:hidden;cursor:pointer;border-radius:0;box-shadow:none;font-family:inherit;}
+#smtinel-command-center .sqt-tree-cell.xl{grid-column:span 3;grid-row:span 2;}#smtinel-command-center .sqt-tree-cell.lg{grid-column:span 2;}#smtinel-command-center .sqt-tree-cell.md{grid-column:span 2;}#smtinel-command-center .sqt-tree-cell.sm{grid-column:span 1;}
+#smtinel-command-center .sqt-tree-cell.green{background:#083728;color:#e6fff5;border-color:#12674c;}#smtinel-command-center .sqt-tree-cell.amber{background:#4a3005;color:#fff1cd;border-color:#8c5f0a;}#smtinel-command-center .sqt-tree-cell.red{background:#552126;color:#ffe8ea;border-color:#91363d;}
+#smtinel-command-center .sqt-tree-cell:hover{filter:brightness(1.16);}
+#smtinel-command-center .sqt-tree-cell b{font-size:10px;line-height:1.2;}#smtinel-command-center .sqt-tree-cell strong{font-size:22px;line-height:1;}#smtinel-command-center .sqt-tree-cell span{font-size:7.5px;opacity:.72;}
+#smtinel-command-center .sqt-breadth{display:grid;gap:8px;}.sqt-breadth-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--qt-line);}
+#smtinel-command-center .sqt-breadth-grid .sqt-metric{min-height:78px;border-bottom:1px solid var(--qt-line);}.sqt-breadth-grid .sqt-metric b{font-size:25px!important;}
+#smtinel-command-center .sqt-ratio-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px solid var(--qt-line);font-size:8.5px;color:var(--qt-muted);}.sqt-ratio-row b{color:var(--qt-text);font-size:12px}.sqt-ratio-row b.warn{color:var(--qt-amber);}
+#smtinel-command-center .sqt-wire{display:grid;}.sqt-wire-row{display:grid;grid-template-columns:72px 1fr;gap:8px;padding:7px 2px;border-bottom:1px solid var(--qt-line);align-items:start;}.sqt-wire-row:last-child{border-bottom:0}.sqt-wire-row b{font-size:9px;line-height:1.35;font-weight:700;color:#cdd7d1;}.sqt-wire-tag{font-size:8px;font-weight:900;letter-spacing:.04em;}.sqt-wire-tag.red{color:var(--qt-red)}.sqt-wire-tag.amber{color:var(--qt-amber)}.sqt-wire-tag.cyan{color:var(--qt-cyan)}.sqt-wire-tag.green{color:var(--qt-green)}.sqt-wire-tag.muted{color:var(--qt-muted)}
+#smtinel-command-center .sqt-chart-wrap{position:relative;min-height:320px;padding:8px 4px 0;}.sqt-chart-kpi{position:absolute;top:10px;left:12px;z-index:2;display:flex;align-items:baseline;gap:8px}.sqt-chart-kpi b{font-size:23px;color:var(--qt-green)}.sqt-chart-kpi span{font-size:8px;color:var(--qt-muted)}.sqt-chart{width:100%;height:255px;display:block;margin-top:22px;overflow:visible}.sqt-chart .grid{stroke:#1e2923;stroke-dasharray:3 4}.sqt-chart .line{fill:none;stroke:var(--qt-green);stroke-width:2.4;vector-effect:non-scaling-stroke}.sqt-chart .area{fill:rgba(0,201,131,.08);stroke:none}.sqt-chart .point{fill:var(--qt-green);stroke:#07100c;stroke-width:1.5}.sqt-chart-labels{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;color:#67736c;font-size:7px;text-align:center;overflow:hidden;}
+#smtinel-command-center .sqt-bars{display:grid;gap:8px;}.sqt-bar-row{display:grid;grid-template-columns:54px minmax(70px,1fr) 54px;grid-template-areas:"line bar rate" "sub sub sub";gap:4px 8px;align-items:center;border:0;background:transparent;color:var(--qt-text);font-family:inherit;padding:1px 0;cursor:pointer;text-align:left;border-radius:0;box-shadow:none}.sqt-bar-row>span{grid-area:line;font-size:9px;color:var(--qt-amber);font-weight:900}.sqt-bar-row>i{grid-area:bar;height:7px;border:1px solid var(--qt-line2);background:#050807;overflow:hidden}.sqt-bar-row>i>em{display:block;height:100%;background:var(--qt-green)}.sqt-bar-row>b{grid-area:rate;text-align:right;font-size:9px}.sqt-bar-row>b.red{color:var(--qt-red)}.sqt-bar-row>b.amber{color:var(--qt-amber)}.sqt-bar-row>b.green{color:var(--qt-green)}.sqt-bar-row>small{grid-area:sub;color:#5e6963;font-size:7px;padding-left:62px}
+#smtinel-command-center .sqt-component-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}.sqt-component-list button{display:grid;grid-template-columns:28px 1fr auto;gap:7px;align-items:center;border:1px solid var(--qt-line);background:#070a08;color:var(--qt-text);font-family:inherit;text-align:left;padding:7px;border-radius:0;box-shadow:none;cursor:pointer}.sqt-component-list button:hover{border-color:var(--qt-cyan)}.sqt-component-list .rank{color:var(--qt-amber);font-size:8px}.sqt-component-list b{font-size:10px}.sqt-component-list small{display:block;margin-top:2px;color:var(--qt-muted);font-size:7px}.sqt-component-list strong{color:var(--qt-cyan);font-size:9px;white-space:nowrap}
+#smtinel-command-center .sqt-table-wrap{overflow:auto;max-height:310px}.sqt-table{width:100%;border-collapse:collapse;font-size:8.5px;color:var(--qt-text);font-family:inherit}.sqt-table th{position:sticky!important;top:0!important;background:#070a08!important;color:var(--qt-amber)!important;border-bottom:1px solid var(--qt-line2)!important;padding:6px 7px!important;font-size:7.5px!important;letter-spacing:.06em!important}.sqt-table td{padding:6px 7px!important;border-bottom:1px solid #17201b!important;color:#bdc9c2!important;white-space:nowrap}.sqt-table tr:hover td{background:#0d1310!important}.sqt-state{font-size:7px;font-weight:900}.sqt-state.critical{color:var(--qt-red)}.sqt-state.degraded,.sqt-state.no-qty{color:var(--qt-amber)}.sqt-state.watch{color:var(--qt-cyan)}.sqt-state.healthy{color:var(--qt-green)}
+#smtinel-command-center .sqt-footer{min-height:30px;padding:6px 9px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#56625b;border-top:1px solid var(--qt-line);font-size:7.5px;letter-spacing:.05em;background:#050807;}
+#smtinel-command-center .sqt-routes{max-width:1680px!important;width:100%!important;margin:0 auto!important;}
+#smtinel-command-center .sqt-system-map{max-width:1680px;width:100%;margin:0 auto;border:1px solid rgba(57,64,34,.18);background:#fff;overflow:hidden;}
+#smtinel-command-center .sqt-system-map>summary{cursor:pointer;list-style:none;padding:10px 13px;display:flex;justify-content:space-between;gap:10px;background:#F1F2F0;color:#33472D;font-family:Segoe UI,Arial,sans-serif;border-bottom:1px solid #D9DEDA;}.sqt-system-map>summary::-webkit-details-marker{display:none}.sqt-system-map>summary b{font-size:11px;letter-spacing:.08em}.sqt-system-map>summary span{font-size:10px;color:#6b756e}.sqt-system-map:not([open])>.smtinel-cc-canvas{display:none!important}
+#smtinel-command-center .sqt-system{max-width:1680px!important;width:100%!important;margin:0 auto!important;}
+@media(max-width:1180px){#smtinel-command-center .sqt-grid{grid-template-columns:1fr 1fr;grid-template-areas:"landscape landscape" "breadth wire" "trend trend" "lines components" "scope scope"}.sqt-ticker{grid-template-columns:repeat(4,minmax(135px,1fr))!important}}
+@media(max-width:760px){#smtinel-command-center .sqt-shell{width:calc(100vw - 12px);margin-left:50%;transform:translateX(-50%)}#smtinel-command-center .sqt-header{align-items:flex-start;flex-direction:column}.sqt-brand{align-items:flex-start!important;flex-direction:column;gap:2px!important}.sqt-commandbar{align-items:flex-start!important;flex-direction:column}.sqt-commandbar>div{width:100%;overflow-x:auto}.sqt-ticker{grid-template-columns:repeat(8,minmax(125px,1fr))!important}.sqt-grid{display:block!important}.sqt-panel{border-right:0!important}.sqt-treemap{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:minmax(96px,auto)!important}.sqt-tree-cell.xl,.sqt-tree-cell.lg,.sqt-tree-cell.md,.sqt-tree-cell.sm{grid-column:span 1!important;grid-row:span 1!important}.sqt-component-list{grid-template-columns:1fr!important}.sqt-footer{align-items:flex-start!important;flex-direction:column}.sqt-system-map>summary span{display:none}}
+@media print{#smtinel-command-center .sqt-shell{box-shadow:none}.sqt-commandbar button,.sqt-panel-head button{display:none!important}}
+</style>
+
+<!-- SMTinel V81.3 injected fix -->
+<style id="smtinel-quality-terminal-v81-3-dbn-fix">
+/* SMTinel V81.3: Quality Terminal layout/grid correction + DBN palette alignment */
+html body #smtinel-command-center.sqt-command-center{
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0 auto 22px!important;
+  padding:0 16px 120px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+html body #smtinel-command-center .sqt-shell,
+html body #smtinel-command-center .sqt-routes,
+html body #smtinel-command-center .sqt-system-map,
+html body #smtinel-command-center .sqt-system{
+  width:100%!important;
+  max-width:1680px!important;
+  margin:0 auto!important;
+  transform:none!important;
+}
+html body #smtinel-command-center .sqt-shell{
+  border:1px solid #253129!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.22)!important;
+  background:linear-gradient(180deg,#0c120f 0%,#060907 100%)!important;
+}
+html body #smtinel-command-center .sqt-header{
+  min-height:56px!important;
+  padding:12px 18px!important;
+  background:#0e1411!important;
+  border-bottom:1px solid #253129!important;
+}
+html body #smtinel-command-center .sqt-brand b{
+  color:#f1f2f0!important;
+  font-size:16px!important;
+  letter-spacing:.02em!important;
+}
+html body #smtinel-command-center .sqt-brand span{color:#95a091!important;font-size:10px!important;letter-spacing:.14em!important;}
+html body #smtinel-command-center .sqt-head-meta b{color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-head-meta small{color:#95a091!important;}
+html body #smtinel-command-center .sqt-head-meta>span{border-color:#33472d!important;border-radius:999px!important;}
+html body #smtinel-command-center .sqt-head-meta>span.live{background:#3f5a38!important;border-color:#3f5a38!important;color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-head-meta>span.offline{background:#5b6659!important;border-color:#5b6659!important;color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-commandbar{
+  min-height:40px!important;
+  padding:8px 14px!important;
+  background:linear-gradient(90deg,#33472d 0%,#41533b 100%)!important;
+  color:#f1f2f0!important;
+  border-bottom:1px solid #233026!important;
+}
+html body #smtinel-command-center .sqt-commandbar>span{color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-commandbar button{
+  background:#0c120f!important;
+  color:#f1f2f0!important;
+  border:1px solid #5b6a59!important;
+  border-radius:999px!important;
+  padding:5px 10px!important;
+}
+html body #smtinel-command-center .sqt-commandbar button:hover{background:#f1f2f0!important;color:#33472d!important;border-color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-ticker{background:#0a0f0d!important;border-bottom:1px solid #233026!important;}
+html body #smtinel-command-center .sqt-metric{padding:12px 12px 10px!important;border-right:1px solid #1c2620!important;}
+html body #smtinel-command-center .sqt-metric span,
+html body #smtinel-command-center .sqt-metric em{color:#8b9788!important;}
+html body #smtinel-command-center .sqt-metric b{color:#f1f2f0!important;font-size:18px!important;}
+html body #smtinel-command-center .sqt-metric.green b{color:#8ed0a2!important;}
+html body #smtinel-command-center .sqt-metric.red b{color:#ff6b74!important;}
+html body #smtinel-command-center .sqt-metric.amber b{color:#c1d0a2!important;}
+html body #smtinel-command-center .sqt-metric.cyan b{color:#8bc3cf!important;}
+html body #smtinel-command-center .sqt-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.48fr) minmax(320px,.52fr)!important;
+  grid-template-areas:"landscape breadth" "trend wire" "trend lines" "components lines" "scope scope"!important;
+  align-items:stretch!important;
+  background:#060907!important;
+}
+html body #smtinel-command-center .sqt-panel{min-width:0!important;background:#0b100d!important;border-right:1px solid #1f2a23!important;border-bottom:1px solid #1f2a23!important;}
+html body #smtinel-command-center .sqt-panel-head{min-height:38px!important;padding:8px 12px!important;background:#0d1310!important;border-bottom:1px solid #1f2a23!important;}
+html body #smtinel-command-center .sqt-panel-head b{color:#d9deda!important;font-size:11px!important;}
+html body #smtinel-command-center .sqt-panel-head span{color:#7f8b7e!important;font-size:8px!important;}
+html body #smtinel-command-center .sqt-panel-head button{background:#121915!important;color:#d9deda!important;border:1px solid #4f5d4d!important;border-radius:999px!important;padding:4px 10px!important;}
+html body #smtinel-command-center .sqt-panel-head button:hover{background:#d9deda!important;color:#33472d!important;border-color:#d9deda!important;}
+html body #smtinel-command-center .sqt-panel-body{background:#0b100d!important;padding:10px!important;}
+html body #smtinel-command-center .sqt-empty{min-height:120px!important;color:#738071!important;border:1px dashed #3a4639!important;background:repeating-linear-gradient(135deg,#0b100d 0,#0b100d 10px,#0c120f 10px,#0c120f 20px)!important;}
+html body #smtinel-command-center .sqt-treemap{grid-template-columns:repeat(6,minmax(0,1fr))!important;grid-auto-rows:minmax(92px,auto)!important;min-height:300px!important;gap:6px!important;}
+html body #smtinel-command-center .sqt-tree-cell{border-radius:14px!important;padding:12px!important;border:1px solid #223027!important;}
+html body #smtinel-command-center .sqt-tree-cell.green{background:linear-gradient(180deg,#183325 0%,#13261d 100%)!important;border-color:#34634a!important;color:#eff8f1!important;}
+html body #smtinel-command-center .sqt-tree-cell.amber{background:linear-gradient(180deg,#293226 0%,#20291e 100%)!important;border-color:#5d7455!important;color:#eff8eb!important;}
+html body #smtinel-command-center .sqt-tree-cell.red{background:linear-gradient(180deg,#3b1e23 0%,#281317 100%)!important;border-color:#87464d!important;color:#ffecef!important;}
+html body #smtinel-command-center .sqt-tree-cell strong{font-size:18px!important;}
+html body #smtinel-command-center .sqt-tree-cell b{font-size:11px!important;}
+html body #smtinel-command-center .sqt-tree-cell span{font-size:8px!important;opacity:.82!important;}
+html body #smtinel-command-center .sqt-breadth-grid{border:1px solid #2a362e!important;background:#0a0f0d!important;}
+html body #smtinel-command-center .sqt-breadth-grid .sqt-metric{background:#0d1310!important;min-height:88px!important;}
+html body #smtinel-command-center .sqt-breadth-grid .sqt-metric b{font-size:28px!important;}
+html body #smtinel-command-center .sqt-ratio-row{padding:10px 2px!important;font-size:10px!important;border-bottom:1px solid #26322b!important;}
+html body #smtinel-command-center .sqt-ratio-row b{font-size:14px!important;color:#f1f2f0!important;}
+html body #smtinel-command-center .sqt-ratio-row b.warn{color:#c1d0a2!important;}
+html body #smtinel-command-center .sqt-wire-row{grid-template-columns:82px 1fr!important;gap:10px!important;padding:10px 2px!important;border-bottom:1px solid #223027!important;}
+html body #smtinel-command-center .sqt-wire-tag.red{color:#ff6b74!important;}
+html body #smtinel-command-center .sqt-wire-tag.amber{color:#c1d0a2!important;}
+html body #smtinel-command-center .sqt-wire-tag.cyan{color:#8bc3cf!important;}
+html body #smtinel-command-center .sqt-wire-tag.green{color:#8ed0a2!important;}
+html body #smtinel-command-center .sqt-chart-wrap{min-height:330px!important;padding:12px 6px 4px!important;}
+html body #smtinel-command-center .sqt-chart-kpi b{color:#8ed0a2!important;font-size:24px!important;}
+html body #smtinel-command-center .sqt-chart{height:260px!important;}
+html body #smtinel-command-center .sqt-chart .line{stroke:#64c2cc!important;}
+html body #smtinel-command-center .sqt-chart .area{fill:rgba(100,194,204,.12)!important;}
+html body #smtinel-command-center .sqt-chart .point{fill:#64c2cc!important;}
+html body #smtinel-command-center .sqt-chart .grid{stroke:#344039!important;}
+html body #smtinel-command-center .sqt-bar-row{padding:10px 0!important;}
+html body #smtinel-command-center .sqt-bar-row>span{color:#d9deda!important;}
+html body #smtinel-command-center .sqt-bar-row>i{background:#0a0f0d!important;border-color:#40503f!important;}
+html body #smtinel-command-center .sqt-bar-row>i>em{background:linear-gradient(90deg,#64c2cc,#8ed0a2)!important;}
+html body #smtinel-command-center .sqt-component-list button{background:#0d1310!important;border-radius:14px!important;border:1px solid #243028!important;}
+html body #smtinel-command-center .sqt-table-wrap{max-height:420px!important;overflow:auto!important;border-radius:14px!important;border:1px solid #243028!important;}
+html body #smtinel-command-center .sqt-table th{position:sticky!important;top:0!important;z-index:1!important;background:#0f1511!important;color:#d9deda!important;font-size:10px!important;}
+html body #smtinel-command-center .sqt-table td{color:#cfdbd0!important;font-size:10px!important;}
+html body #smtinel-command-center .sqt-footer{background:#08100c!important;color:#788476!important;border-top:1px solid #1e2923!important;}
+html body #smtinel-command-center .sqt-system-map{margin-top:14px!important;border:1px solid #243028!important;border-radius:18px!important;overflow:hidden!important;}
+html body #smtinel-command-center .sqt-system-map>summary{padding:12px 16px!important;background:#0e1411!important;color:#d9deda!important;}
+html body #smtinel-command-center .sqt-system-map>summary b{color:#d9deda!important;}
+html body #smtinel-command-center .sqt-system-map>summary span{color:#788476!important;}
+html body #smtinel-command-center .sqt-routes,
+html body #smtinel-command-center .sqt-system{display:none!important;}
+@media(max-width:1280px){html body #smtinel-command-center .sqt-grid{grid-template-columns:1fr 360px!important;}}
+@media(max-width:980px){
+  html body #smtinel-command-center.sqt-command-center{padding:0 10px 120px!important;}
+  html body #smtinel-command-center .sqt-grid{grid-template-columns:1fr!important;grid-template-areas:"landscape" "breadth" "wire" "trend" "lines" "components" "scope"!important;}
+  html body #smtinel-command-center .sqt-ticker{grid-template-columns:repeat(4,minmax(140px,1fr))!important;}
+}
+@media(max-width:760px){
+  html body #smtinel-command-center.sqt-command-center{padding:0 6px 110px!important;}
+  html body #smtinel-command-center .sqt-shell{width:100%!important;margin:0 auto!important;transform:none!important;border-radius:18px!important;}
+  html body #smtinel-command-center .sqt-header{padding:12px!important;}
+  html body #smtinel-command-center .sqt-commandbar{align-items:flex-start!important;flex-direction:column!important;}
+  html body #smtinel-command-center .sqt-commandbar>div{width:100%!important;overflow-x:auto!important;}
+  html body #smtinel-command-center .sqt-ticker{grid-template-columns:repeat(2,minmax(145px,1fr))!important;}
+  html body #smtinel-command-center .sqt-treemap{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  html body #smtinel-command-center .sqt-tree-cell.xl,
+  html body #smtinel-command-center .sqt-tree-cell.lg,
+  html body #smtinel-command-center .sqt-tree-cell.md,
+  html body #smtinel-command-center .sqt-tree-cell.sm{grid-column:span 1!important;grid-row:span 1!important;}
+}
+
+</style>
+
+
+<!-- SMTinel V81.4.5: Home IS the General Quality Terminal -->
+<style id="smtinel-v81-4-5-home-is-dashboard">
+/* In Home/idle mode the general dashboard is the landing content, not one card among many. */
+html body .main-content.smtinel-home-terminal-only{
+  width:100vw!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  padding:6px 4px 118px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+  background:#050807!important;
+  min-height:calc(100svh - 64px)!important;
+}
+/* Remove every legacy landing block in Home. The terminal remains the single operational landing surface. */
+html body .main-content.smtinel-home-terminal-only > :not(#smtinel-command-center){
+  display:none!important;
+}
+html body .main-content.smtinel-home-terminal-only > #smtinel-command-center.sqt-command-center{
+  display:block!important;
+  position:relative!important;
+  left:auto!important;
+  right:auto!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-shell{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  transform:none!important;
+  border-radius:10px!important;
+  min-height:calc(100svh - 78px)!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-grid{
+  grid-template-columns:minmax(0,1.62fr) minmax(280px,.58fr) minmax(300px,.66fr)!important;
+  grid-template-areas:
+    "landscape breadth wire"
+    "trend lines components"
+    "scope scope scope"!important;
+  align-items:stretch!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.landscape{grid-area:landscape!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.breadth{grid-area:breadth!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.wire{grid-area:wire!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.trend{grid-area:trend!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.lines{grid-area:lines!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.components{grid-area:components!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.scope{grid-area:scope!important;}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-treemap{
+  min-height:245px!important;
+  grid-auto-rows:minmax(74px,auto)!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-chart-wrap{
+  min-height:245px!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-chart{
+  height:190px!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel-body{
+  min-height:0!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.lines .sqt-panel-body,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.wire .sqt-panel-body,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-panel.components .sqt-panel-body{
+  max-height:278px!important;
+  overflow:auto!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-table-wrap{
+  max-height:250px!important;
+}
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-routes,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system{
+  display:none!important;
+}
+@media(max-width:1320px){
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-grid{
+    grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr)!important;
+    grid-template-areas:
+      "landscape breadth"
+      "wire wire"
+      "trend lines"
+      "components components"
+      "scope scope"!important;
+  }
+}
+@media(max-width:900px){
+  html body .main-content.smtinel-home-terminal-only{padding:4px 4px 110px!important;}
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-shell{min-height:0!important;border-radius:8px!important;}
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-grid{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"landscape" "breadth" "wire" "trend" "lines" "components" "scope"!important;
+  }
+}
+</style>
+
+<!-- SMTinel V81.5.2 ABSOLUTE EOF HERO RESTORE -->
+<style id="smtinel-v81-5-2-absolute-eof-hero-restore">
+/* This block intentionally lives at the physical EOF so legacy appended styles cannot hide the landing hero again. */
+html body.smtinel-home-dashboard-active #smtinel-command-center.sqt-command-center,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center.sqt-command-center{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:18px!important;
+  width:100%!important;
+  max-width:1700px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  transform:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  order:-100!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(120,152,97,.46)!important;
+  border-radius:28px!important;
+  overflow:hidden!important;
+  background:#080D0A!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 0 1px rgba(149,195,112,.05)!important;
+  pointer-events:auto!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>summary,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map>summary{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+  display:block!important;
+  visibility:visible!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:none!important;
+  height:clamp(480px,49vw,720px)!important;
+  min-height:480px!important;
+  max-height:720px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:27px!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-title,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-kpi-strip,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-hotspot,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-pulse,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map .smtinel-cc-title,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map .smtinel-cc-kpi-strip,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map .smtinel-cc-hotspot,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map .smtinel-cc-pulse{
+  display:none!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map .smtinel-cc-vignette,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map .smtinel-cc-vignette{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,rgba(3,7,5,.02),rgba(3,7,5,.16))!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-shell,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-shell{
+  order:10!important;
+}
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-routes,
+html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-routes,
+html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system{
+  display:none!important;
+}
+@media(max-width:1100px){
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas,
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+    height:clamp(380px,56vw,560px)!important;
+    min-height:380px!important;
+  }
+}
+@media(max-width:760px){
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map,
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map{border-radius:18px!important;}
+  html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas,
+  html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-system-map>.smtinel-cc-canvas{
+    height:340px!important;min-height:340px!important;border-radius:17px!important;
+  }
+}
+</style>
