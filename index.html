@@ -1,6 +1,8 @@
 <!-- SMTinel V81.1 Quality Terminal General Dashboard - Syntax Fix -->
 <!-- SMTinel V80 Semantic Metrics + Covered Population FR + Global DBN Shell -->
 <!DOCTYPE html>
+<!-- SMTinel V81.13: BU authority fix - LANCER / 73-20176-* resolves to CRBU from DB_Model; stale FIELDWORKS fallback corrected. -->
+
 
 <html lang="es">
 <head>
@@ -12193,9 +12195,11 @@ function traceOpsYieldApplyDbModel(sku, family, bu) {
     var dbBu = db && db.bu ? traceOpsYieldNormalizeBU(db.bu) : "";
     var explicitBu = bu ? traceOpsYieldNormalizeBU(bu) : "";
     var inferredBu = traceOpsYieldInferBU("", outFamily, outSku);
-    // BU authority: SFC row BU by SN > DB catalog > family fallback.
-    // Example: LANCER / 73-20176-03 can appear as FIELDWORKS in DB_Model,
-    // but if SFC says CRBU, UI and serial tables must show CRBU.
+    // BU authority: explicit row BU > DB catalog > family fallback.
+    // Guardrail V81.13: LANCER / 73-20176-* belongs to CRBU in the loaded DB_Model.
+    // Older cached enrichment could carry FIELDWORKS from the former family fallback; correct that stale mapping.
+    var _buKey = traceOpsYieldNorm([outFamily, outSku].join(' '));
+    if (explicitBu === 'FIELDWORKS' && dbBu === 'CRBU' && /lancer|73[ -]?20176/.test(_buKey)) explicitBu = dbBu;
     var outBu = explicitBu || dbBu || inferredBu;
     return { sku: outSku, family: outFamily, bu: outBu, db: db };
 }
@@ -13775,7 +13779,10 @@ function traceOpsYieldInferBU(rawBu, family, sku) {
     // Family inference is only fallback when SFC/explicit BU is missing.
     if (/woodside|tuffnel|tufnell|csf|warwick|maryland|brentwood|shenfield|ngfw/.test(key))
         return 'NGFWBU';
-    if (/westminster|hyde park|fieldwork|fieldworks|lancer/.test(key))
+    // LANCER is CRBU in DB_Model (73-20176 family). Never infer it as FIELDWORKS.
+    if (/lancer|73[ -]?20176/.test(key))
+        return 'CRBU';
+    if (/westminster|hyde park|fieldwork|fieldworks/.test(key))
         return 'FIELDWORKS';
     return explicit ? traceOpsYieldNormalizeBU(explicit) : 'NGFWBU';
 }
@@ -38044,17 +38051,23 @@ body:has(#recovery-section) .main-content.expanded{
     }
     function traceOpsBonepileResolveBU(rawBu, family, sku) {
         var raw = String(rawBu || '').trim();
+        var db = typeof traceOpsYieldDbLookup === 'function' ? traceOpsYieldDbLookup(sku) : null;
+        var dbBu = String(db && db.bu || '').trim();
+        var _identityKey = String((family || '') + ' ' + (sku || '')).toLowerCase();
+        // V81.13 stale-cache guard: exact LANCER catalog mapping wins over the obsolete FIELDWORKS inference.
+        if (/lancer|73[- ]?20176/.test(_identityKey) && String(raw || '').toUpperCase() === 'FIELDWORKS' && String(dbBu || '').toUpperCase() === 'CRBU') {
+            return 'CRBU';
+        }
         if (raw && typeof traceOpsYieldIsCanonicalBU === 'function' && traceOpsYieldIsCanonicalBU(raw)) {
             return typeof traceOpsYieldNormalizeBU === 'function' ? traceOpsYieldNormalizeBU(raw) : raw.toUpperCase();
         }
-        var db = typeof traceOpsYieldDbLookup === 'function' ? traceOpsYieldDbLookup(sku) : null;
-        var dbBu = String(db && db.bu || '').trim();
         if (dbBu && typeof traceOpsYieldIsCanonicalBU === 'function' && traceOpsYieldIsCanonicalBU(dbBu)) {
             return typeof traceOpsYieldNormalizeBU === 'function' ? traceOpsYieldNormalizeBU(dbBu) : dbBu.toUpperCase();
         }
         var key = String((family || '') + ' ' + (sku || '')).toLowerCase();
         if (/woodside|tuffnel|tufnell|csf|warwick|maryland|brentwood|shenfield|ngfw/.test(key)) return 'NGFWBU';
-        if (/westminster|hyde park|fieldwork|fieldworks|lancer/.test(key)) return 'FIELDWORKS';
+        if (/lancer|73[- ]?20176/.test(key)) return 'CRBU';
+        if (/westminster|hyde park|fieldwork|fieldworks/.test(key)) return 'FIELDWORKS';
         return '';
     }
     function traceOpsBonepileBuildPayload() {
