@@ -1,0 +1,49 @@
+name: Apply End-of-Shift Commit Readiness
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/apply_end_shift_commit_readiness.py'
+      - '.github/workflows/apply-end-shift-commit-readiness.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply Commit Readiness patch
+        run: python tools/apply_end_shift_commit_readiness.py
+
+      - name: Validate expected markers
+        shell: bash
+        run: |
+          grep -q 'SMTinel End-of-Shift Commit Readiness V1' index.html
+          grep -q 'Commit Readiness / JIT Forecast' index.html
+          grep -q 'COMMIT READINESS, BLOCKERS AND CFT MOBILIZATION' index.html
+          git diff --check
+
+      - name: Commit updated root index
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'index.html already contains the Commit Readiness update.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Update End-of-Shift commit readiness'
+          git push origin HEAD:main
