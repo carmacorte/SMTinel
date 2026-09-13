@@ -31,11 +31,43 @@ jobs:
       - name: Apply Commit Execution Board V2
         run: python tools/apply_end_shift_commit_board_v2.py
 
+      - name: Apply Cesium HxH V3
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='SMTinel End-of-Shift Cesium HxH V3'
+          if marker not in s:
+              js=r'''/* SMTinel End-of-Shift Cesium HxH V3 */
+          (function(){
+          function hxhPanel(metrics){
+            var rows=(metrics||[]).filter(function(m){return Number(m.ftObserved||0)>0&&String(m.terminal||'N/D')!=='N/D'}).sort(function(a,b){return reportCommitRiskRank(b.status)-reportCommitRiskRank(a.status)});
+            if(!rows.length)return '<div style="margin-top:10px;padding:12px;border:1px solid #c9d4df;border-radius:7px;background:#f8fafc;color:#536b86;font-size:11px"><b>Cesium HxH Performance</b><br>No FT evidence is linked to the current WO population yet. HxH, FPY and Forecast activate automatically when Cesium bridges to these serials / WOs.</div>';
+            var m=rows[0],g=m.group||{},hrs=(m.hourRows||[]),max=Math.max(1,Number(m.requiredHxh||0));hrs.forEach(function(h){max=Math.max(max,Number(h.good||0))});
+            var bars=hrs.map(function(h){var z=Math.max(2,Number(h.good||0)/max*100);return '<div style="flex:1;text-align:center"><b style="font-size:10px;color:#33472d">'+Number(h.good||0)+'</b><div style="height:'+z+'px;background:#788476;border-radius:3px 3px 0 0;margin:3px auto 0;max-width:52px"></div><small style="font-size:8px;color:#60758f">'+esc(h.label)+'</small></div>'}).join('');
+            var area=(m.stationSummary||[]).map(function(x){return '<tr><td>'+esc(x.station)+'</td><td>'+Number(x.unique||0)+'</td><td>'+(x.fpy==null?'N/D':Number(x.fpy).toFixed(1)+'%')+'</td><td><b>'+Number(x.lastHourGood||0)+'</b></td><td>'+Number(x.openNg||0)+'</td></tr>'}).join('')||'<tr><td colspan="5">No Test Area evidence.</td></tr>';
+            var gap=m.requiredHxh==null?null:Number(m.effectiveHxh||0)-Number(m.requiredHxh);
+            return '<div style="margin-top:12px;border:1px solid #9fb6cf;border-radius:7px;background:#f7f9fb;padding:12px"><div style="display:flex;justify-content:space-between"><div><b>Cesium HxH · '+esc(g.family||'N/D')+'</b><div style="font-size:9px;color:#60758f">WO '+esc(g.wo||'N/D')+' · Forecast Test Area '+esc(m.terminal)+'</div></div><b style="color:'+reportCommitTone(m.status).color+'">'+esc(m.status)+'</b></div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:8px"><div><small>ACTUAL HxH</small><b>'+Number(m.effectiveHxh||0).toFixed(1)+'/h</b></div><div><small>REQUIRED HxH</small><b>'+(m.requiredHxh==null?'N/D':Number(m.requiredHxh).toFixed(1)+'/h')+'</b></div><div><small>PACE GAP</small><b>'+(gap==null?'N/D':((gap>=0?'+':'')+gap.toFixed(1)+'/h'))+'</b></div><div><small>FT FPY</small><b>'+(m.fpy==null?'N/D':Number(m.fpy).toFixed(1)+'%')+'</b></div><div><small>FUNCTIONAL NG</small><b>'+Number(m.functionalNg||0)+'</b></div></div><div style="display:grid;grid-template-columns:1.3fr .7fr;gap:10px;margin-top:10px"><div style="background:#fff;border:1px solid #d7e0ea;border-radius:7px;padding:8px"><b>HxH Trend · Complete Hours (Good Unique SN)</b><div style="height:145px;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid #ccd6df;padding:8px 8px 18px">'+bars+'</div><div style="font-size:9px;color:#c8202f;margin-top:4px">Required HxH: '+(m.requiredHxh==null?'N/D':Number(m.requiredHxh).toFixed(1)+'/h')+'</div></div><div style="background:#fff;border:1px solid #d7e0ea;border-radius:7px;padding:8px"><b>Test Area Performance</b><table class="hxh3"><thead><tr><th>Area</th><th>SN</th><th>FPY</th><th>Last HxH</th><th>Open NG</th></tr></thead><tbody>'+area+'</tbody></table></div></div><div style="font-size:9px;color:#60758f;margin-top:6px"><b>HxH:</b> unique SN at first valid PASS in the forecast Test Area per complete hour. Retests do not inflate physical output.</div></div>';
+          }
+          var base=reportCommitReadinessSection;reportCommitReadinessSection=function(m,t,h){return base(m,t,h)+hxhPanel(m)};
+          })();
+          '''
+              pos=s.find('function finalShiftReportHtml()')
+              if pos < 0: raise SystemExit('finalShiftReportHtml not found')
+              s=s[:pos]+js+'\n'+s[pos:]
+              s=s.replace('</head>','<style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style></head>',1)
+              p.write_text(s,encoding='utf-8',newline='')
+          print('Cesium HxH V3 applied')
+          PY
+
       - name: Validate expected markers
         shell: bash
         run: |
           grep -q 'SMTinel End-of-Shift Commit Readiness V1' index.html
           grep -q 'SMTinel Commit Execution Board V2' index.html
+          grep -q 'SMTinel End-of-Shift Cesium HxH V3' index.html
           grep -q 'Commit Execution Board' index.html
           grep -q 'COMMIT READINESS, BLOCKERS AND CFT MOBILIZATION' index.html
           git diff --check
@@ -44,11 +76,11 @@ jobs:
         shell: bash
         run: |
           if git diff --quiet -- index.html; then
-            echo 'index.html already contains the Commit Execution Board V2 update.'
+            echo 'index.html already contains the End-of-Shift updates.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'Update End-of-Shift Commit Execution Board V2'
+          git commit -m 'Add Cesium HxH to End-of-Shift Commit Board'
           git push origin HEAD:main
