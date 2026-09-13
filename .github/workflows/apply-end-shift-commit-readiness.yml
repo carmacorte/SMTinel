@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'tools/apply_end_shift_commit_readiness.py'
+      - 'tools/apply_end_shift_commit_board_v2.py'
       - '.github/workflows/apply-end-shift-commit-readiness.yml'
 
 permissions:
@@ -24,14 +25,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply Commit Readiness patch
+      - name: Apply Commit Readiness V1
         run: python tools/apply_end_shift_commit_readiness.py
+
+      - name: Apply Commit Execution Board V2
+        run: python tools/apply_end_shift_commit_board_v2.py
 
       - name: Validate expected markers
         shell: bash
         run: |
           grep -q 'SMTinel End-of-Shift Commit Readiness V1' index.html
-          grep -q 'Commit Readiness / JIT Forecast' index.html
+          grep -q 'SMTinel Commit Execution Board V2' index.html
+          grep -q 'Commit Execution Board' index.html
           grep -q 'COMMIT READINESS, BLOCKERS AND CFT MOBILIZATION' index.html
           git diff --check
 
@@ -39,11 +44,11 @@ jobs:
         shell: bash
         run: |
           if git diff --quiet -- index.html; then
-            echo 'index.html already contains the Commit Readiness update.'
+            echo 'index.html already contains the Commit Execution Board V2 update.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git commit -m 'Update End-of-Shift commit readiness'
+          git commit -m 'Update End-of-Shift Commit Execution Board V2'
           git push origin HEAD:main
