@@ -12807,6 +12807,10 @@ function traceOpsYieldEnrichComponent(componentCode) {
 }
 
 function traceOpsYieldBuildFromImported(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows) {
+    /* SMTinel Cesium Direct Bridge V8: persist raw SFC/Cesium at the source of truth. */
+    try { window.TRACEOPS_YIELD_RAW_SFC_ROWS = Array.isArray(sfcRows) ? sfcRows.slice() : []; } catch (_) {}
+    try { window.TRACEOPS_YIELD_RAW_CESIUM_ROWS = Array.isArray(cesiumRows) ? cesiumRows.slice() : []; } catch (_) {}
+    try { window.SMTINEL_CESIUM_V8_SOURCE_DIAG = { sfcRows: Array.isArray(sfcRows) ? sfcRows.length : 0, cesiumRows: Array.isArray(cesiumRows) ? cesiumRows.length : 0, capturedAt: new Date().toISOString(), bridge: 'SFC.SN -> Cesium.sysserialno' }; } catch (_) {}
     var woMap = {}, snToSfc = {}, sfcByWo = {}, repairsByWo = {}, repairsClean = [], repairRowsBySnRaw = {};
     var allSfcEvents = [];
     var validRepairRawRows = 0;
@@ -39451,9 +39455,11 @@ function sfcSerialSet(group){
 
 function directRows(group){
   var raw=[];try{raw=window.TRACEOPS_YIELD_RAW_CESIUM_ROWS||[]}catch(_){}
+  try{if((!Array.isArray(raw)||!raw.length)&&Array.isArray(window.TRACEOPS_YIELD_CESIUM_RAW_ROWS))raw=window.TRACEOPS_YIELD_CESIUM_RAW_ROWS}catch(_){}
+  try{if((!Array.isArray(raw)||!raw.length)&&typeof TRACEOPS_YIELD_MODEL_CACHE!=='undefined'&&TRACEOPS_YIELD_MODEL_CACHE&&TRACEOPS_YIELD_MODEL_CACHE.value){var cv=TRACEOPS_YIELD_MODEL_CACHE.value;raw=cv.cesiumRows||cv.cesiumRaw||cv.cesium||raw}}catch(_){}
   if(!Array.isArray(raw)||!raw.length)return {rows:[],diag:null};
   var set=sfcSerialSet(group),seen={},out=[],matchedSn={};
-  var diag={wo:group&&group.wo||'',sfcSn:Object.keys(set).length,cesiumRows:raw.length,snMatches:0,woMatches:0,productionRows:0,debugRows:0,productionSn:0,debugSn:0,directBridge:true,source:'RAW_CESIUM.sysserialno'};
+  var diag={wo:group&&group.wo||'',sfcSn:Object.keys(set).length,cesiumRows:raw.length,snMatches:0,woMatches:0,productionRows:0,debugRows:0,productionSn:0,debugSn:0,directBridge:true,source:'DIRECT:SFC.SN->Cesium.sysserialno'};
   var prodSn={},dbgSn={};
   raw.forEach(function(r){r=r||{};
     var sys=cleanSn(pick(r,['sysserialno','syserialno','SysSerialNo','SN','Serial','Serial Number']));
@@ -66497,6 +66503,7 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
 
 
 <!-- SMTinel V81.11: strict DBN serial hierarchy (SFC UUT / Cesium chassis) + V81.10 fixes -->
+<!-- SMTinel Cesium Direct Bridge V8 - core raw capture + direct SN bridge -->
 </body>
 
 
