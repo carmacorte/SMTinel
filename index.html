@@ -1,4 +1,3 @@
-<!-- SMTinel V13.14.81: Global End-of-Shift scope filters propagate Run Follow-up BU/Line/Model/SKU/WO/Flow/Priority to Commit, WIP, Station, Repair and Quality sections. -->
 <!-- SMTinel V81.1 Quality Terminal General Dashboard - Syntax Fix -->
 <!-- End-of-Shift enhancement 2026-09-11: WO model Version + expandable serials by current station -->
 <!-- SMTinel V80 Semantic Metrics + Covered Population FR + Global DBN Shell -->
@@ -8,7 +7,7 @@
 
 <html lang="es">
 <head>
-<!-- SMTinel stable baseline: index(10).zip | Product/detail containment fix only | V13.14.80 -->
+<!-- SMTinel stable baseline: index(10).zip | Product/detail containment fix only | V13.14.83 -->
 
 <script id="smtinel-v63-8d-adaptive-themes">
 (function(){
@@ -39499,7 +39498,7 @@ function reportCommitEvidenceHtml(m){
 /* SMTinel End-of-Shift Commit Execution Board V12.1 */
 (function(){
 'use strict';
-var V12_BUILD='COMMIT-EXECUTION-V12.5-GLOBAL-SCOPE';
+var V12_BUILD='COMMIT-EXECUTION-V12.4-STABLE';
 function v12Esc(v){return esc(v==null?'':v)}
 function v12Num(v){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toLocaleString('en-US'):'N/D'}
 function v12One(v,suffix){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toFixed(1)+(suffix||''):'N/D'}
@@ -39995,10 +39994,23 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       }
       header.addEventListener('click',function(event){if(event.target.closest('a,button,input,select,summary'))return;toggleSection()});
       header.addEventListener('keydown',function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection()}});
-      var defaultOpen=/Shift Overview|Commit Execution Board|Weekly Decision Overview|Quality Priority Ranking|Quality Focus - Repair and Failure Signal|DECISION SUMMARY|FAILURE MODE BREAKDOWN/.test(title);
+      var defaultOpen=/Production Run Follow-up|Shift Overview|Commit Execution Board|Weekly Decision Overview|Quality Priority Ranking|Quality Focus - Repair and Failure Signal|DECISION SUMMARY|FAILURE MODE BREAKDOWN/.test(title);
       if(!defaultOpen){section.classList.add('is-collapsed');toggle.textContent='+';header.setAttribute('aria-expanded','false')}else header.setAttribute('aria-expanded','true');
       sections.push({title:title,id:id,section:section,header:header});
     });
+
+    // V13.14.83: Production Run Follow-up is the primary entry point because its filters drive the rest of the report.
+    (function promoteRunFollowup(){
+      var runIndex=-1;
+      for(var i=0;i<sections.length;i++){if(sections[i].title==='Production Run Follow-up'){runIndex=i;break}}
+      if(runIndex<=0)return;
+      var run=sections[runIndex],anchor=sections[0];
+      try{
+        if(anchor&&anchor.section&&anchor.section.parentNode){anchor.section.parentNode.insertBefore(run.section,anchor.section)}
+        sections.splice(runIndex,1);
+        sections.unshift(run);
+      }catch(_){ }
+    })();
 
     sections.forEach(function(item,index){
       var btn=document.createElement('button');
@@ -40046,21 +40058,16 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       if(!table||!table.tHead||!table.tBodies.length)return;
       var headers=[].slice.call(table.tHead.querySelectorAll('th')).map(function(th){return clean(th.textContent).toUpperCase()});
       function col(names){for(var i=0;i<headers.length;i++){for(var j=0;j<names.length;j++){if(headers[i]===names[j]||headers[i].indexOf(names[j])>=0)return i}}return-1}
-      var indexes={bu:col(['BU']),line:col(['LINE']),model:col(['MODEL']),sku:col(['SKU','PID']),wo:col(['WO','WORK ORDER']),flow:col(['FLOW STATUS']),priority:col(['PRIORITY','SUPPORT PRIORITY']),units:col(['CURRENT UNITS']),repair:col(['REPAIR']),repairExposure:col(['REPAIR EXPOSURE']),wipValue:col(['WIP VALUE']),position:col(['CURRENT POSITION'])};
+      var indexes={bu:col(['BU']),line:col(['LINE']),model:col(['MODEL']),sku:col(['SKU','PID']),wo:col(['WO','WORK ORDER']),flow:col(['FLOW STATUS']),priority:col(['PRIORITY','SUPPORT PRIORITY'])};
       var rows=[].slice.call(table.tBodies[0].rows);
       var bar=document.createElement('div');
-      bar.className='landing-filterbar landing-global-filterbar';
-      bar.innerHTML='<div class="landing-filter-title"><b>Global report scope · Run Follow-up filters</b><span id="landingRowCount"></span></div><div class="landing-filter-grid"><input id="landingSearch" type="search" placeholder="Search WO, SKU, model or station"><select id="landingBu"></select><select id="landingLine"></select><select id="landingModel"></select><select id="landingSku"></select><select id="landingWo"></select><select id="landingFlow"></select><select id="landingPriority"></select><button type="button" id="landingReset">Reset</button></div><div id="landingScopeNote" style="margin-top:7px;color:#5F6264;font-size:10px">This scope is propagated to Commit, WIP, station, repair and Quality sections.</div>';
-      content.parentElement.insertBefore(bar,content);
+      bar.className='landing-filterbar';
+      bar.innerHTML='<div class="landing-filter-title"><b>Run filters</b><span id="landingRowCount"></span></div><div class="landing-filter-grid"><input id="landingSearch" type="search" placeholder="Search WO, SKU, model or station"><select id="landingBu"></select><select id="landingLine"></select><select id="landingModel"></select><select id="landingSku"></select><select id="landingWo"></select><select id="landingFlow"></select><select id="landingPriority"></select><button type="button" id="landingReset">Reset</button></div><div id="landingScopeNote" style="margin-top:7px;color:#5F6264;font-size:10px">Filters are also applied to Commit, WIP and Quality sections.</div>';
+      target.header.insertAdjacentElement('afterend',bar);
       function cell(row,index){return index>=0&&row.cells[index]?clean(row.cells[index].textContent):''}
-      function num(v){var x=parseFloat(String(v||'').replace(/[$,%\s]/g,'').replace(/,/g,''));return isFinite(x)?x:0}
-      function money(v){return '$'+Math.round(Number(v||0)).toLocaleString()}
       function norm(v){return clean(v).toUpperCase()}
-      function setOf(list){var o=Object.create(null);(list||[]).forEach(function(v){v=norm(v);if(v)o[v]=1});return o}
-      function has(o,v){return !v||!!o[norm(v)]}
       function add(o,v){v=norm(v);if(v)o[v]=1}
       function values(o){return Object.keys(o)}
-      function extractSns(text){var out=Object.create(null),m,re=/\b(?:FJZ|FOC)[A-Z0-9]{5,20}\b/ig;while((m=re.exec(String(text||''))))out[norm(m[0])]=1;return out}
       fillSelect(bar.querySelector('#landingBu'),rows.map(function(r){return cell(r,indexes.bu)}),'BU');
       fillSelect(bar.querySelector('#landingLine'),rows.map(function(r){return cell(r,indexes.line)}),'lines');
       fillSelect(bar.querySelector('#landingModel'),rows.map(function(r){return cell(r,indexes.model)}),'models');
@@ -40071,75 +40078,24 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       var search=bar.querySelector('#landingSearch'),bu=bar.querySelector('#landingBu'),line=bar.querySelector('#landingLine'),model=bar.querySelector('#landingModel'),sku=bar.querySelector('#landingSku'),wo=bar.querySelector('#landingWo'),flow=bar.querySelector('#landingFlow'),priority=bar.querySelector('#landingPriority'),count=bar.querySelector('#landingRowCount'),scopeNote=bar.querySelector('#landingScopeNote');
       function section(title){var found=null;sections.forEach(function(x){if(x.title===title)found=x});return found}
       function setScopeBadge(item,text){if(!item||!item.header)return;var b=item.header.querySelector('.landing-scope-badge');if(!b){b=document.createElement('span');b.className='landing-scope-badge';b.style.cssText='float:right;margin-right:38px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800';item.header.appendChild(b)}b.textContent=text||'';b.style.display=text?'':'none'}
-      function filterGenericTables(scope){
-        [].slice.call(content.querySelectorAll('table')).forEach(function(t){
-          if(t===table||t.closest('.v12-board')||t.closest('.smtinel-eq-proto'))return;
-          if(!t.tHead||!t.tBodies.length)return;
-          var hs=[].slice.call(t.tHead.querySelectorAll('th')).map(function(th){return norm(th.textContent)});
-          function ci(keys){for(var i=0;i<hs.length;i++)for(var j=0;j<keys.length;j++)if(hs[i]===keys[j]||hs[i].indexOf(keys[j])>=0)return i;return-1}
-          var ix={bu:ci(['BU','BUSINESS UNIT']),line:ci(['LINE']),model:ci(['MODEL','FAMILY','MODEL / CURRENT SCOPE']),sku:ci(['SKU','PID','PART NUMBER']),wo:ci(['WO','WORK ORDER'])};
-          var active=(bu.value&&ix.bu>=0)||(line.value&&ix.line>=0)||(model.value&&ix.model>=0)||(sku.value&&ix.sku>=0)||(wo.value&&ix.wo>=0);
-          if(!active)return;
-          [].slice.call(t.tBodies[0].rows).forEach(function(r){
-            function cv(i){return i>=0&&r.cells[i]?norm(r.cells[i].textContent):''}
-            var ok=true;
-            if(bu.value&&ix.bu>=0)ok=ok&&cv(ix.bu)===norm(bu.value);
-            if(line.value&&ix.line>=0)ok=ok&&cv(ix.line)===norm(line.value);
-            if(model.value&&ix.model>=0)ok=ok&&cv(ix.model).indexOf(norm(model.value))>=0;
-            if(sku.value&&ix.sku>=0)ok=ok&&cv(ix.sku).indexOf(norm(sku.value))>=0;
-            if(wo.value&&ix.wo>=0)ok=ok&&cv(ix.wo).indexOf(norm(wo.value))>=0;
-            r.style.display=ok?'':'none';
-          });
+      function matchesScopeText(txt,scope){txt=norm(txt);if(!scope.filtered)return true;var groups=[scope.bu,scope.line,scope.model,scope.sku,scope.wo];for(var g=0;g<groups.length;g++){if(groups[g].length){var hit=false;for(var j=0;j<groups[g].length;j++){if(txt.indexOf(groups[g][j])>=0){hit=true;break}}if(!hit)return false}}return true}
+      function filterCommit(scope){var board=content.querySelector('.v12-board');if(!board)return;var first=-1;[].slice.call(board.querySelectorAll('.v12-row')).forEach(function(r){var ok=matchesScopeText(r.textContent,scope);r.style.display=ok?'':'none';r.classList.remove('selected');if(ok&&first<0)first=Number(r.getAttribute('data-v12-index'))});[].slice.call(board.querySelectorAll('.v12-detail')).forEach(function(d){var ok=matchesScopeText(d.textContent,scope),idx=Number(d.getAttribute('data-v12-detail'));d.style.display=ok&&idx===first?'block':'none'});if(first>=0){var rr=board.querySelector('.v12-row[data-v12-index="'+first+'"]');if(rr)rr.classList.add('selected')}setScopeBadge(section('Commit Execution Board'),scope.filtered?(scope.wo.length+' WO scoped'):'')}
+      function filterQuality(scope){
+        ['Quality Focus - Repair and Failure Signal','Repair Location Map by Model','Quality Priority Ranking','CMA / Critical Model Analysis - Quality Decision Signal','EXECUTIVE QUALITY READOUT','EVIDENCE AND CORRELATION MATRIX','IMMEDIATE CONTAINMENT PLAN','RCCA AND EFFECTIVENESS TRACKER','DECISION SUMMARY','FAILURE MODE BREAKDOWN','EVIDENCE & CORRELATION','CONTAINMENT & RELEASE','RCCA & EFFECTIVENESS'].forEach(function(title){
+          var sec=section(title);if(!sec)return;
+          var candidates=[].slice.call(sec.section.querySelectorAll('tbody tr,details,[data-model],[data-wo]'));
+          if(candidates.length){candidates.forEach(function(el){if(el.closest&&el.closest('thead'))return;el.style.display=matchesScopeText(el.textContent,scope)?'':'none'})}
+          setScopeBadge(sec,scope.filtered?'Quality scoped':'');
         });
       }
-      function filterCommitBoard(scope){
-        var board=content.querySelector('.v12-board');if(!board)return;
-        var br=[].slice.call(board.querySelectorAll('.v12-row')),bd=[].slice.call(board.querySelectorAll('.v12-detail')),first=-1;
-        br.forEach(function(r){var txt=norm(r.textContent),ok=!scope.filtered||scope.wo.some(function(x){return txt.indexOf(x)>=0});r.style.display=ok?'':'none';r.classList.remove('selected');if(ok&&first<0)first=Number(r.getAttribute('data-v12-index'))});
-        bd.forEach(function(d){var txt=norm(d.textContent),ok=!scope.filtered||scope.wo.some(function(x){return txt.indexOf(x)>=0});d.style.display=ok&&Number(d.getAttribute('data-v12-detail'))===first?'block':'none'});
-        if(first>=0){var r=board.querySelector('.v12-row[data-v12-index="'+first+'"]');if(r)r.classList.add('selected')}
-        setScopeBadge(section('Commit Execution Board'),scope.filtered?(scope.wo.length+' WO scoped'):'');
-      }
-      function filterQuality(scope){
-        var qsec=section('Quality Focus - Repair and Failure Signal');
-        if(qsec){
-          var qt=qsec.section.querySelector('table');
-          if(qt&&qt.tBodies.length){[].slice.call(qt.tBodies[0].rows).forEach(function(r){var txt=norm(r.cells[0]?r.cells[0].textContent:r.textContent),ok=!scope.filtered||scope.model.some(function(m){return txt.indexOf(m)>=0});r.style.display=ok?'':'none'})}
-          setScopeBadge(qsec,scope.filtered?(scope.model.length+' model scope'):'');
-        }
-        var rsec=section('Repair Location Map by Model');
-        if(rsec){[].slice.call(rsec.section.querySelectorAll('details')).forEach(function(d){var txt=norm((d.querySelector('summary')||d).textContent),ok=!scope.filtered||scope.model.some(function(m){return txt.indexOf(m)>=0});d.style.display=ok?'':'none'});setScopeBadge(rsec,scope.filtered?(scope.model.length+' model scope'):'')}
-        ['Quality Priority Ranking','CMA / Critical Model Analysis - Quality Decision Signal','EXECUTIVE QUALITY READOUT','EVIDENCE AND CORRELATION MATRIX','IMMEDIATE CONTAINMENT PLAN','RCCA AND EFFECTIVENESS TRACKER','DECISION SUMMARY','FAILURE MODE BREAKDOWN','EVIDENCE & CORRELATION','CONTAINMENT & RELEASE','RCCA & EFFECTIVENESS'].forEach(function(title){var s=section(title);if(!s)return;var candidates=[].slice.call(s.section.querySelectorAll('tr,details,[data-model],[data-wo]'));if(!candidates.length){setScopeBadge(s,scope.filtered?'Scope inherited':'');return}candidates.forEach(function(el){if(el.closest('thead'))return;var txt=norm(el.textContent),ok=!scope.filtered||scope.model.some(function(m){return txt.indexOf(m)>=0})||scope.sku.some(function(x){return txt.indexOf(x)>=0})||scope.wo.some(function(x){return txt.indexOf(x)>=0})||scope.bu.some(function(x){return txt.indexOf(x)>=0});if(scope.filtered)el.style.display=ok?'':'none';else el.style.display=''});setScopeBadge(s,scope.filtered?'Quality scoped':'')});
-      }
-      function rebuildBuSnapshot(scope,matched){
-        var s=section('Executive Snapshot by Business Unit');if(!s)return;var t=s.section.querySelector('table');if(!t||!t.tBodies.length)return;var agg=Object.create(null);
-        matched.forEach(function(r){var k=cell(r,indexes.bu)||'N/D',a=agg[k]||(agg[k]={wo:0,units:0,repair:0,repairExposure:0,wipValue:0,attention:0,top:''});a.wo++;a.units+=num(cell(r,indexes.units));a.repair+=num(cell(r,indexes.repair));a.repairExposure+=num(cell(r,indexes.repairExposure));a.wipValue+=num(cell(r,indexes.wipValue));var p=cell(r,indexes.priority);if(/HIGH|CRITICAL/i.test(p))a.attention++;if(!a.top&&p)a.top=(cell(r,indexes.model)||'N/D')+' · '+p});
-        var existing=[].slice.call(t.tBodies[0].rows),by=Object.create(null);existing.forEach(function(r){if(r.cells[0])by[norm(r.cells[0].textContent)]=r});
-        Object.keys(by).forEach(function(k){by[k].style.display=agg[k]?'':'none'});Object.keys(agg).forEach(function(k){var a=agg[k],r=by[norm(k)];if(!r)return;var c=r.cells;if(c[1])c[1].textContent=a.wo.toLocaleString();if(c[2])c[2].textContent=a.units.toLocaleString();if(c[3])c[3].textContent=a.repair.toLocaleString();if(c[4])c[4].textContent=money(a.repairExposure);if(c[5])c[5].textContent=money(a.wipValue);if(c[6])c[6].textContent=a.attention.toLocaleString();if(c[7])c[7].textContent=a.top||'N/D'});setScopeBadge(s,scope.filtered?(matched.length+' runs scoped'):'')
-      }
-      function rebuildStationStatus(scope,matched){
-        var s=section('Current Station Status');if(!s)return;var t=s.section.querySelector('table');if(!t||!t.tBodies.length)return;var agg=Object.create(null),total=0,re=/([A-Z][A-Z0-9_*\- ]{1,24})\s*:\s*(\d+)\s*·/g;
-        matched.forEach(function(r){var txt=cell(r,indexes.position),m,seen=Object.create(null);while((m=re.exec(txt))){var st=clean(m[1]).replace(/\s+/g,'_'),n=Number(m[2]||0);if(!st||seen[st])continue;seen[st]=1;agg[st]=(agg[st]||0)+n;total+=n}re.lastIndex=0});
-        [].slice.call(t.tBodies[0].rows).forEach(function(r){var st=norm(r.cells[0]&&r.cells[0].textContent).replace(/\s+/g,'_'),n=agg[st]||0;r.style.display=n||!scope.filtered?'':'none';if(scope.filtered){if(r.cells[1])r.cells[1].textContent=n.toLocaleString();if(r.cells[2])r.cells[2].textContent='N/D';if(r.cells[3])r.cells[3].textContent='N/D';if(r.cells[4])r.cells[4].textContent=(total?n/total*100:0).toFixed(1)+'%'}});setScopeBadge(s,scope.filtered?(total.toLocaleString()+' units scoped'):'')
-      }
-      function updateShiftOverview(scope,matched){
-        var s=section('Shift Overview');if(!s)return;var cards=[].slice.call(s.section.querySelectorAll('.smtinel-shift-bento-card'));if(!cards.length)return;var totals={wip:0,wipValue:0,wo:matched.length,repair:0,repairExposure:0};matched.forEach(function(r){totals.wip+=num(cell(r,indexes.units));totals.wipValue+=num(cell(r,indexes.wipValue));totals.repair+=num(cell(r,indexes.repair));totals.repairExposure+=num(cell(r,indexes.repairExposure))});cards.forEach(function(c){var label=norm(c.querySelector('span')&&c.querySelector('span').textContent),b=c.querySelector('b'),sm=c.querySelector('small');if(!b)return;if(label==='CURRENT WIP')b.textContent=totals.wip.toLocaleString();else if(label==='WIP VALUE')b.textContent=money(totals.wipValue);else if(label==='WORK ORDERS')b.textContent=totals.wo.toLocaleString();else if(label==='REPAIR / RETEST')b.textContent=totals.repair.toLocaleString();else if(label==='REPAIR EXPOSURE')b.textContent=money(totals.repairExposure);else if(scope.filtered&&(label==='SHIFT MOVEMENT'||label==='ENTERED / EXITED'||label==='COMMIT RISK')){b.textContent='N/D';if(sm)sm.textContent='Not recalculated from filtered Run Follow-up scope'}});setScopeBadge(s,scope.filtered?(matched.length+' runs scoped'):'')
-      }
+      function filterOtherTables(scope){[].slice.call(content.querySelectorAll('table')).forEach(function(t){if(t===table||t.closest('.v12-board')||t.closest('.smtinel-eq-proto'))return;if(!t.tHead||!t.tBodies.length)return;var hs=[].slice.call(t.tHead.querySelectorAll('th')).map(function(th){return norm(th.textContent)});function ci(keys){for(var i=0;i<hs.length;i++)for(var j=0;j<keys.length;j++)if(hs[i]===keys[j]||hs[i].indexOf(keys[j])>=0)return i;return-1}var ix={bu:ci(['BU','BUSINESS UNIT']),line:ci(['LINE']),model:ci(['MODEL','FAMILY','MODEL / CURRENT SCOPE']),sku:ci(['SKU','PID']),wo:ci(['WO','WORK ORDER'])};var can=(ix.bu>=0||ix.line>=0||ix.model>=0||ix.sku>=0||ix.wo>=0);if(!can)return;[].slice.call(t.tBodies[0].rows).forEach(function(r){function cv(i){return i>=0&&r.cells[i]?norm(r.cells[i].textContent):''}var ok=true;if(scope.filtered){if(bu.value&&ix.bu>=0)ok=ok&&cv(ix.bu)===norm(bu.value);if(line.value&&ix.line>=0)ok=ok&&cv(ix.line)===norm(line.value);if(model.value&&ix.model>=0)ok=ok&&cv(ix.model).indexOf(norm(model.value))>=0;if(sku.value&&ix.sku>=0)ok=ok&&cv(ix.sku).indexOf(norm(sku.value))>=0;if(wo.value&&ix.wo>=0)ok=ok&&cv(ix.wo).indexOf(norm(wo.value))>=0}r.style.display=ok?'':'none'})})}
       function apply(){
         var q=norm(search.value),matched=[];
-        rows.forEach(function(row){
-          var woCell=cell(row,indexes.wo).split(/\s+/)[0];
-          var ok=(!q||norm(row.textContent).indexOf(q)>=0)&&(!bu.value||cell(row,indexes.bu)===bu.value)&&(!line.value||cell(row,indexes.line)===line.value)&&(!model.value||cell(row,indexes.model)===model.value)&&(!sku.value||cell(row,indexes.sku)===sku.value)&&(!wo.value||woCell===wo.value)&&(!flow.value||!!row.querySelector('[data-flow="'+flow.value+'"]'))&&(!priority.value||cell(row,indexes.priority)===priority.value);
-          row.style.display=ok?'':'none';if(ok)matched.push(row);
-        });
-        var sb=Object.create(null),sl=Object.create(null),sm=Object.create(null),ss=Object.create(null),sw=Object.create(null),sn=Object.create(null);
-        matched.forEach(function(r){add(sb,cell(r,indexes.bu));add(sl,cell(r,indexes.line));add(sm,cell(r,indexes.model));add(ss,cell(r,indexes.sku));add(sw,cell(r,indexes.wo).split(/\s+/)[0]);var x=extractSns(r.textContent);Object.keys(x).forEach(function(k){sn[k]=1})});
-        var filtered=!!(q||bu.value||line.value||model.value||sku.value||wo.value||flow.value||priority.value);
-        var scope={filtered:filtered,query:q,bu:values(sb),line:values(sl),model:values(sm),sku:values(ss),wo:values(sw),sn:values(sn),matchedRuns:matched.length,totalRuns:rows.length};window.SMTINEL_REPORT_SCOPE=scope;
-        count.textContent=matched.length.toLocaleString()+' of '+rows.length.toLocaleString()+' runs';
-        scopeNote.textContent=filtered?('Scope propagated · '+scope.bu.length+' BU · '+scope.model.length+' model · '+scope.sku.length+' SKU · '+scope.wo.length+' WO'): 'This scope is propagated to Commit, WIP, station, repair and Quality sections.';
-        filterCommitBoard(scope);rebuildBuSnapshot(scope,matched);rebuildStationStatus(scope,matched);filterQuality(scope);filterGenericTables(scope);updateShiftOverview(scope,matched);
-        try{window.dispatchEvent(new CustomEvent('smtinel:report-scope-change',{detail:scope}))}catch(_){ }
+        rows.forEach(function(row){var woCell=cell(row,indexes.wo).split(/\s+/)[0];var ok=(!q||norm(row.textContent).indexOf(q)>=0)&&(!bu.value||cell(row,indexes.bu)===bu.value)&&(!line.value||cell(row,indexes.line)===line.value)&&(!model.value||cell(row,indexes.model)===model.value)&&(!sku.value||cell(row,indexes.sku)===sku.value)&&(!wo.value||woCell===wo.value)&&(!flow.value||!!row.querySelector('[data-flow="'+flow.value+'"]'))&&(!priority.value||cell(row,indexes.priority)===priority.value);row.style.display=ok?'':'none';if(ok)matched.push(row)});
+        var sb=Object.create(null),sl=Object.create(null),sm=Object.create(null),ss=Object.create(null),sw=Object.create(null);matched.forEach(function(r){add(sb,cell(r,indexes.bu));add(sl,cell(r,indexes.line));add(sm,cell(r,indexes.model));add(ss,cell(r,indexes.sku));add(sw,cell(r,indexes.wo).split(/\s+/)[0])});
+        var filtered=!!(q||bu.value||line.value||model.value||sku.value||wo.value||flow.value||priority.value);var scope={filtered:filtered,query:q,bu:values(sb),line:values(sl),model:values(sm),sku:values(ss),wo:values(sw),matchedRuns:matched.length,totalRuns:rows.length};window.SMTINEL_REPORT_SCOPE=scope;
+        count.textContent=matched.length.toLocaleString()+' of '+rows.length.toLocaleString()+' runs';scopeNote.textContent=filtered?('Scope active · '+scope.bu.length+' BU · '+scope.model.length+' model · '+scope.sku.length+' SKU · '+scope.wo.length+' WO'):'Filters are also applied to Commit, WIP and Quality sections.';
+        filterCommit(scope);filterQuality(scope);filterOtherTables(scope);try{window.dispatchEvent(new CustomEvent('smtinel:report-scope-change',{detail:scope}))}catch(_){ }
       }
       [search,bu,line,model,sku,wo,flow,priority].forEach(function(el){el.addEventListener(el===search?'input':'change',apply)});
       bar.querySelector('#landingReset').addEventListener('click',function(){search.value='';bu.value='';line.value='';model.value='';sku.value='';wo.value='';flow.value='';priority.value='';apply()});
@@ -40214,7 +40170,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       '.landing-main{min-width:0}.landing-hero{background:var(--dbn-green);color:#fff;border:1px solid var(--dbn-green);border-radius:8px;padding:11px 16px;margin-bottom:10px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;align-items:center;gap:14px}.landing-hero small{font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#DCE4DD;white-space:nowrap}.landing-hero h2{font-size:15px;margin:0}.landing-hero p{margin:0 0 0 auto;color:#DCE4DD;font-size:10.5px;text-align:right;max-width:480px}',
       '#reportContent{min-width:0}#reportContent>div{max-width:none!important;margin-left:0!important;margin-right:0!important;box-shadow:var(--shadow)}',
       '.report-section{scroll-margin-top:82px;transition:box-shadow .2s ease}.report-section-head{position:relative;padding-right:48px!important;cursor:pointer;user-select:none;border-color:var(--line)!important}.report-section-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:27px;height:27px;border:1px solid rgba(255,255,255,.22);border-radius:7px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:18px;font-weight:800;color:inherit}.report-section.is-collapsed>:not(:first-child){display:none!important}',
-      '.landing-filterbar{padding:9px 11px;background:var(--soft);border-bottom:1px solid var(--line)}.landing-filter-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;color:#4C584F;font-size:10.5px}.landing-filter-grid{display:grid;grid-template-columns:minmax(190px,1.4fr) repeat(7,minmax(95px,1fr)) auto;gap:7px}.landing-filter-grid input,.landing-filter-grid select{width:100%;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:7px 8px;color:var(--ink);font:inherit;font-size:10.5px;outline:none}.landing-filter-grid input:focus,.landing-filter-grid select:focus{border-color:var(--dbn-olive);box-shadow:0 0 0 2px rgba(120,132,118,.14)}',
+      '.landing-filterbar{padding:9px 11px;background:var(--soft);border-bottom:1px solid var(--line)}.landing-filter-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;color:#4C584F;font-size:10.5px}.landing-filter-grid{display:grid;grid-template-columns:minmax(190px,1.6fr) repeat(5,minmax(105px,1fr)) auto;gap:7px}.landing-filter-grid input,.landing-filter-grid select{width:100%;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:7px 8px;color:var(--ink);font:inherit;font-size:10.5px;outline:none}.landing-filter-grid input:focus,.landing-filter-grid select:focus{border-color:var(--dbn-olive);box-shadow:0 0 0 2px rgba(120,132,118,.14)}',
       '#reportContent table{width:100%!important}#reportContent th{position:static}#reportContent [style*="overflow:auto"] thead{position:relative;z-index:4}#reportContent [style*="overflow:auto"] th{position:sticky;top:0;z-index:4;box-shadow:0 1px 0 var(--line)}#reportContent img{cursor:zoom-in}',
       '.landing-overlay{position:fixed;inset:0;background:rgba(20,24,24,.88);display:none;align-items:center;justify-content:center;padding:28px;z-index:100}.landing-overlay.open{display:flex}.landing-overlay img{max-width:96vw;max-height:92vh;background:#fff;border-radius:8px;box-shadow:0 24px 70px rgba(0,0,0,.4)}',
       '.back-top{position:fixed;right:18px;bottom:18px;border:1px solid var(--dbn-green);border-radius:999px;background:var(--dbn-green);color:#fff;padding:10px 14px;font-weight:900;box-shadow:var(--shadow);cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:.2s}.back-top:hover{background:var(--dbn-deep)}.back-top.visible{opacity:1;pointer-events:auto;transform:none}',
@@ -66607,8 +66563,6 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
 
 <!-- SMTinel V81.11: strict DBN serial hierarchy (SFC UUT / Cesium chassis) + V81.10 fixes -->
 <!-- SMTinel Cesium Direct Bridge V9 - hard core raw capture + direct SFC.SN to Cesium.sysserialno bridge -->
-
-<script id="smtinel-v131481-global-scope-version">(function(){var V='SMTinel V13.14.81 - Global Report Scope + Quality Filters';function s(){window.SMTINEL_BUILD_VERSION=V;window.SMTINEL_BUILD_BADGE=V;['smtinel-build-version-badge','smtinel-build-badge'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=V})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',s,{once:true});else s();setTimeout(s,400);setTimeout(s,1500)})();</script>
 </body>
 
 
