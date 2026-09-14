@@ -39415,6 +39415,85 @@ var report0=finalShiftReportHtml;
 finalShiftReportHtml=function(){try{normalizeRows()}catch(e){try{console.warn('[SMTinel EOS V6] Cesium prepare failed',e)}catch(_){}}return report0.apply(this,arguments)};
 })();
 
+/* SMTinel End-of-Shift Direct Cesium Bridge V7 */
+(function(){
+'use strict';
+function st(v){return String(v==null?'':v).trim()}
+function nk(v){return st(v).toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function pick(r,names){if(!r)return'';var m={};Object.keys(r).forEach(function(k){m[nk(k)]=r[k]});for(var i=0;i<names.length;i++){var v=m[nk(names[i])];if(v!=null&&st(v)!=='')return v}return''}
+function cleanSn(v){try{return traceOpsYieldCleanSn(v)}catch(_){return nk(v)}}
+function woKey(v){try{return reportWoKey(v)}catch(_){var x=st(v).replace(/\D/g,'');return x?x.padStart(12,'0'):''}}
+function parseMs(v){try{var x=reportRunTimestamp(v);if(isFinite(x))return x}catch(_){}var d=Date.parse(st(v));return isNaN(d)?NaN:d}
+function baseStation(v){return st(v).replace(/\*+\s*$/,'')}
+function isDebug(v){return /\*\s*$/.test(st(v))}
+
+/* Preserve the original imported sources before any normalized cache rewrites them. */
+try{
+  var import0=traceOpsYieldBuildFromImported;
+  traceOpsYieldBuildFromImported=function(workRows,sfcRows,repairRows,sourceMeta,calendarRows,dbModelRows,cesiumRows,bomRows){
+    try{window.TRACEOPS_YIELD_RAW_SFC_ROWS=Array.isArray(sfcRows)?sfcRows.slice():[]}catch(_){}
+    try{window.TRACEOPS_YIELD_RAW_CESIUM_ROWS=Array.isArray(cesiumRows)?cesiumRows.slice():[]}catch(_){}
+    return import0.apply(this,arguments);
+  };
+}catch(_){ }
+
+function sfcSerialSet(group){
+  var set={},target=woKey(group&&group.wo||'');
+  Object.keys(group&&group.sns||{}).forEach(function(x){x=cleanSn(x);if(x)set[x]=1});
+  var raw=[];try{raw=window.TRACEOPS_YIELD_RAW_SFC_ROWS||[]}catch(_){}
+  (raw||[]).forEach(function(r){
+    var rw=woKey(pick(r,['workorderno','WorkOrderNo','Work Order','WO','WO_NO','Order']));
+    if(target&&rw&&target!==rw)return;
+    [pick(r,['SN','Serial','Serial Number','sysserialno']),pick(r,['boxsn','BOXSN','Box SN','Box Serial']),pick(r,['Parent Serial No','PARENTSERNUM','ParentSN']),pick(r,['Part Serial No','PARTSERNUM','PartSN'])].forEach(function(v){v=cleanSn(v);if(v)set[v]=1});
+  });
+  return set;
+}
+
+function directRows(group){
+  var raw=[];try{raw=window.TRACEOPS_YIELD_RAW_CESIUM_ROWS||[]}catch(_){}
+  if(!Array.isArray(raw)||!raw.length)return {rows:[],diag:null};
+  var set=sfcSerialSet(group),seen={},out=[],matchedSn={};
+  var diag={wo:group&&group.wo||'',sfcSn:Object.keys(set).length,cesiumRows:raw.length,snMatches:0,woMatches:0,productionRows:0,debugRows:0,productionSn:0,debugSn:0,directBridge:true,source:'RAW_CESIUM.sysserialno'};
+  var prodSn={},dbgSn={};
+  raw.forEach(function(r){r=r||{};
+    var sys=cleanSn(pick(r,['sysserialno','syserialno','SysSerialNo','SN','Serial','Serial Number']));
+    var parent=cleanSn(pick(r,['Parent Serial No','PARENTSERNUM','ParentSN','Parent Serial']));
+    var part=cleanSn(pick(r,['Part Serial No','PARTSERNUM','PartSN','PCB Serial','Board Serial']));
+    var bridge=(sys&&set[sys])?sys:((parent&&set[parent])?parent:((part&&set[part])?part:''));
+    if(!bridge)return;
+    diag.snMatches++;matchedSn[bridge]=1;
+    var area=st(pick(r,['station','Station','Test Area','TestArea','AREA','Area','Test Station']));if(!area)return;
+    var ms=parseMs(pick(r,['testdate','Test Date','Record Time','RECTIME','Timestamp','DateTime','SCANTIME']));if(!isFinite(ms))return;
+    var status=st(pick(r,['status','Status','PASSFAIL','PassFail','Result','Pass Fail','Pass/Fail']));
+    var kind='other';try{kind=traceOpsYieldStatusKind(status)}catch(_){kind=/PASS|PASSED|OK\b/i.test(status)?'pass':(/FAIL|FAILED|NG|NOK|ERROR/i.test(status)?'fail':'other')}
+    var debug=isDebug(area),station='';try{station=reportCommitStationCode(area)}catch(_){station=area.toUpperCase()}if(!station)return;
+    var key=[bridge,station,ms,kind].join('|');if(seen[key])return;seen[key]=1;
+    var row={sn:bridge,cesiumSn:sys,parentsernum:parent,partsernum:part,station:station,baseStation:baseStation(station),debug:debug,rank:reportCommitStationRank(station),kind:kind,ms:ms,status:status,fail:st(pick(r,['Failing Test Name','TEST','Test Info','testinfo','Failure','Symptom'])),source:'RAW_CESIUM_DIRECT'};
+    out.push(row);
+    if(debug){diag.debugRows++;dbgSn[bridge]=1}else{diag.productionRows++;prodSn[bridge]=1}
+  });
+  diag.productionSn=Object.keys(prodSn).length;diag.debugSn=Object.keys(dbgSn).length;diag.matchedSn=Object.keys(matchedSn).length;
+  return {rows:out.sort(function(a,b){return a.ms-b.ms||a.rank-b.rank||String(a.sn).localeCompare(String(b.sn))}),diag:diag};
+}
+
+var bridge0=reportCommitFtRowsForGroup;
+reportCommitFtRowsForGroup=function(group){
+  var direct=directRows(group||{}),legacy=[];try{legacy=bridge0(group)||[]}catch(_){}
+  if(!direct.rows.length)return legacy;
+  var seen={},merged=[];
+  direct.rows.concat(legacy||[]).forEach(function(r){var key=[r.sn,r.station,r.ms,r.kind].join('|');if(seen[key])return;seen[key]=1;merged.push(r)});
+  var key=woKey(group&&group.wo||'')||String(group&&group.wo||'N/D');
+  try{window.SMTINEL_COMMIT_BRIDGE_DIAG=window.SMTINEL_COMMIT_BRIDGE_DIAG||{};window.SMTINEL_COMMIT_BRIDGE_DIAG[key]=direct.diag}catch(_){}
+  return merged.sort(function(a,b){return a.ms-b.ms||a.rank-b.rank||String(a.sn).localeCompare(String(b.sn))});
+};
+
+/* Re-attach bridge diagnostics after the direct bridge has populated them. */
+try{
+  var ready7=reportCommitReadiness;
+  reportCommitReadiness=function(group,cutMs){var m=ready7(group,cutMs),key=woKey(group&&group.wo||'')||String(group&&group.wo||'N/D');try{m.bridgeDiag=window.SMTINEL_COMMIT_BRIDGE_DIAG&&window.SMTINEL_COMMIT_BRIDGE_DIAG[key]||m.bridgeDiag||null}catch(_){}return m};
+}catch(_){ }
+})();
+
 /* SMTinel End-of-Shift HxH No-Evidence Semantics V4 */
 (function(){
   'use strict';
