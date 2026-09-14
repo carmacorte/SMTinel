@@ -7,7 +7,7 @@
 
 <html lang="es">
 <head>
-<!-- SMTinel stable baseline: index(10).zip | Product/detail containment fix only | V13.14.83 -->
+<!-- SMTinel stable baseline: index(10).zip | Global report scope + HxH identity fix | V13.14.84 -->
 
 <script id="smtinel-v63-8d-adaptive-themes">
 (function(){
@@ -39999,7 +39999,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       sections.push({title:title,id:id,section:section,header:header});
     });
 
-    // V13.14.83: Production Run Follow-up is the primary entry point because its filters drive the rest of the report.
+    // V13.14.84: global scope + HxH identity fix; Production Run Follow-up is the primary entry point because its filters drive the rest of the report.
     (function promoteRunFollowup(){
       var runIndex=-1;
       for(var i=0;i<sections.length;i++){if(sections[i].title==='Production Run Follow-up'){runIndex=i;break}}
@@ -40078,8 +40078,38 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
       var search=bar.querySelector('#landingSearch'),bu=bar.querySelector('#landingBu'),line=bar.querySelector('#landingLine'),model=bar.querySelector('#landingModel'),sku=bar.querySelector('#landingSku'),wo=bar.querySelector('#landingWo'),flow=bar.querySelector('#landingFlow'),priority=bar.querySelector('#landingPriority'),count=bar.querySelector('#landingRowCount'),scopeNote=bar.querySelector('#landingScopeNote');
       function section(title){var found=null;sections.forEach(function(x){if(x.title===title)found=x});return found}
       function setScopeBadge(item,text){if(!item||!item.header)return;var b=item.header.querySelector('.landing-scope-badge');if(!b){b=document.createElement('span');b.className='landing-scope-badge';b.style.cssText='float:right;margin-right:38px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800';item.header.appendChild(b)}b.textContent=text||'';b.style.display=text?'':'none'}
-      function matchesScopeText(txt,scope){txt=norm(txt);if(!scope.filtered)return true;var groups=[scope.bu,scope.line,scope.model,scope.sku,scope.wo];for(var g=0;g<groups.length;g++){if(groups[g].length){var hit=false;for(var j=0;j<groups[g].length;j++){if(txt.indexOf(groups[g][j])>=0){hit=true;break}}if(!hit)return false}}return true}
-      function filterCommit(scope){var board=content.querySelector('.v12-board');if(!board)return;var first=-1;[].slice.call(board.querySelectorAll('.v12-row')).forEach(function(r){var ok=matchesScopeText(r.textContent,scope);r.style.display=ok?'':'none';r.classList.remove('selected');if(ok&&first<0)first=Number(r.getAttribute('data-v12-index'))});[].slice.call(board.querySelectorAll('.v12-detail')).forEach(function(d){var ok=matchesScopeText(d.textContent,scope),idx=Number(d.getAttribute('data-v12-detail'));d.style.display=ok&&idx===first?'block':'none'});if(first>=0){var rr=board.querySelector('.v12-row[data-v12-index="'+first+'"]');if(rr)rr.classList.add('selected')}setScopeBadge(section('Commit Execution Board'),scope.filtered?(scope.wo.length+' WO scoped'):'')}
+      function hasAny(txt,arr){for(var i=0;i<arr.length;i++){if(arr[i]&&txt.indexOf(arr[i])>=0)return true}return false}
+      function matchesScopeText(txt,scope){
+        txt=norm(txt);
+        if(!scope.filtered)return true;
+        var a=scope.active||{};
+        // Respect the user's explicit filter first. Derived model/SKU/WO keys are only
+        // used when a downstream section does not carry the explicit BU/line field.
+        if(a.wo)return hasAny(txt,scope.wo);
+        if(a.sku)return hasAny(txt,scope.sku);
+        if(a.model)return hasAny(txt,scope.model);
+        if(a.line){if(hasAny(txt,scope.line))return true;return hasAny(txt,scope.wo)||hasAny(txt,scope.sku)||hasAny(txt,scope.model)}
+        if(a.bu){if(hasAny(txt,scope.bu))return true;return hasAny(txt,scope.wo)||hasAny(txt,scope.sku)||hasAny(txt,scope.model)}
+        if(a.query)return hasAny(txt,scope.wo)||hasAny(txt,scope.sku)||hasAny(txt,scope.model)||hasAny(txt,scope.line)||hasAny(txt,scope.bu);
+        return true
+      }
+      function filterCommit(scope){
+        var board=content.querySelector('.v12-board');if(!board)return;
+        var first=-1,visible=Object.create(null);
+        [].slice.call(board.querySelectorAll('.v12-row')).forEach(function(r){
+          var ok=matchesScopeText(r.textContent,scope),idx=Number(r.getAttribute('data-v12-index'));
+          r.style.display=ok?'':'none';r.classList.remove('selected');
+          if(ok){visible[idx]=1;if(first<0)first=idx}
+        });
+        // Detail/HxH belongs to the row by data-v12-index. Do not text-filter the
+        // detail itself because it does not repeat BU/Line and that was hiding HxH.
+        [].slice.call(board.querySelectorAll('.v12-detail')).forEach(function(d){
+          var idx=Number(d.getAttribute('data-v12-detail'));
+          d.style.display=(idx===first&&visible[idx])?'block':'none'
+        });
+        if(first>=0){var rr=board.querySelector('.v12-row[data-v12-index="'+first+'"]');if(rr)rr.classList.add('selected')}
+        setScopeBadge(section('Commit Execution Board'),scope.filtered?(Object.keys(visible).length+' run'+(Object.keys(visible).length===1?'':'s')+' scoped'):'')
+      }
       function filterQuality(scope){
         ['Quality Focus - Repair and Failure Signal','Repair Location Map by Model','Quality Priority Ranking','CMA / Critical Model Analysis - Quality Decision Signal','EXECUTIVE QUALITY READOUT','EVIDENCE AND CORRELATION MATRIX','IMMEDIATE CONTAINMENT PLAN','RCCA AND EFFECTIVENESS TRACKER','DECISION SUMMARY','FAILURE MODE BREAKDOWN','EVIDENCE & CORRELATION','CONTAINMENT & RELEASE','RCCA & EFFECTIVENESS'].forEach(function(title){
           var sec=section(title);if(!sec)return;
@@ -40093,7 +40123,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
         var q=norm(search.value),matched=[];
         rows.forEach(function(row){var woCell=cell(row,indexes.wo).split(/\s+/)[0];var ok=(!q||norm(row.textContent).indexOf(q)>=0)&&(!bu.value||cell(row,indexes.bu)===bu.value)&&(!line.value||cell(row,indexes.line)===line.value)&&(!model.value||cell(row,indexes.model)===model.value)&&(!sku.value||cell(row,indexes.sku)===sku.value)&&(!wo.value||woCell===wo.value)&&(!flow.value||!!row.querySelector('[data-flow="'+flow.value+'"]'))&&(!priority.value||cell(row,indexes.priority)===priority.value);row.style.display=ok?'':'none';if(ok)matched.push(row)});
         var sb=Object.create(null),sl=Object.create(null),sm=Object.create(null),ss=Object.create(null),sw=Object.create(null);matched.forEach(function(r){add(sb,cell(r,indexes.bu));add(sl,cell(r,indexes.line));add(sm,cell(r,indexes.model));add(ss,cell(r,indexes.sku));add(sw,cell(r,indexes.wo).split(/\s+/)[0])});
-        var filtered=!!(q||bu.value||line.value||model.value||sku.value||wo.value||flow.value||priority.value);var scope={filtered:filtered,query:q,bu:values(sb),line:values(sl),model:values(sm),sku:values(ss),wo:values(sw),matchedRuns:matched.length,totalRuns:rows.length};window.SMTINEL_REPORT_SCOPE=scope;
+        var filtered=!!(q||bu.value||line.value||model.value||sku.value||wo.value||flow.value||priority.value);var scope={filtered:filtered,query:q,bu:values(sb),line:values(sl),model:values(sm),sku:values(ss),wo:values(sw),matchedRuns:matched.length,totalRuns:rows.length,active:{query:!!q,bu:!!bu.value,line:!!line.value,model:!!model.value,sku:!!sku.value,wo:!!wo.value,flow:!!flow.value,priority:!!priority.value}};window.SMTINEL_REPORT_SCOPE=scope;
         count.textContent=matched.length.toLocaleString()+' of '+rows.length.toLocaleString()+' runs';scopeNote.textContent=filtered?('Scope active · '+scope.bu.length+' BU · '+scope.model.length+' model · '+scope.sku.length+' SKU · '+scope.wo.length+' WO'):'Filters are also applied to Commit, WIP and Quality sections.';
         filterCommit(scope);filterQuality(scope);filterOtherTables(scope);try{window.dispatchEvent(new CustomEvent('smtinel:report-scope-change',{detail:scope}))}catch(_){ }
       }
