@@ -38200,43 +38200,6 @@ function traceOpsBonepileBuildPayload() {
         var fullSfc = window.TRACEOPS_YIELD_SN_TO_SFC || {};
         var fullFt = window.TRACEOPS_YIELD_FT_ROWS || [];
         var activeSfc = window.TRACEOPS_YIELD_ACTIVE_SN_TO_SFC || {};
-        /* V13.14.78: Bonepile raw-SFC fallback. Some import paths populate RAW SFC before
-           the canonical SN map becomes available. Rebuild the minimum canonical map so
-           Bonepile cannot remain empty merely because the bridge fired between phases. */
-        if (!Object.keys(fullSfc || {}).length && Array.isArray(window.TRACEOPS_YIELD_RAW_SFC_ROWS) && window.TRACEOPS_YIELD_RAW_SFC_ROWS.length) {
-            var rebuiltSfc = {};
-            window.TRACEOPS_YIELD_RAW_SFC_ROWS.forEach(function(raw) {
-                raw = raw || {};
-                var sn = '';
-                try { sn = traceOpsYieldPickSn(raw); } catch (_) {}
-                sn = String(sn || '').trim().toUpperCase();
-                if (!sn) return;
-                var boxSn = '';
-                try { boxSn = traceOpsYieldPickBoxSn(raw); } catch (_) {}
-                var wo = '';
-                try { wo = traceOpsYieldCleanWo(traceOpsYieldPick(raw, ['WorkOrderNo','workorderno','Work Order','WO Number','WO NO','WO_NO','WO','WorkOrder','Orden','Order'])); } catch (_) {}
-                var sku = '';
-                try { sku = String(traceOpsYieldPick(raw, ['skuno','SkuNo','SKU','model','part number','pn','Modelo']) || '').trim(); } catch (_) {}
-                var family = '';
-                try { family = traceOpsYieldPickProductFamily(raw, ''); } catch (_) {}
-                var event = '';
-                try { event = String(traceOpsYieldPick(raw, ['currentevent','Current Event','Event','Station','Current Station','Proceso Actual','Current Process']) || '').trim(); } catch (_) {}
-                var line = '';
-                try { line = String(traceOpsYieldPick(raw, ['Line ID','Line','productionline','Linea','Línea']) || '').trim(); } catch (_) {}
-                var station = '';
-                try { station = traceOpsYieldClassifyStation(event); } catch (_) { station = event; }
-                var eventTime = '';
-                try { eventTime = traceOpsYieldParseDate(traceOpsYieldPick(raw, ['lasteditdt','Last Edit DT','Current Event Time','Event Time','Timestamp','DateTime','Date Time','Rec Time','Fecha Hora','Fecha'])); } catch (_) {}
-                var clean = { sn: sn, sfcSn: sn, boxsn: String(boxSn || '').trim().toUpperCase(), wo: wo, sku: sku, family: family, event: event, eventTime: eventTime, line: line, station: station };
-                rebuiltSfc[sn] = clean;
-                if (clean.boxsn) rebuiltSfc[clean.boxsn] = clean;
-            });
-            if (Object.keys(rebuiltSfc).length) {
-                fullSfc = rebuiltSfc;
-                try { window.TRACEOPS_YIELD_SN_TO_SFC = rebuiltSfc; } catch (_) {}
-                try { window.SMTINEL_BONEPILE_RAW_SFC_FALLBACK = { rows: window.TRACEOPS_YIELD_RAW_SFC_ROWS.length, keys: Object.keys(rebuiltSfc).length, at: new Date().toISOString() }; } catch (_) {}
-            }
-        }
         var activeFt = window.TRACEOPS_YIELD_ACTIVE_FT_ROWS || [];
         var woLine = traceOpsBonepileBuildWoLineMap();
         var woVersion = traceOpsBonepileBuildWoVersionMap();
@@ -38540,7 +38503,6 @@ function traceOpsBonepileBuildPayload() {
     }
     if (!window.__SMTINEL_BONEPILE_BRIDGE_V2__) {
         window.__SMTINEL_BONEPILE_BRIDGE_V2__ = true;
-        window.__SMTINEL_BONEPILE_DIRECT_SYNC_V4__ = 'V13.14.78';
         window.addEventListener('message', function(event) {
             var data = event && event.data;
             if (!data || data.type !== 'smtinel:bonepile:request') return;
@@ -39149,7 +39111,6 @@ function traceOpsBonepileBuildPayload() {
 (function(){
 'use strict';
 var payloadState={},scopeState={},rows=[],snapshotRows=[],repairRows=[],filtered=[],selected='',selectedLayoutLine='',stationTotals={SMTLOADING:0,AOI2:0,AOI4:0},planByWo={},exposureByWo={},fallbackPlanByWo={},runStartByWo={},stationMasterSequence=[],stationMasterOrder={},stationSequenceSource='',source='',scopeMode='FULL';
-var bonepileSessionDiag={requests:0,lastReason:'startup'};
 var TARGET=['SMTLOADING','AOI2','AOI4'],requestCounter=0,lastResponse=0,scopeInitialized=false;
 var LINE_STATION_LAYOUT={
   L12:['SMTLOADING','AOI2','AOI4'],
@@ -39173,8 +39134,7 @@ function compareSfcStations(a,b){var ak=canonicalSfcStation(a&&a.station||a),bk=
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function money(v){var n=Number(v||0);if(!isFinite(n))n=0;return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0})}
 function sumCost(list){return(list||[]).reduce(function(a,r){return a+Number(r&&r.cost||0)},0)}
-function directParentPayload(){try{var p=window.parent;if(p&&p!==window&&typeof p.traceOpsBonepileBuildPayload==='function'){var payload=p.traceOpsBonepileBuildPayload();if(payload&&((Array.isArray(payload.snapshotRows)&&payload.snapshotRows.length)||(Array.isArray(payload.rows)&&payload.rows.length)||Number(payload.totalUnits||0)>0))return payload}}catch(_){}return null}
-function requestData(){requestCounter+=1;bonepileSessionDiag.requests=requestCounter;var id='bp-'+Date.now()+'-'+requestCounter,recon=document.getElementById('recon');if(recon)recon.innerHTML='<span>Refreshing from Yield Flow...</span>';var direct=directParentPayload();if(direct){bonepileSessionDiag.lastReason='direct-parent';receive(direct);return}try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}var requestedAt=Date.now();setTimeout(function(){if(lastResponse>=requestedAt)return;var fallback=directParentPayload();if(fallback){bonepileSessionDiag.lastReason='direct-parent-timeout';receive(fallback);return}var node=document.getElementById('recon');if(node){var meta=null,rawCount=0,mapCount=0;try{meta=window.parent&&window.parent.TRACEOPS_YIELD_IMPORT_META||null}catch(_){}try{rawCount=((window.parent&&window.parent.TRACEOPS_YIELD_RAW_SFC_ROWS)||[]).length}catch(_){}try{mapCount=Object.keys((window.parent&&window.parent.TRACEOPS_YIELD_SN_TO_SFC)||{}).length}catch(_){}if(!rawCount&&!mapCount){node.innerHTML='<span class="warn"><b>No Yield Flow SFC is loaded in this browser session.</b> Import the production ZIP in Yield Flow, then return to Bonepile. Data is intentionally not restored after a page reload.</span>'}else{node.innerHTML='<span class="warn"><b>Yield Flow data detected but Bonepile sync is pending.</b> Raw SFC '+Number(rawCount||0).toLocaleString()+' · mapped '+Number(mapCount||0).toLocaleString()+'. Press Refresh; V13.14.78 will rebuild the SFC map from RAW rows when necessary.</span>'}}},2700)}
+function requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow...</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}var requestedAt=Date.now();setTimeout(function(){if(lastResponse<requestedAt)document.getElementById('recon').innerHTML='<span class="warn"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}
 function showError(message){document.getElementById('recon').innerHTML='<span class="bad"><b>Bonepile data error:</b> '+esc(message)+'</span>'}
 function resolvePayloadStation(row,field){row=row||{};var station=canonicalSfcStation(row[field||'station']);var raw=String(row.rawStation||row.currentEvent||row.testArea||'').trim();if((station==='UNMAPPED/REVIEW'||station==='UNMAPPED / REVIEW'||station==='UNMAPPED'||!station)&&/\*+$/.test(raw)){var debugBase=canonicalSfcStation(raw);if(debugBase&&debugBase!=='N/D'&&debugBase!=='UNKNOWN')station=debugBase}return station||'UNMAPPED / REVIEW'}
 function loadScope(mode){scopeMode=mode==='ACTIVE'?'ACTIVE':'FULL';scopeState=(payloadState.scopes&&payloadState.scopes[scopeMode])||payloadState||{};rows=(Array.isArray(scopeState.rows)?scopeState.rows:[]).map(function(r){return Object.assign({},r,{station:resolvePayloadStation(r,'station'),isDebug:!!(r&&r.isDebug)||/\*+$/.test(String(r&&r.rawStation||''))})});snapshotRows=(Array.isArray(scopeState.snapshotRows)?scopeState.snapshotRows:[]).map(function(r){return Object.assign({},r,{station:resolvePayloadStation(r,'station'),isDebug:!!(r&&r.isDebug)||/\*+$/.test(String(r&&r.rawStation||''))})});repairRows=(Array.isArray(scopeState.repairRows)?scopeState.repairRows:[]).map(function(r){var current=resolvePayloadStation(Object.assign({},r,{station:r&&r.currentStation}),'station');return Object.assign({},r,{currentStation:current})});stationTotals=scopeState.totals||{SMTLOADING:0,AOI2:0,AOI4:0};planByWo=scopeState.planByWo||payloadState.planByWo||{};exposureByWo=scopeState.exposureByWo||payloadState.exposureByWo||{};fallbackPlanByWo=scopeState.fallbackPlanByWo||payloadState.fallbackPlanByWo||{};runStartByWo=scopeState.runStartByWo||payloadState.runStartByWo||{};applyPayloadStationSequence(scopeState.stationSequence||payloadState.stationSequence||[],scopeState.stationSequenceSource||payloadState.stationSequenceSource||'');cesiumContractLoad(scopeState);source=scopeState.source||payloadState.source||'';selected='';selectedLayoutLine='';options();apply();updateBaselineButton();try{if(document.getElementById('reportType')&&reportType()==='EXEC_QUALITY'){eqPopulateControls();setDefaultReportSubject();refreshEmail()}}catch(_){}}
@@ -39536,7 +39496,7 @@ function reportCommitEvidenceHtml(m){
 /* SMTinel End-of-Shift Commit Execution Board V12.1 */
 (function(){
 'use strict';
-var V12_BUILD='COMMIT-EXECUTION-V12.4';
+var V12_BUILD='COMMIT-EXECUTION-V13.14.79'; /* SMTINEL-STABLE-BONEPILE-PRODUCT-KEY-V13.14.79 */
 function v12Esc(v){return esc(v==null?'':v)}
 function v12Num(v){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toLocaleString('en-US'):'N/D'}
 function v12One(v,suffix){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toFixed(1)+(suffix||''):'N/D'}
@@ -39562,8 +39522,9 @@ function v12EightHours(m){
 }
 function v12Failures(m){var parsed=cesiumContractRows(m.group,m.cutMs||Date.now()),map={};parsed.rows.filter(function(r){return !r.debug&&r.kind==='fail'}).forEach(function(r){var key=String(r.fail||'Unspecified functional failure').trim()||'Unspecified functional failure';if(!map[key])map[key]={name:key,qty:0,sn:{}};map[key].qty++;map[key].sn[r.sn]=1});return Object.keys(map).map(function(k){var x=map[k];return{name:x.name,qty:x.qty,unique:Object.keys(x.sn).length}}).sort(function(a,b){return b.unique-a.unique||b.qty-a.qty||a.name.localeCompare(b.name)}).slice(0,5)}
 function v12Kpi(label,value,sub,tone){return'<div class="v12-kpi"><span>'+v12Esc(label)+'</span><b style="color:'+(tone||'#172b43')+'">'+v12Esc(value)+'</b><small>'+v12Esc(sub||'')+'</small></div>'}
+function v12MetricKey(m){var g=m&&m.group||{};return [String(g.wo||'N/D').trim().toUpperCase(),String(g.sku||'N/D').trim().toUpperCase(),String(g.family||'N/D').trim().toUpperCase(),String(g.version||'N/D').trim().toUpperCase()].join('|')}
 function v12Wip(metrics){var map={},total=0;metrics.forEach(function(m){var g=m.group||{};Object.keys(g.stations||{}).forEach(function(st){var k=reportCommitStationCode(st)||String(st),q=Number(g.stations[st]||0);map[k]=(map[k]||0)+q;total+=q})});var arr=Object.keys(map).map(function(k){return{station:k,qty:map[k]}}).sort(function(a,b){return b.qty-a.qty}).slice(0,4),max=arr.length?arr[0].qty:1;return'<div class="v12-wip"><div class="v12-box-title">CURRENT WIP BY STATION</div>'+arr.map(function(x,i){var c=i===0?'#df1f2d':(i===1?'#ef7f1a':'#8da1a1'),pct=total?x.qty/total*100:0;return'<div class="v12-wip-row"><b>'+v12Esc(x.station)+'</b><div><i style="width:'+Math.max(3,x.qty/max*100)+'%;background:'+c+'"></i></div><strong>'+v12Num(x.qty)+' <small style="font-size:8px;color:#69756e">· '+pct.toFixed(1)+'%</small></strong></div>'}).join('')+'</div>'}
-function v12Table(metrics){return'<div class="v12-table-wrap"><table class="v12-table"><thead><tr>'+['#','Model','PID','WO','Version','Commit Qty','Actual Good','Balance','Commit Date*','Forecast Finish','Status','Current Location','Blocker / Reason','Repair','Actual HxH','Req. HxH','Mobilize'].map(function(x){return'<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+metrics.map(function(m,idx){var g=m.group||{},loc=v12CurrentLocation(g),plan=v12Plan(m),good=v12Good(m),bal=(plan==null||good==null)?null:Math.max(0,plan-good),status=v12Status(m),t=v12Tone(status),actual=v12CurrentCoverage(m)&&m.effectiveHxh!=null?v12One(m.effectiveHxh,'/h'):'N/D',req=v12CurrentCoverage(m)&&m.requiredHxh!=null?v12One(m.requiredHxh,'/h'):'N/D',blocker=v12BlockerText(m);return'<tr class="v12-row '+(idx===0?'selected':'')+'" data-v12-index="'+idx+'"><td>'+(idx+1)+'</td><td><b>'+v12Esc(g.family||'N/D')+'</b></td><td>'+v12Esc(g.sku||'N/D')+'</td><td>'+v12Esc(g.wo||'N/D')+'</td><td>'+v12Esc(g.version||'N/D')+'</td><td class="num">'+v12Num(plan)+'</td><td class="num">'+v12Num(good)+'</td><td class="num '+(bal>0?'badnum':'')+'">'+v12Num(bal)+'</td><td>'+v12Date(m.dueMs)+'</td><td>'+v12Date(v12CurrentCoverage(m)?m.forecastMs:null)+'</td><td><span class="v12-status" style="background:'+t.bg+';color:'+t.fg+'">'+v12Esc(status)+'</span></td><td>'+v12Esc(loc.station)+(loc.qty?' · '+v12Num(loc.qty):'')+'</td><td>'+v12Esc(blocker)+'</td><td class="num">'+v12Num(g.repair||0)+'</td><td class="num">'+actual+'</td><td class="num">'+req+'</td><td>'+v12Esc(m.mobilize||'N/D')+'</td></tr>'}).join('')+'</tbody></table></div>'}
+function v12Table(metrics){return'<div class="v12-table-wrap"><table class="v12-table"><thead><tr>'+['#','Model','PID','WO','Version','Commit Qty','Actual Good','Balance','Commit Date*','Forecast Finish','Status','Current Location','Blocker / Reason','Repair','Actual HxH','Req. HxH','Mobilize'].map(function(x){return'<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+metrics.map(function(m,idx){var g=m.group||{},loc=v12CurrentLocation(g),plan=v12Plan(m),good=v12Good(m),bal=(plan==null||good==null)?null:Math.max(0,plan-good),status=v12Status(m),t=v12Tone(status),actual=v12CurrentCoverage(m)&&m.effectiveHxh!=null?v12One(m.effectiveHxh,'/h'):'N/D',req=v12CurrentCoverage(m)&&m.requiredHxh!=null?v12One(m.requiredHxh,'/h'):'N/D',blocker=v12BlockerText(m);var rowKey=v12MetricKey(m);return'<tr class="v12-row '+(idx===0?'selected':'')+'" data-v12-index="'+idx+'" data-v12-key="'+v12Esc(rowKey)+'"><td>'+(idx+1)+'</td><td><b>'+v12Esc(g.family||'N/D')+'</b></td><td>'+v12Esc(g.sku||'N/D')+'</td><td>'+v12Esc(g.wo||'N/D')+'</td><td>'+v12Esc(g.version||'N/D')+'</td><td class="num">'+v12Num(plan)+'</td><td class="num">'+v12Num(good)+'</td><td class="num '+(bal>0?'badnum':'')+'">'+v12Num(bal)+'</td><td>'+v12Date(m.dueMs)+'</td><td>'+v12Date(v12CurrentCoverage(m)?m.forecastMs:null)+'</td><td><span class="v12-status" style="background:'+t.bg+';color:'+t.fg+'">'+v12Esc(status)+'</span></td><td>'+v12Esc(loc.station)+(loc.qty?' · '+v12Num(loc.qty):'')+'</td><td>'+v12Esc(blocker)+'</td><td class="num">'+v12Num(g.repair||0)+'</td><td class="num">'+actual+'</td><td class="num">'+req+'</td><td>'+v12Esc(m.mobilize||'N/D')+'</td></tr>'}).join('')+'</tbody></table></div>'}
 function v12Bars(m){var hrs=v12EightHours(m),vals=hrs.map(function(h){return h.good==null?0:h.good}),max=Math.max.apply(Math,[1].concat(vals).concat([Number(m.requiredHxh||0)])),req=m.requiredHxh==null?null:Number(m.requiredHxh),line=req==null?'':('<div class="v12-reqline" style="bottom:'+Math.min(92,req/max*100)+'%"><span>Required '+req.toFixed(1)+'/h</span></div>');return'<div class="v12-chart"><div class="v12-box-title">HxH TREND · LAST 8 HOURS '+(m.isStale?'<em>HISTORICAL</em>':'')+'</div><div class="v12-chart-body">'+line+hrs.map(function(h){var height=h.good==null?3:Math.max(3,h.good/max*100);return'<div class="v12-bar-col"><b>'+(h.good==null?'N/D':h.good)+'</b><i class="'+(h.good==null?'nd':'')+'" style="height:'+height+'%"></i><span>'+v12Esc(h.label)+'</span></div>'}).join('')+'</div><div class="v12-chart-note">Good unique SN at first valid PASS in candidate Test Area. '+(m.isStale?'Loaded history ends '+v12Esc(cesiumContractDate(m.historyMaxMs))+'.':'Current coverage uses complete hours only.')+'</div></div>'}
 function v12Detail(m,idx){
  var g=m.group||{},loc=v12CurrentLocation(g),plan=v12Plan(m),good=v12Good(m),bal=plan==null||good==null?null:Math.max(0,plan-good),current=v12CurrentCoverage(m),hasCesium=v12HasCesium(m),gap=(!current||m.effectiveHxh==null||m.requiredHxh==null)?null:Number(m.effectiveHxh)-Number(m.requiredHxh),stationRows=(m.stationSummary||[]).slice().sort(function(a,b){return b.rank-a.rank}).map(function(x){return'<tr><td>'+v12Esc(x.station)+'</td><td class="num">'+v12Num(x.unique)+'</td><td class="num">'+v12Num(x.observedPass)+'</td><td class="num">'+(x.fpy==null?'N/D':x.fpy.toFixed(1)+'%')+'</td><td class="num">'+v12Num(x.lastHourGood)+'</td></tr>'}).join(''),fails=hasCesium?v12Failures(m):[],failRows=fails.length?fails.map(function(f){return'<tr><td>'+v12Esc(f.name)+'</td><td class="num">'+v12Num(f.unique)+'</td><td class="num">'+v12Num(f.qty)+'</td></tr>'}).join(''):'<tr><td colspan="3">No production functional FAIL evidence.</td></tr>',serialRows=Object.keys(g.stations||{}).sort(function(a,b){return Number(g.stations[b]||0)-Number(g.stations[a]||0)}).slice(0,6).map(function(st){var sns=Object.keys(g.stationSns&&g.stationSns[st]||{}),ex=sns.slice(0,3).join(', ')+(sns.length>3?', ...':'');return'<tr><td>'+v12Esc(reportCommitStationCode(st)||st)+'</td><td class="num">'+v12Num(g.stations[st])+'</td><td>'+v12Esc(ex||'-')+'</td></tr>'}).join('');
@@ -39575,12 +39536,12 @@ function v12Detail(m,idx){
  var blockerSection='<section><h4>Blocker & Mobilization</h4>'+kv('Primary Blocker',v12BlockerText(m))+kv('Mobilize',m.mobilize||'N/D')+(hasCesium?kv('Candidate Area',m.terminal||'N/D')+kv('History Range',m.historyMaxMs==null?'N/D':(cesiumContractDate(m.historyMinMs)+' → '+cesiumContractDate(m.historyMaxMs))):'')+'</section>';
  var serialPanel='<div class="v12-mini"><div class="v12-box-title">SERIALS BY CURRENT LOCATION</div><table><thead><tr><th>Station</th><th>WIP</th><th>Example SN(s)</th></tr></thead><tbody>'+serialRows+'</tbody></table></div>';
  var cesiumPanels=hasCesium?'<div class="v12-mini"><div class="v12-box-title">TEST AREA PERFORMANCE · CESIUM'+(m.isStale?' · HISTORICAL':'')+'</div><table><thead><tr><th>Test Area</th><th>SN</th><th>PASS rec.</th><th>FPY</th><th>Last HxH</th></tr></thead><tbody>'+(stationRows||'<tr><td colspan="5">No production Test Area evidence.</td></tr>')+'</tbody></table></div><div class="v12-mini"><div class="v12-box-title">TOP FUNCTIONAL FAILURES'+(m.isStale?' · HISTORICAL':'')+'</div><table><thead><tr><th>Failure</th><th>Open/Unique SN</th><th>Fail rec.</th></tr></thead><tbody>'+failRows+'</tbody></table></div>':'';
- var evidence=hasCesium?'<div class="v12-evidence">'+reportCommitEvidenceHtml(m)+'</div>':'<div class="v12-no-cesium"><b>CESIUM</b><span>'+v12Esc(v12BlockerText(m))+'</span><small>HxH, FT performance and functional-failure panels are hidden until matched Cesium evidence exists for this WO.</small></div>';
- return'<div class="v12-detail" data-v12-detail="'+idx+'" style="display:'+(idx===0?'block':'none')+'"><div class="v12-detail-head"><div><b>WO DETAIL · '+v12Esc(g.family||'N/D')+'</b><span>WO '+v12Esc(g.wo||'N/D')+' · PID '+v12Esc(g.sku||'N/D')+' · Version '+v12Esc(g.version||'N/D')+'</span></div><strong style="background:'+t.bg+';color:'+t.fg+'">'+v12Esc(status)+'</strong></div>'+(histNote?'<div style="padding:7px 10px;background:#fff8dc;border-bottom:1px solid #ead48c;color:#7a5d00;font-size:9px">'+histNote+'</div>':'')+'<div class="v12-detail-grid '+(hasCesium?'':'v12-detail-grid-no-cesium')+'">'+commitSection+positionSection+cesiumSection+blockerSection+'</div><div class="v12-lower '+(hasCesium?'':'v12-lower-single')+'">'+serialPanel+cesiumPanels+'</div>'+(hasCesium?v12Bars(m):'')+evidence+'</div>'
+ var evidence=hasCesium?'<div class="v12-evidence">'+reportCommitEvidenceHtml(m)+'</div>':'<div class="v12-no-cesium"><b>CESIUM</b><span>'+v12Esc(v12BlockerText(m))+'</span><small>HxH, FT performance and functional-failure panels are hidden until matched Cesium evidence exists for this exact WO/SKU.</small></div>';
+ var detailKey=v12MetricKey(m);return'<div class="v12-detail" data-v12-detail="'+idx+'" data-v12-key="'+v12Esc(detailKey)+'" style="display:'+(idx===0?'block':'none')+'"><div class="v12-detail-head"><div><b>WO DETAIL · '+v12Esc(g.family||'N/D')+'</b><span>WO '+v12Esc(g.wo||'N/D')+' · PID '+v12Esc(g.sku||'N/D')+' · Version '+v12Esc(g.version||'N/D')+'</span></div><strong style="background:'+t.bg+';color:'+t.fg+'">'+v12Esc(status)+'</strong></div>'+(histNote?'<div style="padding:7px 10px;background:#fff8dc;border-bottom:1px solid #ead48c;color:#7a5d00;font-size:9px">'+histNote+'</div>':'')+'<div class="v12-detail-grid '+(hasCesium?'':'v12-detail-grid-no-cesium')+'">'+commitSection+positionSection+cesiumSection+blockerSection+'</div><div class="v12-lower '+(hasCesium?'':'v12-lower-single')+'">'+serialPanel+cesiumPanels+'</div>'+(hasCesium?v12Bars(m):'')+evidence+'</div>'
 }
 function v12Totals(metrics){var valid=metrics.filter(function(m){return v12Plan(m)!=null}),commit=valid.reduce(function(a,m){return a+v12Plan(m)},0),currentGood=valid.filter(function(m){return v12Good(m)!=null}),good=currentGood.reduce(function(a,m){return a+v12Good(m)},0),balance=currentGood.length===valid.length?Math.max(0,commit-good):null,statuses=metrics.map(v12Status),pastDue=statuses.filter(function(s){return s==='PAST DUE'}).length,atRisk=statuses.filter(function(s){return s==='AT RISK'}).length,blocked=statuses.filter(function(s){return s==='BLOCKED'}).length,historical=metrics.filter(function(m){return !!m.isStale&&Number(m.bridgeDiag&&m.bridgeDiag.matchedRows||0)>0}),histGood=historical.reduce(function(a,m){var n=v12HistoricalCandidateGood(m);return a+(n==null?0:n)},0),noMatch=metrics.filter(function(m){var d=m.bridgeDiag||{};return !!d.received&&!Number(d.matchedRows||0)}).length,sourceMissing=metrics.filter(function(m){return !(m.bridgeDiag||{}).received}).length;return{wo:metrics.length,commit:commit,good:currentGood.length?good:null,balance:balance,risk:pastDue+atRisk+blocked,pastDue:pastDue,atRisk:atRisk,blocked:blocked,inProcess:metrics.filter(function(m){return v12Status(m)!=='COMPLETE'}).length,covered:currentGood.length,planned:valid.length,historical:historical.length,historicalCandidateGood:historical.length?histGood:null,noMatch:noMatch,sourceMissing:sourceMissing}}
 function v12CoverageBanner(total){var parts=['Current FT '+total.covered+'/'+total.wo+' WOs','Historical Cesium '+total.historical+'/'+total.wo,'No WO match '+total.noMatch+'/'+total.wo];if(total.sourceMissing)parts.push('Source missing '+total.sourceMissing+'/'+total.wo);var hist=total.historicalCandidateGood==null?'N/D':v12Num(total.historicalCandidateGood);return'<div class="v12-coverage"><b>DATA COVERAGE</b><span>'+parts.map(v12Esc).join(' · ')+'</span><strong>Historical candidate-area PASS: '+hist+'</strong></div>'}
-function v12SelectScript(){return'<script>(function(){window.smtinelV12Select=function(i){document.querySelectorAll(".v12-row").forEach(function(r){r.classList.toggle("selected",Number(r.getAttribute("data-v12-index"))===Number(i))});document.querySelectorAll(".v12-detail").forEach(function(d){d.style.display=Number(d.getAttribute("data-v12-detail"))===Number(i)?"block":"none"});var el=document.querySelector(".v12-detail[data-v12-detail=\\\""+i+"\\\"]");if(el&&window.innerWidth<800)el.scrollIntoView({behavior:"smooth",block:"start"})};document.querySelectorAll(".v12-row").forEach(function(r){r.addEventListener("click",function(){window.smtinelV12Select(this.getAttribute("data-v12-index"))})})})();<\/script>'}
+function v12SelectScript(){return'<script>(function(){window.smtinelV12Select=function(i,key){var rows=[].slice.call(document.querySelectorAll(".v12-row")),target=rows.filter(function(r){return String(r.getAttribute("data-v12-index"))===String(i)})[0]||null;if(!key&&target)key=target.getAttribute("data-v12-key")||"";rows.forEach(function(r){r.classList.toggle("selected",!!key&&r.getAttribute("data-v12-key")===key)});var details=[].slice.call(document.querySelectorAll(".v12-detail")),match=null;details.forEach(function(d){var on=!!key&&d.getAttribute("data-v12-key")===key;d.style.display=on?"block":"none";if(on)match=d});if(!match&&target){var idx=target.getAttribute("data-v12-index");details.forEach(function(d){var on=String(d.getAttribute("data-v12-detail"))===String(idx);d.style.display=on?"block":"none";if(on)match=d})}if(match&&window.innerWidth<800)match.scrollIntoView({behavior:"smooth",block:"start"})};document.querySelectorAll(".v12-row").forEach(function(r){r.addEventListener("click",function(){window.smtinelV12Select(this.getAttribute("data-v12-index"),this.getAttribute("data-v12-key"))})});var first=document.querySelector(".v12-row.selected")||document.querySelector(".v12-row");if(first)window.smtinelV12Select(first.getAttribute("data-v12-index"),first.getAttribute("data-v12-key"));})();<\/script>'}
 var v12BaseSection=reportCommitReadinessSection;
 reportCommitReadinessSection=function(metrics,td,th){
  metrics=(metrics||[]).slice().sort(function(a,b){return v12ExecRiskRank(b)-v12ExecRiskRank(a)||Number(a.dueMs||9e15)-Number(b.dueMs||9e15)||Number(a.marginHours==null?999999:a.marginHours)-Number(b.marginHours==null?999999:b.marginHours)});
@@ -40679,7 +40640,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
 
 window.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});
 ['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';selectedLayoutLine='';apply()})});document.getElementById('scope').onchange=function(){selected='';selectedLayoutLine='';loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;document.getElementById('shiftEmail').onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadExecutivePptx').onclick=downloadExecutivePptx;document.getElementById('downloadEmail').onclick=downloadEmail;
-renderKpis();renderLayout();requestData();var bonepileAutoSync=setInterval(function(){try{if(!snapshotRows.length){var payload=directParentPayload();if(payload){receive(payload);return}if(Date.now()-lastResponse>5000)requestData()}}catch(_){}},1800);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&(Date.now()-lastResponse>60000||!snapshotRows.length))requestData()})
+renderKpis();renderLayout();requestData();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastResponse>60000)requestData()})
 })();
 ${'</scr'+'ipt>'}
 </body>
@@ -50885,7 +50846,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.77 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -52393,8 +52354,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -52414,7 +52375,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -52719,8 +52680,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   }
 
   function updateBadge(){
@@ -52866,7 +52827,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53039,7 +53000,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53304,7 +53265,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -53330,7 +53291,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -53354,7 +53315,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53528,7 +53489,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -53551,7 +53512,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -53570,7 +53531,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  var versionText = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53611,7 +53572,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var label = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -53640,7 +53601,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION_LABEL = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -53935,7 +53896,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -54314,7 +54275,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -54424,7 +54385,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -55911,7 +55872,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var label='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -62105,7 +62066,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -64854,7 +64815,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -65084,7 +65045,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -65183,7 +65144,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -70896,7 +70857,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -71161,7 +71122,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -71408,7 +71369,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -71604,7 +71565,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -71847,7 +71808,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -72077,7 +72038,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.78 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.14.79 - Executive Decision Intelligence / Stable Import - 2026-08-19';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
