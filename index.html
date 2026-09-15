@@ -371,25 +371,48 @@ window.ensurePptxTools = function() {
 };
 
 window.__traceopsPdfReady = null;
-window.ensurePdfTools = function() {
-  if (window.pdfjsLib) {
-    try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch (_) {}
-    return Promise.resolve();
+window.__traceopsPdfDisabled = false;
+window.__traceopsPdfUrls = [
+  {
+    script: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+    worker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+  },
+  {
+    script: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+    worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
   }
+];
+window.ensurePdfTools = function() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if (window.__traceopsPdfReady) return window.__traceopsPdfReady;
-  window.__traceopsPdfReady = loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js").then(function() {
-    if (!window.pdfjsLib) throw new Error("PDF.js no inicializó correctamente");
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  }).catch(function(err) { window.__traceopsPdfReady = null; throw err; });
+  if (window.__traceopsPdfDisabled) return Promise.reject(new Error("PDF.js unavailable"));
+
+  var urls = window.__traceopsPdfUrls.slice();
+  function tryNext(lastErr) {
+    if (!urls.length) {
+      window.__traceopsPdfDisabled = true;
+      throw (lastErr || new Error("PDF.js unavailable"));
+    }
+    var cfg = urls.shift();
+    return loadExternalScript(cfg.script).then(function() {
+      if (!window.pdfjsLib) throw new Error("PDF.js no inicializó correctamente");
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = cfg.worker; } catch (_) {}
+      return window.pdfjsLib;
+    }).catch(function(err) {
+      try { console.warn("[SMTinel] PDF.js CDN failed, trying fallback:", cfg.script, err); } catch (_) {}
+      return tryNext(err);
+    });
+  }
+
+  window.__traceopsPdfReady = tryNext().catch(function(err) {
+    window.__traceopsPdfReady = null;
+    throw err;
+  });
   return window.__traceopsPdfReady;
 };
 
-/* Prewarm the PDF.js runtime during idle time so Board Impact opens faster. */
-(function(){
-  var warm = function(){ try { window.ensurePdfTools && window.ensurePdfTools().catch(function(){}); } catch (_) {} };
-  if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2500 });
-  else setTimeout(warm, 1800);
-})();
+/* Safari/iOS hotfix: PDF.js is optional and is loaded only when a PDF feature is used.
+   Do not prewarm it during application startup. */
 
 function traceOpsShouldSuppressGlobalScriptError(msg, src, line, col, err) {
   var m = String(msg || '').trim();
@@ -422,9 +445,15 @@ window.addEventListener("error", function(ev) {
   try {
     var target = ev && ev.target;
     if (target && target.tagName === "SCRIPT") {
+      var src = String(target.src || "");
+      var optionalPdf = /pdf(?:\.min)?\.js|pdfjs-dist/i.test(src);
+      if (optionalPdf) {
+        try { console.warn("[SMTinel] Optional PDF script failed; app continues:", src); } catch (_) {}
+        return;
+      }
       traceOpsShowError(
         "SCRIPT LOAD ERROR",
-        (target.src || "Script sin src") + "<br>Revisa CDN / CORS / Safari",
+        (src || "Script sin src") + "<br>Revisa CDN / CORS / Safari",
         "#7F1D1D"
       );
     }
@@ -442,6 +471,7 @@ window.addEventListener("unhandledrejection", function(ev) {
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SMTinel · Trace Monitor Protect</title>
+<!-- SMTinel Safari PDF Hotfix V7: PDF.js is lazy/optional with CDN fallback -->
 <meta name="theme-color" content="#2F3A24"/>
 <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
