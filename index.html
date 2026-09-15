@@ -39535,7 +39535,7 @@ function reportCommitEvidenceHtml(m){
 /* SMTinel End-of-Shift Commit Execution Board V12.1 */
 (function(){
 'use strict';
-var V12_BUILD='COMMIT-EXECUTION-V13.14.99'; /* SECTION-ORDER-NUMBERING-V13.14.99 */
+var V12_BUILD='COMMIT-EXECUTION-V13.15.00'; /* HXH-COMPLETE-HOUR-GOOD-UNIQUE-SN */
 function v12Esc(v){return esc(v==null?'':v)}
 function v12Num(v){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toLocaleString('en-US'):'N/D'}
 function v12One(v,suffix){if(v==null||String(v).trim()==='')return'N/D';var n=Number(v);return isFinite(n)?n.toFixed(1)+(suffix||''):'N/D'}
@@ -39576,14 +39576,14 @@ function v12QualityForGroup(g){
 function v12QualityPanel(m){var rows=v12QualityForGroup(m&&m.group||{}),snMap={};rows.forEach(function(x){Object.keys(x.sns||{}).forEach(function(sn){snMap[sn]=1})});var unique=Object.keys(snMap).length,summary=rows.length?(v12Num(unique)+' affected SN · '+v12Num(rows.length)+' prominent issue'+(rows.length===1?'':'s')):'No linked quality evidence';return'<div class="v12-mini v12-quality-mini"><div class="v12-box-title"><span>TOP QUALITY ISSUES · SELECTED WO</span><small>'+v12Esc(summary)+'</small></div><table><thead><tr><th>Failure mode</th><th>RefDes</th><th>Part Number</th><th>SN</th></tr></thead><tbody>'+(rows.length?rows.map(function(x){return'<tr><td>'+v12Esc(x.mode)+'</td><td>'+v12Esc(x.ref)+'</td><td>'+v12Esc(x.pn)+'</td><td class="num">'+v12Num(x.qty)+'</td></tr>'}).join(''):'<tr><td colspan="4">No linked non-RETEST Repair Record evidence for this WO.</td></tr>')+'</tbody></table></div>'}
 function v12Wip(metrics){var map={},total=0;metrics.forEach(function(m){var g=m.group||{};Object.keys(g.stations||{}).forEach(function(st){var k=reportCommitStationCode(st)||String(st),q=Number(g.stations[st]||0);map[k]=(map[k]||0)+q;total+=q})});var arr=Object.keys(map).map(function(k){return{station:k,qty:map[k]}}).sort(function(a,b){return b.qty-a.qty}).slice(0,4),max=arr.length?arr[0].qty:1;return'<div class="v12-wip"><div class="v12-box-title">CURRENT WIP BY STATION</div>'+arr.map(function(x,i){var c=i===0?'#df1f2d':(i===1?'#ef7f1a':'#8da1a1'),pct=total?x.qty/total*100:0;return'<div class="v12-wip-row"><b>'+v12Esc(x.station)+'</b><div><i style="width:'+Math.max(3,x.qty/max*100)+'%;background:'+c+'"></i></div><strong>'+v12Num(x.qty)+' <small style="font-size:8px;color:#69756e">· '+pct.toFixed(1)+'%</small></strong></div>'}).join('')+'</div>'}
 function v12Table(metrics){return'<div class="v12-table-wrap"><table class="v12-table"><thead><tr>'+['#','Model','PID','WO','Version','Commit Qty','Actual Good','Balance','Commit Date*','Forecast Finish','Status','Current Location','Blocker / Reason','Repair','Actual HxH','Req. HxH','Mobilize'].map(function(x){return'<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+metrics.map(function(m,idx){var g=m.group||{},loc=v12CurrentLocation(g),plan=v12Plan(m),good=v12Good(m),bal=(plan==null||good==null)?null:Math.max(0,plan-good),status=v12Status(m),t=v12Tone(status),actual=v12BottleneckHxhText(m),req=m&&m.requiredHxh!=null?v12One(m.requiredHxh,'/h'):'N/D',blocker=v12BlockerText(m);return'<tr class="v12-row '+(idx===0?'selected':'')+'" data-v12-index="'+idx+'" onclick="if(window.smtinelV12Select){window.smtinelV12Select('+idx+')}else{var I='+idx+';document.querySelectorAll(\'.v12-row\').forEach(function(r){r.classList.toggle(\'selected\',Number(r.getAttribute(\'data-v12-index\'))===I)});document.querySelectorAll(\'.v12-detail\').forEach(function(d){d.style.display=Number(d.getAttribute(\'data-v12-detail\'))===I?\'block\':\'none\'})}" data-bu="'+v12Esc(g.bu||g.businessUnit||'N/D')+'" data-line="'+v12Esc(g.line||'N/D')+'" data-model="'+v12Esc(g.family||'N/D')+'" data-sku="'+v12Esc(g.sku||'N/D')+'" data-wo="'+v12Esc(g.wo||'N/D')+'"><td>'+(idx+1)+'</td><td><b>'+v12Esc(g.family||'N/D')+'</b></td><td>'+v12Esc(g.sku||'N/D')+'</td><td>'+v12Esc(g.wo||'N/D')+'</td><td>'+v12Esc(g.version||'N/D')+'</td><td class="num">'+v12Num(plan)+'</td><td class="num">'+v12Num(good)+'</td><td class="num '+(bal>0?'badnum':'')+'">'+v12Num(bal)+'</td><td>'+v12Date(m.dueMs)+'</td><td>'+v12ForecastText(m)+'</td><td><span class="v12-status" style="background:'+t.bg+';color:'+t.fg+'">'+v12Esc(status)+'</span></td><td>'+v12Esc(loc.station)+(loc.qty?' · '+v12Num(loc.qty):'')+'</td><td>'+v12Esc(blocker)+'</td><td class="num">'+v12Num(g.repair||0)+'</td><td class="num">'+actual+'</td><td class="num">'+req+'</td><td>'+v12Esc(m.mobilize||'N/D')+'</td></tr>'}).join('')+'</tbody></table></div>'}
-function v12Bars(m){var hrs=v12EightHours(m),vals=hrs.map(function(h){return h.good==null?0:h.good}),max=Math.max.apply(Math,[1].concat(vals).concat([Number(m.requiredHxh||0)])),req=m.requiredHxh==null?null:Number(m.requiredHxh),line=req==null?'':('<div class="v12-reqline" style="bottom:'+Math.min(92,req/max*100)+'%"><span>Required '+req.toFixed(1)+'/h</span></div>');return'<div class="v12-chart"><div class="v12-box-title">HxH TREND · LAST 8 HOURS '+(m.isStale?'<em>HISTORICAL</em>':'')+'</div><div class="v12-chart-body">'+line+hrs.map(function(h){var height=h.good==null?3:Math.max(3,h.good/max*100);return'<div class="v12-bar-col"><b>'+(h.good==null?'N/D':h.good)+'</b><i class="'+(h.good==null?'nd':'')+'" style="height:'+height+'%"></i><span>'+v12Esc(h.label)+'</span></div>'}).join('')+'</div><div class="v12-chart-note">Good unique SN at first valid PASS in candidate Test Area. '+(m.isStale?'Loaded history ends '+v12Esc(cesiumContractDate(m.historyMaxMs))+'.':'Current coverage uses complete hours only.')+'</div></div>'}
+function v12Bars(m){var hrs=v12EightHours(m),vals=hrs.map(function(h){return h.good==null?0:h.good}),max=Math.max.apply(Math,[1].concat(vals).concat([Number(m.requiredHxh||0)])),req=m.requiredHxh==null?null:Number(m.requiredHxh),line=req==null?'':('<div class="v12-reqline" style="bottom:'+Math.min(92,req/max*100)+'%"><span>Required '+req.toFixed(1)+'/h</span></div>');return'<div class="v12-chart"><div class="v12-box-title">HxH TREND · LAST 8 HOURS '+(m.isStale?'<em>HISTORICAL</em>':'')+'</div><div class="v12-chart-body">'+line+hrs.map(function(h){var height=h.good==null?3:Math.max(3,h.good/max*100);return'<div class="v12-bar-col"><b>'+(h.good==null?'N/D':h.good)+'</b><i class="'+(h.good==null?'nd':'')+'" style="height:'+height+'%"></i><span>'+v12Esc(h.label)+'</span></div>'}).join('')+'</div><div class="v12-chart-note">Official HxH = average Good unique SN across the last 4 complete covered hours. Bars show first valid PASS by hour. '+(m.isStale?'Loaded history ends '+v12Esc(cesiumContractDate(m.historyMaxMs))+'.':'Current coverage uses complete hours only.')+'</div></div>'}
 function v12Detail(m,idx){
  var g=m.group||{},loc=v12CurrentLocation(g),plan=v12Plan(m),good=v12Good(m),bal=plan==null||good==null?null:Math.max(0,plan-good),current=v12CurrentCoverage(m),hasCesium=v12HasCesium(m),gap=(!current||m.effectiveHxh==null||m.requiredHxh==null)?null:Number(m.effectiveHxh)-Number(m.requiredHxh),stationRows=(m.stationSummary||[]).slice().sort(function(a,b){return b.rank-a.rank}).map(function(x){return'<tr><td>'+v12Esc(x.station)+'</td><td class="num">'+v12Num(x.unique)+'</td><td class="num">'+v12Num(x.observedPass)+'</td><td class="num">'+(x.fpy==null?'N/D':x.fpy.toFixed(1)+'%')+'</td><td class="num">'+v12Num(x.lastHourGood)+'</td></tr>'}).join(''),fails=hasCesium?v12Failures(m):[],failRows=fails.length?fails.map(function(f){var sns=(f.serials||[]),shown=sns.slice(0,3),more=Math.max(0,sns.length-shown.length),full=sns.join(', '),serialHtml=shown.length?shown.map(function(sn){return'<code>'+v12Esc(sn)+'</code>'}).join('<br>'):'N/D';if(more)serialHtml+='<small>+'+more+' more</small>';return'<tr><td>'+v12Esc(f.name)+'</td><td class="num">'+v12Num(f.unique)+'</td><td class="v12-fail-serials" title="'+v12Esc(full)+'">'+serialHtml+'</td><td class="num">'+v12Num(f.qty)+'</td></tr>'}).join(''):'<tr><td colspan="4">No production functional FAIL evidence.</td></tr>',serialRows=Object.keys(g.stations||{}).sort(function(a,b){return Number(g.stations[b]||0)-Number(g.stations[a]||0)}).slice(0,6).map(function(st){var sns=Object.keys(g.stationSns&&g.stationSns[st]||{}),ex=sns.slice(0,3).join(', ')+(sns.length>3?', ...':'');return'<tr><td>'+v12Esc(reportCommitStationCode(st)||st)+'</td><td class="num">'+v12Num(g.stations[st])+'</td><td>'+v12Esc(ex||'-')+'</td></tr>'}).join('');
  function kv(k,v,bad){return'<div><span>'+v12Esc(k)+'</span><b class="'+(bad?'badnum':'')+'">'+v12Esc(v)+'</b></div>'}
- var status=v12Status(m),t=v12Tone(status),histGood=v12HistoricalCandidateGood(m),histNote=m.isStale&&hasCesium?'Historical Cesium evidence is available below. It remains excluded from current Good/FPY, but SMTinel may use the lowest-FPY Test Area as a labeled historical bottleneck pace estimate for HxH and Forecast.'+(histGood==null?'':' Historical candidate-area PASS: '+v12Num(histGood)+'.'):'';
+ var status=v12Status(m),t=v12Tone(status),histGood=v12HistoricalCandidateGood(m),histNote=m.isStale&&hasCesium?'Historical Cesium evidence is available below. It remains excluded from current Good/FPY. Historical HxH and Forecast use only the average physical Good unique SN across four complete covered hours in the lowest-FPY candidate Test Area.'+(histGood==null?'':' Historical candidate-area PASS: '+v12Num(histGood)+'.'):'';
  var commitSection='<section><h4>Commit & Execution</h4>'+kv('Commit Qty',v12Num(plan))+kv('Actual Good',v12Num(good))+kv('Balance',v12Num(bal),bal>0)+kv('Commit Date*',v12Date(m.dueMs))+kv('Forecast Finish',v12ForecastText(m))+kv('Margin',m&&m.marginHours!=null?reportCommitFmtHours(m.marginHours):'N/D',m&&m.marginHours<0)+'</section>';
  var positionSection='<section><h4>Current Position</h4>'+kv('Current Location',loc.station)+kv('WIP at Location',v12Num(loc.qty))+kv('Pending to FT',v12Num(m.pendingToFt))+kv('Total WIP',v12Num(g.units))+kv('Repair Units',v12Num(g.repair))+kv('Execution State',current?'FT ACTIVE':(m.isStale&&hasCesium?'HISTORICAL FT / CURRENT SFC':'UPSTREAM / DATA'))+'</section>';
- var cesiumSection=hasCesium?'<section><h4>Performance (Cesium)</h4>'+kv(m&&m.bottleneckHistorical?'Historical HxH':'Actual HxH',v12BottleneckHxhText(m))+kv('Critical Test Area',m&&m.bottleneckStation||m.terminal||'N/D')+kv('Lowest FPY',m&&m.bottleneckFpy!=null?Number(m.bottleneckFpy).toFixed(1)+'%':(current&&m.fpy!=null?m.fpy.toFixed(1)+'%':'N/D'))+kv('Avg test interval',m&&m.bottleneckAvgIntervalMin!=null?Number(m.bottleneckAvgIntervalMin).toFixed(2)+' min':'N/D')+kv('Required HxH',m&&m.requiredHxh!=null?v12One(m.requiredHxh,'/h'):'N/D')+kv('Observed Test SN',m&&m.bottleneckTested!=null?v12Num(m.bottleneckTested):(current?v12Num(m.ftObserved):'N/D'))+'</section>':'';
+ var cesiumSection=hasCesium?'<section><h4>Performance (Cesium)</h4>'+kv(m&&m.bottleneckHistorical?'Historical HxH · 4h avg':'Actual HxH · 4h avg',v12BottleneckHxhText(m))+kv('Critical Test Area',m&&m.bottleneckStation||m.terminal||'N/D')+kv('Lowest FPY',m&&m.bottleneckFpy!=null?Number(m.bottleneckFpy).toFixed(1)+'%':(current&&m.fpy!=null?m.fpy.toFixed(1)+'%':'N/D'))+kv('Active Test Pace',m&&m.activeTestPace!=null&&Number.isFinite(Number(m.activeTestPace))?Number(m.activeTestPace).toFixed(1)+'/h':'N/D')+kv('Avg PASS interval',m&&m.bottleneckAvgIntervalMin!=null?Number(m.bottleneckAvgIntervalMin).toFixed(2)+' min':'N/D')+kv('Required HxH',m&&m.requiredHxh!=null?v12One(m.requiredHxh,'/h'):'N/D')+kv('Observed Test SN',m&&m.bottleneckTested!=null?v12Num(m.bottleneckTested):(current?v12Num(m.ftObserved):'N/D'))+'</section>':'';
  var blockerSection='<section><h4>Blocker & Mobilization</h4>'+kv('Primary Blocker',v12BlockerText(m))+kv('Mobilize',m.mobilize||'N/D')+(hasCesium?kv('Candidate Area',m.terminal||'N/D')+kv('History Range',m.historyMaxMs==null?'N/D':(cesiumContractDate(m.historyMinMs)+' → '+cesiumContractDate(m.historyMaxMs))):'')+'</section>';
  var serialPanel='<div class="v12-mini"><div class="v12-box-title">SERIALS BY CURRENT LOCATION</div><table><thead><tr><th>Station</th><th>WIP</th><th>Example SN(s)</th></tr></thead><tbody>'+serialRows+'</tbody></table></div>';
  var cesiumPanels=hasCesium?'<div class="v12-mini"><div class="v12-box-title">TEST AREA PERFORMANCE · CESIUM'+(m.isStale?' · HISTORICAL':'')+'</div><table><thead><tr><th>Test Area</th><th>SN</th><th>PASS rec.</th><th>FPY</th><th>Last HxH</th></tr></thead><tbody>'+(stationRows||'<tr><td colspan="5">No production Test Area evidence.</td></tr>')+'</tbody></table></div><div class="v12-mini v12-functional-fails"><div class="v12-box-title">TOP FUNCTIONAL FAILURES'+(m.isStale?' · HISTORICAL':'')+'</div><table><thead><tr><th>Failure</th><th>Affected SN</th><th>Affected serial(s)</th><th>Fail rec.</th></tr></thead><tbody>'+failRows+'</tbody></table></div>':'';
@@ -40801,10 +40801,10 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
 ['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';selectedLayoutLine='';apply()})});document.getElementById('scope').onchange=function(){selected='';selectedLayoutLine='';loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;document.getElementById('shiftEmail').onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadExecutivePptx').onclick=downloadExecutivePptx;document.getElementById('downloadEmail').onclick=downloadEmail;
 
 
-/* SMTinel V13.14.89 - Cesium bottleneck forecast + DBN preview/export runtime fix */
+/* SMTinel V13.15.00 - HxH semantic correction: complete-hour physical output */
 (function(){
   'use strict';
-  window.__SMTINEL_V131494__='CESIUM-BOTTLENECK-FORECAST-DBN-SCOPED-FIX';
+  window.__SMTINEL_V131500__='HXH-COMPLETE-HOUR-GOOD-UNIQUE-SN';
 
   function _mean(a){return a&&a.length?a.reduce(function(x,y){return x+y},0)/a.length:null}
   function _median(a){if(!a||!a.length)return null;var b=a.slice().sort(function(x,y){return x-y}),m=Math.floor(b.length/2);return b.length%2?b[m]:(b[m-1]+b[m])/2}
@@ -40815,6 +40815,11 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
     var med=_median(d),cap=Math.max(15*60000,(med||0)*5),active=d.filter(function(v){return v<=cap});
     return _mean(active.length?active:d)
   }
+  function _completeHourAverage(hours){
+    hours=(hours||[]).slice();
+    if(hours.length!==4||!hours.every(function(h){return !!h.covered&&h.good!=null&&Number.isFinite(Number(h.good))}))return null;
+    return hours.reduce(function(a,h){return a+Number(h.good||0)},0)/hours.length;
+  }
   function _fmtDate(ms){if(!Number.isFinite(Number(ms))||Number(ms)<=0)return'N/D';try{return reportCommitFmtDate(Number(ms))}catch(_){return new Date(Number(ms)).toLocaleString()}}
 
   function smtinelCriticalCesiumMetric(group,cutMs){
@@ -40822,33 +40827,67 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
     var parsed;try{parsed=cesiumContractRows(group,cutMs)}catch(_){return null}
     var rows=(parsed&&parsed.rows||[]).filter(function(r){return r&&!r.debug&&(r.kind==='pass'||r.kind==='fail')&&!reportCommitExcludedFtStation(r.station)}),map={};
     rows.forEach(function(r){var st=String(r.station||'').trim();if(!st)return;if(!map[st])map[st]={station:st,bySn:{},passTime:{},latest:0,rows:[]};var x=map[st];x.rows.push(r);x.latest=Math.max(x.latest,Number(r.ms||0));if(!x.bySn[r.sn]||Number(r.ms)<Number(x.bySn[r.sn].ms))x.bySn[r.sn]=r;if(r.kind==='pass'&&(x.passTime[r.sn]==null||Number(r.ms)<x.passTime[r.sn]))x.passTime[r.sn]=Number(r.ms)});
-    var cand=Object.keys(map).map(function(k){var x=map[k],sns=Object.keys(x.bySn),firstPass=0,firstFail=0;sns.forEach(function(sn){var r=x.bySn[sn];if(r.kind==='pass')firstPass++;else if(r.kind==='fail')firstFail++});var tested=firstPass+firstFail,fpy=tested?firstPass/tested*100:null,passSns=Object.keys(x.passTime),interval=_activeInterval(passSns.map(function(sn){return x.passTime[sn]})),rate=interval&&interval>0?3600000/interval:null;return{station:x.station,tested:tested,firstPass:firstPass,firstFail:firstFail,fpy:fpy,good:passSns.length,avgIntervalMs:interval,rate:rate,latest:x.latest}}).filter(function(x){return x.tested>=10&&x.fpy!=null&&x.rate!=null&&x.rate>0});
+    var cand=Object.keys(map).map(function(k){var x=map[k],sns=Object.keys(x.bySn),firstPass=0,firstFail=0;sns.forEach(function(sn){var r=x.bySn[sn];if(r.kind==='pass')firstPass++;else if(r.kind==='fail')firstFail++});var tested=firstPass+firstFail,fpy=tested?firstPass/tested*100:null,passSns=Object.keys(x.passTime),interval=_activeInterval(passSns.map(function(sn){return x.passTime[sn]})),activePace=interval&&interval>0?3600000/interval:null;return{station:x.station,tested:tested,firstPass:firstPass,firstFail:firstFail,fpy:fpy,good:passSns.length,avgIntervalMs:interval,activePace:activePace,latest:x.latest}}).filter(function(x){return x.tested>=10&&x.fpy!=null});
     if(!cand.length)return null;
+    /* Critical Test Area remains a quality-risk signal: lowest FPY, then largest tested population. */
     cand.sort(function(a,b){return a.fpy-b.fpy||b.tested-a.tested||a.station.localeCompare(b.station,undefined,{numeric:true})});
     var c=cand[0],stale=c.latest>0&&c.latest<cutMs-2*3600000;return Object.assign(c,{historical:stale,all:cand});
   }
 
   var _baseReadiness=reportCommitReadiness;
   reportCommitReadiness=function(group,cutMs){
-    var m=_baseReadiness(group,cutMs),critical=smtinelCriticalCesiumMetric(group,cutMs||Date.now());
+    var now=Number(cutMs||Date.now()),m=_baseReadiness(group,now),critical=smtinelCriticalCesiumMetric(group,now);
     if(!critical)return m;
-    var plan=(m.plan==null?null:Number(m.plan)),population=Math.max(Number(group&&group.units||0),plan==null?0:plan),remaining=population>0?Math.max(0,population-critical.good):null,now=Number(cutMs||Date.now()),forecast=(remaining!=null&&critical.rate>0)?now+(remaining/critical.rate)*3600000:NaN;
-    m.bottleneckStation=critical.station;m.bottleneckFpy=critical.fpy;m.bottleneckHxh=critical.rate;m.bottleneckAvgIntervalMin=critical.avgIntervalMs/60000;m.bottleneckTested=critical.tested;m.bottleneckGood=critical.good;m.bottleneckHistorical=critical.historical;m.forecastBasis=critical.historical?'HISTORICAL BOTTLENECK PACE':'CURRENT BOTTLENECK PACE';
-    m.terminal=critical.station;m.fpy=critical.fpy;
-    if(!critical.historical)m.effectiveHxh=critical.rate;else m.historicalHxh=critical.rate;
+
+    var parsed=cesiumContractRows(group,now),srcMin=cesiumEvidenceMeta.minMs==null?null:Number(cesiumEvidenceMeta.minMs),srcMax=cesiumEvidenceMeta.maxMs==null?null:Number(cesiumEvidenceMeta.maxMs);
+    if(srcMax!=null)srcMax=Math.min(srcMax,now);
+    var currentHours=cesiumContractHours(parsed.rows,critical.station,now,srcMin,srcMax);
+    var historicalHours=cesiumContractHours(parsed.rows,critical.station,critical.latest||now,srcMin,srcMax);
+    var currentHxh=_completeHourAverage(currentHours),historicalHxh=_completeHourAverage(historicalHours);
+    var officialHxh=critical.historical?historicalHxh:currentHxh;
+
+    var plan=(m.plan==null?null:Number(m.plan)),population=Math.max(Number(group&&group.units||0),plan==null?0:plan),remaining=population>0?Math.max(0,population-critical.good):null;
+    var pace=officialHxh!=null&&Number.isFinite(Number(officialHxh))?Number(officialHxh):null;
+    var forecast=(remaining!=null&&pace!=null&&pace>0)?now+(remaining/pace)*3600000:NaN;
+
+    m.bottleneckStation=critical.station;
+    m.bottleneckFpy=critical.fpy;
+    m.bottleneckHxh=officialHxh;
+    m.activeTestPace=critical.activePace;
+    m.bottleneckAvgIntervalMin=critical.avgIntervalMs==null?null:critical.avgIntervalMs/60000;
+    m.bottleneckTested=critical.tested;
+    m.bottleneckGood=critical.good;
+    m.bottleneckHistorical=critical.historical;
+    m.hxhMethod='4 COMPLETE HOURS · GOOD UNIQUE SN';
+    m.forecastBasis=critical.historical?'HISTORICAL 4H GOOD OUTPUT':'CURRENT 4H GOOD OUTPUT';
+    m.terminal=critical.station;
+    m.fpy=critical.fpy;
+    m.currentHourRows=currentHours;
+    m.historicalHourRows=historicalHours;
+    m.hourRows=critical.historical?historicalHours:currentHours;
+    m.historicalHxh=historicalHxh;
+    m.effectiveHxh=critical.historical?null:currentHxh;
     m.remaining=remaining;
-    if(Number.isFinite(forecast)){m.forecastMs=forecast;if(Number.isFinite(Number(m.dueMs)))m.marginHours=(Number(m.dueMs)-forecast)/3600000;var hrs=(Number(m.dueMs)-now)/3600000;m.requiredHxh=(remaining!=null&&hrs>0)?remaining/hrs:null}
-    try{var parsed=cesiumContractRows(group,now),srcMin=cesiumEvidenceMeta.minMs,srcMax=cesiumEvidenceMeta.maxMs;m.currentHourRows=cesiumContractHours(parsed.rows,critical.station,now,srcMin,srcMax);m.historicalHourRows=cesiumContractHours(parsed.rows,critical.station,critical.latest||now,srcMin,srcMax);m.hourRows=critical.historical?m.historicalHourRows:m.currentHourRows}catch(_){}
+
+    /* Forecast uses physical good output per complete hour. Active test pace is diagnostic only. */
+    m.forecastMs=NaN;m.marginHours=null;
+    if(Number.isFinite(forecast)){
+      m.forecastMs=forecast;
+      if(Number.isFinite(Number(m.dueMs)))m.marginHours=(Number(m.dueMs)-forecast)/3600000;
+    }
+    if(Number.isFinite(Number(m.dueMs))){var hrs=(Number(m.dueMs)-now)/3600000;m.requiredHxh=(remaining!=null&&hrs>0)?remaining/hrs:null}else m.requiredHxh=null;
     return m;
   };
 
-  window.v12BottleneckHxhText=function(m){var n=m&&m.bottleneckHxh!=null?Number(m.bottleneckHxh):(m&&m.effectiveHxh!=null?Number(m.effectiveHxh):NaN);if(!Number.isFinite(n)||n<=0)return'N/D';return n.toFixed(1)+'/h'+(m&&m.bottleneckHistorical?' · HIST':'')};
+  window.v12BottleneckHxhText=function(m){
+    var raw=m&&m.bottleneckHxh!=null?m.bottleneckHxh:(m&&m.effectiveHxh!=null?m.effectiveHxh:null);
+    if(raw==null||raw===''||!Number.isFinite(Number(raw))||Number(raw)<0)return'N/D';
+    return Number(raw).toFixed(1)+'/h'+(m&&m.bottleneckHistorical?' · HIST':'');
+  };
   window.v12ForecastText=function(m){if(!m||!Number.isFinite(Number(m.forecastMs))||Number(m.forecastMs)<=0)return'N/D';var txt=_fmtDate(m.forecastMs);return m.bottleneckHistorical?txt+' · EST. HIST':txt};
-  // Expose as lexical names for existing render functions.
   try{v12BottleneckHxhText=window.v12BottleneckHxhText;v12ForecastText=window.v12ForecastText}catch(_){}
 
-  /* DBN rendering is intentionally handled by the scoped V13.14.94 API below.
-     Do not reference DBN lexical functions from this forecast IIFE. */
+  /* DBN rendering is intentionally handled by the scoped API below. */
 })();
 
 /* SMTinel V13.14.97 - DBN dedicated preview surface + route-order runtime fix. */
