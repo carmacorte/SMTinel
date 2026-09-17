@@ -39131,7 +39131,7 @@ function traceOpsBonepileBuildPayload() {
                 <label class="field">From<input id="testPerfFrom" type="date"></label>
                 <label class="field">To<input id="testPerfTo" type="date"></label>
                 <label class="field">Shift<select id="testPerfShift"><option value="ALL">All shifts</option><option value="1st">1st · 06:00–15:15</option><option value="2nd">2nd · 15:15–00:15</option><option value="3rd">3rd · 00:15–06:00</option></select></label>
-                <label class="field">BU<select id="testPerfBu"><option value="ALL">All BU</option></select></label>
+                <label class="field">BU · Report Scope<select id="testPerfBu" required><option value="">Select BU first</option></select></label>
                 <label class="field">Cisco Week<select id="testPerfWeek"><option value="ALL">All weeks</option></select></label>
                 <label class="field">Product / Model<select id="testPerfModel"><option value="ALL">All products</option></select></label>
                 <label class="field">Cesium SKU / UUT<select id="testPerfSku"><option value="ALL">All SKU / UUT</option></select></label>
@@ -41068,34 +41068,55 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
 /* SMTinel V13.15.50 - Test Performance is an Export Center report, not a workspace module */
 (function(){
   'use strict';
-  var TEST_BUILD='TEST-EXPORT-CENTER-V1.4.0', testCsvButton=null, lastTestKey='';
+  var TEST_BUILD='TEST-EXPORT-CENTER-V1.6.0-BU-FIRST', testCsvButton=null, lastTestKey='',fullHtmlKey='',fullHtmlCache='',previewTimer=null;
   function isTest(){var el=document.getElementById('reportType');return !!(el&&el.value==='TEST')}
   function api(){try{return window.parent&&window.parent.SMTINEL_TEST_PERF_API||null}catch(_){return null}}
   function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function dateMinus(ymd,n){if(!ymd)return'';var a=String(ymd).split('-').map(Number),d=new Date(a[0],a[1]-1,a[2]-Number(n||0));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
   function controls(){return document.getElementById('testPerformanceControls')}
-  function filters(){return {from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'ALL',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}
+  function filters(){return {from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}
   function key(){var f=filters(),n=(document.getElementById('shiftNotes')||{}).value||'';return [f.from,f.to,f.shift,f.bu,f.week,f.model,f.sku,f.area,f.failure,f.target,n].join('|')}
   function ensureOption(select,value,label){if(!select)return;var opt=document.createElement('option');opt.value=value;opt.textContent=label||value;select.appendChild(opt)}
-  function fillOptions(force){var a=api(),m=a&&a.meta?a.meta():null;if(!m)return false;var defs=[['testPerfBu','All BU',m.bus||[]],['testPerfWeek','All weeks',m.weeks||[]],['testPerfModel','All products',m.models||[]],['testPerfSku','All SKU / UUT',m.skus||[]],['testPerfArea','All Test Areas',m.areas||[]],['testPerfFailure','All failure modes',m.failures||[]]];defs.forEach(function(d){var el=document.getElementById(d[0]);if(!el||(!force&&el.options.length>1))return;var keep=el.value||'ALL';el.innerHTML='<option value="ALL">'+d[1]+'</option>';d[2].forEach(function(x){ensureOption(el,x,x)});if([].slice.call(el.options).some(function(o){return o.value===keep}))el.value=keep});var from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(m.latestDate&&from&&to&&!from.value&&!to.value){from.value=m.latestDate;to.value=m.latestDate}var target=document.getElementById('testPerfTarget');if(target&&!target.value){try{target.value=localStorage.getItem('smtinel_test_perf_target_v1')||''}catch(_){}}return true}
-  function applyPreset(v){var a=api(),m=a&&a.meta?a.meta():null,latest=m&&m.latestDate||'',from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(!from||!to)return;if(v==='day'){from.value=latest;to.value=latest}else if(v==='7d'){from.value=dateMinus(latest,6);to.value=latest}else{from.value='';to.value=''}render('preset',true)}
+  var lastBuOptions='';
+  function fillOptions(force){
+    var a=api(),buEl=document.getElementById('testPerfBu');if(!a||!a.meta||!buEl)return false;
+    var globalMeta=a.meta('')||{},selectedBu=buEl.value||'';
+    if(force||buEl.options.length<=1){var keepBu=selectedBu;buEl.innerHTML='<option value="">Select BU first</option>';(globalMeta.bus||[]).forEach(function(x){ensureOption(buEl,x,x)});if(keepBu&&[].slice.call(buEl.options).some(function(o){return o.value===keepBu}))buEl.value=keepBu;selectedBu=buEl.value||'';}
+    var m=selectedBu?(a.meta(selectedBu)||globalMeta):globalMeta,changed=(selectedBu!==lastBuOptions);
+    var defs=[['testPerfWeek','All weeks',m.weeks||[]],['testPerfModel','All products',m.models||[]],['testPerfSku','All SKU / UUT',m.skus||[]],['testPerfArea','All Test Areas',m.areas||[]],['testPerfFailure','All failure modes',m.failures||[]]];
+    defs.forEach(function(d){var el=document.getElementById(d[0]);if(!el)return;el.disabled=!selectedBu;if(!force&&!changed&&el.options.length>1)return;var keep=changed?'ALL':(el.value||'ALL');el.innerHTML='<option value="ALL">'+d[1]+'</option>';if(selectedBu)d[2].forEach(function(x){ensureOption(el,x,x)});if([].slice.call(el.options).some(function(o){return o.value===keep}))el.value=keep;else el.value='ALL'});
+    var from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(changed&&selectedBu&&m.latestDate&&from&&to){from.value=m.latestDate;to.value=m.latestDate}else if(m.latestDate&&from&&to&&!from.value&&!to.value){from.value=m.latestDate;to.value=m.latestDate}
+    var target=document.getElementById('testPerfTarget');if(target&&!target.value){try{target.value=localStorage.getItem('smtinel_test_perf_target_v1')||''}catch(_){}}
+    lastBuOptions=selectedBu;return true
+  }
+  function applyPreset(v){var a=api(),bu=(document.getElementById('testPerfBu')||{}).value||'',m=a&&a.meta?a.meta(bu):null,latest=m&&m.latestDate||'',from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(!from||!to)return;if(v==='day'){from.value=latest;to.value=latest}else if(v==='7d'){from.value=dateMinus(latest,6);to.value=latest}else{from.value='';to.value=''}scheduleRender('preset')}
   function decorateReport(html){var notes=(document.getElementById('shiftNotes')||{}).value||'';if(!notes)return html;var box='<div class="tpr-card" style="border-left:5px solid #315e87;margin-bottom:10px"><div class="tpr-card-title">MANAGEMENT NOTES / ACTIONS</div><div style="white-space:pre-wrap;font-size:11px">'+safe(notes)+'</div></div>';var out=String(html||'');if(out.indexOf('<div class="tpr-method">')>=0)return out.replace('<div class="tpr-method">',box+'<div class="tpr-method">');return out.replace('<div class="tp-method">',box+'<div class="tp-method">')}
-  function reportHtml(){var a=api();if(!a||!a.reportHtmlFor)return'';return decorateReport(a.reportHtmlFor(filters()))}
-  function render(reason,force){if(!isTest())return false;fillOptions(false);var preview=document.getElementById('emailPreview');if(!preview)return false;var k=key();if(!force&&k===lastTestKey&&preview.querySelector('iframe[data-test-report-preview]'))return true;var a=api();if(!a||!a.reportHtmlFor){preview.innerHTML='<div style="padding:18px;color:#E8E8E6;border:1px solid #3A3A3A;background:#111;border-radius:12px"><b>Test Performance engine is not ready.</b><br>Load the same Yield Flow source package, then reopen Export Center.</div>';return false}var html=reportHtml();preview.innerHTML='';var frame=document.createElement('iframe');frame.setAttribute('data-test-report-preview',TEST_BUILD);frame.title='Test Performance report preview';frame.style.cssText='width:100%;height:760px;border:0;border-radius:10px;background:#fff;display:block';frame.srcdoc=html;preview.appendChild(frame);lastTestKey=k;return true}
+  function quickPreviewHtml(){
+    var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body style="font-family:Segoe UI,Arial;padding:24px">Test Performance engine is not ready.</body>';
+    var f=filters();if(!f.bu)return '<!doctype html><meta charset="utf-8"><body style="margin:0;background:#eef2ec;font-family:Segoe UI,Arial;color:#17231a"><div style="max-width:760px;margin:80px auto;padding:28px;background:#fff;border:1px solid #d7e0da;border-radius:20px"><b style="font-size:24px">Select a BU to start</b><p style="color:#607067;line-height:1.5">Test Performance now calculates one Business Unit at a time. Choose CRBU, NGFWBU, CVEBU or another available BU in Export Center. No global Test calculation runs until a BU is selected.</p></div></body>';
+    var m=a.computeFor(f)||{},top=(m.failures||[])[0]||null,tested=Number(m.eteTested||0),fpy=(m.fpy==null||!isFinite(m.fpy))?null:Number(m.fpy),touch=(tested&&fpy!=null)?Math.max(0,100-fpy):null,impact=Number(top&&top.affected||m.eteFail||0),fr=tested?100*impact/tested:null;
+    function pct(v){return v==null||!isFinite(v)?'N/D':Number(v).toFixed(2)+'%'}
+    function card(label,value,note,cls){return '<div class="qk '+(cls||'')+'"><small>'+safe(label)+'</small><b>'+safe(value)+'</b><span>'+safe(note||'')+'</span></div>'}
+    var gains=[.25,.5,.75].map(function(p){var saved=Math.round(impact*p),gain=tested?100*saved/tested:null,next=(fpy!=null&&gain!=null)?Math.min(100,fpy+gain):null;return '<tr><td>Fix '+Math.round(p*100)+'%</td><td>'+saved+'</td><td>+'+pct(gain)+' → <b>'+pct(next)+'</b></td></tr>'}).join('');
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#eef2ec;font-family:Segoe UI,Arial;color:#17231a}.wrap{padding:18px}.head{background:#fff;border:1px solid #d7e0da;border-radius:18px;padding:16px 18px;display:flex;justify-content:space-between;gap:12px}.head b{font-size:22px}.head span{font-size:11px;color:#627067}.grid{display:grid;grid-template-columns:1.4fr .8fr;gap:14px;margin-top:14px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.qk{background:#fff;border:1px solid #d9e2dc;border-radius:14px;padding:12px}.qk small,.qk span{display:block;color:#647168;font-size:10px}.qk b{display:block;font-size:25px;margin:7px 0}.qk.good{background:#eff8f0}.qk.warn{background:#fff7e4}.qk.risk{background:#fdecee}.qk.info{background:#edf5fd}.box{background:#fff;border:1px solid #d9e2dc;border-radius:18px;padding:14px;margin-top:12px}.ribbon{display:inline-block;background:#cb4254;color:#fff;border-radius:10px;padding:7px 12px;font-weight:900}.off{font-size:18px;margin:12px 0}.big{font-size:36px;color:#b92134;font-weight:900}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e0e7e2;padding:8px;text-align:left}th{background:#35567f;color:#fff}.note{font-size:11px;color:#66736b;margin-top:12px}.actions{margin-top:10px}.actions b{display:block;margin-bottom:8px}.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#eaf0e7;font-size:10px}@media(max-width:800px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}@media(max-width:520px){.kpis{grid-template-columns:1fr}}</style></head><body><div class="wrap"><div class="head"><div><b>Weekly Factory Health Check</b><div class="note">Fast preview · full 13WK, backlog, NDF, Repair and Traceability are built only when downloading the Test HTML.</div></div><span>'+safe([f.bu&&f.bu!=='ALL'?'BU '+f.bu:'All BU',f.week&&f.week!=='ALL'?f.week:'Loaded scope',f.area&&f.area!=='ALL'?f.area:'All Test Areas'].join(' · '))+'</span></div><div class="grid"><div><div class="kpis">'+card('CLEAN YIELD %',pct(fpy),'FPY first attempt','good')+card('TOUCH RATE %',pct(touch),'1 − FPY','warn')+card('RISK UNITS',String(impact),top?'top offender impact':'FPY fail','risk')+card('TOTAL UNITS',String(tested),'FPY tested scope','info')+'</div><div class="box"><span class="ribbon">TOP OFFENDER · THIS SCOPE</span><div class="off">#1 Symptom: <b>'+safe(top&&top.failure||'N/D')+'</b></div><div><span class="big">'+impact+'</span> units impacted · '+pct(fr)+' of tested scope</div><div class="note">Location: <b>'+safe(top&&top.station||'N/D')+'</b></div></div></div><div><div class="box" style="margin-top:0"><b>Realistic Improvement Scenarios</b><table style="margin-top:10px"><thead><tr><th>Scenario</th><th>Units Saved</th><th>Clean Yield</th></tr></thead><tbody>'+gains+'</tbody></table></div><div class="box actions"><b>Current scope</b><span class="badge">Pass '+Number(m.etePass||0)+'</span> <span class="badge">Fail '+Number(m.eteFail||0)+'</span> <span class="badge">Open NG '+Number(m.openNg||0)+'</span> <span class="badge">Retest '+Number(m.retestRuns||0)+'</span></div></div></div></div></body></html>';
+  }
+  function reportHtml(){var a=api(),f=filters();if(!f.bu)return'';if(!a||!a.reportHtmlFor)return'';var k=key();if(k===fullHtmlKey&&fullHtmlCache)return fullHtmlCache;fullHtmlCache=decorateReport(a.reportHtmlFor(filters()));fullHtmlKey=k;return fullHtmlCache;}
+  function render(reason,force){if(!isTest())return false;fillOptions(false);var preview=document.getElementById('emailPreview');if(!preview)return false;var k=key();if(!force&&k===lastTestKey&&preview.querySelector('iframe[data-test-report-preview]'))return true;var a=api();if(!a||!a.computeFor){preview.innerHTML='<div style="padding:18px;color:#E8E8E6;border:1px solid #3A3A3A;background:#111;border-radius:12px"><b>Test Performance engine is not ready.</b><br>Load the same Yield Flow source package, then reopen Export Center.</div>';return false}var html=quickPreviewHtml();preview.innerHTML='';var frame=document.createElement('iframe');frame.setAttribute('data-test-report-preview',TEST_BUILD);frame.title='Test Performance fast preview';frame.style.cssText='width:100%;height:640px;border:0;border-radius:10px;background:#fff;display:block';frame.srcdoc=html;preview.appendChild(frame);lastTestKey=k;return true}
+  function scheduleRender(reason){clearTimeout(previewTimer);previewTimer=setTimeout(function(){render(reason,false)},140)}
   function downloadBlob(name,content,type){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:type||'text/plain;charset=utf-8'}));a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},800)}
   function filenameBase(){var f=filters(),scope=(f.from||'all')+(f.to&&f.to!==f.from?'_to_'+f.to:'');return 'SMTinel_Test_Performance_'+scope}
-  function downloadHtml(){var html=reportHtml();if(!html)return;downloadBlob(filenameBase()+'.html',html,'text/html;charset=utf-8')}
-  function downloadCsv(){var a=api();if(!a||!a.csvTextFor)return;downloadBlob(filenameBase()+'.csv',a.csvTextFor(filters()),'text/csv;charset=utf-8')}
+  function downloadHtml(){if(!filters().bu){try{alert('Select a BU before generating Test Performance.')}catch(_){}return}var html=reportHtml();if(!html)return;downloadBlob(filenameBase()+'.html',html,'text/html;charset=utf-8')}
+  function downloadCsv(){if(!filters().bu){try{alert('Select a BU before exporting Test Performance.')}catch(_){}return}var a=api();if(!a||!a.csvTextFor)return;downloadBlob(filenameBase()+'.csv',a.csvTextFor(filters()),'text/csv;charset=utf-8')}
   function plainText(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerText:''}
   function bodyHtml(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerHTML:''}
   function setupCsvButton(show){if(!testCsvButton){testCsvButton=document.getElementById('downloadTestCsv');if(!testCsvButton){testCsvButton=document.createElement('button');testCsvButton.className='btn';testCsvButton.id='downloadTestCsv';testCsvButton.textContent='Download Test CSV';var dl=document.getElementById('downloadEmail');if(dl&&dl.parentNode)dl.parentNode.insertBefore(testCsvButton,dl);testCsvButton.onclick=function(e){e.preventDefault();downloadCsv()}}}if(testCsvButton)testCsvButton.style.display=show?'inline-block':'none'}
   var baseUpdate=updateReportBuilder;
-  updateReportBuilder=function(){if(!isTest()){var tc=controls();if(tc)tc.style.display='none';setupCsvButton(false);return baseUpdate()}var role=document.getElementById('roleSelectorWrap'),period=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),dbn=document.getElementById('dbnControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),button=document.getElementById('downloadEmail'),notesLabel=document.querySelector('label[for="shiftNotes"]');if(role)role.style.display='none';if(period)period.style.display='none';if(eq)eq.style.display='none';if(dbn)dbn.style.display='none';if(ppt)ppt.style.display='none';var tc=controls();if(tc)tc.style.display='block';fillOptions(false);if(title)title.textContent='Test Performance Report';if(sub)sub.textContent='Performance + Backlog + Accountability: Daily/WTD/QTD/13WK FPY, open-unit aging, NDF follow-up, Repair evidence, actions and PCB ↔ chassis traceability.';if(hint)hint.innerHTML='<b>Test scope:</b> Cesium remains authoritative. Date, Shift, BU, Cisco Week, Product, SKU/UUT and Test Area filter the population; Failure Mode is a signal filter. The report adds Daily/WTD/QTD/13WK context, carry-forward Open NG aging, explicit NDF tracking, Repair evidence and the persistent Yield Flow Action Tracker. Enter FPY Target only when a released target exists; blank remains N/D.';if(button)button.textContent='Download Test HTML';if(notesLabel)notesLabel.textContent='Test notes / actions';var subject=document.getElementById('emailSubject');if(subject)subject.value='SMTinel Test Performance - '+((document.getElementById('testPerfFrom')||{}).value||'Loaded activity');setupCsvButton(true);render('builder',true)};
+  updateReportBuilder=function(){if(!isTest()){var tc=controls();if(tc)tc.style.display='none';setupCsvButton(false);return baseUpdate()}var role=document.getElementById('roleSelectorWrap'),period=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),dbn=document.getElementById('dbnControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),button=document.getElementById('downloadEmail'),notesLabel=document.querySelector('label[for="shiftNotes"]');if(role)role.style.display='none';if(period)period.style.display='none';if(eq)eq.style.display='none';if(dbn)dbn.style.display='none';if(ppt)ppt.style.display='none';var tc=controls();if(tc)tc.style.display='block';fillOptions(false);if(title)title.textContent='Test Performance Report';if(sub)sub.textContent='Performance + Backlog + Accountability: Daily/WTD/QTD/13WK FPY, open-unit aging, NDF follow-up, Repair evidence, actions and PCB ↔ chassis traceability.';if(hint)hint.innerHTML='<b>BU-first scope:</b> Select the Business Unit first. SMTinel partitions the Cesium population by BU before calculating FPY, WTD/QTD/13WK, backlog, Repair and traceability. Date, Shift, Cisco Week, Product, SKU/UUT and Test Area then filter only that BU; Failure Mode remains a signal filter. The report adds Daily/WTD/QTD/13WK context, carry-forward Open NG aging, explicit NDF tracking, Repair evidence and the persistent Yield Flow Action Tracker. Enter FPY Target only when a released target exists; blank remains N/D.';if(button)button.textContent='Download Test HTML';if(notesLabel)notesLabel.textContent='Test notes / actions';var subject=document.getElementById('emailSubject');if(subject)subject.value='SMTinel Test Performance - '+((document.getElementById('testPerfFrom')||{}).value||'Loaded activity');setupCsvButton(true);scheduleRender('builder')};
   var oldNotes=document.getElementById('shiftNotes')&&document.getElementById('shiftNotes').oninput;
-  if(document.getElementById('shiftNotes'))document.getElementById('shiftNotes').oninput=function(e){if(isTest())render('notes',true);else if(typeof oldNotes==='function')oldNotes.call(this,e)};
-  document.addEventListener('change',function(e){var t=e&&e.target;if(!t)return;if(t.id==='reportType'){setTimeout(function(){if(isTest())render('report-type',true)},0);return}if(!isTest())return;if(/^testPerf/.test(t.id)){if(t.id==='testPerfTarget'){try{localStorage.setItem('smtinel_test_perf_target_v1',t.value||'')}catch(_){}render('target',true)}else if(t.id==='testPerfWeek'){var aa=api(),rr=aa&&aa.weekRange?aa.weekRange(t.value):null;if(rr&&t.value!=='ALL'){var ff=document.getElementById('testPerfFrom'),tt=document.getElementById('testPerfTo'),mm=aa&&aa.meta?aa.meta():null,ee=rr.end;if(mm&&mm.latestDate&&rr.start<=mm.latestDate&&ee>mm.latestDate)ee=mm.latestDate;if(ff)ff.value=rr.start||ff.value;if(tt)tt.value=ee||tt.value}render('week',true)}else if(t.id==='testPerfPreset')applyPreset(t.value);else render('filter',true)}},true);
+  if(document.getElementById('shiftNotes'))document.getElementById('shiftNotes').oninput=function(e){if(isTest())scheduleRender('notes');else if(typeof oldNotes==='function')oldNotes.call(this,e)};
+  document.addEventListener('change',function(e){var t=e&&e.target;if(!t)return;if(t.id==='reportType'){setTimeout(function(){if(isTest())scheduleRender('report-type')},0);return}if(!isTest())return;if(/^testPerf/.test(t.id)){if(t.id==='testPerfBu'){lastTestKey='';fullHtmlKey='';fullHtmlCache='';fillOptions(true);scheduleRender('bu-scope')}else if(t.id==='testPerfTarget'){try{localStorage.setItem('smtinel_test_perf_target_v1',t.value||'')}catch(_){}scheduleRender('target')}else if(t.id==='testPerfWeek'){var aa=api(),rr=aa&&aa.weekRange?aa.weekRange(t.value):null;if(rr&&t.value!=='ALL'){var ff=document.getElementById('testPerfFrom'),tt=document.getElementById('testPerfTo'),mm=aa&&aa.meta?aa.meta():null,ee=rr.end;if(mm&&mm.latestDate&&rr.start<=mm.latestDate&&ee>mm.latestDate)ee=mm.latestDate;if(ff)ff.value=rr.start||ff.value;if(tt)tt.value=ee||tt.value}scheduleRender('week')}else if(t.id==='testPerfPreset')applyPreset(t.value);else scheduleRender('filter')}},true);
   document.addEventListener('click',function(e){if(!isTest())return;var t=e&&e.target;if(!t)return;if(t.id==='downloadEmail'){e.preventDefault();e.stopImmediatePropagation();downloadHtml()}else if(t.id==='downloadTestCsv'){e.preventDefault();e.stopImmediatePropagation();downloadCsv()}else if(t.id==='copyHtml'){e.preventDefault();e.stopImmediatePropagation();fallbackCopyHtml(bodyHtml())}else if(t.id==='copyPlain'){e.preventDefault();e.stopImmediatePropagation();copyText(plainText())}},true);
-  setInterval(function(){try{if(isTest()){fillOptions(false);var k=key();if(k!==lastTestKey)render('watch',true)}}catch(_){ }},900);
+  setInterval(function(){try{if(isTest()){fillOptions(false);var k=key();if(k!==lastTestKey)scheduleRender('watch')}}catch(_){ }},5000);
 })();
 
 renderKpis();renderLayout();requestData();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastResponse>60000)requestData()})
@@ -51243,7 +51264,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -52751,8 +52772,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -52772,7 +52793,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -53077,8 +53098,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   }
 
   function updateBadge(){
@@ -53224,7 +53245,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53397,7 +53418,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53662,7 +53683,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var badge = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -53688,7 +53709,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -53712,7 +53733,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var badgeText = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53886,7 +53907,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var badgeText = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -53909,7 +53930,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var badge = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -53928,7 +53949,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  var versionText = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53969,7 +53990,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var label = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -53998,7 +54019,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION_LABEL = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -54293,7 +54314,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var badge = 'SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -54672,7 +54693,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -54782,7 +54803,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -56269,7 +56290,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var label='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -62463,7 +62484,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -65212,7 +65233,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -65442,7 +65463,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -65541,7 +65562,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -66936,6 +66957,12 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
   'use strict';
   var BUILD='TEST-PERFORMANCE-ENGINE-V1.2.0';
   window.SMTINEL_TEST_PERFORMANCE_V100=BUILD;
+  /* V1.2.1 performance cache: normalize Cesium once, memoize scoped calculations. */
+  var _tpRawRef=null,_tpRawLen=-1,_tpRawFirst=null,_tpRawLast=null,_tpRowsCache=null,_tpRowsVersion=0,_tpComputeCache={},_tpMetaCache=null,_tpMetaVersion=-1;
+  var _tpBuCacheVersion=-1,_tpBuRowsCache={},_tpBuMetaCache={};
+  function tpRawStamp(raw){return [raw&&raw.length||0,raw&&raw.length?raw[0]:null,raw&&raw.length?raw[raw.length-1]:null];}
+  function tpSetRowsCache(raw,rows){var st=tpRawStamp(raw);_tpRawRef=raw;_tpRawLen=st[0];_tpRawFirst=st[1];_tpRawLast=st[2];_tpRowsCache=rows||[];_tpRowsVersion++;_tpComputeCache={};_tpMetaCache=null;_tpMetaVersion=-1;_tpBuCacheVersion=-1;_tpBuRowsCache={};_tpBuMetaCache={};window.SMTINEL_TEST_PERF_ROWS=_tpRowsCache;return _tpRowsCache;}
+  function tpFilterKey(f){f=f||{};return _tpRowsVersion+'|'+['from','to','shift','bu','week','model','sku','area','failure'].map(function(k){return String(f[k]==null?'':f[k]);}).join('|');}
 
   function txt(v){ return String(v==null?'':v).trim(); }
   function up(v){ return txt(v).toUpperCase(); }
@@ -67044,13 +67071,28 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
   }
   function ensureRows(){
     var raw=window.TRACEOPS_YIELD_RAW_CESIUM_ROWS||(window.SMTINEL_CROSSMODEL_LAST_PARSED&&window.SMTINEL_CROSSMODEL_LAST_PARSED.cesium)||[];
-    if(Array.isArray(raw)&&raw.length){var rows=normalizeRaw(raw,'Cesium raw');window.SMTINEL_TEST_PERF_ROWS=rows;return {rows:rows,mode:'full',warning:''};}
+    if(Array.isArray(raw)&&raw.length){
+      var st=tpRawStamp(raw);
+      if(_tpRowsCache&&raw===_tpRawRef&&st[0]===_tpRawLen&&st[1]===_tpRawFirst&&st[2]===_tpRawLast)return {rows:_tpRowsCache,mode:'full-cached',warning:''};
+      return {rows:tpSetRowsCache(raw,normalizeRaw(raw,'Cesium raw')),mode:'full',warning:''};
+    }
     var cached=window.SMTINEL_TEST_PERF_ROWS;
-    if(Array.isArray(cached)&&cached.length)return {rows:remapCachedRows(cached),mode:'full-or-cached',warning:''};
+    if(Array.isArray(cached)&&cached.length){
+      if(_tpRowsCache===cached)return {rows:_tpRowsCache,mode:'cached',warning:''};
+      _tpRowsCache=remapCachedRows(cached);_tpRowsVersion++;_tpComputeCache={};_tpMetaCache=null;_tpMetaVersion=-1;
+      return {rows:_tpRowsCache,mode:'full-or-cached',warning:''};
+    }
     var ft=window.TRACEOPS_YIELD_FT_ROWS||[];
-    if(ft.length)return {rows:normalizeFallback(ft),mode:'fallback',warning:'SFC-linked fallback only. Reload the same Yield Flow source ZIP/XLSX to include retest-only and old-WO activity.'};
+    if(ft.length){var fr=normalizeFallback(ft);_tpRowsCache=fr;_tpRowsVersion++;_tpComputeCache={};_tpMetaCache=null;_tpMetaVersion=-1;return {rows:fr,mode:'fallback',warning:'SFC-linked fallback only. Reload the same Yield Flow source ZIP/XLSX to include retest-only and old-WO activity.'};}
     return {rows:[],mode:'none',warning:'No Cesium activity is loaded. Load the same source package used by Yield Flow.'};
   }
+  function buRowsFrom(rows,bu){
+    bu=txt(bu);if(!bu||bu==='ALL')return rows||[];
+    if(_tpBuCacheVersion!==_tpRowsVersion){_tpBuRowsCache={};_tpBuMetaCache={};_tpBuCacheVersion=_tpRowsVersion;}
+    if(_tpBuRowsCache[bu])return _tpBuRowsCache[bu];
+    var out=(rows||[]).filter(function(r){return txt(r&&r.bu)===bu});_tpBuRowsCache[bu]=out;return out;
+  }
+  function rowsForBu(bu){var src=ensureRows();return buRowsFrom(src.rows||[],bu);}
   function inScope(e,f){ if(!e||!isFinite(e.timeMs))return false; if(f.from&&e.opDate<f.from)return false;if(f.to&&e.opDate>f.to)return false;if(f.shift&&f.shift!=='ALL'&&e.shift!==f.shift)return false;if(f.bu&&f.bu!=='ALL'&&e.bu!==f.bu)return false;if(f.week&&f.week!=='ALL'&&e.week!==f.week)return false;if(f.model&&f.model!=='ALL'&&e.model!==f.model)return false;if(f.sku&&f.sku!=='ALL'&&e.sku!==f.sku&&e.cesiumSku!==f.sku&&e.uutType!==f.sku)return false;if(f.area&&f.area!=='ALL'&&e.station!==f.area)return false;return true; }
   function valid(e){return e&&(e.kind==='pass'||e.kind==='fail');}
   function pct(a,b){return b?100*a/b:null;}
@@ -67131,7 +67173,7 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
   document.addEventListener('change',function(e){var host=document.getElementById('smtinel-test-performance-host');if(!host||!host.contains(e.target))return;if(e.target.hasAttribute('data-tp-preset')){var v=e.target.value;if(v)setPreset(v);}});
 
   function refresh(){if(document.getElementById('smtinel-test-performance-host'))render();}
-  function buildAndStore(raw){var rows=normalizeRaw(raw||[],'Cesium raw');window.SMTINEL_TEST_PERF_ROWS=rows;window.SMTINEL_TEST_PERF_META={build:BUILD,rows:rows.length,builtAt:new Date().toISOString(),sourceRows:(raw||[]).length};return rows;}
+  function buildAndStore(raw){raw=raw||[];var rows=normalizeRaw(raw,'Cesium raw');tpSetRowsCache(raw,rows);window.SMTINEL_TEST_PERF_META={build:BUILD,rows:rows.length,builtAt:new Date().toISOString(),sourceRows:raw.length};return rows;}
   var priorBuild=window.traceOpsYieldBuildFromImported;
   if(typeof priorBuild==='function'&&!priorBuild.__smtinelTestPerfV100){var wrapped=function(){var result=priorBuild.apply(this,arguments);try{var raw=arguments[6]||window.TRACEOPS_YIELD_RAW_CESIUM_ROWS||[];buildAndStore(raw);setTimeout(refresh,0);}catch(err){try{console.warn('[SMTinel Test Performance]',err);}catch(_){}}return result;};wrapped.__smtinelTestPerfV100=true;window.traceOpsYieldBuildFromImported=wrapped;try{traceOpsYieldBuildFromImported=wrapped;}catch(_){}}
   var priorSnap=window.traceOpsYieldCacheSnapshot;
@@ -67141,10 +67183,10 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
 
   function testPerfWithFilters(filters,fn){var prev={from:uiState.from,to:uiState.to,shift:uiState.shift,model:uiState.model,area:uiState.area};filters=filters||{};uiState.from=filters.from||'';uiState.to=filters.to||'';uiState.shift=filters.shift||'ALL';uiState.model=filters.model||'ALL';uiState.area=filters.area||'ALL';try{return fn();}finally{uiState.from=prev.from;uiState.to=prev.to;uiState.shift=prev.shift;uiState.model=prev.model;uiState.area=prev.area;}}
   function reportHtmlFor(filters){return testPerfWithFilters(filters,function(){return reportHtml();});}
-  function computeFor(filters){var src=ensureRows(),m=compute(src.rows,filters||{});m.source=src;return m;}
+  function computeFor(filters){filters=filters||{};var src=ensureRows(),ck=tpFilterKey(filters),hit=_tpComputeCache[ck];if(hit)return hit;var rows=(filters.bu&&filters.bu!=='ALL')?buRowsFrom(src.rows||[],filters.bu):(src.rows||[]);var m=compute(rows,filters);m.source={rows:rows,mode:src.mode+(filters.bu?'·BU':'·ALL'),warning:src.warning||''};_tpComputeCache[ck]=m;var keys=Object.keys(_tpComputeCache);if(keys.length>36)delete _tpComputeCache[keys[0]];return m;}
   function csvTextFor(filters){var m=computeFor(filters),lines=[['Section','Name','Activity','FPY Tested','Pass','Fail','FPY','Carry-in','Retest Runs','Recovered','Open NG']];m.byModel.forEach(function(x){lines.push(['MODEL',x.name,x.activity,x.tested,x.pass,x.fail,x.fpy==null?'':x.fpy.toFixed(2),x.carryIn,x.retestRuns,x.recovered,x.openNg]);});m.byArea.forEach(function(x){lines.push(['TEST AREA',x.name,x.activity,x.tested,x.pass,x.fail,x.fpy==null?'':x.fpy.toFixed(2),x.carryIn,x.retestRuns,x.recovered,x.openNg]);});return lines.map(function(r){return r.map(csvEscape).join(',');}).join('\n');}
-  function metaForExport(){var src=ensureRows(),rows=src.rows||[],firstFails={};rows.filter(function(r){return valid(r)&&!isDebugStation(r.station)&&r.kind==='fail';}).forEach(function(r){if(r.failure)firstFails[r.failure]=1;});return {build:BUILD,latestDate:latestDate(rows),bus:options(rows,'bu'),weeks:options(rows,'week'),models:options(rows,'model'),skus:options(rows,'sku'),areas:options(rows,'station'),failures:Object.keys(firstFails).sort(),rowCount:rows.length,sourceMode:src.mode||'',warning:src.warning||''};}
-  window.SMTINEL_TEST_PERF_API={build:BUILD,normalizeRaw:normalizeRaw,compute:compute,computeFor:computeFor,ensureRows:ensureRows,buildAndStore:buildAndStore,render:render,reportHtml:reportHtml,reportHtmlFor:reportHtmlFor,csvTextFor:csvTextFor,meta:metaForExport};
+  function metaForExport(bu){var src=ensureRows(),all=src.rows||[],bus=options(all,'bu');bu=txt(bu);if(!bu||bu==='ALL'){if(_tpMetaCache&&_tpMetaVersion===_tpRowsVersion)return _tpMetaCache;var firstFails={};all.forEach(function(r){if(valid(r)&&!isDebugStation(r.station)&&r.kind==='fail'&&r.failure)firstFails[r.failure]=1;});_tpMetaCache={build:BUILD,latestDate:latestDate(all),bus:bus,weeks:options(all,'week'),models:options(all,'model'),skus:options(all,'sku'),areas:options(all,'station'),failures:Object.keys(firstFails).sort(),rowCount:all.length,sourceMode:src.mode||'',warning:src.warning||''};_tpMetaVersion=_tpRowsVersion;return _tpMetaCache;}if(_tpBuCacheVersion!==_tpRowsVersion){_tpBuRowsCache={};_tpBuMetaCache={};_tpBuCacheVersion=_tpRowsVersion;}if(_tpBuMetaCache[bu])return _tpBuMetaCache[bu];var rows=buRowsFrom(all,bu),ff={};rows.forEach(function(r){if(valid(r)&&!isDebugStation(r.station)&&r.kind==='fail'&&r.failure)ff[r.failure]=1;});return _tpBuMetaCache[bu]={build:BUILD,selectedBu:bu,latestDate:latestDate(rows),bus:bus,weeks:options(rows,'week'),models:options(rows,'model'),skus:options(rows,'sku'),areas:options(rows,'station'),failures:Object.keys(ff).sort(),rowCount:rows.length,sourceMode:src.mode+'·BU',warning:src.warning||''};}
+  window.SMTINEL_TEST_PERF_API={build:BUILD,normalizeRaw:normalizeRaw,compute:compute,computeFor:computeFor,ensureRows:ensureRows,buildAndStore:buildAndStore,render:render,reportHtml:reportHtml,reportHtmlFor:reportHtmlFor,csvTextFor:csvTextFor,meta:metaForExport,rowsForBu:rowsForBu};
   window.addEventListener('smtinel:module-changed',function(e){if(e&&e.detail&&e.detail.name==='testperf')setTimeout(refresh,40);});
   try{new MutationObserver(function(){if(document.getElementById('smtinel-test-performance-host')){clearTimeout(window.__tpRenderTimer);window.__tpRenderTimer=setTimeout(refresh,80);}}).observe(document.body,{childList:true,subtree:true});}catch(_){}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,80);});else setTimeout(refresh,80);
@@ -71477,7 +71519,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -71742,7 +71784,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -71989,7 +72031,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -72185,7 +72227,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -72428,7 +72470,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -72658,7 +72700,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+  var VERSION='SMTinel V13.16.30 - BU-first Test Scope / Fast Export - 2026-09-17';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -73694,16 +73736,16 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     var runtime='<scr'+'ipt>(function(){function q(s,a){return (a||document).querySelector(s)}function qa(s,a){return [].slice.call((a||document).querySelectorAll(s))}qa("[data-tpr-toggle]").forEach(function(h){h.addEventListener("click",function(){var s=h.closest(".tpr-section");s.classList.toggle("is-collapsed");var i=h.querySelector("i");if(i)i.textContent=s.classList.contains("is-collapsed")?"+":"−";});});document.addEventListener("click",function(e){var b=e.target.closest("[data-tpr-copy]");if(!b)return;var t=b.previousElementSibling;if(!t)return;t.focus();t.select();try{document.execCommand("copy");b.textContent="Copied"}catch(_){b.textContent="Select / Ctrl+C"}});var ex=q("#tprExpand"),co=q("#tprCollapse");if(ex)ex.onclick=function(){qa(".tpr-section").forEach(function(s){s.classList.remove("is-collapsed");var i=q("i",s);if(i)i.textContent="−";})};if(co)co.onclick=function(){qa(".tpr-section").forEach(function(s){s.classList.add("is-collapsed");var i=q("i",s);if(i)i.textContent="+";})};})();</scr'+'ipt>';
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title+' · '+scope)+'</title><style>'+css()+'</style></head><body id="top"><header class="tpr-top"><div class="tpr-top-inner"><div class="tpr-brand"><div class="tpr-mark">S</div><div><div><span class="tpr-word">SMTinel</span><span class="tpr-tag">TRACE · MONITOR · PROTECT</span></div><div class="tpr-title">Test Performance Review</div><div class="tpr-sub">Daily / weekly FPY · Cesium product mapping · failure rate · repair · PCB / chassis traceability</div></div></div><div class="tpr-actions"><button id="tprExpand" type="button">Expand all</button><button id="tprCollapse" type="button">Collapse all</button><button type="button" onclick="window.print()">Print / PDF</button></div></div></header><div class="tpr-shell"><aside class="tpr-side">'+nav+'</aside><main class="tpr-main"><div class="tpr-hero"><small>Test Performance</small><b>'+esc(scope)+'</b><span>'+REPORT_BUILD+' · Generated '+esc(generated)+'</span></div>'+body+'<div class="tpr-footer"><span>SMTinel · Test Performance · Internal manufacturing quality report</span><span>'+esc(scope)+'</span></div></main></div><a class="tpr-back" href="#top">Back to top</a>'+runtime+'</body></html>';
   }
-  function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.computeFor!=='function')return false;api.reportHtmlFor=reportHtmlFor;api.reportHtml=function(){var f={};try{f={from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'ALL',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL'};}catch(_){}return reportHtmlFor(f);};api.build=REPORT_BUILD;api.enrichRepairs=enrichRepairs;return true;}
+  function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.computeFor!=='function')return false;api.reportHtmlFor=reportHtmlFor;api.reportHtml=function(){var f={};try{f={from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL'};}catch(_){}return reportHtmlFor(f);};api.build=REPORT_BUILD;api.enrichRepairs=enrichRepairs;return true;}
   if(!install()){var tries=0,t=setInterval(function(){tries++;if(install()||tries>80)clearInterval(t);},100);}
 })();
 </script>
 
-<!-- SMTinel V13.15.90 - Test Performance v1.4: Performance + Backlog + Accountability -->
+<!-- SMTinel V13.16.30 - Test Performance v1.4.2: BU-first population partition + BU-scoped accountability -->
 <script id="smtinel-test-performance-report-v140">
 (function(){
   'use strict';
-  var BUILD='TEST-PERFORMANCE-V1.4.0';
+  var BUILD='TEST-PERFORMANCE-V1.4.2-BU-FIRST';
   var ACTION_KEY='traceops_yield_action_log_v1';
   window.SMTINEL_TEST_PERFORMANCE_REPORT_V140=BUILD;
   function txt(v){return String(v==null?'':v).trim()}
@@ -73717,7 +73759,7 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   function ymdMs(v,end){if(!v)return NaN;var a=String(v).split('-').map(Number);if(a.length<3)return NaN;return new Date(a[0],a[1]-1,a[2],end?23:0,end?59:0,end?59:0,end?999:0).getTime()}
   function dateLabel(v){if(!v)return'N/D';var a=String(v).split('-');return a.length===3?(a[2]+'-'+a[1]+'-'+a[0]):v}
   function api(){return window.SMTINEL_TEST_PERF_API||null}
-  function source(){var a=api();try{return a&&a.ensureRows?a.ensureRows():{rows:[],mode:'none'}}catch(_){return{rows:[],mode:'none'}}}
+  function source(f){var a=api();try{var src=a&&a.ensureRows?a.ensureRows():{rows:[],mode:'none'};var bu=txt(f&&f.bu);if(bu&&bu!=='ALL'&&a&&a.rowsForBu)return {rows:a.rowsForBu(bu),mode:(src.mode||'')+'·BU',warning:src.warning||''};return src}catch(_){return{rows:[],mode:'none'}}}
   function isValid(r){return r&&(r.kind==='pass'||r.kind==='fail')}
   function isDebug(r){var st=up(r&&r.station);return /\*/.test(st)||/DEBUG|REPAIR|REWORK|MRB|SCRAP/.test(st)}
   function nonDateMatch(r,f,ignoreWeek){f=f||{};if(!r)return false;if(f.shift&&f.shift!=='ALL'&&r.shift!==f.shift)return false;if(f.bu&&f.bu!=='ALL'&&r.bu!==f.bu)return false;if(!ignoreWeek&&f.week&&f.week!=='ALL'&&r.week!==f.week)return false;if(f.model&&f.model!=='ALL'&&r.model!==f.model)return false;if(f.sku&&f.sku!=='ALL'&&r.sku!==f.sku&&r.cesiumSku!==f.sku&&r.uutType!==f.sku)return false;if(f.area&&f.area!=='ALL'&&r.station!==f.area)return false;return true}
@@ -73732,7 +73774,7 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   function repairRowsFor(r){var store=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{},ids=uniq([r.logicalUnit,r.logicalKey,r.testSn,r.parentSn,r.partSn,r.boxSn,r.sfcSn,r.sfcBox].concat(r.serialIds||[])),seen={},out=[];ids.forEach(function(id){(store[id]||store[up(id)]||[]).forEach(function(x){var sig=[x&&x.sn,x&&x.repairTime,x&&x.refdes,x&&x.failureMode,x&&x.actionDesc].map(txt).join('|');if(!seen[sig]){seen[sig]=1;out.push(x)}})});return out}
   function actionRows(){var out=[],seen={};try{var raw=localStorage.getItem(ACTION_KEY);var a=raw?JSON.parse(raw):[];(Array.isArray(a)?a:[]).forEach(function(x){out.push(x)})}catch(_){};(window.TRACEOPS_YIELD_ACTION_TRACKER_ROWS||[]).forEach(function(x){out.push(x)});return out.filter(function(x){var sig=txt(x&&x.id)||[x&&x.source,x&&x.failureMode||x&&x.focus,x&&x.owner,x&&x.action].map(txt).join('|');if(!sig||seen[sig])return false;seen[sig]=1;return !/CANCELLED/i.test(txt(x&&x.status))})}
   function actionMatch(row,actions){var best=null,score=0;(actions||[]).forEach(function(a){var s=0,text=up([a.failureMode,a.focus,a.scope,a.context,a.model,a.sku,a.station,a.workOrder,a.wo,(a.serials||[]).join(' ')].join(' '));if(row.logicalUnit&&text.indexOf(up(row.logicalUnit))>=0)s+=12;if(row.testSn&&text.indexOf(up(row.testSn))>=0)s+=10;if(row.failure&&text.indexOf(up(row.failure))>=0)s+=6;if(row.station&&text.indexOf(up(row.station))>=0)s+=3;if(row.model&&text.indexOf(up(row.model))>=0)s+=2;if(row.wo&&text.indexOf(up(row.wo))>=0)s+=2;if(s>score){score=s;best=a}});return score?best:null}
-  function actionScope(a,f,current){if(!a)return false;f=f||{};var text=up([a.failureMode,a.focus,a.scope,a.context,a.model,a.sku,a.station,a.workOrder,a.wo,a.supportArea,a.owner].join(' '));var constrained=false,ok=true;[['model',f.model],['sku',f.sku],['station',f.area],['failure',f.failure]].forEach(function(z){if(z[1]&&z[1]!=='ALL'){constrained=true;if(text.indexOf(up(z[1]))<0)ok=false}});if(constrained)return ok;var stations={},models={},fails={};(current.byArea||[]).forEach(function(x){stations[up(x.name)]=1});(current.byModel||[]).forEach(function(x){models[up(x.name)]=1});(current.failures||[]).forEach(function(x){fails[up(x.failure)]=1});if(stations[up(a.station)]||models[up(a.model)]||fails[up(a.failureMode||a.focus)])return true;return /TEST|FT|CESIUM|QUALITY|CALIDAD|PARETO/i.test(text)}
+  function actionScope(a,f,current){if(!a)return false;f=f||{};var text=up([a.failureMode,a.focus,a.scope,a.context,a.model,a.sku,a.station,a.workOrder,a.wo,a.supportArea,a.owner,a.bu,a.businessUnit].join(' '));if(f.bu&&f.bu!=='ALL'){var explicit=up(a.bu||a.businessUnit||a.BU||'');var mentioned=(text.match(/\b(?:CRBU|NGFWBU|CVEBU|ERBU|CNSBG)\b/g)||[]);if(explicit&&explicit!==up(f.bu))return false;if(mentioned.length&&text.indexOf(up(f.bu))<0)return false;}var constrained=false,ok=true;[['model',f.model],['sku',f.sku],['station',f.area],['failure',f.failure]].forEach(function(z){if(z[1]&&z[1]!=='ALL'){constrained=true;if(text.indexOf(up(z[1]))<0)ok=false}});if(constrained)return ok;var stations={},models={},fails={};(current.byArea||[]).forEach(function(x){stations[up(x.name)]=1});(current.byModel||[]).forEach(function(x){models[up(x.name)]=1});(current.failures||[]).forEach(function(x){fails[up(x.failure)]=1});if(stations[up(a.station)]||models[up(a.model)]||fails[up(a.failureMode||a.focus)])return true;return /TEST|FT|CESIUM|QUALITY|CALIDAD|PARETO/i.test(text)}
   function computeScoped(f){var a=api(),m=a&&a.computeFor?a.computeFor(f||{}):{};try{if(a&&a.enrichRepairs)m=a.enrichRepairs(m)}catch(_){}return m||{}}
   function temporal(filters,rows){
     var f=clone(filters),cutoff=f.to||latestYmd(rows,f,false)||latestYmd(rows,{},true),srcStart=earliestYmd(rows),currentWeek=(f.week&&f.week!=='ALL')?f.week:weekForDate(cutoff,rows,f),wr=weekRange(currentWeek),qr=quarterRange(cutoff),baseNoSignal=clone(f);baseNoSignal.failure='ALL';
@@ -73756,6 +73798,22 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   function qaHtml(filters,m,h){var acts=actionRows().filter(function(a){return /\bQA\b|QUALITY|CALIDAD/i.test([a.supportArea,a.owner,a.source,a.scope,a.context].map(txt).join(' '))&&actionScope(a,filters,m)}),snSet={},qtyOnly=0;acts.forEach(function(a){var ss=a.serials||[];if(ss.length)ss.forEach(function(s){snSet[key(s)]=1});else if(Number(a.units)>0)qtyOnly+=Number(a.units)});var sns=Object.keys(snSet),affected=sns.length?sns.length:(qtyOnly||null),failMap={},openMap={};(h.allFails||[]).forEach(function(x){failMap[key(x.sn)]=x});(h.open||[]).forEach(function(x){openMap[key(x.sn)]=x});var diagnosed=0,repaired=0,passed=0,still=0;if(sns.length){sns.forEach(function(sn){var x=failMap[sn];if(x){if(x.ndf||x.repairCount||x.rootCause!=='N/D')diagnosed++;if(x.repairCount)repaired++;if(x.recovered)passed++;if(openMap[sn])still++}})}var n=function(v){return v==null?'N/D':v};var note=sns.length?'QA cohort is serial-backed from Quality/QA Action Tracker evidence.':(affected!=null?'QA affected quantity exists in Action Tracker, but no serial cohort is attached; diagnosis/recovery breakdown remains N/D.':'No explicit QA affected cohort exists in the loaded sources or persistent Action Tracker.');return '<div class="tpr-kpis">'+metric('QA Affected',n(affected),'explicit cohort')+metric('Diagnosed',sns.length?diagnosed:'N/D','serial-backed')+metric('Repaired',sns.length?repaired:'N/D','Repair Record')+metric('Retest PASS',sns.length?passed:'N/D','recovered')+metric('Still NG',sns.length?still:'N/D','open at cutoff')+'</div><div class="tpr-method">'+esc(note)+'</div>'}
   function execHtml(t,h){var q=t.qtd,qtdVal=(q&&t.qtdComplete)?fp(q.fpy):'N/D',qtdNote=t.quarter?(t.qtdComplete?t.quarter.name:'insufficient history · partial '+fp(q&&q.fpy)):'quarter N/D',wtdVal=(t.wtd&&t.wtdComplete)?fp(t.wtd.fpy):'N/D',wtdNote=t.currentWeek?(t.wtdComplete?t.currentWeek:'partial history · '+t.currentWeek):'week N/D';return '<div class="tpr-kpis">'+metric('Scope FPY',fp(t.scope&&t.scope.fpy),(t.scope&&t.scope.eteTested||0)+' tested',t.scope&&t.scope.fpy!=null&&t.scope.fpy<95?'warn':'good')+metric('Daily FPY',fp(t.day&&t.day.fpy),dateLabel(t.cutoff),t.day&&t.day.fpy!=null&&t.day.fpy<95?'warn':'good')+metric('WTD FPY',wtdVal,wtdNote)+metric('QTD FPY',qtdVal,qtdNote)+metric('Target',t.target==null?'N/D':fp(t.target),'released target only')+metric('Gap vs Target',signed(t.gap),t.target==null?'target not loaded':'WTD / scope',t.gap!=null&&t.gap<0?'risk':'good')+metric('Δ WoW',signed(t.wow),'current vs prior fiscal week',t.wow!=null&&t.wow<0?'warn':'good')+metric('FPY Fail',t.scope&&t.scope.eteFail||0,'selected scope','risk')+metric('Recovered',t.scope&&t.scope.recovered||0,'later PASS','good')+metric('Open Backlog',h.open.length,'carry-forward at cutoff',h.open.length?'risk':'good')+metric('Aging > 7d',h.aging7,'open units',h.aging7?'warn':'good')+'</div>'}
   function updateSectionHead(sec,num,title,sub){if(!sec)return;var n=sec.querySelector('.tpr-num'),b=sec.querySelector('.tpr-section-head b'),sm=sec.querySelector('.tpr-section-head small');if(n)n.textContent=String(num);if(b)b.textContent=title;if(sm)sm.textContent=sub||''}
+  function filterSnapshotHtml(filters,t){
+    filters=filters||{};
+    var vals=[
+      ['From',filters.from||((t&&t.cutoff)||'All loaded')],
+      ['To',filters.to||((t&&t.cutoff)||'All loaded')],
+      ['Shift',filters.shift&&filters.shift!=='ALL'?filters.shift:'ALL'],
+      ['BU',filters.bu&&filters.bu!=='ALL'?filters.bu:'ALL'],
+      ['Cisco Week',filters.week&&filters.week!=='ALL'?filters.week:((t&&t.currentWeek)||'ALL')],
+      ['Product / Model',filters.model&&filters.model!=='ALL'?filters.model:'ALL'],
+      ['Cesium SKU / UUT',filters.sku&&filters.sku!=='ALL'?filters.sku:'ALL'],
+      ['Test Area',filters.area&&filters.area!=='ALL'?filters.area:'ALL'],
+      ['Failure Mode',filters.failure&&filters.failure!=='ALL'?filters.failure:'ALL'],
+      ['FPY Target',filters.target?filters.target+'%':'N/D']
+    ];
+    return '<section class="tpr-filter-snapshot" id="sec-filters"><div class="tpr-filter-head"><b>REPORT FILTERS</b><span>Selections linked from Export Center</span></div><div class="tpr-filter-grid">'+vals.map(function(x){return '<div class="tpr-filter-chip"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>';}).join('')+'</div></section>';
+  }
   function coverFocus(symptom){
     var s=up(symptom);
     if(/NDF|NO DEFECT|NO FAILURE|NO FAULT/.test(s))return 'Diagnosis / NDF validation';
@@ -73783,9 +73841,11 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     return '<section class="tpr-cover" id="sec-cover">'+'<div class="tpr-cover-head"><div class="tpr-cover-title">WEEKLY FACTORY HEALTH CHECK</div><div class="tpr-cover-meta">BU: '+esc(filters&&filters.bu&&filters.bu!=='ALL'?filters.bu:'ALL')+' • Area: '+esc(filters&&filters.area&&filters.area!=='ALL'?filters.area:'ALL')+' • Week: '+esc(filters&&filters.week&&filters.week!=='ALL'?filters.week:(t&&t.currentWeek)||'Loaded')+'</div></div>'+'<div class="tpr-cover-sub">Weeks: '+esc(weekLabel)+'</div>'+'<div class="tpr-cover-grid">'+'<div class="tpr-cover-left">'+'<div class="tpr-cover-section-title">KPI Snapshot</div>'+'<div class="tpr-cover-kpis">'+'<div class="tpr-cover-kpi good"><small>CLEAN YIELD %</small><b>'+fp(clean)+'</b><span>Target 95%</span></div>'+'<div class="tpr-cover-kpi warn"><small>TOUCH RATE %</small><b>'+(touch==null?'N/D':fp(touch))+'</b><span>Target &lt;5%</span></div>'+'<div class="tpr-cover-kpi risk"><small>RISK UNITS</small><b>'+Number(impacted||0)+'</b><span>'+(h&&h.open&&h.open.length?'Open backlog '+h.open.length:'Top offender impact')+'</span></div>'+'<div class="tpr-cover-kpi info"><small>TOTAL UNITS</small><b>'+Number(tested||0)+'</b><span>FPY tested scope</span></div>'+'</div>'+'<div class="tpr-cover-offender">'+'<div class="tpr-cover-ribbon">TOP OFFENDER <span>(This Scope)</span></div>'+'<div class="tpr-cover-offender-title">#1 Symptom: <b>'+esc(symptom)+'</b></div>'+'<div class="tpr-cover-offender-metric"><b>'+Number(impacted||0)+'</b> Units Impacted · <span>'+(failureRate==null?'N/D':fp(failureRate))+' of scoped tested units</span></div>'+'<div class="tpr-cover-improve"><div>✓ If fixed (100%): Clean Yield <b>↑ '+(fullGain==null?'N/D':fp(fullGain))+'</b> → '+fp(clean)+' → <b>'+(fullYield==null?'N/D':fp(fullYield))+'</b></div><div>◎ Target (50%): Clean Yield <b>↑ '+(halfGain==null?'N/D':fp(halfGain))+'</b> → '+fp(clean)+' → <b>'+(halfYield==null?'N/D':fp(halfYield))+'</b></div></div>'+coverMiniTrend(t)+'</div>'+'</div>'+'<div class="tpr-cover-right">'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Realistic Improvement Scenarios</div><table class="tpr-cover-table"><thead><tr><th>Scenario</th><th>Units Saved</th><th>Clean Yield</th></tr></thead><tbody>'+scenarios.map(function(x){return '<tr><td>'+esc(x.label)+'</td><td>'+x.saved+'</td><td>+'+(x.gain==null?'N/D':fp(x.gain))+' → <b>'+(x.next==null?'N/D':fp(x.next))+'</b></td></tr>';}).join('')+'</tbody></table></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Main Location Driver</div><ul class="tpr-cover-bullets"><li><b>Top Location:</b> '+esc(loc)+'</li><li><b>Main Symptom:</b> '+esc(symptom)+'</li><li><b>Focus:</b> '+esc(coverFocus(symptom))+'</li></ul></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Action Tracker</div><table class="tpr-cover-table compact"><thead><tr><th>Issue</th><th>Owner</th><th>Action</th><th>Status</th></tr></thead><tbody>'+coverActionRows(filters,m)+'</tbody></table></div>'+'</div>'+'</div>'+'</section>';
   }
   function reportHtmlFor(filters){
-    var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';filters=filters||{};var src=source(),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters),h=history(filters,rows,t.cutoff),old=a.__v140OldReportHtmlFor||a.reportHtmlFor,html='';try{html=old.call(a,filters)}catch(err){return '<!doctype html><meta charset="utf-8"><body>Base Test report unavailable: '+esc(err&&err.message||err)+'</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
+    var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';filters=filters||{};if(!filters.bu||filters.bu==='ALL')return '<!doctype html><meta charset="utf-8"><body style="font-family:Segoe UI,Arial;padding:24px"><h2>Select a BU first</h2><p>Test Performance is intentionally BU-scoped to reduce processing time and keep ownership/accountability separated.</p></body>';var src=source(filters),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters),h=history(filters,rows,t.cutoff),old=a.__v140OldReportHtmlFor||a.reportHtmlFor,html='';try{html=old.call(a,filters)}catch(err){return '<!doctype html><meta charset="utf-8"><body>Base Test report unavailable: '+esc(err&&err.message||err)+'</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
     doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();var subtitle=doc.querySelector('.tpr-sub');if(subtitle)subtitle.textContent='Performance + Backlog + Accountability · Daily / WTD / QTD / 13WK · NDF · aging · actions · traceability';var note=doc.querySelector('.tpr-note');if(note)note.innerHTML='<b>Contract:</b> Cesium is authoritative for Test population. FPY never changes because of repair or retest. Open backlog is a separate carry-forward population: unresolved first-attempt failures stay open until a later PASS or explicit disposition. QTD / 13WK are shown only from loaded history; missing fiscal history is not fabricated. <b>Cutoff:</b> '+esc(t.cutoff||'N/D')+'.';var top=main.querySelector(':scope > .tpr-kpis');if(top)top.remove();
-    var coverWrap=doc.createElement('div');coverWrap.innerHTML=coverHtml(filters,t,h,m);var coverNode=coverWrap.firstElementChild,heroBox=main.querySelector('.tpr-hero'),noteBox=main.querySelector('.tpr-note');if(coverNode){if(noteBox&&noteBox.nextSibling)main.insertBefore(coverNode,noteBox.nextSibling);else if(noteBox)main.appendChild(coverNode);else if(heroBox&&heroBox.nextSibling)main.insertBefore(coverNode,heroBox.nextSibling);else main.insertBefore(coverNode,main.firstChild);}
+    var heroBox=main.querySelector('.tpr-hero'),noteBox=main.querySelector('.tpr-note');
+    var filterWrap=doc.createElement('div');filterWrap.innerHTML=filterSnapshotHtml(filters,t);var filterNode=filterWrap.firstElementChild;if(filterNode){if(noteBox&&noteBox.nextSibling)main.insertBefore(filterNode,noteBox.nextSibling);else if(noteBox)main.appendChild(filterNode);else if(heroBox&&heroBox.nextSibling)main.insertBefore(filterNode,heroBox.nextSibling);else main.insertBefore(filterNode,main.firstChild);}
+    var coverWrap=doc.createElement('div');coverWrap.innerHTML=coverHtml(filters,t,h,m);var coverNode=coverWrap.firstElementChild;if(coverNode){if(filterNode&&filterNode.nextSibling)main.insertBefore(coverNode,filterNode.nextSibling);else if(filterNode)main.appendChild(coverNode);else if(noteBox&&noteBox.nextSibling)main.insertBefore(coverNode,noteBox.nextSibling);else main.insertBefore(coverNode,main.firstChild);}
     var secModel=doc.getElementById('sec-model'),secArea=doc.getElementById('sec-area'),secSignal=doc.getElementById('sec-signal'),secFail=doc.getElementById('sec-fail'),secRepair=doc.getElementById('sec-repair'),secBridge=doc.getElementById('sec-bridge'),secMethod=doc.getElementById('sec-method');
     var exec=doc.createElement('div');exec.innerHTML=section('sec-exec','1','Executive Yield','Daily, WTD, QTD, target, WoW and carry-forward risk',execHtml(t,h));var execSec=exec.firstElementChild;main.insertBefore(execSec,secModel);
     var trend=doc.createElement('div');trend.innerHTML=section('sec-trend','2','13 Week Trend','Fiscal-week ETE FPY with explicit loaded-history coverage',trendHtml(t));main.insertBefore(trend.firstElementChild,secModel);
@@ -73796,12 +73856,12 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     var qa=doc.createElement('div');qa.innerHTML=section('sec-qa','7','QA Affected Population','Explicit QA cohort tracking; no inference from generic Repair records',qaHtml(filters,m,h));main.insertBefore(qa.firstElementChild,secRepair);
     if(secRepair)updateSectionHead(secRepair,8,'Repair Intelligence','Repair mode, RefDes, PN, action, responsible area and serial evidence');var action=doc.createElement('div');action.innerHTML=section('sec-actions','9','Action Tracker','Department → finding → owner → due date → status → evidence',actionHtml(filters,m));if(secBridge)main.insertBefore(action.firstElementChild,secBridge);else main.appendChild(action.firstElementChild);
     if(secBridge)updateSectionHead(secBridge,10,'Traceability','PCB ↔ chassis ↔ SFC ↔ WO ↔ Cesium SKU / UUT');if(secMethod){updateSectionHead(secMethod,11,'Method & Source','Calculation contract, historical coverage and evidence boundaries');var mb=secMethod.querySelector('.tpr-method');if(mb)mb.innerHTML='<b>Method:</b> Cesium remains authoritative for Test population and product identity. Daily/WTD/QTD/13WK metrics use the same first-attempt engine as the selected-scope FPY. QTD is withheld when the loaded source does not reach the fiscal-quarter start. Open backlog ignores the report start date and carries unresolved first-observed FAIL events to the cutoff; first-attempt certainty is limited by the earliest Cesium history loaded. NDF requires explicit NDF / No Defect Found evidence. Repair enriches diagnosis but never rewrites FPY. Persistent actions come from the Yield Flow Action Tracker. Failure Rate remains unique first-fail SN ÷ FPY Tested at the same Test Area. Source mode: <b>'+esc(src.mode||'N/D')+'</b>.'}
-    var nav=doc.querySelector('.tpr-side');if(nav)nav.innerHTML=[['#sec-cover','Cover'],['#sec-exec','Executive'],['#sec-trend','13WK'],['#sec-model','Product'],['#sec-signal','Offenders'],['#sec-ndf','NDF'],['#sec-backlog','Backlog'],['#sec-qa','QA'],['#sec-repair','Repair'],['#sec-actions','Actions'],['#sec-bridge','Trace'],['#sec-method','Method']].map(function(x,i){return '<a class="tpr-nav" href="'+x[0]+'" title="'+esc(x[1])+'">'+(i+1)+'</a>'}).join('');
-    var style=doc.querySelector('style');if(style)style.textContent+=' .tpr-week-chart{display:grid;gap:7px}.tpr-week-row{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(220px,2.4fr) 72px;gap:8px;align-items:center}.tpr-week-row>div:first-child b{display:block;font-size:9px;color:#172b43}.tpr-week-row>div:first-child small{font-size:8px;color:#6c786f}.tpr-week-track{height:14px;border-radius:999px;background:#edf1ed;border:1px solid #d8dfd8;position:relative;overflow:visible}.tpr-week-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#33472D,#788476)}.tpr-week-track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#B80F1B}.tpr-week-row strong{text-align:right;font-size:10px}.tpr-cover{margin:14px 0 18px;padding:18px;border:1px solid #d9e2dc;border-radius:22px;background:linear-gradient(180deg,#ffffff 0%,#f7faf8 100%);box-shadow:0 16px 34px rgba(39,60,44,.08)}.tpr-cover-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;border-bottom:1px solid #dfe8e2;padding-bottom:10px}.tpr-cover-title{font-size:28px;font-weight:950;letter-spacing:.02em;color:#1b2c22}.tpr-cover-meta{font-size:12px;font-weight:800;color:#506658;text-align:right}.tpr-cover-sub{margin:10px 0 14px;font-size:12px;color:#5e6f64;font-weight:700}.tpr-cover-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.8fr);gap:16px}.tpr-cover-section-title{font-size:14px;font-weight:900;color:#274131;margin-bottom:10px}.tpr-cover-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.tpr-cover-kpi{padding:12px 14px;border-radius:16px;border:1px solid #d7e0da;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}.tpr-cover-kpi small{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:#52685a}.tpr-cover-kpi b{display:block;margin-top:8px;font-size:28px;line-height:1.05;color:#21382a}.tpr-cover-kpi span{display:block;margin-top:6px;font-size:11px;color:#5e6f64}.tpr-cover-kpi.good{background:linear-gradient(180deg,#eef8ef 0%,#ffffff 100%);border-color:#bedec1}.tpr-cover-kpi.warn{background:linear-gradient(180deg,#fff6df 0%,#ffffff 100%);border-color:#ead39a}.tpr-cover-kpi.risk{background:linear-gradient(180deg,#fdebec 0%,#ffffff 100%);border-color:#efb7bd}.tpr-cover-kpi.info{background:linear-gradient(180deg,#ebf4fe 0%,#ffffff 100%);border-color:#bfd4ea}.tpr-cover-offender{margin-top:14px;padding:14px;border:1px solid #dde4df;border-radius:18px;background:#fff}.tpr-cover-ribbon{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,#cf4557,#dc6d7b);color:#fff;padding:7px 14px;border-radius:12px 12px 12px 2px;font-weight:900;font-size:14px;letter-spacing:.02em}.tpr-cover-ribbon span{font-size:12px;opacity:.92}.tpr-cover-offender-title{margin-top:12px;font-size:18px;color:#24372b}.tpr-cover-offender-title b{color:#18271f}.tpr-cover-offender-metric{margin-top:10px;font-size:15px;color:#44584b}.tpr-cover-offender-metric b{font-size:42px;line-height:1;color:#bf2d3e;margin-right:8px}.tpr-cover-improve{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid #ecf1ee;font-size:14px;color:#294033}.tpr-cover-improve b{color:#0d6b51}.tpr-cover-chart{display:flex;align-items:flex-end;gap:16px;min-height:146px;margin-top:16px;padding:10px 8px 2px;border-top:1px solid #edf2ee}.tpr-cover-bar{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px}.tpr-cover-bar b{font-size:12px;color:#294033}.tpr-cover-bar i{display:block;width:42px;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#5da280,#91c17b);box-shadow:inset 0 1px 0 rgba(255,255,255,.34)}.tpr-cover-bar span{font-size:11px;color:#607065;text-align:center}.tpr-cover-right{display:grid;gap:12px}.tpr-cover-card{padding:14px;border:1px solid #dce5de;border-radius:18px;background:#fff}.tpr-cover-card-title{font-size:13px;font-weight:900;color:#223629;margin-bottom:10px}.tpr-cover-table{width:100%;border-collapse:collapse;font-size:12px}.tpr-cover-table th,.tpr-cover-table td{padding:8px 8px;border:1px solid #e2e9e3;text-align:left;vertical-align:top}.tpr-cover-table thead th{background:#35567f;color:#fff;border-color:#35567f;font-size:11px}.tpr-cover-table.compact th,.tpr-cover-table.compact td{font-size:11px;padding:7px}.tpr-cover-bullets{margin:0;padding-left:18px;display:grid;gap:8px;color:#2f4035;font-size:13px}.tpr-cover-status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.tpr-cover-status.open{background:#fff3d8;color:#9f6b00}.tpr-cover-status.track{background:#e8f5e6;color:#2f7a2b}.tpr-cover-status.done{background:#e5edf9;color:#1e4d89}@media(max-width:980px){.tpr-cover-grid{grid-template-columns:1fr}.tpr-cover-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.tpr-cover{padding:14px}.tpr-cover-head{display:block}.tpr-cover-title{font-size:22px}.tpr-cover-meta{margin-top:6px;text-align:left}.tpr-cover-kpis{grid-template-columns:1fr}.tpr-cover-chart{justify-content:flex-start;overflow:auto}}@media(max-width:700px){.tpr-week-row{grid-template-columns:1fr}.tpr-week-row strong{text-align:left}}';
+    var nav=doc.querySelector('.tpr-side');if(nav)nav.innerHTML=[['#sec-filters','Filters'],['#sec-cover','Cover'],['#sec-exec','Executive'],['#sec-trend','13WK'],['#sec-model','Product'],['#sec-signal','Offenders'],['#sec-ndf','NDF'],['#sec-backlog','Backlog'],['#sec-qa','QA'],['#sec-repair','Repair'],['#sec-actions','Actions'],['#sec-bridge','Trace'],['#sec-method','Method']].map(function(x,i){return '<a class="tpr-nav" href="'+x[0]+'" title="'+esc(x[1])+'">'+(i+1)+'</a>'}).join('');
+    var style=doc.querySelector('style');if(style)style.textContent+=' .tpr-week-chart{display:grid;gap:7px}.tpr-week-row{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(220px,2.4fr) 72px;gap:8px;align-items:center}.tpr-week-row>div:first-child b{display:block;font-size:9px;color:#172b43}.tpr-week-row>div:first-child small{font-size:8px;color:#6c786f}.tpr-week-track{height:14px;border-radius:999px;background:#edf1ed;border:1px solid #d8dfd8;position:relative;overflow:visible}.tpr-week-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#33472D,#788476)}.tpr-week-track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#B80F1B}.tpr-week-row strong{text-align:right;font-size:10px}.tpr-cover{margin:14px 0 18px;padding:18px;border:1px solid #d9e2dc;border-radius:22px;background:linear-gradient(180deg,#ffffff 0%,#f7faf8 100%);box-shadow:0 16px 34px rgba(39,60,44,.08)}.tpr-cover-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;border-bottom:1px solid #dfe8e2;padding-bottom:10px}.tpr-cover-title{font-size:28px;font-weight:950;letter-spacing:.02em;color:#1b2c22}.tpr-cover-meta{font-size:12px;font-weight:800;color:#506658;text-align:right}.tpr-cover-sub{margin:10px 0 14px;font-size:12px;color:#5e6f64;font-weight:700}.tpr-cover-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.8fr);gap:16px}.tpr-cover-section-title{font-size:14px;font-weight:900;color:#274131;margin-bottom:10px}.tpr-cover-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.tpr-cover-kpi{padding:12px 14px;border-radius:16px;border:1px solid #d7e0da;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}.tpr-cover-kpi small{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:#52685a}.tpr-cover-kpi b{display:block;margin-top:8px;font-size:28px;line-height:1.05;color:#21382a}.tpr-cover-kpi span{display:block;margin-top:6px;font-size:11px;color:#5e6f64}.tpr-cover-kpi.good{background:linear-gradient(180deg,#eef8ef 0%,#ffffff 100%);border-color:#bedec1}.tpr-cover-kpi.warn{background:linear-gradient(180deg,#fff6df 0%,#ffffff 100%);border-color:#ead39a}.tpr-cover-kpi.risk{background:linear-gradient(180deg,#fdebec 0%,#ffffff 100%);border-color:#efb7bd}.tpr-cover-kpi.info{background:linear-gradient(180deg,#ebf4fe 0%,#ffffff 100%);border-color:#bfd4ea}.tpr-cover-offender{margin-top:14px;padding:14px;border:1px solid #dde4df;border-radius:18px;background:#fff}.tpr-cover-ribbon{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,#cf4557,#dc6d7b);color:#fff;padding:7px 14px;border-radius:12px 12px 12px 2px;font-weight:900;font-size:14px;letter-spacing:.02em}.tpr-cover-ribbon span{font-size:12px;opacity:.92}.tpr-cover-offender-title{margin-top:12px;font-size:18px;color:#24372b}.tpr-cover-offender-title b{color:#18271f}.tpr-cover-offender-metric{margin-top:10px;font-size:15px;color:#44584b}.tpr-cover-offender-metric b{font-size:42px;line-height:1;color:#bf2d3e;margin-right:8px}.tpr-cover-improve{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid #ecf1ee;font-size:14px;color:#294033}.tpr-cover-improve b{color:#0d6b51}.tpr-cover-chart{display:flex;align-items:flex-end;gap:16px;min-height:146px;margin-top:16px;padding:10px 8px 2px;border-top:1px solid #edf2ee}.tpr-cover-bar{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px}.tpr-cover-bar b{font-size:12px;color:#294033}.tpr-cover-bar i{display:block;width:42px;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#5da280,#91c17b);box-shadow:inset 0 1px 0 rgba(255,255,255,.34)}.tpr-cover-bar span{font-size:11px;color:#607065;text-align:center}.tpr-cover-right{display:grid;gap:12px}.tpr-cover-card{padding:14px;border:1px solid #dce5de;border-radius:18px;background:#fff}.tpr-cover-card-title{font-size:13px;font-weight:900;color:#223629;margin-bottom:10px}.tpr-cover-table{width:100%;border-collapse:collapse;font-size:12px}.tpr-cover-table th,.tpr-cover-table td{padding:8px 8px;border:1px solid #e2e9e3;text-align:left;vertical-align:top}.tpr-cover-table thead th{background:#35567f;color:#fff;border-color:#35567f;font-size:11px}.tpr-cover-table.compact th,.tpr-cover-table.compact td{font-size:11px;padding:7px}.tpr-cover-bullets{margin:0;padding-left:18px;display:grid;gap:8px;color:#2f4035;font-size:13px}.tpr-cover-status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.tpr-cover-status.open{background:#fff3d8;color:#9f6b00}.tpr-cover-status.track{background:#e8f5e6;color:#2f7a2b}.tpr-cover-status.done{background:#e5edf9;color:#1e4d89}.tpr-filter-snapshot{margin:0 0 12px;padding:12px 14px;border:1px solid #cfd9d1;border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(20,24,24,.05)}.tpr-filter-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.tpr-filter-head b{font-size:12px;color:#294033;letter-spacing:.04em}.tpr-filter-head span{font-size:9px;color:#718078}.tpr-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.tpr-filter-chip{padding:8px 10px;border-radius:10px;background:#f5f8f5;border:1px solid #dce5de;min-width:0}.tpr-filter-chip small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#728178;font-weight:900}.tpr-filter-chip b{display:block;margin-top:3px;font-size:10px;color:#1d3125;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tpr-filter-chip b[title]{cursor:help}@media(max-width:980px){.tpr-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tpr-cover-grid{grid-template-columns:1fr}.tpr-cover-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.tpr-filter-grid{grid-template-columns:1fr}.tpr-filter-head{align-items:flex-start;flex-direction:column}.tpr-cover{padding:14px}.tpr-cover-head{display:block}.tpr-cover-title{font-size:22px}.tpr-cover-meta{margin-top:6px;text-align:left}.tpr-cover-kpis{grid-template-columns:1fr}.tpr-cover-chart{justify-content:flex-start;overflow:auto}}@media(max-width:700px){.tpr-week-row{grid-template-columns:1fr}.tpr-week-row strong{text-align:left}}';
     return '<!doctype html>\n'+doc.documentElement.outerHTML
   }
-  function csvTextFor(filters){var a=api(),src=source(),rows=src.rows||[],t=temporal(filters||{},rows),m=t.scope||computeScoped(filters||{}),h=history(filters||{},rows,t.cutoff),out=[['Section','Metric','Value','Detail']];[['Scope FPY',fp(m.fpy),m.eteTested+' tested'],['Daily FPY',fp(t.day&&t.day.fpy),t.cutoff],['WTD FPY',t.wtd&&t.wtdComplete?fp(t.wtd.fpy):'N/D',t.currentWeek||''],['QTD FPY',t.qtd&&t.qtdComplete?fp(t.qtd.fpy):'N/D',t.quarter&&t.quarter.name||''],['Target',t.target==null?'N/D':fp(t.target),''],['Gap',signed(t.gap),''],['WoW',signed(t.wow),''],['Open Backlog',h.open.length,''],['Aging >7d',h.aging7,''],['NDF',h.ndf.length,'']].forEach(function(r){out.push(['EXECUTIVE'].concat(r))});(t.trend||[]).forEach(function(x){out.push(['13WK',x.week,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.byModel||[]).forEach(function(x){out.push(['PRODUCT',x.name,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.failures||[]).forEach(function(x){out.push(['FAILURE',x.station+' · '+x.failure,x.affected+' SN',fp(x.failureRate)])});(h.open||[]).forEach(function(x){out.push(['BACKLOG',x.sn,x.disposition,x.ageDays+' d · '+x.station+' · '+x.failure])});actionRows().filter(function(x){return actionScope(x,filters||{},m)}).forEach(function(x){out.push(['ACTION',x.id||x.focus||'Action',x.status||'Open',(x.owner||'N/D')+' · '+(x.dueDate||'N/D')+' · '+(x.action||'')])});function q(v){v=txt(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}return out.map(function(r){return r.map(q).join(',')}).join('\n')}
-  function install(){var a=api();if(!a||!a.reportHtmlFor||!a.computeFor)return false;if(!a.__v140OldReportHtmlFor)a.__v140OldReportHtmlFor=a.reportHtmlFor;a.reportHtmlFor=reportHtmlFor;a.csvTextFor=csvTextFor;a.weekRange=weekRange;a.quarterRange=quarterRange;a.build=BUILD;a.reportHtml=function(){var f={};try{f={from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'ALL',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}catch(_){}return reportHtmlFor(f)};return true}
+  function csvTextFor(filters){filters=filters||{};if(!filters.bu||filters.bu==='ALL')return 'Section,Metric,Value,Detail\nERROR,BU,Select BU first,';var a=api(),src=source(filters),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters||{}),h=history(filters||{},rows,t.cutoff),out=[['Section','Metric','Value','Detail']];[['Scope FPY',fp(m.fpy),m.eteTested+' tested'],['Daily FPY',fp(t.day&&t.day.fpy),t.cutoff],['WTD FPY',t.wtd&&t.wtdComplete?fp(t.wtd.fpy):'N/D',t.currentWeek||''],['QTD FPY',t.qtd&&t.qtdComplete?fp(t.qtd.fpy):'N/D',t.quarter&&t.quarter.name||''],['Target',t.target==null?'N/D':fp(t.target),''],['Gap',signed(t.gap),''],['WoW',signed(t.wow),''],['Open Backlog',h.open.length,''],['Aging >7d',h.aging7,''],['NDF',h.ndf.length,'']].forEach(function(r){out.push(['EXECUTIVE'].concat(r))});(t.trend||[]).forEach(function(x){out.push(['13WK',x.week,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.byModel||[]).forEach(function(x){out.push(['PRODUCT',x.name,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.failures||[]).forEach(function(x){out.push(['FAILURE',x.station+' · '+x.failure,x.affected+' SN',fp(x.failureRate)])});(h.open||[]).forEach(function(x){out.push(['BACKLOG',x.sn,x.disposition,x.ageDays+' d · '+x.station+' · '+x.failure])});actionRows().filter(function(x){return actionScope(x,filters||{},m)}).forEach(function(x){out.push(['ACTION',x.id||x.focus||'Action',x.status||'Open',(x.owner||'N/D')+' · '+(x.dueDate||'N/D')+' · '+(x.action||'')])});function q(v){v=txt(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}return out.map(function(r){return r.map(q).join(',')}).join('\n')}
+  function install(){var a=api();if(!a||!a.reportHtmlFor||!a.computeFor)return false;if(!a.__v140OldReportHtmlFor)a.__v140OldReportHtmlFor=a.reportHtmlFor;a.reportHtmlFor=reportHtmlFor;a.csvTextFor=csvTextFor;a.weekRange=weekRange;a.quarterRange=quarterRange;a.build=BUILD;a.reportHtml=function(){var f={};try{f={from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}catch(_){}return reportHtmlFor(f)};return true}
   if(!install()){var tries=0,t=setInterval(function(){tries++;if(install()||tries>100)clearInterval(t)},100)}
 })();
 </script>
@@ -73814,4 +73874,4 @@ html body .smtinel-starter ._s2fpanel ._s2fcontent{position:relative!important;i
 html body .smtinel-starter ._s2fpanel ._s2fcontent h3,html body .smtinel-starter ._s2fpanel ._s2fcontent p,html body .smtinel-starter ._s2fpanel ._s2fcontent li{color:#17231A!important;text-shadow:none!important}
 html body video[data-smtinel-video]{display:none!important}
 </style>
-<script>window.__SMTINEL_V131600__='RUNTIME-SLIM-NO-EXEC-QUALITY-NO-VIDEO-NO-8D';</script>
+<script>window.__SMTINEL_V131620__='FILTER-LINKED-TEST-EXPORT';</script>
