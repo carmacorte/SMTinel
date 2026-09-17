@@ -38972,6 +38972,7 @@ function traceOpsBonepileBuildPayload() {
 .export-type-card[data-report-type="SHIFT"] .export-type-icon{color:#3DD68C;border-color:rgba(61,214,140,.20);background:rgba(61,214,140,.07)}
 .export-type-card[data-report-type="WEEKLY"] .export-type-icon{color:#6B8E5A;border-color:rgba(107,142,90,.26);background:rgba(107,142,90,.08)}
 .export-type-card[data-report-type="DBN"] .export-type-icon{color:#F5A623;border-color:rgba(245,166,35,.26);background:rgba(245,166,35,.08)}
+.export-type-card[data-report-type="TEST"] .export-type-icon{color:#69B7FF;border-color:rgba(105,183,255,.26);background:rgba(105,183,255,.08)}
 .export-type-card[data-report-type="EXEC_QUALITY"] .export-type-icon{color:#C73E54;border-color:rgba(199,62,84,.24);background:rgba(199,62,84,.08)}
 .export-type-card b{display:block;color:#F2F2EF;font-size:17px;line-height:1.2;position:relative}
 .export-type-card p{margin:8px 0 0;color:#AAAAAA;font-size:11.5px;line-height:1.5;position:relative}
@@ -39083,6 +39084,12 @@ function traceOpsBonepileBuildPayload() {
             <p>Model and work-order follow-up with build progress, unit route validation, terminal evidence and DBN export package.</p>
             <span class="export-type-meta"><span>Model + WO</span><span>HTML</span><span>Excel</span></span>
           </button>
+          <button type="button" class="export-type-card" data-report-type="TEST">
+            <span class="export-type-icon">&#9651;</span>
+            <b>Test Performance Report</b>
+            <p>Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.</p>
+            <span class="export-type-meta"><span>Date / shift</span><span>FPY + retest</span><span>HTML + CSV</span></span>
+          </button>
           <button type="button" class="export-type-card" data-report-type="EXEC_QUALITY">
             <span class="export-type-icon">&#9888;</span>
             <b>Executive Quality Report</b>
@@ -39102,6 +39109,7 @@ function traceOpsBonepileBuildPayload() {
                   <option value="WEEKLY" selected>Weekly Execution Review</option>
                   <option value="SHIFT">Shift Handoff</option>
                   <option value="DBN">DBN Follow-up</option>
+                  <option value="TEST">Test Performance Report</option>
                   <option value="EXEC_QUALITY">Executive Quality Report</option>
                 </select>
               </label>
@@ -39127,6 +39135,17 @@ function traceOpsBonepileBuildPayload() {
                 <label class="field">Period start<input id="eqStartDate" type="date"></label>
                 <label class="field">Period end<input id="eqEndDate" type="date"></label>
                 <label class="field">Data scope<input value="Repair Records + current SFC" readonly></label>
+              </div>
+            </div>
+            <div id="testPerformanceControls" style="display:none;margin-top:12px">
+              <div class="role-title">Test performance scope</div>
+              <div class="period-controls">
+                <label class="field">From<input id="testPerfFrom" type="date"></label>
+                <label class="field">To<input id="testPerfTo" type="date"></label>
+                <label class="field">Shift<select id="testPerfShift"><option value="ALL">All shifts</option><option value="1st">1st · 06:00–15:15</option><option value="2nd">2nd · 15:15–00:15</option><option value="3rd">3rd · 00:15–06:00</option></select></label>
+                <label class="field">Model<select id="testPerfModel"><option value="ALL">All models</option></select></label>
+                <label class="field">Test Area<select id="testPerfArea"><option value="ALL">All Test Areas</option></select></label>
+                <label class="field">Preset<select id="testPerfPreset"><option value="day">Latest loaded day</option><option value="7d">Last 7 production days</option><option value="all">All loaded activity</option></select></label>
               </div>
             </div>
             <div class="scope-hint" id="reportScopeHint"></div>
@@ -41052,6 +41071,40 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   },700);
   setTimeout(function(){sync('startup')},50);
 })();
+
+/* SMTinel V13.15.50 - Test Performance is an Export Center report, not a workspace module */
+(function(){
+  'use strict';
+  var TEST_BUILD='TEST-EXPORT-CENTER-V1.1.0', testCsvButton=null, lastTestKey='';
+  function isTest(){var el=document.getElementById('reportType');return !!(el&&el.value==='TEST')}
+  function api(){try{return window.parent&&window.parent.SMTINEL_TEST_PERF_API||null}catch(_){return null}}
+  function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function dateMinus(ymd,n){if(!ymd)return'';var a=String(ymd).split('-').map(Number),d=new Date(a[0],a[1]-1,a[2]-Number(n||0));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+  function controls(){return document.getElementById('testPerformanceControls')}
+  function filters(){return {from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL'}}
+  function key(){var f=filters(),n=(document.getElementById('shiftNotes')||{}).value||'';return [f.from,f.to,f.shift,f.model,f.area,n].join('|')}
+  function ensureOption(select,value,label){if(!select)return;var opt=document.createElement('option');opt.value=value;opt.textContent=label||value;select.appendChild(opt)}
+  function fillOptions(force){var a=api(),m=a&&a.meta?a.meta():null;if(!m)return false;var model=document.getElementById('testPerfModel'),area=document.getElementById('testPerfArea'),from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(model&&(force||model.options.length<=1)){var mv=model.value||'ALL';model.innerHTML='<option value="ALL">All models</option>';(m.models||[]).forEach(function(x){ensureOption(model,x,x)});if([].slice.call(model.options).some(function(o){return o.value===mv}))model.value=mv}if(area&&(force||area.options.length<=1)){var av=area.value||'ALL';area.innerHTML='<option value="ALL">All Test Areas</option>';(m.areas||[]).forEach(function(x){ensureOption(area,x,x)});if([].slice.call(area.options).some(function(o){return o.value===av}))area.value=av}if(m.latestDate&&from&&to&&!from.value&&!to.value){from.value=m.latestDate;to.value=m.latestDate}return true}
+  function applyPreset(v){var a=api(),m=a&&a.meta?a.meta():null,latest=m&&m.latestDate||'',from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(!from||!to)return;if(v==='day'){from.value=latest;to.value=latest}else if(v==='7d'){from.value=dateMinus(latest,6);to.value=latest}else{from.value='';to.value=''}render('preset',true)}
+  function decorateReport(html){var notes=(document.getElementById('shiftNotes')||{}).value||'';if(!notes)return html;var box='<div class="tp-card" style="border-left:5px solid #315e87"><h4>TEST NOTES / ACTIONS</h4><div style="white-space:pre-wrap;font-size:11px">'+safe(notes)+'</div></div>';return String(html||'').replace('<div class="tp-method">',box+'<div class="tp-method">')}
+  function reportHtml(){var a=api();if(!a||!a.reportHtmlFor)return'';return decorateReport(a.reportHtmlFor(filters()))}
+  function render(reason,force){if(!isTest())return false;fillOptions(false);var preview=document.getElementById('emailPreview');if(!preview)return false;var k=key();if(!force&&k===lastTestKey&&preview.querySelector('iframe[data-test-report-preview]'))return true;var a=api();if(!a||!a.reportHtmlFor){preview.innerHTML='<div style="padding:18px;color:#E8E8E6;border:1px solid #3A3A3A;background:#111;border-radius:12px"><b>Test Performance engine is not ready.</b><br>Load the same Yield Flow source package, then reopen Export Center.</div>';return false}var html=reportHtml();preview.innerHTML='';var frame=document.createElement('iframe');frame.setAttribute('data-test-report-preview',TEST_BUILD);frame.title='Test Performance report preview';frame.style.cssText='width:100%;height:760px;border:0;border-radius:10px;background:#fff;display:block';frame.srcdoc=html;preview.appendChild(frame);lastTestKey=k;return true}
+  function downloadBlob(name,content,type){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:type||'text/plain;charset=utf-8'}));a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},800)}
+  function filenameBase(){var f=filters(),scope=(f.from||'all')+(f.to&&f.to!==f.from?'_to_'+f.to:'');return 'SMTinel_Test_Performance_'+scope}
+  function downloadHtml(){var html=reportHtml();if(!html)return;downloadBlob(filenameBase()+'.html',html,'text/html;charset=utf-8')}
+  function downloadCsv(){var a=api();if(!a||!a.csvTextFor)return;downloadBlob(filenameBase()+'.csv',a.csvTextFor(filters()),'text/csv;charset=utf-8')}
+  function plainText(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerText:''}
+  function bodyHtml(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerHTML:''}
+  function setupCsvButton(show){if(!testCsvButton){testCsvButton=document.getElementById('downloadTestCsv');if(!testCsvButton){testCsvButton=document.createElement('button');testCsvButton.className='btn';testCsvButton.id='downloadTestCsv';testCsvButton.textContent='Download Test CSV';var dl=document.getElementById('downloadEmail');if(dl&&dl.parentNode)dl.parentNode.insertBefore(testCsvButton,dl);testCsvButton.onclick=function(e){e.preventDefault();downloadCsv()}}}if(testCsvButton)testCsvButton.style.display=show?'inline-block':'none'}
+  var baseUpdate=updateReportBuilder;
+  updateReportBuilder=function(){if(!isTest()){var tc=controls();if(tc)tc.style.display='none';setupCsvButton(false);return baseUpdate()}var role=document.getElementById('roleSelectorWrap'),period=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),dbn=document.getElementById('dbnControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),button=document.getElementById('downloadEmail'),notesLabel=document.querySelector('label[for="shiftNotes"]');if(role)role.style.display='none';if(period)period.style.display='none';if(eq)eq.style.display='none';if(dbn)dbn.style.display='none';if(ppt)ppt.style.display='none';var tc=controls();if(tc)tc.style.display='block';fillOptions(false);if(title)title.textContent='Test Performance Report';if(sub)sub.textContent='Daily / weekly Test FPY, retest activity and PCB ↔ chassis traceability from the same Yield Flow / Cesium source package.';if(hint)hint.innerHTML='<b>Test scope:</b> Population starts from Cesium activity in the selected date / shift, not from fresh work orders. FPY uses first eligible attempt per logical unit + Test Area. Carry-in retests remain daily activity without becoming current-period FPY PASS. PCB / chassis matching reuses Parent Serial + SFC / BOXSN evidence.';if(button)button.textContent='Download Test HTML';if(notesLabel)notesLabel.textContent='Test notes / actions';var subject=document.getElementById('emailSubject');if(subject)subject.value='SMTinel Test Performance - '+((document.getElementById('testPerfFrom')||{}).value||'Loaded activity');setupCsvButton(true);render('builder',true)};
+  var oldNotes=document.getElementById('shiftNotes')&&document.getElementById('shiftNotes').oninput;
+  if(document.getElementById('shiftNotes'))document.getElementById('shiftNotes').oninput=function(e){if(isTest())render('notes',true);else if(typeof oldNotes==='function')oldNotes.call(this,e)};
+  document.addEventListener('change',function(e){var t=e&&e.target;if(!t)return;if(t.id==='reportType'){setTimeout(function(){if(isTest())render('report-type',true)},0);return}if(!isTest())return;if(/^testPerf/.test(t.id)){if(t.id==='testPerfPreset')applyPreset(t.value);else render('filter',true)}},true);
+  document.addEventListener('click',function(e){if(!isTest())return;var t=e&&e.target;if(!t)return;if(t.id==='downloadEmail'){e.preventDefault();e.stopImmediatePropagation();downloadHtml()}else if(t.id==='downloadTestCsv'){e.preventDefault();e.stopImmediatePropagation();downloadCsv()}else if(t.id==='copyHtml'){e.preventDefault();e.stopImmediatePropagation();fallbackCopyHtml(bodyHtml())}else if(t.id==='copyPlain'){e.preventDefault();e.stopImmediatePropagation();copyText(plainText())}},true);
+  setInterval(function(){try{if(isTest()){fillOptions(false);var k=key();if(k!==lastTestKey)render('watch',true)}}catch(_){ }},900);
+})();
+
 renderKpis();renderLayout();requestData();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastResponse>60000)requestData()})
 })();
 ${'</scr'+'ipt>'}
@@ -41120,14 +41173,6 @@ ${'</scr'+'ipt>'}
             count: yieldFlowModel.kpi.orders,
             anchorId: "yieldflow-section",
             tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
-        },
-        {
-            key: "testperf",
-            label: "Test Performance",
-            shortLabel: "Daily / weekly ETE FPY from all Cesium activity, including fresh units and retest carry-in",
-            count: "FPY",
-            anchorId: "test-performance-section",
-            tone: { bg: "#EEF8F1", border: "#B9DEC7", color: "#1D6B42" }
         },
         {
             key: "bonepile",
@@ -43190,7 +43235,6 @@ ${'</scr'+'ipt>'}
                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
                         false && activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
-                        activeModule === "testperf" && renderTestPerformanceSection(),
                         activeModule === "bonepile" && renderBonepileSection(),
                         activeModule === "scheduling" && renderSchedulingOptimizerSection(),
                         activeModule === "planagent" && renderPlanAgentSection(),
@@ -46544,7 +46588,6 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"storyline",label:"Storyline",icon:icons.storyline,aliases:["Storyline","Manufacturing Storyline","Weekly Build Timeline Intelligence"]},
     {key:"8d",label:"8D Generator",icon:icons.eightd,aliases:["8D Generator","8D Analyzer","8D","EightD Analyzer","Quality Gate 8D"]},
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
-    {key:"testperf",label:"Test Performance",icon:icons.yield,aliases:["Test Performance","Daily FPY","ETE FPY","Test Yield"]},
     {key:"bonepile",label:"Bonepile Visual Tracker",icon:icons.bonepile,aliases:["Bonepile Visual Tracker","Bonepile","WIP Map","Layout Inventory"]},
     {key:"scheduling",label:"Scheduling",icon:icons.scheduling,aliases:["Scheduling","Scheduling Optimizer","SMT Sequence","Operation Scheduling"]},
     {key:"yieldweek",label:"Yield by Week",icon:icons.yield,aliases:["Yield by Week","Yield Week","YBW"]},
@@ -46556,7 +46599,7 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"issueimpact",label:"Issue Impact Analyzer",icon:icons.issue||icons.signal,aliases:["Issue Impact Analyzer","Issue Impact","Issue Time Impact","Time Impact"]},
     {key:"intellog",label:"Intel Log",icon:icons.log,aliases:["Intel Log","Maintenance Log"]}
   ];
-  var retiredModuleKeys={storyline:1,rcca:1,issueimpact:1,scheduling:1,yieldweek:1,planagent:1,recovery:1,criticalchars:1};
+  var retiredModuleKeys={storyline:1,rcca:1,issueimpact:1,scheduling:1,yieldweek:1,planagent:1,recovery:1,criticalchars:1,testperf:1};
   modules=modules.filter(function(m){return !retiredModuleKeys[m.key];});
   var mobileKeys=["sentinelux","yieldflow","boardimpact","8d"];
   function norm(s){return String(s||"").toLowerCase().replace(/\s+/g," ").trim();}
@@ -51280,7 +51323,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -52788,8 +52831,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -52809,7 +52852,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -53114,8 +53157,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   }
 
   function updateBadge(){
@@ -53261,7 +53304,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53434,7 +53477,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53699,7 +53742,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -53725,7 +53768,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -53749,7 +53792,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53923,7 +53966,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -53946,7 +53989,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -53965,7 +54008,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  var versionText = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -54006,7 +54049,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var label = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -54035,7 +54078,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION_LABEL = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -54330,7 +54373,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -54709,7 +54752,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -54819,7 +54862,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -56306,7 +56349,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var label='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -62500,7 +62543,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -65249,7 +65292,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -65479,7 +65522,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -65578,7 +65621,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -67135,7 +67178,12 @@ html body.smtinel-home-dashboard-active #smtinel-command-center .sqt-system{
   var priorApply=window.traceOpsYieldApplyLocalCache;
   if(typeof priorApply==='function'&&!priorApply.__smtinelTestPerfV100){var apply=function(record){var out=priorApply.apply(this,arguments);try{var x=record&&record.snapshot||{};window.SMTINEL_TEST_PERF_ROWS=x.testPerfRows||window.SMTINEL_TEST_PERF_ROWS||[];window.SMTINEL_TEST_PERF_META=x.testPerfMeta||window.SMTINEL_TEST_PERF_META||{};}catch(_){}setTimeout(refresh,0);return out;};apply.__smtinelTestPerfV100=true;window.traceOpsYieldApplyLocalCache=apply;try{traceOpsYieldApplyLocalCache=apply;}catch(_){}}
 
-  window.SMTINEL_TEST_PERF_API={build:BUILD,normalizeRaw:normalizeRaw,compute:compute,ensureRows:ensureRows,buildAndStore:buildAndStore,render:render,reportHtml:reportHtml};
+  function testPerfWithFilters(filters,fn){var prev={from:uiState.from,to:uiState.to,shift:uiState.shift,model:uiState.model,area:uiState.area};filters=filters||{};uiState.from=filters.from||'';uiState.to=filters.to||'';uiState.shift=filters.shift||'ALL';uiState.model=filters.model||'ALL';uiState.area=filters.area||'ALL';try{return fn();}finally{uiState.from=prev.from;uiState.to=prev.to;uiState.shift=prev.shift;uiState.model=prev.model;uiState.area=prev.area;}}
+  function reportHtmlFor(filters){return testPerfWithFilters(filters,function(){return reportHtml();});}
+  function computeFor(filters){var src=ensureRows(),m=compute(src.rows,filters||{});m.source=src;return m;}
+  function csvTextFor(filters){var m=computeFor(filters),lines=[['Section','Name','Activity','FPY Tested','Pass','Fail','FPY','Carry-in','Retest Runs','Recovered','Open NG']];m.byModel.forEach(function(x){lines.push(['MODEL',x.name,x.activity,x.tested,x.pass,x.fail,x.fpy==null?'':x.fpy.toFixed(2),x.carryIn,x.retestRuns,x.recovered,x.openNg]);});m.byArea.forEach(function(x){lines.push(['TEST AREA',x.name,x.activity,x.tested,x.pass,x.fail,x.fpy==null?'':x.fpy.toFixed(2),x.carryIn,x.retestRuns,x.recovered,x.openNg]);});return lines.map(function(r){return r.map(csvEscape).join(',');}).join('\n');}
+  function metaForExport(){var src=ensureRows(),rows=src.rows||[];return {build:BUILD,latestDate:latestDate(rows),models:options(rows,'model'),areas:options(rows,'station'),rowCount:rows.length,sourceMode:src.mode||'',warning:src.warning||''};}
+  window.SMTINEL_TEST_PERF_API={build:BUILD,normalizeRaw:normalizeRaw,compute:compute,computeFor:computeFor,ensureRows:ensureRows,buildAndStore:buildAndStore,render:render,reportHtml:reportHtml,reportHtmlFor:reportHtmlFor,csvTextFor:csvTextFor,meta:metaForExport};
   window.addEventListener('smtinel:module-changed',function(e){if(e&&e.detail&&e.detail.name==='testperf')setTimeout(refresh,40);});
   try{new MutationObserver(function(){if(document.getElementById('smtinel-test-performance-host')){clearTimeout(window.__tpRenderTimer);window.__tpRenderTimer=setTimeout(refresh,80);}}).observe(document.body,{childList:true,subtree:true});}catch(_){}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,80);});else setTimeout(refresh,80);
@@ -71468,7 +71516,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -71733,7 +71781,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -71980,7 +72028,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -72176,7 +72224,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -72419,7 +72467,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -72649,7 +72697,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.14.76 - Executive Decision Intelligence / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
