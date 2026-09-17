@@ -1,5 +1,5 @@
 <!-- SMTinel V8.2 Slim Functional Migration - 2026-09-15 -->
-<!-- Baseline: index(20260915-042529).html | RCCA + Issue Impact retired from UI; 8D Generator preserved; Supabase startup removed; PDF lazy-only -->
+<!-- Baseline: index(20260915-042529).html | RCCA + Issue Impact + 8D Generator retired from runtime; Executive Quality export retired; onboarding videos disconnected; Supabase startup removed; PDF lazy-only -->
 <!-- SMTinel V81.1 Quality Terminal General Dashboard - Syntax Fix -->
 <!-- End-of-Shift enhancement 2026-09-11: WO model Version + expandable serials by current station -->
 <!-- SMTinel V80 Semantic Metrics + Covered Population FR + Global DBN Shell -->
@@ -7269,7 +7269,7 @@ body.traceops-premium-shell .app-logo-img,
   </div>
   <div class="_s2mv">
     <div class="_s2vid _s2anim-scale">
-      <video class="_s2video" data-smtinel-video="mission-command-center" muted loop playsinline webkit-playsinline preload="none"><source type="video/mp4"></video>
+      <!-- video disabled V13.16.00: mission-command-center -->
       <div class="_s2vidcap"><h4>COMMAND CENTER</h4><p>Real-time intelligence for manufacturing operations</p></div>
     </div>
   </div>
@@ -7294,7 +7294,7 @@ body.traceops-premium-shell .app-logo-img,
   <div id="_s2fp">
     <!-- Panel 1: Command Center -->
     <div class="_s2fpanel _s2fpi" data-index="0">
-      <video class="_s2video" data-smtinel-video="feature-command-center" muted loop playsinline webkit-playsinline preload="none"><source type="video/mp4"></video>
+      <!-- video disabled V13.16.00: feature-command-center -->
       <div class="_s2foverlay"></div>
       <div class="_s2fcontent">
         <div class="_s2b _s2anim-init">FEATURE 01</div>
@@ -7309,7 +7309,7 @@ body.traceops-premium-shell .app-logo-img,
     </div>
     <!-- Panel 2: Anomaly Detection -->
     <div class="_s2fpanel _s2fpi" data-index="1">
-      <video class="_s2video" data-smtinel-video="feature-anomaly-detection" muted loop playsinline webkit-playsinline preload="none"><source type="video/mp4"></video>
+      <!-- video disabled V13.16.00: feature-anomaly-detection -->
       <div class="_s2foverlay"></div>
       <div class="_s2fcontent">
         <div class="_s2b _s2anim-init">FEATURE 02</div>
@@ -7324,7 +7324,7 @@ body.traceops-premium-shell .app-logo-img,
     </div>
     <!-- Panel 3: Pattern Intelligence -->
     <div class="_s2fpanel _s2fpi" data-index="2">
-      <video class="_s2video" data-smtinel-video="feature-pattern-intelligence" muted loop playsinline webkit-playsinline preload="none"><source type="video/mp4"></video>
+      <!-- video disabled V13.16.00: feature-pattern-intelligence -->
       <div class="_s2foverlay"></div>
       <div class="_s2fcontent">
         <div class="_s2b _s2anim-init">FEATURE 03</div>
@@ -16264,7 +16264,7 @@ function App() {
     var activeModuleArr = _useState("sentinelux");
     var activeModule = activeModuleArr[0];
     var _setActiveModuleRaw = activeModuleArr[1];
-    var SMTINEL_RETIRED_MODULE_KEYS = { storyline: true, rcca: true, issueimpact: true, scheduling: true, yieldweek: true, planagent: true, recovery: true, criticalchars: true };
+    var SMTINEL_RETIRED_MODULE_KEYS = { storyline: true, rcca: true, issueimpact: true, scheduling: true, yieldweek: true, planagent: true, recovery: true, criticalchars: true, "8d": true };
     function setActiveModule(key) {
         var next = String(key || "sentinelux");
         if (SMTINEL_RETIRED_MODULE_KEYS[next]) next = "sentinelux";
@@ -17040,13 +17040,8 @@ function App() {
     var rccaFilter = rccaFilterArr[0];
     var setRccaFilter = rccaFilterArr[1];
     var eightdArr = _useState(function () {
-        try {
-            var raw = localStorage.getItem(EIGHTD_KEY);
-            return raw ? JSON.parse(raw) : [];
-        }
-        catch (_) {
-            return [];
-        }
+        // V13.16.00: 8D Generator retired from runtime to reduce startup/render work.
+        return [];
     });
     var eightdList = eightdArr[0];
     var setEightdList = eightdArr[1];
@@ -39090,12 +39085,6 @@ function traceOpsBonepileBuildPayload() {
             <p>Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.</p>
             <span class="export-type-meta"><span>Date / shift</span><span>FPY + retest</span><span>HTML + CSV</span></span>
           </button>
-          <button type="button" class="export-type-card" data-report-type="EXEC_QUALITY">
-            <span class="export-type-icon">&#9888;</span>
-            <b>Executive Quality Report</b>
-            <p>Select model and failure mode, correlate evidence and generate the interactive HTML or editable quality PPTX.</p>
-            <span class="export-type-meta"><span>Model + failure</span><span>HTML</span><span>PPTX</span></span>
-          </button>
         </div>
         <div class="export-landing-foot"><b style="color:#E8E8E6">Current data scope is preserved.</b> Choosing a report does not reset Bonepile filters, loaded SFC data, Repair Records, fiscal periods or the captured shift baseline.</div>
       </section>
@@ -39110,7 +39099,6 @@ function traceOpsBonepileBuildPayload() {
                   <option value="SHIFT">Shift Handoff</option>
                   <option value="DBN">DBN Follow-up</option>
                   <option value="TEST">Test Performance Report</option>
-                  <option value="EXEC_QUALITY">Executive Quality Report</option>
                 </select>
               </label>
               <div class="period-controls" id="periodControls">
@@ -39125,7 +39113,7 @@ function traceOpsBonepileBuildPayload() {
                 <button class="role-card" data-focus="EXECUTIVE"><span class="role-icon" style="background:rgba(107,142,90,.10);color:#6B8E5A">&#128084;</span><b>Executive Focus</b><span>Exposure, risk and required decisions</span></button>
               </div>
             </div>
-            <div id="executiveQualityControls" style="display:none;margin-top:12px">
+            <div id="executiveQualityControls" style="display:none!important;margin-top:12px">
               <div class="role-title">Executive quality scope</div>
               <div class="period-controls">
                 <label class="field">Model / family<select id="eqModel"></select></label>
@@ -39167,7 +39155,7 @@ function traceOpsBonepileBuildPayload() {
               <button class="btn" id="copySubject">Copy subject</button>
               <button class="btn" id="copyPlain">Copy plain text</button>
               <button class="btn primary" id="copyHtml">Copy HTML body</button>
-              <button class="btn" id="downloadExecutivePptx" style="display:none">Export PPTX</button>
+              <button class="btn" id="downloadExecutivePptx" style="display:none!important" aria-hidden="true" tabindex="-1">Export PPTX</button>
               <button class="btn" id="downloadEmail">Download Landing HTML</button>
             </div>
           </div>
@@ -39382,7 +39370,7 @@ function populateFiscalPeriodOptions(){var select=document.getElementById('repor
 function updateFiscalPeriodFields(){var range=document.getElementById('reportDateRange'),period=reportSelectedFiscalPeriod();if(range){range.value=reportFiscalDateRange(period);try{var st=reportFiscalFilterStats();range.title=st.included.toLocaleString()+' of '+st.total.toLocaleString()+' serials included in the selected fiscal week'}catch(_){range.title=''}}}
 var selectedReportFocus='QUALITY';
 function reportRole(){return REPORT_ROLES[selectedReportFocus]||REPORT_ROLES.QUALITY}
-function reportType(){var el=document.getElementById('reportType'),v=el&&el.value||'WEEKLY';return v==='DBN'?'DBN':(v==='SHIFT'?'SHIFT':(v==='EXEC_QUALITY'?'EXEC_QUALITY':'WEEKLY'))}
+function reportType(){var el=document.getElementById('reportType'),v=el&&el.value||'WEEKLY';return v==='DBN'?'DBN':(v==='SHIFT'?'SHIFT':(v==='TEST'?'TEST':'WEEKLY'))}
 function reportPeriod(){var period=reportSelectedFiscalPeriod();return period?period.label:'Fiscal period N/D'}
 function reportPeriodRange(){return reportFiscalDateRange(reportSelectedFiscalPeriod())}
 function reportScopeLabel(){return scopeMode==='FULL'?'Full loaded SFC':'Yield Flow active filters'}
@@ -43250,7 +43238,7 @@ ${'</scr'+'ipt>'}
                         activeModule === "criticalmodel" && renderCriticalModelAnalysisSection(),
                         activeModule === "intellog" && renderMaintenanceSection(),
                         false && activeModule === "rcca" && renderRccaLandingSection(),
-                        activeModule === "8d" && renderEightdAnalyzerSection(),
+                        false && activeModule === "8d" && renderEightdAnalyzerSection(),
                 activeModule !== "storyline" && activeModule !== "yieldflow" && activeModule !== "testperf" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "rcca" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
@@ -46604,9 +46592,9 @@ html body .smtinel-command-center .smtinel-cc-canvas{
     {key:"issueimpact",label:"Issue Impact Analyzer",icon:icons.issue||icons.signal,aliases:["Issue Impact Analyzer","Issue Impact","Issue Time Impact","Time Impact"]},
     {key:"intellog",label:"Intel Log",icon:icons.log,aliases:["Intel Log","Maintenance Log"]}
   ];
-  var retiredModuleKeys={storyline:1,rcca:1,issueimpact:1,scheduling:1,yieldweek:1,planagent:1,recovery:1,criticalchars:1,testperf:1};
+  var retiredModuleKeys={storyline:1,rcca:1,issueimpact:1,scheduling:1,yieldweek:1,planagent:1,recovery:1,criticalchars:1,testperf:1,"8d":1};
   modules=modules.filter(function(m){return !retiredModuleKeys[m.key];});
-  var mobileKeys=["sentinelux","yieldflow","boardimpact","8d"];
+  var mobileKeys=["sentinelux","yieldflow","boardimpact"];
   function norm(s){return String(s||"").toLowerCase().replace(/\s+/g," ").trim();}
   function byKey(k){return modules.filter(function(m){return m.key===k;})[0]||modules[0];}
   function findExistingButton(mod){
@@ -47753,17 +47741,7 @@ function _s2enter(){
   html body ._s2vid video[data-smtinel-video="mission-command-center"]{display:block!important;opacity:1!important;visibility:visible!important;object-fit:cover!important;filter:brightness(.98) contrast(1.06)!important;}
 }
 </style>
-<script id="smtinel-mobile-loader-videos-v9">
-(function(){
-  'use strict';
-  function prepare(){
-    [].slice.call(document.querySelectorAll('video[data-smtinel-video], .smtinel-card-video-v9 video')).forEach(function(v){
-      try{v.autoplay=false;v.preload='none';v.muted=true;v.defaultMuted=true;v.playsInline=true;v.removeAttribute('src');var s=v.querySelector('source');if(s)s.removeAttribute('src');}catch(_){ }
-    });
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',prepare,{once:true});else prepare();
-})();
-</script>
+<!-- smtinel-mobile-loader-videos-v9 disabled V13.16.00 -->
 
 
 <style id="smtinel-mobile-gap-fix-v10">
@@ -47936,33 +47914,7 @@ html body{
   background:#f6f8f4!important;
 }
 </style>
-<script id="smtinel-v17-video-brightness-guard">
-(function(){
-  function fixMedia(){
-    try{
-      document.querySelectorAll('video[data-smtinel-video], ._s2video').forEach(function(v){
-        v.style.opacity='1';
-        v.style.visibility='visible';
-        v.style.filter='none';
-        v.style.mixBlendMode='normal';
-        v.style.backgroundColor='#07110d';
-        v.setAttribute('playsinline','');
-        v.setAttribute('webkit-playsinline','');
-        v.muted=true;
-        v.defaultMuted=true;
-      });
-      document.querySelectorAll('._s2foverlay').forEach(function(o){
-        o.style.opacity='1';
-        o.style.mixBlendMode='normal';
-      });
-    }catch(_){}
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fixMedia,{once:true});
-  else fixMedia();
-  window.addEventListener('pageshow',fixMedia,{passive:true});
-  window.addEventListener('resize',fixMedia,{passive:true});
-})();
-</script>
+<!-- smtinel-v17-video-brightness-guard disabled V13.16.00 -->
 
 
 <style id="smtinel-v19-text-and-menu-render-fix">
@@ -49875,44 +49827,7 @@ html body .smtinel-more-sheet.open .smtinel-more-btn{
 }
 </style>
 
-<script id="smtinel-v19o-video-only">(function(){
-  'use strict';
-  var VIDEO_ASSETS={
-    "mission-command-center":"./assets/mission-command-center.mp4",
-    "feature-command-center":"./assets/feature-command-center.mp4",
-    "feature-anomaly-detection":"./assets/feature-anomaly-detection.mp4",
-    "feature-pattern-intelligence":"./assets/feature-pattern-intelligence.mp4"
-  };
-  var checked=Object.create(null), observer=null;
-  function keyOf(video){
-    var key=video.getAttribute('data-smtinel-video')||'';
-    if(key)return key;
-    var src=(video.getAttribute('src')||'');var source=video.querySelector('source');if(source&&!src)src=source.getAttribute('src')||'';
-    Object.keys(VIDEO_ASSETS).some(function(k){if(src.indexOf(k)>=0){key=k;return true;}return false;});
-    if(key)video.setAttribute('data-smtinel-video',key); return key;
-  }
-  function prepare(video){
-    if(!video)return; video.muted=true;video.defaultMuted=true;video.loop=true;video.playsInline=true;video.autoplay=false;video.preload='none';video.controls=false;
-    video.removeAttribute('src'); var source=video.querySelector('source'); if(source)source.removeAttribute('src');
-    var key=keyOf(video); if(key) video.setAttribute('data-smtinel-video',key);
-  }
-  function activate(video){
-    var key=keyOf(video),rel=VIDEO_ASSETS[key]; if(!rel||checked[key]===false)return;
-    if(location.protocol==='file:'){checked[key]=false;return;}
-    var url;try{url=new URL(rel,document.baseURI).href;}catch(_){url=rel;}
-    function load(){video.src=url;video.preload='metadata';try{var p=video.play();if(p&&p.catch)p.catch(function(){});}catch(_){ }}
-    if(checked[key]===true){load();return;}
-    checked[key]=false;
-    try{fetch(url,{method:'HEAD',cache:'no-store'}).then(function(r){if(!r.ok)return;checked[key]=true;load();}).catch(function(){});}catch(_){ }
-  }
-  function init(){
-    var videos=[].slice.call(document.querySelectorAll('video[data-smtinel-video], ._s2vid video, ._s2fpanel>video'));
-    videos.forEach(prepare);
-    if('IntersectionObserver' in window){observer=new IntersectionObserver(function(entries,obs){entries.forEach(function(e){if(e.isIntersecting){activate(e.target);obs.unobserve(e.target);}});},{rootMargin:'300px 0px'});videos.forEach(function(v){observer.observe(v);});}
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-</script>
+<!-- smtinel-v19o-video-only disabled V13.16.00 -->
 
 <script id="smtinel-v19o-more-final-router">
 (function(){
@@ -51328,7 +51243,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -52836,8 +52751,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -52857,7 +52772,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -53162,8 +53077,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   }
 
   function updateBadge(){
@@ -53309,7 +53224,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53482,7 +53397,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53747,7 +53662,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -53773,7 +53688,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -53797,7 +53712,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var badgeText = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53971,7 +53886,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var badgeText = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -53994,7 +53909,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -54013,7 +53928,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  var versionText = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -54054,7 +53969,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var label = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -54083,7 +53998,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION_LABEL = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -54378,7 +54293,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var badge = 'SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -54757,7 +54672,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -54867,7 +54782,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -56354,7 +56269,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var label='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -62548,7 +62463,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -65297,7 +65212,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -65527,7 +65442,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -65626,7 +65541,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -71562,7 +71477,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -71827,7 +71742,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -72074,7 +71989,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -72270,7 +72185,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -72513,7 +72428,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -72743,7 +72658,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+  var VERSION='SMTinel V13.16.00 - Runtime Slim / Test Performance - 2026-09-16';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -73698,6 +73613,68 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     '@media(max-width:1050px){.tpr-kpis{grid-template-columns:repeat(3,1fr)}.tpr-grid{grid-template-columns:1fr}}@media(max-width:700px){.tpr-top-inner{align-items:flex-start;flex-direction:column}.tpr-actions{width:100%}.tpr-shell{grid-template-columns:1fr;padding:8px}.tpr-side{display:none}.tpr-hero{display:block}.tpr-hero span{display:block;margin:4px 0 0;text-align:left}.tpr-kpis{grid-template-columns:1fr 1fr}.tpr-kpi b{font-size:17px}.tpr-section-body{padding:7px}.tpr-card{padding:7px}table{font-size:9px}th,td{padding:5px}.tpr-sn summary{min-height:38px;display:flex;align-items:center}.tpr-sn button{min-height:40px}.tpr-dbn-row{grid-template-columns:1fr}.tpr-dbn-value{text-align:left;display:flex;gap:8px;align-items:baseline}.tpr-dbn-track{height:13px}.tpr-back{bottom:12px;right:12px}}',
     '@media print{body{background:#fff}.tpr-top,.tpr-side,.tpr-back{display:none!important}.tpr-shell{display:block;padding:0}.tpr-section{box-shadow:none;break-inside:avoid}.tpr-section-body{display:block!important}.tpr-footer{background:#17382f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.tpr-hero,.tpr-section-head{background:#33472D!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
   ].join('');}
+  function coverFocus(symptom){
+    var s=up(symptom);
+    if(/NDF|NO DEFECT|NO FAILURE|NO FAULT/.test(s))return 'Diagnosis / NDF validation';
+    if(/SHORT|OPEN|INSUFFICIENT|SOLDER|BRIDGE/.test(s))return 'Containment / repair closure';
+    if(/PROGRAM|FLASH|FIRMWARE|BIOS|BMC/.test(s))return 'Programming / verification control';
+    return 'Containment / troubleshooting / repair closure';
+  }
+  function coverMiniTrend(t){
+    var rows=(t&&t.trend||[]).slice(-3),max=Math.max.apply(Math,rows.map(function(x){return Number(x&&x.fail||0);}).concat([1]));
+    return '<div class="tpr-cover-chart">'+(rows.map(function(x){var h=Math.max(18,Math.round(112*Number(x&&x.fail||0)/max));return '<div class="tpr-cover-bar"><b>'+Number(x&&x.fail||0)+'</b><i style="height:'+h+'px"></i><span>'+esc(x&&x.week||'N/D')+'</span></div>';}).join('')||'<div class="tpr-empty-chart">No 3-week trend loaded.</div>')+'</div>';
+  }
+  function coverActionRows(filters,m){
+    var acts=actionRows().filter(function(a){return actionScope(a,filters,m)}).sort(function(a,b){
+      var ao=/CLOSED/i.test(txt(a&&a.status))?1:0,bo=/CLOSED/i.test(txt(b&&b.status))?1:0;
+      return ao-bo||txt(a&&a.dueDate).localeCompare(txt(b&&b.dueDate));
+    }).slice(0,3);
+    return acts.map(function(a){
+      var finding=txt(a.failureMode||a.focus||a.scope||'N/D');
+      var status=txt(a.status||'Open')||'Open';
+      var cls=/CLOSED|DONE|COMPLETE/.test(up(status))?'done':(/TRACK|PROGRESS|ONGOING/.test(up(status))?'track':'open');
+      return '<tr><td><b>'+esc(finding)+'</b></td><td>'+esc(a.owner||a.supportArea||'N/D')+'</td><td>'+esc(a.action||a.actionType||'N/D')+'</td><td><span class="tpr-cover-status '+cls+'">'+esc(status)+'</span></td></tr>';
+    }).join('')||'<tr><td colspan="4">No scoped persistent actions.</td></tr>';
+  }
+  function coverHtml(filters,t,h,m){
+    var scope=t&&t.scope||m||{}, tested=Number(scope&&scope.eteTested||0), clean=(scope&&scope.fpy!=null&&isFinite(scope.fpy))?Number(scope.fpy):null, touch=(tested&&clean!=null)?Math.max(0,100-clean):null;
+    var top=((m&&m.failures)||[])[0]||null, impacted=Number(top&&top.affected||scope&&scope.eteFail||0), failureRate=tested?100*impacted/tested:null;
+    var loc=txt((top&&top.station)||((filters&&filters.area&&filters.area!=='ALL')?filters.area:'N/D'))||'N/D';
+    var symptom=txt((top&&top.failure)||((filters&&filters.failure&&filters.failure!=='ALL')?filters.failure:'N/D'))||'N/D';
+    var scenarios=[0.25,0.5,0.75].map(function(p){var saved=Math.round(impacted*p),gain=tested?100*saved/tested:null,next=clean!=null&&gain!=null?Math.min(100,clean+gain):null;return {label:'Fix '+Math.round(p*100)+'%',saved:saved,gain:gain,next:next};});
+    var fullGain=tested?100*impacted/tested:null, halfGain=tested?100*Math.round(impacted*0.5)/tested:null;
+    var fullYield=clean!=null&&fullGain!=null?Math.min(100,clean+fullGain):null, halfYield=clean!=null&&halfGain!=null?Math.min(100,clean+halfGain):null;
+    var trendRows=(t&&t.trend||[]).slice(-3), weekLabel=trendRows.length?(txt(trendRows[0].week)||'N/D')+' → '+(txt(trendRows[trendRows.length-1].week)||'N/D')+' ('+trendRows.length+' weeks)':(txt(filters&&filters.week&&filters.week!=='ALL'?filters.week:'Loaded scope')||'Loaded scope');
+    return '<section class="tpr-cover" id="sec-cover">'
+      +'<div class="tpr-cover-head"><div class="tpr-cover-title">WEEKLY FACTORY HEALTH CHECK</div><div class="tpr-cover-meta">BU: '+esc(filters&&filters.bu&&filters.bu!=='ALL'?filters.bu:'ALL')+' • Area: '+esc(filters&&filters.area&&filters.area!=='ALL'?filters.area:'ALL')+' • Week: '+esc(filters&&filters.week&&filters.week!=='ALL'?filters.week:(t&&t.currentWeek)||'Loaded')+'</div></div>'
+      +'<div class="tpr-cover-sub">Weeks: '+esc(weekLabel)+'</div>'
+      +'<div class="tpr-cover-grid">'
+        +'<div class="tpr-cover-left">'
+          +'<div class="tpr-cover-section-title">KPI Snapshot</div>'
+          +'<div class="tpr-cover-kpis">'
+            +'<div class="tpr-cover-kpi good"><small>CLEAN YIELD %</small><b>'+fp(clean)+'</b><span>Target 95%</span></div>'
+            +'<div class="tpr-cover-kpi warn"><small>TOUCH RATE %</small><b>'+(touch==null?'N/D':fp(touch))+'</b><span>Target &lt;5%</span></div>'
+            +'<div class="tpr-cover-kpi risk"><small>RISK UNITS</small><b>'+Number(impacted||0)+'</b><span>'+(h&&h.open&&h.open.length?'Open backlog '+h.open.length:'Top offender impact')+'</span></div>'
+            +'<div class="tpr-cover-kpi info"><small>TOTAL UNITS</small><b>'+Number(tested||0)+'</b><span>FPY tested scope</span></div>'
+          +'</div>'
+          +'<div class="tpr-cover-offender">'
+            +'<div class="tpr-cover-ribbon">TOP OFFENDER <span>(This Scope)</span></div>'
+            +'<div class="tpr-cover-offender-title">#1 Symptom: <b>'+esc(symptom)+'</b></div>'
+            +'<div class="tpr-cover-offender-metric"><b>'+Number(impacted||0)+'</b> Units Impacted · <span>'+(failureRate==null?'N/D':fp(failureRate))+' of scoped tested units</span></div>'
+            +'<div class="tpr-cover-improve"><div>✓ If fixed (100%): Clean Yield <b>↑ '+(fullGain==null?'N/D':fp(fullGain))+'</b> → '+fp(clean)+' → <b>'+(fullYield==null?'N/D':fp(fullYield))+'</b></div><div>◎ Target (50%): Clean Yield <b>↑ '+(halfGain==null?'N/D':fp(halfGain))+'</b> → '+fp(clean)+' → <b>'+(halfYield==null?'N/D':fp(halfYield))+'</b></div></div>'
+            +coverMiniTrend(t)
+          +'</div>'
+        +'</div>'
+        +'<div class="tpr-cover-right">'
+          +'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Realistic Improvement Scenarios</div><table class="tpr-cover-table"><thead><tr><th>Scenario</th><th>Units Saved</th><th>Clean Yield</th></tr></thead><tbody>'
+            +scenarios.map(function(x){return '<tr><td>'+esc(x.label)+'</td><td>'+x.saved+'</td><td>+'+(x.gain==null?'N/D':fp(x.gain))+' → <b>'+(x.next==null?'N/D':fp(x.next))+'</b></td></tr>';}).join('')
+            +'</tbody></table></div>'
+          +'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Main Location Driver</div><ul class="tpr-cover-bullets"><li><b>Top Location:</b> '+esc(loc)+'</li><li><b>Main Symptom:</b> '+esc(symptom)+'</li><li><b>Focus:</b> '+esc(coverFocus(symptom))+'</li></ul></div>'
+          +'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Action Tracker</div><table class="tpr-cover-table compact"><thead><tr><th>Issue</th><th>Owner</th><th>Action</th><th>Status</th></tr></thead><tbody>'+coverActionRows(filters,m)+'</tbody></table></div>'
+        +'</div>'
+      +'</div>'
+    +'</section>';
+  }
   function reportHtmlFor(filters){
     var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.computeFor!=='function')return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';
     var m=enrichRepairs(api.computeFor(filters||{})), scope=scopeText(filters), repair=m.repair||{}, generated=new Date().toLocaleString();
@@ -73779,9 +73756,36 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   function qaHtml(filters,m,h){var acts=actionRows().filter(function(a){return /\bQA\b|QUALITY|CALIDAD/i.test([a.supportArea,a.owner,a.source,a.scope,a.context].map(txt).join(' '))&&actionScope(a,filters,m)}),snSet={},qtyOnly=0;acts.forEach(function(a){var ss=a.serials||[];if(ss.length)ss.forEach(function(s){snSet[key(s)]=1});else if(Number(a.units)>0)qtyOnly+=Number(a.units)});var sns=Object.keys(snSet),affected=sns.length?sns.length:(qtyOnly||null),failMap={},openMap={};(h.allFails||[]).forEach(function(x){failMap[key(x.sn)]=x});(h.open||[]).forEach(function(x){openMap[key(x.sn)]=x});var diagnosed=0,repaired=0,passed=0,still=0;if(sns.length){sns.forEach(function(sn){var x=failMap[sn];if(x){if(x.ndf||x.repairCount||x.rootCause!=='N/D')diagnosed++;if(x.repairCount)repaired++;if(x.recovered)passed++;if(openMap[sn])still++}})}var n=function(v){return v==null?'N/D':v};var note=sns.length?'QA cohort is serial-backed from Quality/QA Action Tracker evidence.':(affected!=null?'QA affected quantity exists in Action Tracker, but no serial cohort is attached; diagnosis/recovery breakdown remains N/D.':'No explicit QA affected cohort exists in the loaded sources or persistent Action Tracker.');return '<div class="tpr-kpis">'+metric('QA Affected',n(affected),'explicit cohort')+metric('Diagnosed',sns.length?diagnosed:'N/D','serial-backed')+metric('Repaired',sns.length?repaired:'N/D','Repair Record')+metric('Retest PASS',sns.length?passed:'N/D','recovered')+metric('Still NG',sns.length?still:'N/D','open at cutoff')+'</div><div class="tpr-method">'+esc(note)+'</div>'}
   function execHtml(t,h){var q=t.qtd,qtdVal=(q&&t.qtdComplete)?fp(q.fpy):'N/D',qtdNote=t.quarter?(t.qtdComplete?t.quarter.name:'insufficient history · partial '+fp(q&&q.fpy)):'quarter N/D',wtdVal=(t.wtd&&t.wtdComplete)?fp(t.wtd.fpy):'N/D',wtdNote=t.currentWeek?(t.wtdComplete?t.currentWeek:'partial history · '+t.currentWeek):'week N/D';return '<div class="tpr-kpis">'+metric('Scope FPY',fp(t.scope&&t.scope.fpy),(t.scope&&t.scope.eteTested||0)+' tested',t.scope&&t.scope.fpy!=null&&t.scope.fpy<95?'warn':'good')+metric('Daily FPY',fp(t.day&&t.day.fpy),dateLabel(t.cutoff),t.day&&t.day.fpy!=null&&t.day.fpy<95?'warn':'good')+metric('WTD FPY',wtdVal,wtdNote)+metric('QTD FPY',qtdVal,qtdNote)+metric('Target',t.target==null?'N/D':fp(t.target),'released target only')+metric('Gap vs Target',signed(t.gap),t.target==null?'target not loaded':'WTD / scope',t.gap!=null&&t.gap<0?'risk':'good')+metric('Δ WoW',signed(t.wow),'current vs prior fiscal week',t.wow!=null&&t.wow<0?'warn':'good')+metric('FPY Fail',t.scope&&t.scope.eteFail||0,'selected scope','risk')+metric('Recovered',t.scope&&t.scope.recovered||0,'later PASS','good')+metric('Open Backlog',h.open.length,'carry-forward at cutoff',h.open.length?'risk':'good')+metric('Aging > 7d',h.aging7,'open units',h.aging7?'warn':'good')+'</div>'}
   function updateSectionHead(sec,num,title,sub){if(!sec)return;var n=sec.querySelector('.tpr-num'),b=sec.querySelector('.tpr-section-head b'),sm=sec.querySelector('.tpr-section-head small');if(n)n.textContent=String(num);if(b)b.textContent=title;if(sm)sm.textContent=sub||''}
+  function coverFocus(symptom){
+    var s=up(symptom);
+    if(/NDF|NO DEFECT|NO FAILURE|NO FAULT/.test(s))return 'Diagnosis / NDF validation';
+    if(/SHORT|OPEN|INSUFFICIENT|SOLDER|BRIDGE/.test(s))return 'Containment / repair closure';
+    if(/PROGRAM|FLASH|FIRMWARE|BIOS|BMC/.test(s))return 'Programming / verification control';
+    return 'Containment / troubleshooting / repair closure';
+  }
+  function coverMiniTrend(t){
+    var rows=(t&&t.trend||[]).slice(-3),max=Math.max.apply(Math,rows.map(function(x){return Number(x&&x.fail||0);}).concat([1]));
+    return '<div class="tpr-cover-chart">'+(rows.map(function(x){var h=Math.max(18,Math.round(112*Number(x&&x.fail||0)/max));return '<div class="tpr-cover-bar"><b>'+Number(x&&x.fail||0)+'</b><i style="height:'+h+'px"></i><span>'+esc(x&&x.week||'N/D')+'</span></div>';}).join('')||'<div class="tpr-empty-chart">No 3-week trend loaded.</div>')+'</div>';
+  }
+  function coverActionRows(filters,m){
+    var acts=actionRows().filter(function(a){return actionScope(a,filters,m)}).sort(function(a,b){var ao=/CLOSED/i.test(txt(a&&a.status))?1:0,bo=/CLOSED/i.test(txt(b&&b.status))?1:0;return ao-bo||txt(a&&a.dueDate).localeCompare(txt(b&&b.dueDate));}).slice(0,3);
+    return acts.map(function(a){var finding=txt(a.failureMode||a.focus||a.scope||'N/D');var status=txt(a.status||'Open')||'Open';var cls=/CLOSED|DONE|COMPLETE/.test(up(status))?'done':(/TRACK|PROGRESS|ONGOING/.test(up(status))?'track':'open');return '<tr><td><b>'+esc(finding)+'</b></td><td>'+esc(a.owner||a.supportArea||'N/D')+'</td><td>'+esc(a.action||a.actionType||'N/D')+'</td><td><span class="tpr-cover-status '+cls+'">'+esc(status)+'</span></td></tr>';}).join('')||'<tr><td colspan="4">No scoped persistent actions.</td></tr>';
+  }
+  function coverHtml(filters,t,h,m){
+    var scope=t&&t.scope||m||{}, tested=Number(scope&&scope.eteTested||0), clean=(scope&&scope.fpy!=null&&isFinite(scope.fpy))?Number(scope.fpy):null, touch=(tested&&clean!=null)?Math.max(0,100-clean):null;
+    var top=((m&&m.failures)||[])[0]||null, impacted=Number(top&&top.affected||scope&&scope.eteFail||0), failureRate=tested?100*impacted/tested:null;
+    var loc=txt((top&&top.station)||((filters&&filters.area&&filters.area!=='ALL')?filters.area:'N/D'))||'N/D';
+    var symptom=txt((top&&top.failure)||((filters&&filters.failure&&filters.failure!=='ALL')?filters.failure:'N/D'))||'N/D';
+    var scenarios=[0.25,0.5,0.75].map(function(p){var saved=Math.round(impacted*p),gain=tested?100*saved/tested:null,next=clean!=null&&gain!=null?Math.min(100,clean+gain):null;return {label:'Fix '+Math.round(p*100)+'%',saved:saved,gain:gain,next:next};});
+    var fullGain=tested?100*impacted/tested:null, halfGain=tested?100*Math.round(impacted*0.5)/tested:null;
+    var fullYield=clean!=null&&fullGain!=null?Math.min(100,clean+fullGain):null, halfYield=clean!=null&&halfGain!=null?Math.min(100,clean+halfGain):null;
+    var trendRows=(t&&t.trend||[]).slice(-3), weekLabel=trendRows.length?(txt(trendRows[0].week)||'N/D')+' → '+(txt(trendRows[trendRows.length-1].week)||'N/D')+' ('+trendRows.length+' weeks)':(txt(filters&&filters.week&&filters.week!=='ALL'?filters.week:'Loaded scope')||'Loaded scope');
+    return '<section class="tpr-cover" id="sec-cover">'+'<div class="tpr-cover-head"><div class="tpr-cover-title">WEEKLY FACTORY HEALTH CHECK</div><div class="tpr-cover-meta">BU: '+esc(filters&&filters.bu&&filters.bu!=='ALL'?filters.bu:'ALL')+' • Area: '+esc(filters&&filters.area&&filters.area!=='ALL'?filters.area:'ALL')+' • Week: '+esc(filters&&filters.week&&filters.week!=='ALL'?filters.week:(t&&t.currentWeek)||'Loaded')+'</div></div>'+'<div class="tpr-cover-sub">Weeks: '+esc(weekLabel)+'</div>'+'<div class="tpr-cover-grid">'+'<div class="tpr-cover-left">'+'<div class="tpr-cover-section-title">KPI Snapshot</div>'+'<div class="tpr-cover-kpis">'+'<div class="tpr-cover-kpi good"><small>CLEAN YIELD %</small><b>'+fp(clean)+'</b><span>Target 95%</span></div>'+'<div class="tpr-cover-kpi warn"><small>TOUCH RATE %</small><b>'+(touch==null?'N/D':fp(touch))+'</b><span>Target &lt;5%</span></div>'+'<div class="tpr-cover-kpi risk"><small>RISK UNITS</small><b>'+Number(impacted||0)+'</b><span>'+(h&&h.open&&h.open.length?'Open backlog '+h.open.length:'Top offender impact')+'</span></div>'+'<div class="tpr-cover-kpi info"><small>TOTAL UNITS</small><b>'+Number(tested||0)+'</b><span>FPY tested scope</span></div>'+'</div>'+'<div class="tpr-cover-offender">'+'<div class="tpr-cover-ribbon">TOP OFFENDER <span>(This Scope)</span></div>'+'<div class="tpr-cover-offender-title">#1 Symptom: <b>'+esc(symptom)+'</b></div>'+'<div class="tpr-cover-offender-metric"><b>'+Number(impacted||0)+'</b> Units Impacted · <span>'+(failureRate==null?'N/D':fp(failureRate))+' of scoped tested units</span></div>'+'<div class="tpr-cover-improve"><div>✓ If fixed (100%): Clean Yield <b>↑ '+(fullGain==null?'N/D':fp(fullGain))+'</b> → '+fp(clean)+' → <b>'+(fullYield==null?'N/D':fp(fullYield))+'</b></div><div>◎ Target (50%): Clean Yield <b>↑ '+(halfGain==null?'N/D':fp(halfGain))+'</b> → '+fp(clean)+' → <b>'+(halfYield==null?'N/D':fp(halfYield))+'</b></div></div>'+coverMiniTrend(t)+'</div>'+'</div>'+'<div class="tpr-cover-right">'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Realistic Improvement Scenarios</div><table class="tpr-cover-table"><thead><tr><th>Scenario</th><th>Units Saved</th><th>Clean Yield</th></tr></thead><tbody>'+scenarios.map(function(x){return '<tr><td>'+esc(x.label)+'</td><td>'+x.saved+'</td><td>+'+(x.gain==null?'N/D':fp(x.gain))+' → <b>'+(x.next==null?'N/D':fp(x.next))+'</b></td></tr>';}).join('')+'</tbody></table></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Main Location Driver</div><ul class="tpr-cover-bullets"><li><b>Top Location:</b> '+esc(loc)+'</li><li><b>Main Symptom:</b> '+esc(symptom)+'</li><li><b>Focus:</b> '+esc(coverFocus(symptom))+'</li></ul></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Action Tracker</div><table class="tpr-cover-table compact"><thead><tr><th>Issue</th><th>Owner</th><th>Action</th><th>Status</th></tr></thead><tbody>'+coverActionRows(filters,m)+'</tbody></table></div>'+'</div>'+'</div>'+'</section>';
+  }
   function reportHtmlFor(filters){
     var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';filters=filters||{};var src=source(),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters),h=history(filters,rows,t.cutoff),old=a.__v140OldReportHtmlFor||a.reportHtmlFor,html='';try{html=old.call(a,filters)}catch(err){return '<!doctype html><meta charset="utf-8"><body>Base Test report unavailable: '+esc(err&&err.message||err)+'</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
     doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();var subtitle=doc.querySelector('.tpr-sub');if(subtitle)subtitle.textContent='Performance + Backlog + Accountability · Daily / WTD / QTD / 13WK · NDF · aging · actions · traceability';var note=doc.querySelector('.tpr-note');if(note)note.innerHTML='<b>Contract:</b> Cesium is authoritative for Test population. FPY never changes because of repair or retest. Open backlog is a separate carry-forward population: unresolved first-attempt failures stay open until a later PASS or explicit disposition. QTD / 13WK are shown only from loaded history; missing fiscal history is not fabricated. <b>Cutoff:</b> '+esc(t.cutoff||'N/D')+'.';var top=main.querySelector(':scope > .tpr-kpis');if(top)top.remove();
+    var coverWrap=doc.createElement('div');coverWrap.innerHTML=coverHtml(filters,t,h,m);var coverNode=coverWrap.firstElementChild,heroBox=main.querySelector('.tpr-hero'),noteBox=main.querySelector('.tpr-note');if(coverNode){if(noteBox&&noteBox.nextSibling)main.insertBefore(coverNode,noteBox.nextSibling);else if(noteBox)main.appendChild(coverNode);else if(heroBox&&heroBox.nextSibling)main.insertBefore(coverNode,heroBox.nextSibling);else main.insertBefore(coverNode,main.firstChild);}
     var secModel=doc.getElementById('sec-model'),secArea=doc.getElementById('sec-area'),secSignal=doc.getElementById('sec-signal'),secFail=doc.getElementById('sec-fail'),secRepair=doc.getElementById('sec-repair'),secBridge=doc.getElementById('sec-bridge'),secMethod=doc.getElementById('sec-method');
     var exec=doc.createElement('div');exec.innerHTML=section('sec-exec','1','Executive Yield','Daily, WTD, QTD, target, WoW and carry-forward risk',execHtml(t,h));var execSec=exec.firstElementChild;main.insertBefore(execSec,secModel);
     var trend=doc.createElement('div');trend.innerHTML=section('sec-trend','2','13 Week Trend','Fiscal-week ETE FPY with explicit loaded-history coverage',trendHtml(t));main.insertBefore(trend.firstElementChild,secModel);
@@ -73792,8 +73796,8 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     var qa=doc.createElement('div');qa.innerHTML=section('sec-qa','7','QA Affected Population','Explicit QA cohort tracking; no inference from generic Repair records',qaHtml(filters,m,h));main.insertBefore(qa.firstElementChild,secRepair);
     if(secRepair)updateSectionHead(secRepair,8,'Repair Intelligence','Repair mode, RefDes, PN, action, responsible area and serial evidence');var action=doc.createElement('div');action.innerHTML=section('sec-actions','9','Action Tracker','Department → finding → owner → due date → status → evidence',actionHtml(filters,m));if(secBridge)main.insertBefore(action.firstElementChild,secBridge);else main.appendChild(action.firstElementChild);
     if(secBridge)updateSectionHead(secBridge,10,'Traceability','PCB ↔ chassis ↔ SFC ↔ WO ↔ Cesium SKU / UUT');if(secMethod){updateSectionHead(secMethod,11,'Method & Source','Calculation contract, historical coverage and evidence boundaries');var mb=secMethod.querySelector('.tpr-method');if(mb)mb.innerHTML='<b>Method:</b> Cesium remains authoritative for Test population and product identity. Daily/WTD/QTD/13WK metrics use the same first-attempt engine as the selected-scope FPY. QTD is withheld when the loaded source does not reach the fiscal-quarter start. Open backlog ignores the report start date and carries unresolved first-observed FAIL events to the cutoff; first-attempt certainty is limited by the earliest Cesium history loaded. NDF requires explicit NDF / No Defect Found evidence. Repair enriches diagnosis but never rewrites FPY. Persistent actions come from the Yield Flow Action Tracker. Failure Rate remains unique first-fail SN ÷ FPY Tested at the same Test Area. Source mode: <b>'+esc(src.mode||'N/D')+'</b>.'}
-    var nav=doc.querySelector('.tpr-side');if(nav)nav.innerHTML=[['#top','Summary'],['#sec-exec','Executive'],['#sec-trend','13WK'],['#sec-model','Product'],['#sec-signal','Offenders'],['#sec-ndf','NDF'],['#sec-backlog','Backlog'],['#sec-qa','QA'],['#sec-repair','Repair'],['#sec-actions','Actions'],['#sec-bridge','Trace'],['#sec-method','Method']].map(function(x,i){return '<a class="tpr-nav" href="'+x[0]+'" title="'+esc(x[1])+'">'+(i+1)+'</a>'}).join('');
-    var style=doc.querySelector('style');if(style)style.textContent+=' .tpr-week-chart{display:grid;gap:7px}.tpr-week-row{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(220px,2.4fr) 72px;gap:8px;align-items:center}.tpr-week-row>div:first-child b{display:block;font-size:9px;color:#172b43}.tpr-week-row>div:first-child small{font-size:8px;color:#6c786f}.tpr-week-track{height:14px;border-radius:999px;background:#edf1ed;border:1px solid #d8dfd8;position:relative;overflow:visible}.tpr-week-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#33472D,#788476)}.tpr-week-track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#B80F1B}.tpr-week-row strong{text-align:right;font-size:10px}@media(max-width:700px){.tpr-week-row{grid-template-columns:1fr}.tpr-week-row strong{text-align:left}}';
+    var nav=doc.querySelector('.tpr-side');if(nav)nav.innerHTML=[['#sec-cover','Cover'],['#sec-exec','Executive'],['#sec-trend','13WK'],['#sec-model','Product'],['#sec-signal','Offenders'],['#sec-ndf','NDF'],['#sec-backlog','Backlog'],['#sec-qa','QA'],['#sec-repair','Repair'],['#sec-actions','Actions'],['#sec-bridge','Trace'],['#sec-method','Method']].map(function(x,i){return '<a class="tpr-nav" href="'+x[0]+'" title="'+esc(x[1])+'">'+(i+1)+'</a>'}).join('');
+    var style=doc.querySelector('style');if(style)style.textContent+=' .tpr-week-chart{display:grid;gap:7px}.tpr-week-row{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(220px,2.4fr) 72px;gap:8px;align-items:center}.tpr-week-row>div:first-child b{display:block;font-size:9px;color:#172b43}.tpr-week-row>div:first-child small{font-size:8px;color:#6c786f}.tpr-week-track{height:14px;border-radius:999px;background:#edf1ed;border:1px solid #d8dfd8;position:relative;overflow:visible}.tpr-week-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#33472D,#788476)}.tpr-week-track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#B80F1B}.tpr-week-row strong{text-align:right;font-size:10px}.tpr-cover{margin:14px 0 18px;padding:18px;border:1px solid #d9e2dc;border-radius:22px;background:linear-gradient(180deg,#ffffff 0%,#f7faf8 100%);box-shadow:0 16px 34px rgba(39,60,44,.08)}.tpr-cover-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;border-bottom:1px solid #dfe8e2;padding-bottom:10px}.tpr-cover-title{font-size:28px;font-weight:950;letter-spacing:.02em;color:#1b2c22}.tpr-cover-meta{font-size:12px;font-weight:800;color:#506658;text-align:right}.tpr-cover-sub{margin:10px 0 14px;font-size:12px;color:#5e6f64;font-weight:700}.tpr-cover-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.8fr);gap:16px}.tpr-cover-section-title{font-size:14px;font-weight:900;color:#274131;margin-bottom:10px}.tpr-cover-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.tpr-cover-kpi{padding:12px 14px;border-radius:16px;border:1px solid #d7e0da;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}.tpr-cover-kpi small{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:#52685a}.tpr-cover-kpi b{display:block;margin-top:8px;font-size:28px;line-height:1.05;color:#21382a}.tpr-cover-kpi span{display:block;margin-top:6px;font-size:11px;color:#5e6f64}.tpr-cover-kpi.good{background:linear-gradient(180deg,#eef8ef 0%,#ffffff 100%);border-color:#bedec1}.tpr-cover-kpi.warn{background:linear-gradient(180deg,#fff6df 0%,#ffffff 100%);border-color:#ead39a}.tpr-cover-kpi.risk{background:linear-gradient(180deg,#fdebec 0%,#ffffff 100%);border-color:#efb7bd}.tpr-cover-kpi.info{background:linear-gradient(180deg,#ebf4fe 0%,#ffffff 100%);border-color:#bfd4ea}.tpr-cover-offender{margin-top:14px;padding:14px;border:1px solid #dde4df;border-radius:18px;background:#fff}.tpr-cover-ribbon{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,#cf4557,#dc6d7b);color:#fff;padding:7px 14px;border-radius:12px 12px 12px 2px;font-weight:900;font-size:14px;letter-spacing:.02em}.tpr-cover-ribbon span{font-size:12px;opacity:.92}.tpr-cover-offender-title{margin-top:12px;font-size:18px;color:#24372b}.tpr-cover-offender-title b{color:#18271f}.tpr-cover-offender-metric{margin-top:10px;font-size:15px;color:#44584b}.tpr-cover-offender-metric b{font-size:42px;line-height:1;color:#bf2d3e;margin-right:8px}.tpr-cover-improve{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid #ecf1ee;font-size:14px;color:#294033}.tpr-cover-improve b{color:#0d6b51}.tpr-cover-chart{display:flex;align-items:flex-end;gap:16px;min-height:146px;margin-top:16px;padding:10px 8px 2px;border-top:1px solid #edf2ee}.tpr-cover-bar{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px}.tpr-cover-bar b{font-size:12px;color:#294033}.tpr-cover-bar i{display:block;width:42px;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#5da280,#91c17b);box-shadow:inset 0 1px 0 rgba(255,255,255,.34)}.tpr-cover-bar span{font-size:11px;color:#607065;text-align:center}.tpr-cover-right{display:grid;gap:12px}.tpr-cover-card{padding:14px;border:1px solid #dce5de;border-radius:18px;background:#fff}.tpr-cover-card-title{font-size:13px;font-weight:900;color:#223629;margin-bottom:10px}.tpr-cover-table{width:100%;border-collapse:collapse;font-size:12px}.tpr-cover-table th,.tpr-cover-table td{padding:8px 8px;border:1px solid #e2e9e3;text-align:left;vertical-align:top}.tpr-cover-table thead th{background:#35567f;color:#fff;border-color:#35567f;font-size:11px}.tpr-cover-table.compact th,.tpr-cover-table.compact td{font-size:11px;padding:7px}.tpr-cover-bullets{margin:0;padding-left:18px;display:grid;gap:8px;color:#2f4035;font-size:13px}.tpr-cover-status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.tpr-cover-status.open{background:#fff3d8;color:#9f6b00}.tpr-cover-status.track{background:#e8f5e6;color:#2f7a2b}.tpr-cover-status.done{background:#e5edf9;color:#1e4d89}@media(max-width:980px){.tpr-cover-grid{grid-template-columns:1fr}.tpr-cover-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.tpr-cover{padding:14px}.tpr-cover-head{display:block}.tpr-cover-title{font-size:22px}.tpr-cover-meta{margin-top:6px;text-align:left}.tpr-cover-kpis{grid-template-columns:1fr}.tpr-cover-chart{justify-content:flex-start;overflow:auto}}@media(max-width:700px){.tpr-week-row{grid-template-columns:1fr}.tpr-week-row strong{text-align:left}}';
     return '<!doctype html>\n'+doc.documentElement.outerHTML
   }
   function csvTextFor(filters){var a=api(),src=source(),rows=src.rows||[],t=temporal(filters||{},rows),m=t.scope||computeScoped(filters||{}),h=history(filters||{},rows,t.cutoff),out=[['Section','Metric','Value','Detail']];[['Scope FPY',fp(m.fpy),m.eteTested+' tested'],['Daily FPY',fp(t.day&&t.day.fpy),t.cutoff],['WTD FPY',t.wtd&&t.wtdComplete?fp(t.wtd.fpy):'N/D',t.currentWeek||''],['QTD FPY',t.qtd&&t.qtdComplete?fp(t.qtd.fpy):'N/D',t.quarter&&t.quarter.name||''],['Target',t.target==null?'N/D':fp(t.target),''],['Gap',signed(t.gap),''],['WoW',signed(t.wow),''],['Open Backlog',h.open.length,''],['Aging >7d',h.aging7,''],['NDF',h.ndf.length,'']].forEach(function(r){out.push(['EXECUTIVE'].concat(r))});(t.trend||[]).forEach(function(x){out.push(['13WK',x.week,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.byModel||[]).forEach(function(x){out.push(['PRODUCT',x.name,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.failures||[]).forEach(function(x){out.push(['FAILURE',x.station+' · '+x.failure,x.affected+' SN',fp(x.failureRate)])});(h.open||[]).forEach(function(x){out.push(['BACKLOG',x.sn,x.disposition,x.ageDays+' d · '+x.station+' · '+x.failure])});actionRows().filter(function(x){return actionScope(x,filters||{},m)}).forEach(function(x){out.push(['ACTION',x.id||x.focus||'Action',x.status||'Open',(x.owner||'N/D')+' · '+(x.dueDate||'N/D')+' · '+(x.action||'')])});function q(v){v=txt(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}return out.map(function(r){return r.map(q).join(',')}).join('\n')}
@@ -73801,3 +73805,13 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   if(!install()){var tries=0,t=setInterval(function(){tries++;if(install()||tries>100)clearInterval(t)},100)}
 })();
 </script>
+<!-- SMTinel V13.16.00 - Runtime Slim: Executive Quality export retired; onboarding videos disconnected; 8D Generator retired -->
+<style id="smtinel-v131600-runtime-slim">
+html body .smtinel-starter ._s2mv{display:none!important}
+html body .smtinel-starter ._s2fpanel{min-height:0!important;height:auto!important;padding:34px 5vw!important;background:#F7F9F8!important;color:#17231A!important}
+html body .smtinel-starter ._s2fpanel ._s2foverlay{display:none!important}
+html body .smtinel-starter ._s2fpanel ._s2fcontent{position:relative!important;inset:auto!important;transform:none!important;max-width:980px!important;color:#17231A!important;text-shadow:none!important}
+html body .smtinel-starter ._s2fpanel ._s2fcontent h3,html body .smtinel-starter ._s2fpanel ._s2fcontent p,html body .smtinel-starter ._s2fpanel ._s2fcontent li{color:#17231A!important;text-shadow:none!important}
+html body video[data-smtinel-video]{display:none!important}
+</style>
+<script>window.__SMTINEL_V131600__='RUNTIME-SLIM-NO-EXEC-QUALITY-NO-VIDEO-NO-8D';</script>
