@@ -41097,7 +41097,7 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   function bodyHtml(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerHTML:''}
   function setupCsvButton(show){if(!testCsvButton){testCsvButton=document.getElementById('downloadTestCsv');if(!testCsvButton){testCsvButton=document.createElement('button');testCsvButton.className='btn';testCsvButton.id='downloadTestCsv';testCsvButton.textContent='Download Test CSV';var dl=document.getElementById('downloadEmail');if(dl&&dl.parentNode)dl.parentNode.insertBefore(testCsvButton,dl);testCsvButton.onclick=function(e){e.preventDefault();downloadCsv()}}}if(testCsvButton)testCsvButton.style.display=show?'inline-block':'none'}
   var baseUpdate=updateReportBuilder;
-  updateReportBuilder=function(){if(!isTest()){var tc=controls();if(tc)tc.style.display='none';setupCsvButton(false);return baseUpdate()}var role=document.getElementById('roleSelectorWrap'),period=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),dbn=document.getElementById('dbnControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),button=document.getElementById('downloadEmail'),notesLabel=document.querySelector('label[for="shiftNotes"]');if(role)role.style.display='none';if(period)period.style.display='none';if(eq)eq.style.display='none';if(dbn)dbn.style.display='none';if(ppt)ppt.style.display='none';var tc=controls();if(tc)tc.style.display='block';fillOptions(false);if(title)title.textContent='Test Performance Report';if(sub)sub.textContent='Daily / weekly Test FPY, retest activity and PCB ↔ chassis traceability from the same Yield Flow / Cesium source package.';if(hint)hint.innerHTML='<b>Test scope:</b> Population starts from Cesium activity in the selected date / shift, not from fresh work orders. FPY uses first eligible attempt per logical unit + Test Area. Carry-in retests remain daily activity without becoming current-period FPY PASS. PCB / chassis matching reuses Parent Serial + SFC / BOXSN evidence.';if(button)button.textContent='Download Test HTML';if(notesLabel)notesLabel.textContent='Test notes / actions';var subject=document.getElementById('emailSubject');if(subject)subject.value='SMTinel Test Performance - '+((document.getElementById('testPerfFrom')||{}).value||'Loaded activity');setupCsvButton(true);render('builder',true)};
+  updateReportBuilder=function(){if(!isTest()){var tc=controls();if(tc)tc.style.display='none';setupCsvButton(false);return baseUpdate()}var role=document.getElementById('roleSelectorWrap'),period=document.getElementById('periodControls'),eq=document.getElementById('executiveQualityControls'),dbn=document.getElementById('dbnControls'),ppt=document.getElementById('downloadExecutivePptx'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),button=document.getElementById('downloadEmail'),notesLabel=document.querySelector('label[for="shiftNotes"]');if(role)role.style.display='none';if(period)period.style.display='none';if(eq)eq.style.display='none';if(dbn)dbn.style.display='none';if(ppt)ppt.style.display='none';var tc=controls();if(tc)tc.style.display='block';fillOptions(false);if(title)title.textContent='Test Performance Report';if(sub)sub.textContent='Daily / weekly Test FPY, retest activity, Repair Record evidence and PCB ↔ chassis traceability from the same Yield Flow source package.';if(hint)hint.innerHTML='<b>Test scope:</b> Population starts from Cesium activity in the selected date / shift, not from fresh work orders. FPY uses first eligible attempt per logical unit + Test Area. Carry-in retests remain daily activity without becoming current-period FPY PASS. PCB / chassis matching reuses Parent Serial + SFC / BOXSN evidence. Repair evidence is linked by serial from the same Repair Record population used by Yield Flow.';if(button)button.textContent='Download Test HTML';if(notesLabel)notesLabel.textContent='Test notes / actions';var subject=document.getElementById('emailSubject');if(subject)subject.value='SMTinel Test Performance - '+((document.getElementById('testPerfFrom')||{}).value||'Loaded activity');setupCsvButton(true);render('builder',true)};
   var oldNotes=document.getElementById('shiftNotes')&&document.getElementById('shiftNotes').oninput;
   if(document.getElementById('shiftNotes'))document.getElementById('shiftNotes').oninput=function(e){if(isTest())render('notes',true);else if(typeof oldNotes==='function')oldNotes.call(this,e)};
   document.addEventListener('change',function(e){var t=e&&e.target;if(!t)return;if(t.id==='reportType'){setTimeout(function(){if(isTest())render('report-type',true)},0);return}if(!isTest())return;if(/^testPerf/.test(t.id)){if(t.id==='testPerfPreset')applyPreset(t.value);else render('filter',true)}},true);
@@ -51323,7 +51323,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -52831,8 +52831,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
-    window.SMTINEL_BUILD_BADGE='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
+    window.SMTINEL_BUILD_BADGE='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -52852,7 +52852,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -53157,8 +53157,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   }
 
   function updateBadge(){
@@ -53304,7 +53304,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53477,7 +53477,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -53742,7 +53742,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -53768,7 +53768,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -53792,7 +53792,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -53966,7 +53966,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var badgeText = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -53989,7 +53989,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -54008,7 +54008,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  var versionText = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -54049,7 +54049,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var label = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -54078,7 +54078,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION_LABEL = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
   window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
   window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
@@ -54373,7 +54373,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var badge = 'SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -54752,7 +54752,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -54862,7 +54862,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -56349,7 +56349,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var label='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -62543,7 +62543,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -65292,7 +65292,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -65522,7 +65522,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -65621,7 +65621,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -71516,7 +71516,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   var STORAGE_KEY='smtinel-theme';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -71781,7 +71781,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -72028,7 +72028,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -72224,7 +72224,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -72467,7 +72467,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -72697,7 +72697,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V13.15.50 - Test Report Export Center / Stable Import - 2026-08-19';
+  var VERSION='SMTinel V13.15.60 - Test Repair Review / Stable Import - 2026-09-16';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -73584,3 +73584,85 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
 <!-- SMTinel V81.8 DBN Chassis Module: Parent SN displays Cesium moduleno from exact self-serial match -->
 
 <!-- SMTinel V81.12: Executive Quality report fixed to Executive view; obsolete Engineering toggle removed. -->
+
+<!-- SMTinel V13.15.60 - Test Performance external report v1.1: End-of-Shift visual system + Repair Record -->
+<script id="smtinel-test-performance-report-v110">
+(function(){
+  'use strict';
+  var REPORT_BUILD='TEST-PERFORMANCE-V1.1.0';
+  window.SMTINEL_TEST_PERFORMANCE_REPORT_V110=REPORT_BUILD;
+  function txt(v){return String(v==null?'':v).trim();}
+  function up(v){return txt(v).toUpperCase();}
+  function esc(v){return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function k(v){var x=up(v).replace(/\s+/g,'');return (!x||/^(N\/?A|N\/?D|NULL|UNKNOWN|0|-)$/.test(x))?'':x;}
+  function uniq(a){var m={},o=[];(a||[]).forEach(function(v){v=k(v);if(v&&!m[v]){m[v]=1;o.push(v);}});return o;}
+  function fmtPct(v){return v==null||!isFinite(v)?'N/D':Number(v).toFixed(2)+'%';}
+  function fmtDate(v){if(!v)return 'N/D';try{var d=v instanceof Date?v:new Date(v);if(isNaN(d.getTime()))return txt(v)||'N/D';return d.toLocaleString();}catch(_){return txt(v)||'N/D';}}
+  function serialsCell(list){list=uniq(list);if(!list.length)return 'N/D';var preview=list.slice(0,3).map(function(x){return '<code>'+esc(x)+'</code>';}).join('<br>');return '<div class="tpr-sn">'+preview+'<details><summary>View / copy '+list.length+' SN</summary><textarea readonly rows="'+Math.min(9,Math.max(2,list.length))+'">'+esc(list.join('\n'))+'</textarea><button type="button" data-tpr-copy>Copy SN</button></details></div>';}
+  function repairSig(rep){return [rep&&rep.sn,rep&&rep.repairTime,rep&&rep.refdes,rep&&rep.location,rep&&rep.failureMode,rep&&rep.mode,rep&&rep.partNumber,rep&&rep.actionDesc].map(txt).join('|');}
+  function repairRowsForUnit(u){
+    var map=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{}, ids=uniq([u.logicalUnit,u.testSn,u.parentSn,u.sfcBox,u.sfcSn,u.logicalKey]), seen={}, out=[];
+    ids.forEach(function(id){(map[id]||[]).forEach(function(rep){var sig=repairSig(rep);if(!sig)sig=JSON.stringify(rep||{});if(!seen[sig]){seen[sig]=1;out.push(rep);}});});
+    return out;
+  }
+  function enrichRepairs(m){
+    m=m||{};var byUnit={},details=[],events=0,modeMap={},refMap={};
+    (m.activityRows||[]).forEach(function(u){var reps=repairRowsForUnit(u);if(!reps.length)return;byUnit[u.logicalKey]=reps;events+=reps.length;reps.forEach(function(rep){
+      var mode=txt(rep.failureMode||rep.mode||rep.symptom||rep.rootCause||rep.rawRootCause)||'N/D';
+      var root=txt(rep.rawRootCause||rep.rootCause||rep.symptom)||mode;
+      var ref=txt(rep.refdes||rep.failLocation||rep.location)||'N/D';
+      var pn=txt(rep.partNumber||rep.componentPn||rep.componentCode)||'N/D';
+      var action=txt(rep.actionDesc)||'N/D';
+      var area=txt(rep.responsibleArea)||'N/D';
+      details.push({logicalKey:u.logicalKey,sn:u.logicalUnit||u.testSn,wo:u.wo||rep.wo||'',model:u.model||rep.family||'N/D',mode:mode,root:root,refdes:ref,pn:pn,station:txt(rep.detectionStation||rep.station)||'N/D',action:action,responsible:area,repairType:txt(rep.repairType)||'N/D',repairTime:rep.repairTime||'',rep:rep});
+      var mm=modeMap[mode]||(modeMap[mode]={name:mode,units:{},events:0,refs:{}});mm.units[u.logicalKey]=1;mm.events++;mm.refs[ref]=1;
+      var rr=refMap[ref]||(refMap[ref]={name:ref,units:{},events:0,modes:{}});rr.units[u.logicalKey]=1;rr.events++;rr.modes[mode]=1;
+    });});
+    var failUnits={};(m.failures||[]).forEach(function(f){(f.rows||[]).forEach(function(r){failUnits[r.logicalKey]=1;});});
+    var linked=0;Object.keys(failUnits).forEach(function(x){if(byUnit[x]&&byUnit[x].length)linked++;});
+    function finalize(map){return Object.keys(map).map(function(name){var x=map[name];return {name:name,units:Object.keys(x.units).length,events:x.events,refs:Object.keys(x.refs||{}),modes:Object.keys(x.modes||{})};}).sort(function(a,b){return b.units-a.units||b.events-a.events||a.name.localeCompare(b.name);});}
+    m.repair={units:Object.keys(byUnit).length,events:events,byUnit:byUnit,details:details.sort(function(a,b){var ta=a.repairTime?new Date(a.repairTime).getTime():0,tb=b.repairTime?new Date(b.repairTime).getTime():0;return tb-ta;}),byMode:finalize(modeMap),byRef:finalize(refMap),failUnits:Object.keys(failUnits).length,failLinked:linked,failNoRepair:Math.max(0,Object.keys(failUnits).length-linked),failCoverage:Object.keys(failUnits).length?100*linked/Object.keys(failUnits).length:null};
+    return m;
+  }
+  function scopeText(filters){filters=filters||{};var bits=[];if(filters.from||filters.to)bits.push((filters.from||'…')+(filters.to&&filters.to!==filters.from?' → '+filters.to:''));else bits.push('All loaded activity');if(filters.shift&&filters.shift!=='ALL')bits.push(filters.shift+' shift');if(filters.model&&filters.model!=='ALL')bits.push(filters.model);if(filters.area&&filters.area!=='ALL')bits.push(filters.area);return bits.join(' · ');}
+  function metric(label,value,note,tone){return '<div class="tpr-kpi '+(tone||'')+'"><span>'+esc(label)+'</span><b>'+esc(value)+'</b><small>'+esc(note||'')+'</small></div>';}
+  function section(id,num,title,sub,body){return '<section class="tpr-section" id="'+id+'"><div class="tpr-section-head" data-tpr-toggle><span class="tpr-num">'+num+'</span><div><b>'+esc(title)+'</b><small>'+esc(sub||'')+'</small></div><i>−</i></div><div class="tpr-section-body">'+body+'</div></section>';}
+  function summaryTable(title,rows,kind){var th=kind==='area'?'Test Area':'Model';return '<div class="tpr-card"><div class="tpr-card-title">'+esc(title)+'</div><div class="tpr-scroll"><table><thead><tr><th>'+th+'</th><th>Activity</th><th>FPY Tested</th><th>Pass</th><th>Fail</th><th>FPY</th><th>Carry-in</th><th>Retest Runs</th><th>Recovered</th><th>Open NG</th></tr></thead><tbody>'+((rows||[]).map(function(x){return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+x.activity+'</td><td>'+x.tested+'</td><td>'+x.pass+'</td><td>'+x.fail+'</td><td><b>'+fmtPct(x.fpy)+'</b></td><td>'+x.carryIn+'</td><td>'+x.retestRuns+'</td><td>'+x.recovered+'</td><td>'+x.openNg+'</td></tr>';}).join('')||'<tr><td colspan="10">No scoped activity</td></tr>')+'</tbody></table></div></div>';}
+  function failureTable(m){var rep=(m.repair||{}).byUnit||{};return '<div class="tpr-card"><div class="tpr-card-title">TOP FIRST-ATTEMPT FAILURES</div><div class="tpr-scroll"><table><thead><tr><th>Test Area</th><th>Failure</th><th>Affected FPY SN</th><th>Repair SN</th><th>Repair Coverage</th><th>Model(s)</th><th>Serial evidence</th></tr></thead><tbody>'+(((m.failures||[]).slice(0,30)).map(function(x){var ids={},linked=0;(x.rows||[]).forEach(function(r){ids[r.logicalKey]=1;if(rep[r.logicalKey]&&rep[r.logicalKey].length)linked++;});var total=Object.keys(ids).length,cov=total?100*linked/total:null;return '<tr><td>'+esc(x.station)+'</td><td><b>'+esc(x.failure)+'</b></td><td>'+x.affected+'</td><td>'+linked+'</td><td>'+fmtPct(cov)+'</td><td>'+esc((x.models||[]).slice(0,4).join(', '))+'</td><td>'+serialsCell((x.rows||[]).map(function(r){return r.logicalUnit||r.testSn;}))+'</td></tr>';}).join('')||'<tr><td colspan="7">No first-attempt failures in scope</td></tr>')+'</tbody></table></div></div>';}
+  function repairModeTable(m){var r=m.repair||{};return '<div class="tpr-card"><div class="tpr-card-title">REPAIR MODE PARETO</div><div class="tpr-scroll"><table><thead><tr><th>Repair / Root Cause</th><th>Affected SN</th><th>Events</th><th>RefDes</th></tr></thead><tbody>'+(((r.byMode||[]).slice(0,25)).map(function(x){return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+x.units+'</td><td>'+x.events+'</td><td>'+esc((x.refs||[]).slice(0,5).join(', ')||'N/D')+'</td></tr>';}).join('')||'<tr><td colspan="4">No linked Repair Record evidence for scoped Test units</td></tr>')+'</tbody></table></div></div>';}
+  function repairDetailTable(m){var rows=((m.repair||{}).details||[]).slice(0,100);return '<div class="tpr-card"><div class="tpr-card-title">REPAIR EVIDENCE · SERIAL LEVEL</div><div class="tpr-scroll"><table><thead><tr><th>SN</th><th>WO</th><th>Model</th><th>Repair / Mode</th><th>RefDes</th><th>PN</th><th>Repair Station</th><th>Responsible</th><th>Action</th><th>Repair Time</th></tr></thead><tbody>'+((rows.map(function(x){return '<tr><td><code>'+esc(x.sn||'N/D')+'</code></td><td>'+esc(x.wo||'N/D')+'</td><td>'+esc(x.model||'N/D')+'</td><td><b>'+esc(x.mode||x.root||'N/D')+'</b></td><td>'+esc(x.refdes||'N/D')+'</td><td>'+esc(x.pn||'N/D')+'</td><td>'+esc(x.station||'N/D')+'</td><td>'+esc(x.responsible||'N/D')+'</td><td>'+esc(x.action||'N/D')+'</td><td>'+esc(fmtDate(x.repairTime))+'</td></tr>';}).join(''))||'<tr><td colspan="10">No linked repair evidence</td></tr>')+'</tbody></table></div><div class="tpr-footnote">Repair evidence is linked by serial to the scoped Test population. Repair Time is evidence metadata and does not redefine the Test FPY period.</div></div>';}
+  function bridgeTable(m){var rows=(m.activityRows||[]).slice(0,100);return '<div class="tpr-card"><div class="tpr-card-title">SERIAL BRIDGE · PCB / CHASSIS / SFC</div><div class="tpr-pillrow"><span>Paired identities <b>'+m.bridge.paired+'/'+m.bridge.activity+'</b></span><span>SFC match <b>'+m.bridge.sfcMatched+'/'+m.bridge.activity+'</b></span><span>WO match <b>'+m.bridge.woMatched+'/'+m.bridge.activity+'</b></span></div><div class="tpr-scroll"><table><thead><tr><th>Logical Unit</th><th>Test SN</th><th>Parent / Chassis</th><th>SFC / BOXSN</th><th>WO</th><th>Model</th><th>Runs</th></tr></thead><tbody>'+rows.map(function(x){return '<tr><td><b>'+esc(x.logicalUnit||'N/D')+'</b></td><td>'+esc(x.testSn||'N/D')+'</td><td>'+esc(x.parentSn||'N/D')+'</td><td>'+esc(x.sfcBox||x.sfcSn||'N/D')+'</td><td>'+esc(x.wo||'N/D')+'</td><td>'+esc(x.model||'N/D')+'</td><td>'+x.runs+'</td></tr>';}).join('')+'</tbody></table></div><div class="tpr-footnote">Valid Cesium activity remains in the report even when a fresh WO/SFC match does not exist.</div></div>';}
+  function css(){return [
+    ':root{--deep:#17231A;--green:#33472D;--olive:#788476;--line:#D9DEDA;--line2:#C3CCC5;--bg:#F1F2F0;--card:#fff;--soft:#F4F5F3;--muted:#5F6264;--ink:#141818;--red:#B80F1B;--amber:#B87820;--blue:#315E87;--shadow:0 12px 32px rgba(20,24,24,.10)}',
+    '*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);font-family:Segoe UI,Arial,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums}',
+    '.tpr-top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.98);border-bottom:1px solid var(--line);box-shadow:0 4px 16px rgba(20,24,24,.08)}.tpr-top-inner{padding:8px 16px 8px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:68px}.tpr-brand{display:flex;gap:11px;align-items:center}.tpr-mark{width:46px;height:46px;border:2px solid #52614f;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#e9eee8,#cdd8cb);color:var(--green);font-weight:950;font-size:20px}.tpr-word{font-size:20px;font-weight:950;color:var(--green)}.tpr-tag{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--olive);margin-left:7px}.tpr-title{font-size:16px;font-weight:900;margin-top:3px}.tpr-sub{font-size:10px;color:var(--muted);margin-top:2px}.tpr-actions{display:flex;gap:7px;flex-wrap:wrap}.tpr-actions button{border:1px solid var(--line2);background:#fff;color:var(--green);padding:8px 11px;border-radius:8px;font-weight:800;cursor:pointer}',
+    '.tpr-shell{display:grid;grid-template-columns:66px minmax(0,1fr);gap:10px;padding:10px 12px 24px 6px}.tpr-side{position:sticky;top:79px;align-self:start;background:#fff;border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;padding:7px 5px;box-shadow:var(--shadow);display:grid;gap:6px}.tpr-nav{width:42px;height:42px;border-radius:8px;border:1px solid transparent;background:var(--soft);display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--green);text-decoration:none}.tpr-nav:hover{background:#e9eee8;border-color:var(--line2)}',
+    '.tpr-main{min-width:0}.tpr-hero{background:var(--green);color:#fff;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow)}.tpr-hero small{font-size:9px;letter-spacing:.11em;text-transform:uppercase;font-weight:900;color:#DCE4DD}.tpr-hero b{font-size:15px}.tpr-hero span{margin-left:auto;color:#DCE4DD;font-size:10px;text-align:right}',
+    '.tpr-note{padding:9px 11px;background:#fff8dc;border:1px solid #ead48c;border-radius:8px;color:#765c00;font-size:10px;line-height:1.45;margin-bottom:10px}.tpr-kpis{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:7px;margin-bottom:10px}.tpr-kpi{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px;box-shadow:0 3px 12px rgba(20,24,24,.04)}.tpr-kpi span{display:block;font-size:8.5px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.tpr-kpi b{display:block;font-size:20px;margin:3px 0;color:#172b43}.tpr-kpi small{font-size:9px;color:#74867d}.tpr-kpi.risk b{color:var(--red)}.tpr-kpi.warn b{color:var(--amber)}.tpr-kpi.good b{color:#1d6b42}',
+    '.tpr-section{background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:82px}.tpr-section-head{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--green);color:#fff;cursor:pointer;user-select:none}.tpr-num{width:27px;height:27px;border-radius:999px;background:#fff;color:#17382f;display:grid;place-items:center;font-weight:950}.tpr-section-head>div{min-width:0}.tpr-section-head b{display:block;font-size:11px}.tpr-section-head small{display:block;font-size:8.5px;color:#dce4dd;margin-top:1px}.tpr-section-head i{margin-left:auto;font-size:18px;font-style:normal;font-weight:900}.tpr-section.is-collapsed .tpr-section-body{display:none}.tpr-section-body{padding:10px;background:#f8faf8}',
+    '.tpr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tpr-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px;min-width:0}.tpr-card-title{font-size:10px;font-weight:950;color:var(--green);margin-bottom:7px;text-transform:uppercase;letter-spacing:.025em}.tpr-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:9.5px}th,td{border:1px solid #d9e1dc;padding:6px;text-align:left;vertical-align:top}th{background:#eef1ed;color:#314638;white-space:nowrap;font-size:8.5px;text-transform:uppercase;letter-spacing:.03em}tbody tr:nth-child(even){background:#fbfcfb}code{font:9.5px Consolas,Menlo,monospace}.tpr-pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.tpr-pillrow span{padding:5px 8px;background:#eef3ef;border-radius:999px;border:1px solid #d5dfd6;font-size:9px}.tpr-footnote{font-size:9px;color:#627d70;margin-top:7px}.tpr-sn summary{cursor:pointer;color:var(--blue);font-weight:800}.tpr-sn textarea{display:block;width:100%;min-width:170px;margin-top:4px;padding:5px;border:1px solid #cfd8d2;border-radius:4px;background:#fbfcfb;font:9px/1.35 Consolas,Menlo,monospace;resize:vertical}.tpr-sn button{margin-top:4px;padding:5px 8px;border:1px solid #9fb5a5;border-radius:5px;background:#eef3ef;color:#274637;font-size:9px;font-weight:800}.tpr-method{padding:10px 11px;background:#f5f8fc;border:1px solid #b9cbe3;border-radius:8px;font-size:10px;line-height:1.45;color:#536b86}.tpr-footer{margin-top:10px;background:#17382f;color:#fff;padding:8px 12px;font-size:9px;display:flex;justify-content:space-between}.tpr-back{position:fixed;right:18px;bottom:18px;border:1px solid var(--green);border-radius:999px;background:var(--green);color:#fff;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:var(--shadow)}',
+    '@media(max-width:1050px){.tpr-kpis{grid-template-columns:repeat(3,1fr)}.tpr-grid{grid-template-columns:1fr}}@media(max-width:700px){.tpr-top-inner{align-items:flex-start;flex-direction:column}.tpr-actions{width:100%}.tpr-shell{grid-template-columns:1fr;padding:8px}.tpr-side{display:none}.tpr-hero{display:block}.tpr-hero span{display:block;margin:4px 0 0;text-align:left}.tpr-kpis{grid-template-columns:1fr 1fr}.tpr-kpi b{font-size:17px}.tpr-section-body{padding:7px}.tpr-card{padding:7px}table{font-size:9px}th,td{padding:5px}.tpr-sn summary{min-height:38px;display:flex;align-items:center}.tpr-sn button{min-height:40px}.tpr-back{bottom:12px;right:12px}}',
+    '@media print{body{background:#fff}.tpr-top,.tpr-side,.tpr-back{display:none!important}.tpr-shell{display:block;padding:0}.tpr-section{box-shadow:none;break-inside:avoid}.tpr-section-body{display:block!important}.tpr-footer{background:#17382f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.tpr-hero,.tpr-section-head{background:#33472D!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+  ].join('');}
+  function reportHtmlFor(filters){
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.computeFor!=='function')return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';
+    var m=enrichRepairs(api.computeFor(filters||{})), scope=scopeText(filters), repair=m.repair||{}, generated=new Date().toLocaleString();
+    var repairCoverage=fmtPct(repair.failCoverage);
+    var title='SMTinel Test Performance Review';
+    var body='';
+    body+='<div class="tpr-note"><b>Population:</b> Test activity starts from Cesium event date, not WO freshness. FPY uses first eligible attempt per logical unit + Test Area. Carry-in retests remain activity. <b>Repair:</b> Repair Record is linked by PCB / chassis / SFC identity to the scoped Test population; it enriches the report but does not rewrite FPY.</div>';
+    body+='<div class="tpr-kpis">'+metric('Activity Units',m.activity,'fresh + retest')+metric('ETE FPY Tested',m.eteTested,'first-attempt units')+metric('FPY Pass',m.etePass,'unit first yield','good')+metric('FPY Fail',m.eteFail,'unit first yield','risk')+metric('ETE FPY',fmtPct(m.fpy),'first attempt only',m.fpy!=null&&m.fpy<95?'warn':'good')+metric('Carry-in Retest',m.carryIn,'prior first attempt')+metric('Retest Runs',m.retestRuns,'extra executions')+metric('Recovered',m.recovered,'later PASS in loaded history','good')+metric('Open NG',m.openNg,'no later PASS','risk')+metric('Repair SN',repair.units||0,'linked Repair Record units')+metric('Repair Events',repair.events||0,'repair interventions')+metric('Fail ↔ Repair',repair.failLinked||0,'FPY fail units with repair')+metric('Fail w/o Repair',repair.failNoRepair||0,'FPY fail units without repair','warn')+metric('Repair Coverage',repairCoverage,'FPY fail SN with repair evidence')+metric('Debug Units',m.debugUnits||0,'excluded from official FPY')+'</div>';
+    body+=section('sec-model','1','FPY by Model','Activity and first-attempt yield by model',summaryTable('FPY BY MODEL',m.byModel,'model'));
+    body+=section('sec-area','2','FPY by Test Area','Independent station-level FPY and retest activity',summaryTable('FPY BY TEST AREA',m.byArea,'area'));
+    body+=section('sec-fail','3','First-Attempt Failures','Failure Pareto with Repair Record coverage',failureTable(m));
+    body+=section('sec-repair','4','Repair Evidence','Repair Record linked to the same scoped Test serial population','<div class="tpr-grid">'+repairModeTable(m)+'<div class="tpr-card"><div class="tpr-card-title">REPAIR COVERAGE</div><div class="tpr-kpis" style="grid-template-columns:repeat(2,1fr);margin:0">'+metric('Repair SN',repair.units||0,'unique linked units')+metric('Repair Events',repair.events||0,'interventions')+metric('FPY Fail Linked',repair.failLinked||0,'with Repair Record')+metric('FPY Fail Unlinked',repair.failNoRepair||0,'needs diagnosis / record','warn')+'</div></div></div><div style="margin-top:10px">'+repairDetailTable(m)+'</div>');
+    body+=section('sec-bridge','5','Serial Bridge','PCB ↔ chassis ↔ SFC ↔ WO identity evidence',bridgeTable(m));
+    body+=section('sec-method','6','Method & Source','Calculation contract and evidence boundaries','<div class="tpr-method"><b>Method:</b> Activity Units count unique logical units with valid PASS/FAIL activity in the selected scope. FPY is first eligible attempt per logical unit + Test Area. Repeated executions are Retest Runs. Recovered means first-attempt FAIL with a later PASS in loaded history. Debug / starred / Repair / Rework / MRB / Scrap stations remain excluded from official Test FPY. Repair Record is joined by serial identity to the scoped Test population. Source mode: <b>'+esc((m.source&&m.source.mode)||'N/D')+'</b>'+(m.source&&m.source.warning?' · '+esc(m.source.warning):'')+'.</div>');
+    var nav=['Summary','Model','Test Area','Failures','Repairs','Bridge'].map(function(x,i){return '<a class="tpr-nav" href="'+(i===0?'#top':'#sec-'+['model','area','fail','repair','bridge'][i-1])+'" title="'+esc(x)+'">'+(i+1)+'</a>';}).join('');
+    var runtime='<scr'+'ipt>(function(){function q(s,a){return (a||document).querySelector(s)}function qa(s,a){return [].slice.call((a||document).querySelectorAll(s))}qa("[data-tpr-toggle]").forEach(function(h){h.addEventListener("click",function(){var s=h.closest(".tpr-section");s.classList.toggle("is-collapsed");var i=h.querySelector("i");if(i)i.textContent=s.classList.contains("is-collapsed")?"+":"−";});});document.addEventListener("click",function(e){var b=e.target.closest("[data-tpr-copy]");if(!b)return;var t=b.previousElementSibling;if(!t)return;t.focus();t.select();try{document.execCommand("copy");b.textContent="Copied"}catch(_){b.textContent="Select / Ctrl+C"}});var ex=q("#tprExpand"),co=q("#tprCollapse");if(ex)ex.onclick=function(){qa(".tpr-section").forEach(function(s){s.classList.remove("is-collapsed");var i=q("i",s);if(i)i.textContent="−";})};if(co)co.onclick=function(){qa(".tpr-section").forEach(function(s){s.classList.add("is-collapsed");var i=q("i",s);if(i)i.textContent="+";})};})();</scr'+'ipt>';
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title+' · '+scope)+'</title><style>'+css()+'</style></head><body id="top"><header class="tpr-top"><div class="tpr-top-inner"><div class="tpr-brand"><div class="tpr-mark">S</div><div><div><span class="tpr-word">SMTinel</span><span class="tpr-tag">TRACE · MONITOR · PROTECT</span></div><div class="tpr-title">Test Performance Review</div><div class="tpr-sub">Daily / weekly FPY · retest · repair evidence · PCB / chassis traceability</div></div></div><div class="tpr-actions"><button id="tprExpand" type="button">Expand all</button><button id="tprCollapse" type="button">Collapse all</button><button type="button" onclick="window.print()">Print / PDF</button></div></div></header><div class="tpr-shell"><aside class="tpr-side">'+nav+'</aside><main class="tpr-main"><div class="tpr-hero"><small>Test Performance</small><b>'+esc(scope)+'</b><span>'+REPORT_BUILD+' · Generated '+esc(generated)+'</span></div>'+body+'<div class="tpr-footer"><span>SMTinel · Test Performance · Internal manufacturing quality report</span><span>'+esc(scope)+'</span></div></main></div><a class="tpr-back" href="#top">Back to top</a>'+runtime+'</body></html>';
+  }
+  function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.computeFor!=='function')return false;api.reportHtmlFor=reportHtmlFor;api.reportHtml=function(){var f={};try{f={from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL'};}catch(_){}return reportHtmlFor(f);};api.build=REPORT_BUILD;api.enrichRepairs=enrichRepairs;return true;}
+  if(!install()){var tries=0,t=setInterval(function(){tries++;if(install()||tries>80)clearInterval(t);},100);}
+})();
+</script>
