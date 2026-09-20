@@ -74290,9 +74290,9 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
 (function(){
   'use strict';
   if(window.__SMTINEL_TEST_TIME_CENTRIC_V167__)return;
-  var BUILD='TEST-PERFORMANCE-V1.6.7-TIME-SCOPE-QUARTERS';
+  var BUILD='TEST-PERFORMANCE-V1.6.8-TIME-SCOPE-CURRENT-WEEK';
   window.__SMTINEL_TEST_TIME_CENTRIC_V167__=BUILD;
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.67 - Test Performance v1.6.7 Time Scope + Fiscal Quarter Summary - 2026-09-19';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.68 - Test Performance v1.6.8 Current Fiscal Week + Time Summary Fix - 2026-09-19';
 
   function tx(v){return String(v==null?'':v).trim()}
   function qFromWeek(w){var m=tx(w).match(/(FY\d{4}\s+Q\d)/i);return m?m[1].toUpperCase():''}
@@ -74345,21 +74345,47 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
       document.getElementById('testPerfTimeModeV167').addEventListener('change',function(){applyMode(this.value)});
       document.getElementById('testPerfQuarterV167').addEventListener('change',function(){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='quarter';applyMode('quarter')});
       var from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');[from,to].forEach(function(x){if(x)x.addEventListener('change',function(){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='custom';setv('testPerfWeek','ALL');resetGeneral()})});
-      if(wk)wk.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='custom';var qq=document.getElementById('testPerfQuarterV167');if(qq)qq.value=qFromWeek(this.value);resetGeneral()}});
+      if(wk)wk.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='week';var qq=document.getElementById('testPerfQuarterV167');if(qq)qq.value=qFromWeek(this.value);resetGeneral()}});
     }
     fillQuarter();resetGeneral();
     var p=document.getElementById('testPerfPreset');if(p)p.closest('label').style.display='none';
     var h=c.querySelector('.scope-hint');if(h)h.innerHTML='<b>Time-only scope:</b> BU defines the report population. Choose the fiscal week, quarter or date range. Line, Product, SKU/UUT, WO, Test Area, Failure Mode and Shift remain <b>ALL</b>; the report shows their general summaries inside the selected period.';
   }
-  function defaultWeekAfterBu(){setTimeout(function(){ensureLive();var mode=document.getElementById('testPerfTimeModeV167');if(mode&&!mode.dataset.seeded){mode.dataset.seeded='1';mode.value='week';applyMode('week')}},30)}
+  function defaultWeekAfterBu(){
+    var tries=0;
+    function run(){
+      ensureLive();
+      var mode=document.getElementById('testPerfTimeModeV167'),m=latestMeta(),cur=weekAt(tx(m.latestDate),m);
+      if(mode&&mode.dataset.seeded)return;
+      if(mode&&cur){mode.dataset.seeded='1';mode.value='week';applyMode('week');return}
+      if(tries++<30)setTimeout(run,100);
+    }
+    setTimeout(run,30);
+  }
 
   function normalizeFilters(f){f=Object.assign({},f||{});f.search='';f.line='ALL';f.model='ALL';f.sku='ALL';f.wo='ALL';f.area='ALL';f.failure='ALL';f.shift='ALL';return f}
   function esc(v){return tx(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function payloadLatestDate(P){
+    var cols=P&&P.columns||[],idx=cols.indexOf('opDate'),dict=P&&P.dict||[],latest='';
+    if(idx<0)return tx(P&&P.filters&&P.filters.to);
+    (P.rows||[]).forEach(function(a){var v=a&&a[idx],d=typeof v==='number'?tx(dict[v]):tx(v);if(/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>latest)latest=d});
+    return latest||tx(P&&P.filters&&P.filters.to);
+  }
+  function seedStandaloneTime(P){
+    P=P||{};P.filters=normalizeFilters(P.filters||{});
+    var liveMode=tx((document.getElementById('testPerfTimeModeV167')||{}).value),liveQuarter=tx((document.getElementById('testPerfQuarterV167')||{}).value);
+    P.timeView=liveMode||P.timeView||'week';P.fiscalQuarter=liveQuarter||P.fiscalQuarter||qFromWeek(P.filters.week);
+    if(P.timeView==='week'&&(!P.filters.week||P.filters.week==='ALL')){
+      var latest=payloadLatestDate(P),cal=P.calendar||{},hit=cal.dates&&cal.dates[latest],wk=hit&&hit[0],rg=wk&&cal.weeks&&cal.weeks[wk];
+      if(wk&&rg&&rg.start&&rg.end){P.filters.week=wk;P.filters.from=rg.start;P.filters.to=latest&&latest<rg.end?latest:rg.end;P.fiscalQuarter=(hit&&hit[1])||qFromWeek(wk)}
+    }
+    return P;
+  }
   function addStandaloneTimeUi(html){
     html=String(html||'');if(html.indexOf('id="tprStandaloneData"')<0)return html;
     var doc=new DOMParser().parseFromString(html,'text/html'),n=doc.getElementById('tprStandaloneData');if(!n)return html;
     var P;try{P=JSON.parse(n.textContent||'{}')}catch(_){return html}
-    P.filters=normalizeFilters(P.filters||{});P.build=BUILD;n.textContent=JSON.stringify(P).replace(/</g,'\\u003c');
+    P=seedStandaloneTime(P);P.build=BUILD;n.textContent=JSON.stringify(P).replace(/</g,'\\u003c');
     var title=doc.querySelector('#sec-filters .tpr-filter-head b');if(title)title.textContent='REPORT TIME SCOPE · INTERACTIVE';
     ['tprFSearch','tprFLine','tprFModel','tprFSku','tprFWo','tprFArea','tprFFailure','tprFShift','tprFTarget'].forEach(function(id){var x=doc.getElementById(id);if(x){var p=x.closest('.tpr-filter-field');if(p)p.style.display='none';if(x.tagName==='SELECT')x.value='ALL';else x.value=''}});
     var bu=doc.getElementById('tprFBu');if(bu){var bl=bu.closest('.tpr-filter-field');if(bl){var s=bl.querySelector('small');if(s)s.textContent='BU · REPORT SCOPE'}}
@@ -74369,7 +74395,14 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
       var q=doc.createElement('div');q.className='tpr-filter-field';q.innerHTML='<small>Fiscal Quarter</small><select id="tprQuarterV167"></select>';if(week&&week.closest('.tpr-filter-field'))grid.insertBefore(q,week.closest('.tpr-filter-field').nextSibling);else grid.appendChild(q);
     }
     var act=doc.querySelector('#sec-filters .tpr-filter-actions span');if(act)act.textContent='Time controls are interactive. All non-time dimensions stay at ALL and are summarized automatically.';
-    var apply=doc.getElementById('tprApplyStandalone');if(apply)apply.style.display='none';var restore=doc.getElementById('tprRestoreStandalone');if(restore)restore.textContent='Restore export period';
+    var apply=doc.getElementById('tprApplyStandalone');if(apply)apply.style.display='none';var restore=doc.getElementById('tprRestoreStandalone');if(restore)restore.textContent='Restore exported time scope';
+    var wf0=doc.getElementById('tprFWeek'),from0=doc.getElementById('tprFFrom'),to0=doc.getElementById('tprFTo');if(wf0)wf0.value=P.filters.week||'ALL';if(from0)from0.value=P.filters.from||'';if(to0)to0.value=P.filters.to||'';
+    var mode0=doc.getElementById('tprTimeModeV167');if(mode0)mode0.value=P.timeView||'week';var q0=doc.getElementById('tprQuarterV167');if(q0&&P.fiscalQuarter)q0.value=P.fiscalQuarter;
+    var coverMeta0=doc.querySelector('#sec-cover .tpr-cover-meta'),coverSub0=doc.querySelector('#sec-cover .tpr-cover-sub'),coverChart0=doc.querySelector('#sec-cover .tpr-cover-chart');
+    var qLabel0=P.fiscalQuarter||qFromWeek(P.filters.week),scopeLabel0=P.timeView==='quarter'?'Fiscal quarter':P.timeView==='13wk'?'Last 13 closed fiscal weeks':P.timeView==='custom'?'Custom date range':'Fiscal week';
+    if(coverMeta0)coverMeta0.textContent='BU: '+(P.bu||P.filters.bu||'ALL')+' • Time view: '+scopeLabel0+(P.timeView==='week'&&P.filters.week&&P.filters.week!=='ALL'?' • '+P.filters.week:P.timeView==='quarter'&&qLabel0?' • '+qLabel0:'');
+    if(coverSub0)coverSub0.textContent=(qLabel0?'Quarter: '+qLabel0+' • ':'')+'Selected scope: '+(P.filters.from||'…')+' → '+(P.filters.to||'…')+' • 13WK history: available';
+    if(coverChart0){coverChart0.innerHTML='<div class="tpr-footnote" style="padding:10px 0">The selected time scope drives all Product, Test Area, Failure, Backlog and action summaries. The 13-week history remains in the dedicated trend section.</div>';coverChart0.style.minHeight='0'};
     if(!doc.getElementById('sec-quarter-summary-v167')){
       var sec=doc.createElement('section');sec.id='sec-quarter-summary-v167';sec.className='tpr-section';sec.innerHTML='<div class="tpr-section-head"><span class="tpr-num">Q</span><div><b>Fiscal Quarter Summary</b><small>General BU summary by fiscal quarter</small></div><i>−</i></div><div class="tpr-section-body"><div id="tprQuarterSummaryV167" class="tpr-card">Loading fiscal quarter summary...</div></div>';
       var filters=doc.getElementById('sec-filters');if(filters&&filters.parentNode)filters.parentNode.insertBefore(sec,filters.nextSibling);
@@ -74398,9 +74431,20 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
     function set(id,v){var x=document.getElementById(id);if(x)x.value=v}
     function fill(){
       var q=document.getElementById('tprQuarterV167');if(q){var qs=[],seen={};weeks().forEach(function(x){if(x.quarter&&!seen[x.quarter]){seen[x.quarter]=1;qs.push(x.quarter)}});q.innerHTML=qs.map(function(x){return'<option value="'+x+'">'+x+'</option>'}).join('');var cur=weekAt(latest());if(cur)q.value=cur.quarter}
-      var mode=document.getElementById('tprTimeModeV167'),wf=document.getElementById('tprFWeek'),f=P.filters||{},cur=weekAt(f.to||latest());if(mode){if(f.week&&f.week!=='ALL')mode.value='week';else if(cur&&f.from&&f.to&&f.from===cur.start&&f.to===cur.end)mode.value='week';else mode.value='custom'}if(q&&cur)q.value=cur.quarter;
+      var mode=document.getElementById('tprTimeModeV167'),wf=document.getElementById('tprFWeek'),f=P.filters||{},cur=weekAt(f.to||latest()),requested=tx(P.timeView);if(mode){if(['week','quarter','13wk','custom'].indexOf(requested)>=0)mode.value=requested;else if(f.week&&f.week!=='ALL')mode.value='week';else if(cur&&f.from&&f.to&&f.from===cur.start&&f.to===cur.end)mode.value='week';else mode.value='custom'}if(q){if(P.fiscalQuarter)q.value=P.fiscalQuarter;else if(cur)q.value=cur.quarter};
     }
     function mode(v){var l=latest(),cur=weekAt(l),q=document.getElementById('tprQuarterV167');if(v==='week'){var w=document.getElementById('tprFWeek'),sel=w&&w.value&&w.value!=='ALL'?weeks().filter(function(x){return x.week===w.value})[0]:cur;if(sel){set('tprFWeek',sel.week);set('tprFFrom',sel.start);set('tprFTo',sel.end>l?l:sel.end);if(q)q.value=sel.quarter;trigger('tprFWeek')}}else if(v==='quarter'){var b=quarterBounds(tx(q&&q.value)||(cur&&cur.quarter)||'');set('tprFWeek','ALL');if(b){set('tprFFrom',b.start);set('tprFTo',b.end>l?l:b.end)}trigger('tprFTo')}else if(v==='13wk'){var r=closed13();set('tprFWeek','ALL');if(r){set('tprFFrom',r.start);set('tprFTo',r.end)}trigger('tprFTo')}else set('tprFWeek','ALL')}
+    function patchCover(){
+      var sec=document.getElementById('sec-cover');if(!sec)return;
+      var md=document.getElementById('tprTimeModeV167'),view=tx(md&&md.value)||tx(P.timeView)||'week',wf=tx((document.getElementById('tprFWeek')||{}).value),q=tx((document.getElementById('tprQuarterV167')||{}).value),from=tx((document.getElementById('tprFFrom')||{}).value),to=tx((document.getElementById('tprFTo')||{}).value),cur=weekAt(to||latest());
+      if(!q)q=wf&&wf!=='ALL'?qfw(wf):(cur&&cur.quarter)||'';
+      var label=view==='quarter'?'Fiscal quarter':view==='13wk'?'Last 13 closed fiscal weeks':view==='custom'?'Custom date range':'Fiscal week';
+      var meta=sec.querySelector('.tpr-cover-meta'),sub=sec.querySelector('.tpr-cover-sub'),title=sec.querySelector('.tpr-cover-title'),chart=sec.querySelector('.tpr-cover-chart');
+      if(title)title.textContent=view==='quarter'?'FISCAL QUARTER FACTORY HEALTH CHECK':view==='13wk'?'13-WEEK FACTORY HEALTH CHECK':view==='custom'?'FACTORY HEALTH CHECK':'WEEKLY FACTORY HEALTH CHECK';
+      if(meta)meta.textContent='BU: '+(P.bu||'ALL')+' • Time view: '+label+(view==='week'&&wf&&wf!=='ALL'?' • '+wf:view==='quarter'&&q?' • '+q:'');
+      if(sub)sub.textContent=(q?'Quarter: '+q+' • ':'')+'Selected scope: '+(from||'…')+' → '+(to||'…')+' • 13WK history: available';
+      if(chart){chart.innerHTML='<div class="tpr-footnote" style="padding:10px 0">The selected time scope drives all Product, Test Area, Failure, Backlog and action summaries. The 13-week history remains in the dedicated trend section.</div>';chart.style.minHeight='0';chart.style.display='block'}
+    }
     function quarterOf(r){var d=tx(r.opDate),x=cal.dates&&cal.dates[d];return x&&x[1]||qfw(r.week)}
     function summary(){
       var first={},pairs={};R.forEach(function(r){var k=tx(r.logicalKey)+'|'+tx(r.station);if(!k)return;(pairs[k]||(pairs[k]=[])).push(r);if(!first[k]||Number(r.timeMs)<Number(first[k].timeMs))first[k]=r});
@@ -74409,8 +74453,8 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
       var sel=tx((document.getElementById('tprQuarterV167')||{}).value),out=Object.keys(by).sort().map(function(q){var z=by[q];return '<tr'+(q===sel?' style="background:#eef5ed"':'')+'><td><b>'+q+'</b></td><td>'+z.start+' → '+z.end+'</td><td>'+z.tested+'</td><td>'+z.pass+'</td><td>'+z.fail+'</td><td><b>'+fp(z.fpy)+'</b></td></tr>'}).join('');
       var box=document.getElementById('tprQuarterSummaryV167');if(box)box.innerHTML='<div class="tpr-card-title">FISCAL QUARTER OVERVIEW</div><div class="tpr-scroll"><table><thead><tr><th>Quarter</th><th>Loaded activity</th><th>Tested</th><th>Pass</th><th>Fail</th><th>ETE / FPY</th></tr></thead><tbody>'+out+'</tbody></table></div><div class="tpr-footnote">All Product, SKU/UUT, WO, Line, Test Area, Failure Mode and Shift dimensions remain general (ALL). Time is the only interactive scope.</div>';
     }
-    fill();summary();
-    var md=document.getElementById('tprTimeModeV167');if(md)md.addEventListener('change',function(){mode(this.value)});var q=document.getElementById('tprQuarterV167');if(q)q.addEventListener('change',function(){if(md)md.value='quarter';mode('quarter');summary()});var w=document.getElementById('tprFWeek');if(w)w.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){if(md)md.value='week';if(q)q.value=qfw(this.value);summary()}});['tprFFrom','tprFTo'].forEach(function(id){var x=document.getElementById(id);if(x)x.addEventListener('change',function(){if(md&&document.activeElement===x)md.value='custom'})});
+    fill();summary();setTimeout(patchCover,0);
+    var md=document.getElementById('tprTimeModeV167');if(md)md.addEventListener('change',function(){mode(this.value);setTimeout(patchCover,0)});var q=document.getElementById('tprQuarterV167');if(q)q.addEventListener('change',function(){if(md)md.value='quarter';mode('quarter');summary();setTimeout(patchCover,0)});var w=document.getElementById('tprFWeek');if(w)w.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){if(md)md.value='week';if(q)q.value=qfw(this.value);summary();setTimeout(patchCover,0)}});['tprFFrom','tprFTo'].forEach(function(id){var x=document.getElementById(id);if(x)x.addEventListener('change',function(){if(md&&document.activeElement===x)md.value='custom';setTimeout(patchCover,0)})});var rb=document.getElementById('tprRestoreStandalone');if(rb)rb.addEventListener('click',function(){setTimeout(function(){fill();summary();patchCover()},0)});
   }
 
   function install(){
@@ -74418,9 +74462,9 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
     var base=a.reportHtmlFor;var wrapped=function(f){return addStandaloneTimeUi(base.call(a,normalizeFilters(f)))};wrapped.__smtinelTimeCentricV167=true;wrapped.__base=base;a.reportHtmlFor=wrapped;a.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;return true
   }
   ensureLive();if(!install()){var n=0,t=setInterval(function(){n++;ensureLive();if(install()||n>200)clearInterval(t)},100)}
-  document.addEventListener('change',function(e){var x=e&&e.target;if(!x)return;if(x.id==='reportType'){setTimeout(function(){ensureLive();var b=tx((document.getElementById('testPerfBu')||{}).value);if(b)defaultWeekAfterBu()},0)}else if(x.id==='testPerfBu'){setTimeout(function(){ensureLive();fillQuarter();resetGeneral();defaultWeekAfterBu()},30)}},true);
-  window.addEventListener('smtinel:yield-data-updated',function(){setTimeout(function(){ensureLive();fillQuarter()},50)},true);
-  setTimeout(function(){ensureLive();fillQuarter()},250);
+  document.addEventListener('change',function(e){var x=e&&e.target;if(!x)return;if(x.id==='reportType'){setTimeout(function(){ensureLive();var b=tx((document.getElementById('testPerfBu')||{}).value);if(b)defaultWeekAfterBu()},0)}else if(x.id==='testPerfBu'){var md=document.getElementById('testPerfTimeModeV167');if(md)delete md.dataset.seeded;setTimeout(function(){ensureLive();fillQuarter();resetGeneral();defaultWeekAfterBu()},30)}},true);
+  window.addEventListener('smtinel:yield-data-updated',function(){setTimeout(function(){ensureLive();fillQuarter();defaultWeekAfterBu()},50)},true);
+  setTimeout(function(){ensureLive();fillQuarter();defaultWeekAfterBu()},250);
 })();
 </script>
 
