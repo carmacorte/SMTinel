@@ -31,6 +31,114 @@
 })();
 </script>
 
+<!-- SMTinel Test Performance v1.8.1 - Editable critical issue tracker aligned to Control de Cambios template -->
+<script id="smtinel-test-performance-critical-tracker-v181">
+(function(){
+  'use strict';
+  var BUILD='TEST-PERFORMANCE-V1.8.1-CONTROL-TRACKER';
+  var STORE_KEY='smtinel_test_critical_issue_tracker_v1';
+  var ACTION_KEY='traceops_yield_action_log_v1';
+  var STYLE_ID='tpr-critical-tracker-style-v181';
+  var RUNTIME_ID='tpr-critical-tracker-runtime-v181';
+
+  function txt(v){return String(v==null?'':v).trim()}
+  function esc(v){return txt(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function num(v){var n=Number(txt(v).replace(/[^0-9.-]/g,''));return isFinite(n)?n:0}
+  function slug(v){return txt(v).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,100)||'ISSUE'}
+  function cellText(row,index){var cells=row?row.querySelectorAll('td'):[];return index>=0&&cells[index]?txt(cells[index].textContent):''}
+  function headerIndex(table,label){var out=-1,needle=txt(label).toUpperCase();Array.prototype.some.call(table?table.querySelectorAll('thead th'):[],function(th,i){if(txt(th.textContent).toUpperCase()===needle){out=i;return true}return false});return out}
+  function cardTable(doc,title){var found=null,needle=txt(title).toUpperCase();Array.prototype.some.call(doc.querySelectorAll('.tpr-card-title'),function(h){if(txt(h.textContent).toUpperCase().indexOf(needle)===0){found=h.parentElement&&h.parentElement.querySelector('table');return !!found}return false});return found}
+  function metric(doc,label){var out=0,needle=txt(label).toUpperCase();Array.prototype.some.call(doc.querySelectorAll('#sec-exec .tpr-kpi'),function(k){var s=k.querySelector('span'),b=k.querySelector('b');if(txt(s&&s.textContent).toUpperCase()===needle){out=num(b&&b.textContent);return true}return false});return out}
+  function scopeData(doc,filters){filters=filters||{};var hero=txt(doc.querySelector('.tpr-hero b')&&doc.querySelector('.tpr-hero b').textContent),bu=txt(filters.bu);if(!bu||bu==='ALL'){var m=hero.match(/\b(?:CRBU|NGFWBU|CVEBU|ERBU|CNSBG)\b/i);bu=m?m[0].toUpperCase():'ALL'}return{bu:bu,from:txt(filters.from),to:txt(filters.to)}}
+  function issue(id,severity,title,context,impact,source,containment,corrective,preventive){return{id:id,severity:severity,issue:title,context:context||'',impact:impact,source:source,owner:'',containment:containment||'',correctiveAction:corrective||'',preventiveAction:preventive||'',dueDate:'',status:'Open',evidence:''}}
+  function severityRank(v){return{Critical:4,High:3,Medium:2,Low:1}[v]||0}
+  function collectSeeds(doc,scope){
+    var list=[],seen={};
+    function add(x){if(!x||!x.id||seen[x.id])return;seen[x.id]=1;list.push(x)}
+    var fail=cardTable(doc,'TOP FIRST-ATTEMPT FAILURES');
+    if(fail){
+      var iArea=headerIndex(fail,'Test Area'),iFail=headerIndex(fail,'Failure'),iSn=headerIndex(fail,'Affected FPY SN'),iRate=headerIndex(fail,'Failure Rate'),iCov=headerIndex(fail,'Repair Coverage'),iProduct=headerIndex(fail,'Product(s)');
+      Array.prototype.slice.call(fail.querySelectorAll('tbody tr'),0,6).forEach(function(row){
+        var mode=cellText(row,iFail),area=cellText(row,iArea),sn=num(cellText(row,iSn)),rate=num(cellText(row,iRate)),coverage=num(cellText(row,iCov)),product=cellText(row,iProduct);
+        if(!mode||!sn)return;
+        var sev=(sn>=25||rate>=2||coverage<10)?'Critical':(sn>=10||rate>=1||coverage<35)?'High':'Medium';
+        var title=mode+(area?' @ '+area:'');
+        add(issue('TP-'+slug(scope.bu+'-'+area+'-'+mode),sev,title,[scope.bu,product,area].filter(Boolean).join(' · '),sn+' FPY SN · '+(rate?rate.toFixed(2)+'% FR':'rate N/D')+' · Repair '+(coverage?coverage.toFixed(1)+'%':'0%'),'Top First-Attempt Failures','Contain affected serials and protect the next build.','Confirm root cause and implement the permanent correction for '+mode+'.','Add recurrence monitoring and a station control that detects the same failure before release.'));
+      });
+    }
+    var open=metric(doc,'Open Backlog'),aged=metric(doc,'Aging > 7d');
+    if(open>0)add(issue('TP-'+slug(scope.bu+'-OPEN-BACKLOG'),'Critical','Open backlog / aging exposure',scope.bu,open+' open SN'+(aged?' · '+aged+' >7d':''),'Executive Yield','Segregate aged open units and protect material at risk.','Assign recovery by aging bucket and close each serial with diagnosis or disposition.','Review backlog aging daily with owner and escalation for overdue units.'));
+    var repairGap=doc.querySelector('[data-tpr-gap="REPAIR LINKAGE GAP"]');
+    if(repairGap)add(issue('TP-'+slug(scope.bu+'-REPAIR-LINKAGE'),'Critical','Repair linkage gap',scope.bu,txt(repairGap.textContent).replace(/^REPAIR LINKAGE GAP\s*/i,''),'Repair Evidence','Hold unlinked failed serials from closure.','Link failed serials to Repair Record, diagnosis, root cause and disposition.','Require Repair linkage before a Test failure can be closed.'));
+    var ndfGap=doc.querySelector('[data-tpr-gap="NDF DATA GAP"]');
+    if(ndfGap)add(issue('TP-'+slug(scope.bu+'-NDF-DATA'),'High','NDF classification / RCCA gap',scope.bu,'Explicit NDF evidence missing','NDF / Root Cause','Identify and segregate the suspected NDF cohort.','Classify NDF units and document RCCA, owner and evidence.','Add an explicit NDF classification and recurrence check to the standard flow.'));
+    var qaGap=doc.querySelector('[data-tpr-gap="QA COHORT REQUIRED"]');
+    if(qaGap)add(issue('TP-'+slug(scope.bu+'-QA-COHORT'),'High','QA affected cohort not loaded',scope.bu,'Affected quantity / serial cohort missing','QA Affected Follow-up','Protect the reported QA quantity until the serial cohort is confirmed.','Attach the QA cohort and reconcile diagnosed, repaired, retest PASS and still-NG quantities.','Make affected quantity and serial cohort mandatory for QA follow-up.'));
+    return list.sort(function(a,b){return severityRank(b.severity)-severityRank(a.severity)||num(b.impact)-num(a.impact)}).slice(0,10)
+  }
+  function styles(){return[
+    '.tpr-issue-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 10px}.tpr-issue-toolbar button{min-height:34px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--green);font-weight:900;cursor:pointer}.tpr-issue-toolbar .primary{background:var(--green);border-color:var(--green);color:#fff}.tpr-issue-saved{margin-left:auto;color:#617269;font-size:9px;font-weight:800}.tpr-issue-scope{margin:0 0 10px;padding:9px 11px;border:1px solid #cbd7ce;border-radius:9px;background:#f3f7f3;color:#53655b;font-size:9.5px;line-height:1.45}',
+    '.tpr-issue-wrap{overflow:auto;max-height:600px;border:1px solid #d9e1dc;border-radius:9px}.tpr-issue-table{width:100%;min-width:1840px;border-collapse:separate;border-spacing:0}.tpr-issue-table th{position:sticky;top:0;z-index:2;background:#eef3ef!important;color:#315142!important;font-size:8px!important;letter-spacing:.07em}.tpr-issue-table th,.tpr-issue-table td{padding:7px;border-right:1px solid #e2e7e3;border-bottom:1px solid #e2e7e3;vertical-align:top}.tpr-issue-table td:last-child,.tpr-issue-table th:last-child{border-right:0}.tpr-issue-table tr:last-child td{border-bottom:0}.tpr-issue-table input,.tpr-issue-table select,.tpr-issue-table textarea{width:100%;box-sizing:border-box;border:1px solid #cbd7ce;border-radius:6px;background:#fff;color:#1d2a22;font:inherit;padding:6px;min-height:32px}.tpr-issue-table textarea{min-height:58px;resize:vertical;line-height:1.35}.tpr-issue-table [data-field="issue"]{font-weight:800}.tpr-issue-id{min-width:92px;color:#315142;font-size:8.5px;font-weight:900}.tpr-issue-impact{min-width:125px;color:#4e6257;font-size:9px;line-height:1.4}.tpr-issue-context{min-width:155px;color:#4f6258;font-size:8.5px;line-height:1.4}.tpr-issue-context small{display:block;margin-top:4px;color:#7a8780}.tpr-issue-delete{width:30px;height:30px;border:1px solid #e1b7ae;border-radius:6px;background:#fff4f1;color:#a13c27;font-weight:900;cursor:pointer}',
+    '.tpr-issue-row[data-severity="Critical"]{box-shadow:inset 4px 0 #bb3e2b}.tpr-issue-row[data-severity="High"]{box-shadow:inset 4px 0 #c9851b}.tpr-issue-row[data-severity="Medium"]{box-shadow:inset 4px 0 #6680a6}.tpr-issue-row[data-status="Closed"]{opacity:.58}.tpr-issue-row[data-status="Closed"] [data-field="issue"]{text-decoration:line-through}',
+    '@media(max-width:760px){.tpr-issue-saved{width:100%;margin-left:0}.tpr-issue-wrap{max-height:520px}.tpr-issue-table{min-width:1680px}}',
+    '@media print{.tpr-issue-toolbar,.tpr-issue-delete{display:none!important}.tpr-issue-wrap{max-height:none!important;overflow:visible!important;border:0!important}.tpr-issue-table{min-width:0!important;font-size:7px}.tpr-issue-table input,.tpr-issue-table select,.tpr-issue-table textarea{border:0!important;padding:0!important;background:transparent!important;resize:none!important;min-height:0!important}.tpr-issue-table th,.tpr-issue-table td{padding:4px!important}}'
+  ].join('')}
+  function trackerHtml(scope,seeds){
+    var seedNode='<script id="tprCriticalIssueSeeds" type="application/json">'+JSON.stringify({scope:scope,seeds:seeds}).replace(/</g,'\\u003c')+'<\/script>';
+    return '<div class="tpr-issue-scope"><b>Control format:</b> Aligned to the Control de Cambios tracker. Issues are ranked from current Test evidence. Containment, corrective action, preventive action, owner, due date, status and validation evidence are editable. Saved rows carry forward by BU and are mirrored to the persistent Yield Flow Action Tracker.</div><div class="tpr-issue-toolbar"><button type="button" class="primary" id="tprIssueAdd">+ Add issue</button><button type="button" id="tprIssueSave">Save tracker</button><button type="button" id="tprIssueExport">Export CSV</button><button type="button" id="tprIssueClosed">Hide closed</button><span class="tpr-issue-saved" id="tprIssueSaved">Autosave ready</span></div><div class="tpr-issue-wrap"><table class="tpr-issue-table"><thead><tr><th>Issue ID</th><th>Severity</th><th>Issue / Finding</th><th>BU · Product · Station</th><th>Impact / Exposure</th><th>Containment</th><th>Corrective Action</th><th>Preventive Action</th><th>Owner</th><th>Due Date</th><th>Status</th><th>Validation Evidence</th><th></th></tr></thead><tbody id="tprIssueBody"></tbody></table></div>'+seedNode
+  }
+  function addTracker(doc,filters){
+    var scope=scopeData(doc,filters),seeds=collectSeeds(doc,scope),old=doc.getElementById('sec-critical-tracker');if(old)old.remove();
+    var section=doc.createElement('section');section.className='tpr-section';section.id='sec-critical-tracker';section.innerHTML='<div class="tpr-section-head" data-tpr-toggle><span class="tpr-num">!</span><div><b>Critical Issue Tracker</b><small>Impact · containment · corrective/preventive action · owner · due date · validation evidence</small></div><i>−</i></div><div class="tpr-section-body">'+trackerHtml(scope,seeds)+'</div>';
+    var anchor=doc.getElementById('sec-exec')||doc.getElementById('sec-cover');if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(section,anchor.nextSibling);else{var main=doc.querySelector('.tpr-main');if(main)main.appendChild(section)}
+    var side=doc.querySelector('.tpr-side');if(side){var a=doc.createElement('a');a.className='tpr-nav';a.href='#sec-critical-tracker';a.title='Critical Tracker';a.innerHTML='!<span class="tpr-nav-label">Critical Tracker</span>';var first=side.querySelector('.tpr-nav');if(first&&first.nextSibling)side.insertBefore(a,first.nextSibling);else side.appendChild(a)}
+  }
+  function reportRuntime(){
+    'use strict';
+    if(window.__TPR_CRITICAL_TRACKER_V181__)return;window.__TPR_CRITICAL_TRACKER_V181__=1;
+    var STORE_KEY='smtinel_test_critical_issue_tracker_v1',ACTION_KEY='traceops_yield_action_log_v1';
+    function t(v){return String(v==null?'':v).trim()}
+    function q(s,a){return (a||document).querySelector(s)}function qa(s,a){return Array.prototype.slice.call((a||document).querySelectorAll(s))}
+    function parse(id){try{return JSON.parse((q('#'+id)||{}).textContent||'{}')}catch(_){return{}}}
+    function load(key,fallback){try{var x=JSON.parse(localStorage.getItem(key)||'null');return x==null?fallback:x}catch(_){return fallback}}
+    function put(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(_){return false}}
+    function csv(v){v=t(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+    var config=parse('tprCriticalIssueSeeds'),scope=config.scope||{},bu=t(scope.bu)||'ALL',store=load(STORE_KEY,{}),saved=store&&typeof store==='object'?store:{},rows=[],hiddenClosed=false,timer=null;
+    function migrate(r){r=Object.assign({},r||{});if(!t(r.containment)&&t(r.action))r.containment=r.action;if(!('context' in r))r.context=bu;return r}
+    (config.seeds||[]).forEach(function(seed){var prior=migrate(saved[seed.id]||{});rows.push(Object.assign({},seed,prior,{id:seed.id,impact:seed.impact,source:seed.source,context:seed.context||prior.context||bu,bu:bu,auto:true}))});
+    Object.keys(saved).forEach(function(id){var r=migrate(saved[id]);if(!r||t(r.bu)!==bu||rows.some(function(x){return x.id===id}))return;if(r.manual||t(r.status)!=='Closed')rows.push(r)});
+    function options(values,current){return values.map(function(v){return '<option'+(v===current?' selected':'')+'>'+v+'</option>'}).join('')}
+    function h(v){return t(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function rowHtml(r){return '<tr class="tpr-issue-row" data-id="'+h(r.id).replace(/"/g,'&quot;')+'" data-severity="'+h(r.severity)+'" data-status="'+h(r.status)+'"><td><div class="tpr-issue-id">'+h(r.id)+'</div></td><td><select data-field="severity">'+options(['Critical','High','Medium','Low'],r.severity||'High')+'</select></td><td><textarea data-field="issue" aria-label="Issue">'+h(r.issue)+'</textarea></td><td><textarea data-field="context" aria-label="BU, product and station">'+h(r.context||bu)+'</textarea><div class="tpr-issue-context"><small>'+h(r.source)+'</small></div></td><td><div class="tpr-issue-impact">'+h(r.impact)+'</div></td><td><textarea data-field="containment" placeholder="Immediate protection / containment">'+h(r.containment)+'</textarea></td><td><textarea data-field="correctiveAction" placeholder="Permanent corrective action">'+h(r.correctiveAction)+'</textarea></td><td><textarea data-field="preventiveAction" placeholder="Systemic prevention / recurrence control">'+h(r.preventiveAction)+'</textarea></td><td><input data-field="owner" value="'+h(r.owner).replace(/"/g,'&quot;')+'" placeholder="Owner"></td><td><input data-field="dueDate" type="date" value="'+h(r.dueDate).replace(/"/g,'&quot;')+'"></td><td><select data-field="status">'+options(['Open','In review','In progress','Blocked','Monitoring','Validation','Closed'],r.status||'Open')+'</select></td><td><textarea data-field="evidence" placeholder="Validation result, evidence or link">'+h(r.evidence)+'</textarea></td><td><button type="button" class="tpr-issue-delete" title="Remove issue">×</button></td></tr>'}
+    function render(){var body=q('#tprIssueBody');if(!body)return;body.innerHTML=rows.filter(function(r){return !(hiddenClosed&&r.status==='Closed')}).map(rowHtml).join('');var b=q('#tprIssueClosed');if(b)b.textContent=hiddenClosed?'Show closed':'Hide closed'}
+    function readDom(){qa('#tprIssueBody tr').forEach(function(tr){var id=tr.getAttribute('data-id'),r=rows.filter(function(x){return x.id===id})[0];if(!r)return;qa('[data-field]',tr).forEach(function(x){r[x.getAttribute('data-field')]=x.value});tr.setAttribute('data-severity',r.severity);tr.setAttribute('data-status',r.status)})}
+    function mirrorActions(){var actions=load(ACTION_KEY,[]);if(!Array.isArray(actions))actions=[];rows.forEach(function(r){if(!t(r.owner)&&!t(r.dueDate)&&!t(r.evidence)&&!r.manual)return;var id='TEST-'+r.id,index=-1;actions.some(function(a,i){if(a&&a.id===id){index=i;return true}return false});var joined=['Containment: '+t(r.containment),'Corrective: '+t(r.correctiveAction),'Preventive: '+t(r.preventiveAction)].filter(function(x){return !/:\s*$/.test(x)}).join(' | '),a={id:id,date:new Date().toISOString().slice(0,10),source:'Test Performance',category:t(r.source)||'Critical issue follow-up',scope:[bu,t(r.context),t(r.impact)].filter(Boolean).join(' · '),failureMode:t(r.issue),supportArea:'Quality / Test',owner:t(r.owner),actionType:'Containment / Corrective / Preventive',action:joined,startDate:new Date().toISOString().slice(0,10),dueDate:t(r.dueDate),closeDate:r.status==='Closed'?new Date().toISOString().slice(0,10):'',status:t(r.status),priority:t(r.severity),comments:t(r.evidence),bu:bu};if(index>=0)actions[index]=Object.assign({},actions[index],a);else actions.push(a)});put(ACTION_KEY,actions)}
+    function save(show){readDom();rows.forEach(function(r){r.bu=bu;r.updatedAt=new Date().toISOString();saved[r.id]=r});put(STORE_KEY,saved);mirrorActions();var s=q('#tprIssueSaved');if(s){s.textContent=(show?'Saved':'Autosaved')+' · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}}
+    function schedule(){clearTimeout(timer);timer=setTimeout(function(){save(false)},450)}
+    document.addEventListener('input',function(e){if(e.target&&e.target.closest('#sec-critical-tracker'))schedule()},true);
+    document.addEventListener('change',function(e){var tr=e.target&&e.target.closest('#tprIssueBody tr');if(!tr)return;readDom();render();schedule()},true);
+    var add=q('#tprIssueAdd');if(add)add.onclick=function(){readDom();var id='TP-MANUAL-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);rows.unshift({id:id,bu:bu,manual:true,severity:'High',issue:'New critical issue',context:bu,impact:'Manual entry',source:'Test Performance review',containment:'',correctiveAction:'',preventiveAction:'',owner:'',dueDate:'',status:'Open',evidence:''});render();var x=q('#tprIssueBody [data-id="'+id+'"] [data-field="issue"]');if(x){x.focus();x.select()}schedule()};
+    var saveBtn=q('#tprIssueSave');if(saveBtn)saveBtn.onclick=function(){save(true)};
+    var closed=q('#tprIssueClosed');if(closed)closed.onclick=function(){readDom();hiddenClosed=!hiddenClosed;render()};
+    document.addEventListener('click',function(e){var b=e.target&&e.target.closest('.tpr-issue-delete');if(!b)return;var tr=b.closest('tr'),id=tr&&tr.getAttribute('data-id');rows=rows.filter(function(r){return r.id!==id});delete saved[id];put(STORE_KEY,saved);render();save(false)},true);
+    var exp=q('#tprIssueExport');if(exp)exp.onclick=function(){readDom();var cols=['Issue ID','Severity','Issue / Finding','BU · Product · Station','Impact / Exposure','Source','Containment','Corrective Action','Preventive Action','Owner','Due Date','Status','Validation Evidence','BU'],out=[cols.join(',')];rows.forEach(function(r){out.push([r.id,r.severity,r.issue,r.context,r.impact,r.source,r.containment,r.correctiveAction,r.preventiveAction,r.owner,r.dueDate,r.status,r.evidence,bu].map(csv).join(','))});var a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+out.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.href=url;a.download='SMTinel_Test_Critical_Issue_Tracker_'+bu+'_'+(scope.to||new Date().toISOString().slice(0,10))+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000)};
+    render();
+  }
+  function enhance(html,filters){
+    var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;addTracker(doc,filters||{});
+    var oldStyle=doc.getElementById(STYLE_ID);if(oldStyle)oldStyle.remove();var style=doc.createElement('style');style.id=STYLE_ID;style.textContent=styles();doc.head.appendChild(style);
+    var oldRun=doc.getElementById(RUNTIME_ID);if(oldRun)oldRun.remove();var run=doc.createElement('script');run.id=RUNTIME_ID;run.textContent='('+reportRuntime.toString()+')();';doc.body.appendChild(run);
+    doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();
+    return '<!doctype html>\n'+doc.documentElement.outerHTML
+  }
+  function install(force){
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelCriticalTrackerV181)return true;if(!force&&!api.reportHtmlFor.__smtinelHandoffCompactV171)return false;
+    var base=api.reportHtmlFor,wrapped=function(filters){filters=filters||{};return enhance(base.call(api,filters),filters)};wrapped.__smtinelCriticalTrackerV181=true;wrapped.__base=base;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.18.1 - Test Performance Control Tracker - 2026-09-20';return true
+  }
+  if(!install(false)){var n=0,timer=setInterval(function(){n++;var api=window.SMTINEL_TEST_PERF_API,ready=api&&api.reportHtmlFor&&api.reportHtmlFor.__smtinelHandoffCompactV171;if((ready||n>220)&&install(n>220))clearInterval(timer);if(n>260)clearInterval(timer)},100)}
+})();
+</script>
+
 <!-- SMTinel Test Performance v1.7.1 - Mail coverage + Handoff interaction + compact serial evidence -->
 <script id="smtinel-test-performance-handoff-compact-v171">
 (function(){
