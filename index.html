@@ -74481,3 +74481,144 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
 })();
 </script>
 
+
+<!-- SMTinel Test Performance v1.6.10 - single temporal authority for export + standalone -->
+<script id="smtinel-test-performance-temporal-authority-v1610">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_TEMPORAL_AUTHORITY_V1610__)return;
+  var BUILD='TEST-PERFORMANCE-V1.6.10-TIME-AUTHORITY';
+  window.__SMTINEL_TEST_TEMPORAL_AUTHORITY_V1610__=BUILD;
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.70 - Test Performance v1.6.10 Single Temporal Authority - 2026-09-20';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function qFromWeek(w){var m=tx(w).match(/(FY\d{4}\s+Q\d)/i);return m?m[1].toUpperCase():''}
+  function api(){return window.SMTINEL_TEST_PERF_API||null}
+  function clamp(v,min,max){if(!v)return v;if(min&&v<min)return min;if(max&&v>max)return max;return v}
+  function metaFor(filters){var a=api(),bu=tx(filters&&filters.bu)||tx((document.getElementById('testPerfBu')||{}).value);return a&&a.meta?a.meta(bu):null}
+  function weekRows(m){var a=api();return ((m&&m.weeks)||[]).map(function(w){var r=a&&a.weekRange?a.weekRange(w):null;return{week:w,start:r&&r.start||'',end:r&&r.end||'',quarter:qFromWeek(w)}}).filter(function(x){return x.start&&x.end}).sort(function(x,y){return x.start.localeCompare(y.start)})}
+  function weekAt(d,m){var a=weekRows(m);for(var i=0;i<a.length;i++)if(a[i].start<=d&&d<=a[i].end)return a[i];return a.length?a[a.length-1]:null}
+  function quarterBounds(q,m){var a=weekRows(m).filter(function(x){return x.quarter===q});return a.length?{start:a[0].start,end:a[a.length-1].end,quarter:q}:null}
+  function closed13(m){var latest=tx(m&&m.latestDate),cur=weekAt(latest,m),a=weekRows(m).filter(function(x){return !cur||x.start<cur.start}).slice(-13);return a.length?{start:a[0].start,end:a[a.length-1].end}:null}
+  function expected(mode,f,m){
+    var latest=tx(m&&m.latestDate),earliest=tx(m&&m.earliestDate),uiWeek=tx((document.getElementById('testPerfWeek')||{}).value),uiQuarter=tx((document.getElementById('testPerfQuarterV167')||{}).value),w,b;
+    if(mode==='day')return latest?{from:latest,to:latest,week:'ALL',quarter:(weekAt(latest,m)||{}).quarter||''}:null;
+    if(mode==='week'){
+      var wanted=tx(f&&f.week);if(!wanted||wanted==='ALL')wanted=uiWeek&&uiWeek!=='ALL'?uiWeek:'';
+      w=weekRows(m).filter(function(x){return x.week===wanted})[0]||weekAt(latest,m);
+      return w?{from:w.start,to:latest&&w.end>latest?latest:w.end,week:w.week,quarter:w.quarter}:null;
+    }
+    if(mode==='quarter'){
+      var q=uiQuarter||qFromWeek(f&&f.week)||((weekAt(latest,m)||{}).quarter||'');b=quarterBounds(q,m);
+      return b?{from:b.start,to:latest&&b.end>latest?latest:b.end,week:'ALL',quarter:q}:null;
+    }
+    if(mode==='13wk'){
+      b=closed13(m);return b?{from:b.start,to:b.end,week:'ALL',quarter:((weekAt(b.end,m)||{}).quarter||'')}:null;
+    }
+    return{from:tx(f&&f.from)||earliest,to:tx(f&&f.to)||latest,week:'ALL',quarter:((weekAt(tx(f&&f.to)||latest,m)||{}).quarter||'')};
+  }
+  function cleanNonTime(f){f=Object.assign({},f||{});f.search='';f.line='ALL';f.model='ALL';f.sku='ALL';f.wo='ALL';f.area='ALL';f.failure='ALL';f.shift='ALL';return f}
+  function resolve(filters){
+    var f=cleanNonTime(filters),m=metaFor(f),mode=tx((document.getElementById('testPerfTimeModeV167')||{}).value)||'week',from=tx(f.from),to=tx(f.to),ex;
+    if(from&&to&&from>to){var z=from;from=to;to=z;f.from=from;f.to=to}
+    ex=expected(mode,f,m);
+    // Explicit exported dates win if they disagree with the declared preset. This removes mixed scopes such as W008 + Sep 1-17.
+    if(mode!=='custom'&&from&&to&&ex&&(from!==ex.from||to!==ex.to))mode='custom';
+    if(mode==='custom'){
+      f.week='ALL';f.from=from||tx(m&&m.earliestDate);f.to=to||tx(m&&m.latestDate);ex=expected('custom',f,m);
+    }else{
+      ex=expected(mode,f,m)||ex;if(ex){f.from=ex.from;f.to=ex.to;f.week=ex.week||'ALL'}
+    }
+    f.from=clamp(f.from,tx(m&&m.earliestDate),tx(m&&m.latestDate));f.to=clamp(f.to,tx(m&&m.earliestDate),tx(m&&m.latestDate));
+    var q=(ex&&ex.quarter)||((weekAt(f.to,m)||{}).quarter)||qFromWeek(f.week);
+    return{filters:f,mode:mode,quarter:q,meta:m};
+  }
+  function esc(v){return tx(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function patchExport(html,state){
+    html=String(html||'');if(html.indexOf('id="tprStandaloneData"')<0)return html;
+    var doc=new DOMParser().parseFromString(html,'text/html'),n=doc.getElementById('tprStandaloneData');if(!n)return html;
+    var P;try{P=JSON.parse(n.textContent||'{}')}catch(_){return html}
+    P.filters=Object.assign({},P.filters||{},state.filters||{});P.timeView=state.mode;P.fiscalQuarter=state.quarter||'';P.build=BUILD;
+    n.textContent=JSON.stringify(P).replace(/</g,'\\u003c');
+    var md=doc.getElementById('tprTimeModeV167');if(md){Array.prototype.forEach.call(md.options,function(o){if(o.value===state.mode)o.setAttribute('selected','selected');else o.removeAttribute('selected')})}
+    var wk=doc.getElementById('tprFWeek');if(wk){Array.prototype.forEach.call(wk.options,function(o){if(o.value===(state.filters.week||'ALL'))o.setAttribute('selected','selected');else o.removeAttribute('selected')})}
+    var fr=doc.getElementById('tprFFrom'),to=doc.getElementById('tprFTo');if(fr)fr.setAttribute('value',state.filters.from||'');if(to)to.setAttribute('value',state.filters.to||'');
+    var q=doc.getElementById('tprQuarterV167');if(q&&state.quarter){Array.prototype.forEach.call(q.options,function(o){if(o.value===state.quarter)o.setAttribute('selected','selected');else o.removeAttribute('selected')})}
+    var label=state.mode==='quarter'?'Fiscal quarter':state.mode==='13wk'?'Last 13 closed fiscal weeks':state.mode==='custom'?'Custom date range':state.mode==='day'?'Latest loaded day':'Fiscal week';
+    var meta=doc.querySelector('#sec-cover .tpr-cover-meta'),sub=doc.querySelector('#sec-cover .tpr-cover-sub');
+    if(meta)meta.textContent='BU: '+(P.bu||P.filters.bu||'ALL')+' • Time view: '+label+(state.mode==='week'&&P.filters.week&&P.filters.week!=='ALL'?' • '+P.filters.week:state.mode==='quarter'&&state.quarter?' • '+state.quarter:'');
+    if(sub)sub.textContent=(state.quarter?'Quarter: '+state.quarter+' • ':'')+'Selected scope: '+(P.filters.from||'…')+' → '+(P.filters.to||'…')+' • 13WK history: available';
+    var old=doc.getElementById('tpr-time-authority-runtime-v1610');if(old)old.remove();
+    var s=doc.createElement('script');s.id='tpr-time-authority-runtime-v1610';s.textContent='('+standaloneAuthority.toString()+')();';doc.body.appendChild(s);
+    doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();
+    return '<!doctype html>\n'+doc.documentElement.outerHTML;
+  }
+
+  function standaloneAuthority(){
+    'use strict';
+    if(window.__TPR_TIME_AUTHORITY_V1610__)return;window.__TPR_TIME_AUTHORITY_V1610__=1;
+    function tx(v){return String(v==null?'':v).trim()}
+    function qfw(w){var m=tx(w).match(/(FY\d{4}\s+Q\d)/i);return m?m[1].toUpperCase():''}
+    function parse(){var n=document.getElementById('tprStandaloneData');try{return JSON.parse(n&&n.textContent||'{}')}catch(_){return{}}}
+    var P=parse(),cal=P.calendar||{},wr=cal.weeks||{},suppress=false;
+    function weeks(){return Object.keys(wr).map(function(w){return{week:w,start:wr[w]&&wr[w].start||'',end:wr[w]&&wr[w].end||'',quarter:qfw(w)}}).filter(function(x){return x.start&&x.end}).sort(function(a,b){return a.start.localeCompare(b.start)})}
+    function latest(){var d=Object.keys(cal.dates||{}).sort();return d.length?d[d.length-1]:tx(P.filters&&P.filters.to)}
+    function weekAt(d){var a=weeks();for(var i=0;i<a.length;i++)if(a[i].start<=d&&d<=a[i].end)return a[i];return a.length?a[a.length-1]:null}
+    function quarterBounds(q){var a=weeks().filter(function(x){return x.quarter===q});return a.length?{start:a[0].start,end:a[a.length-1].end}:null}
+    function closed13(){var l=latest(),cur=weekAt(l),a=weeks().filter(function(x){return !cur||x.start<cur.start}).slice(-13);return a.length?{start:a[0].start,end:a[a.length-1].end}:null}
+    function set(id,v){var x=document.getElementById(id);if(x)x.value=v}
+    function modeEl(){return document.getElementById('tprTimeModeV167')}
+    function quarterEl(){return document.getElementById('tprQuarterV167')}
+    function enforce(v){
+      var l=latest(),q=quarterEl(),wf=document.getElementById('tprFWeek'),sel,b;
+      suppress=true;
+      try{
+        if(v==='week'){
+          var wanted=tx(wf&&wf.value);sel=weeks().filter(function(x){return x.week===wanted})[0]||weekAt(l);if(sel){set('tprFWeek',sel.week);set('tprFFrom',sel.start);set('tprFTo',sel.end>l?l:sel.end);if(q)q.value=sel.quarter}
+        }else if(v==='quarter'){
+          var qq=tx(q&&q.value)||((weekAt(l)||{}).quarter||'');b=quarterBounds(qq);set('tprFWeek','ALL');if(b){set('tprFFrom',b.start);set('tprFTo',b.end>l?l:b.end)}
+        }else if(v==='13wk'){
+          b=closed13();set('tprFWeek','ALL');if(b){set('tprFFrom',b.start);set('tprFTo',b.end)}
+        }else if(v==='day'){
+          set('tprFWeek','ALL');set('tprFFrom',l);set('tprFTo',l)
+        }else set('tprFWeek','ALL');
+      }finally{setTimeout(function(){suppress=false},0)}
+    }
+    function seed(){var md=modeEl(),f=P.filters||{},v=tx(P.timeView)||'custom';if(md)md.value=v;set('tprFWeek',v==='week'?(f.week||'ALL'):'ALL');set('tprFFrom',f.from||'');set('tprFTo',f.to||'');var q=quarterEl();if(q&&P.fiscalQuarter)q.value=P.fiscalQuarter}
+    document.addEventListener('change',function(e){
+      var x=e&&e.target;if(!x)return;
+      if(x.id==='tprFFrom'||x.id==='tprFTo'){
+        if(suppress)return;var md=modeEl();if(md)md.value='custom';set('tprFWeek','ALL');P.timeView='custom';P.filters=P.filters||{};P.filters.week='ALL';P.filters.from=tx((document.getElementById('tprFFrom')||{}).value);P.filters.to=tx((document.getElementById('tprFTo')||{}).value);return;
+      }
+      if(x.id==='tprFWeek'){
+        if(suppress)return;var mdw=modeEl();if(x.value&&x.value!=='ALL'){if(mdw)mdw.value='week';enforce('week')}return;
+      }
+      if(x.id==='tprTimeModeV167'){
+        suppress=true;var val=tx(x.value);enforce(val);P.timeView=val;setTimeout(function(){suppress=false},0);return;
+      }
+      if(x.id==='tprQuarterV167'){
+        suppress=true;var mdq=modeEl();if(mdq)mdq.value='quarter';enforce('quarter');P.timeView='quarter';setTimeout(function(){suppress=false},0);return;
+      }
+    },true);
+    var rb=document.getElementById('tprRestoreStandalone');if(rb)rb.addEventListener('click',function(){setTimeout(function(){seed()},0)},true);
+    seed();
+  }
+
+  function install(){
+    var a=api();if(!a||typeof a.reportHtmlFor!=='function')return false;if(a.reportHtmlFor.__smtinelTemporalAuthorityV1610)return true;
+    var base=a.reportHtmlFor;
+    var wrapped=function(f){var state=resolve(f||{}),html=base.call(a,state.filters);return patchExport(html,state)};
+    wrapped.__smtinelTemporalAuthorityV1610=true;wrapped.__base=base;a.reportHtmlFor=wrapped;a.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;return true;
+  }
+
+  // Live UI: a manual date edit immediately becomes Custom and clears Cisco Week before the existing engine recalculates.
+  document.addEventListener('change',function(e){
+    var x=e&&e.target;if(!x)return;
+    if(x.id==='testPerfFrom'||x.id==='testPerfTo'){
+      var md=document.getElementById('testPerfTimeModeV167');if(md)md.value='custom';var w=document.getElementById('testPerfWeek');if(w)w.value='ALL';
+    }
+  },true);
+
+  if(!install()){var n=0,t=setInterval(function(){n++;if(install()||n>200)clearInterval(t)},100)}
+})();
+</script>
