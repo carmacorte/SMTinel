@@ -31,13 +31,13 @@
 })();
 </script>
 
-<!-- SMTinel Test Performance v1.7.0 - Handoff interaction + compact serial evidence -->
-<script id="smtinel-test-performance-handoff-compact-v170">
+<!-- SMTinel Test Performance v1.7.1 - Mail coverage + Handoff interaction + compact serial evidence -->
+<script id="smtinel-test-performance-handoff-compact-v171">
 (function(){
   'use strict';
-  var BUILD='TEST-PERFORMANCE-V1.7.0-HANDOFF-COMPACT';
-  var STYLE_ID='tpr-handoff-compact-style-v170';
-  var RUNTIME_ID='tpr-handoff-compact-runtime-v170';
+  var BUILD='TEST-PERFORMANCE-V1.7.1-MAIL-COVERAGE';
+  var STYLE_ID='tpr-handoff-compact-style-v171';
+  var RUNTIME_ID='tpr-handoff-compact-runtime-v171';
 
   function text(v){return String(v==null?'':v).trim()}
   function serialCount(details){
@@ -80,14 +80,58 @@
       var label=doc.createElement('span');label.className='tpr-nav-label';label.textContent=link.getAttribute('title')||'Section';link.appendChild(label);
     });
   }
-  function addHeaderControls(doc){
+  function addHeaderControls(doc,backlogExport){
     var actions=doc.querySelector('.tpr-actions');if(actions&&!doc.getElementById('tprCollapseSerials')){
       var b=doc.createElement('button');b.type='button';b.id='tprCollapseSerials';b.textContent='Collapse serials';actions.insertBefore(b,actions.firstChild);
+    }
+    if(actions&&backlogExport&&backlogExport.data&&!doc.getElementById('tprDownloadBacklog')){
+      var csv=doc.createElement('button');csv.type='button';csv.id='tprDownloadBacklog';csv.textContent='Download full backlog CSV';csv.setAttribute('data-file',backlogExport.name);actions.insertBefore(csv,actions.firstChild);
     }
     var top=doc.querySelector('.tpr-top');
     if(top&&!doc.getElementById('tprScrollProgress')){
       var bar=doc.createElement('div');bar.id='tprScrollProgress';bar.className='tpr-scroll-progress';top.insertBefore(bar,top.firstChild);
     }
+  }
+  function cardByLabel(doc,label){
+    var out=null,needle=text(label).toUpperCase();
+    Array.prototype.some.call(doc.querySelectorAll('.tpr-cover-kpi'),function(card){var small=card.querySelector('small');if(text(small&&small.textContent).toUpperCase()===needle){out=card;return true}return false});
+    return out;
+  }
+  function fixCoverContract(doc,filters){
+    var target=filters&&filters.target!==''&&isFinite(Number(filters.target))?Number(filters.target):null;
+    var clean=cardByLabel(doc,'CLEAN YIELD %'),touch=cardByLabel(doc,'TOUCH RATE %'),risk=cardByLabel(doc,'RISK UNITS');
+    if(clean){var cs=clean.querySelector('span');if(cs)cs.textContent=target==null?'Target N/D · released target only':'Released target '+target.toFixed(2)+'%'}
+    if(touch){var ts=touch.querySelector('span');if(ts)ts.textContent=target==null?'Target N/D · released target only':'Released target < '+Math.max(0,100-target).toFixed(2)+'%'}
+    if(risk){var rs=risk.querySelector('small'),rn=risk.querySelector('span');if(rs)rs.textContent='TOP OFFENDER SN';if(rn)rn.textContent='Impact within selected FPY scope'}
+  }
+  function gapBox(doc,section,title,detail){
+    if(!section||section.querySelector('[data-tpr-gap="'+title+'"]'))return;
+    var body=section.querySelector('.tpr-section-body')||section,box=doc.createElement('div');box.className='tpr-data-gap';box.setAttribute('data-tpr-gap',title);box.innerHTML='<b>'+title+'</b><span>'+detail+'</span>';body.insertBefore(box,body.firstChild)
+  }
+  function metricValue(section,label){
+    var value=null,needle=text(label).toUpperCase();
+    Array.prototype.some.call((section||document).querySelectorAll('.tpr-kpi'),function(card){var s=card.querySelector('span'),b=card.querySelector('b');if(text(s&&s.textContent).toUpperCase()===needle){value=Number(text(b&&b.textContent).replace(/[^0-9.-]/g,''));return true}return false});
+    return isFinite(value)?value:null
+  }
+  function improveEvidenceSections(doc){
+    var ndf=doc.getElementById('sec-ndf'),qa=doc.getElementById('sec-qa'),actions=doc.getElementById('sec-actions'),repair=doc.getElementById('sec-repair'),backlog=doc.getElementById('sec-backlog');
+    if(ndf&&/No explicit NDF|No Defect Found classification/i.test(text(ndf.textContent)))gapBox(doc,ndf,'NDF DATA GAP','No explicit NDF evidence is loaded. Add NDF classification, root cause, owner, action and due date in Repair or the persistent Action Tracker. A later PASS is not treated as NDF.');
+    if(qa&&/No explicit QA affected cohort/i.test(text(qa.textContent)))gapBox(doc,qa,'QA COHORT REQUIRED','No QA-affected population is attached to this scope. Add the affected quantity and preferably the serial cohort so Diagnosed, Repaired, Retest PASS and Still NG can be calculated.');
+    if(actions&&/No persistent .*actions match/i.test(text(actions.textContent)))gapBox(doc,actions,'ACTION OWNERSHIP GAP','No scoped department actions were found. Add finding, quantity, owner, action, due date, status and evidence in the persistent Yield Flow Action Tracker.');
+    if(repair){
+      var linked=metricValue(repair,'FPY Fail Linked'),unlinked=metricValue(repair,'FPY Fail Unlinked');
+      if(linked!=null&&unlinked!=null&&unlinked>0){var total=linked+unlinked,pct=total?100*linked/total:0;gapBox(doc,repair,'REPAIR LINKAGE GAP',linked+' of '+total+' FPY failed serials ('+pct.toFixed(1)+'%) have a linked Repair Record; '+unlinked+' still require diagnosis or serial linkage.')}
+      Array.prototype.forEach.call(repair.querySelectorAll('.tpr-card'),function(card){var title=card.querySelector('.tpr-card-title');if(!title||text(title.textContent).toUpperCase().indexOf('REPAIR MODE PARETO')!==0)return;var removed=0;Array.prototype.forEach.call(card.querySelectorAll('tbody tr'),function(row){var first=row.querySelector('td');if(text(first&&first.textContent).toUpperCase()==='RETEST'){row.remove();removed++}});if(removed&&!card.querySelector('.tpr-retest-note')){var note=doc.createElement('div');note.className='tpr-footnote tpr-retest-note';note.textContent='RETEST is Test activity and is excluded from the Repair / Root Cause Pareto.';card.appendChild(note)}})
+    }
+    if(backlog){var note=doc.createElement('div');note.className='tpr-data-note';note.textContent='The on-screen table is intentionally bounded for fast scrolling. Use “Download full backlog CSV” for the complete carried population.';var body=backlog.querySelector('.tpr-section-body')||backlog;body.insertBefore(note,body.firstChild)}
+  }
+  function backlogExport(filters){
+    var api=window.SMTINEL_TEST_PERF_API,csv='';try{if(api&&typeof api.csvTextFor==='function')csv=String(api.csvTextFor(filters||{})||'')}catch(_){}
+    if(!csv)return null;var lines=csv.split(/\r?\n/),rows=lines.filter(function(line){return line.indexOf('BACKLOG,')===0});if(!rows.length)return null;var output=[lines[0]].concat(rows).join('\n'),encoded='';try{encoded=btoa(unescape(encodeURIComponent(output)))}catch(_){return null}
+    var bu=text(filters&&filters.bu||'BU').replace(/[^A-Za-z0-9_-]+/g,'_'),cutoff=text(filters&&filters.to||'cutoff').replace(/[^A-Za-z0-9_-]+/g,'_');return{data:encoded,name:'SMTinel_Test_Backlog_'+bu+'_'+cutoff+'.csv',count:rows.length}
+  }
+  function addBacklogPayload(doc,payload){
+    if(!payload||!payload.data)return;var old=doc.getElementById('tprBacklogCsvData');if(old)old.remove();var node=doc.createElement('script');node.id='tprBacklogCsvData';node.type='application/octet-stream';node.textContent=payload.data;doc.body.appendChild(node)
   }
   function styleText(){return [
     '.tpr-scroll-progress{height:3px;width:0;background:linear-gradient(90deg,var(--green),var(--olive));transition:width .08s linear}',
@@ -96,7 +140,8 @@
     '.tpr-side-toggle{width:42px;height:38px;border:1px solid var(--line);background:var(--soft);color:var(--green);border-radius:8px;display:grid;place-items:center;cursor:pointer}.tpr-side-toggle b{display:none}.tpr-nav{transition:background .16s ease,color .16s ease}.tpr-nav-label{display:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tpr-nav.active{background:var(--green);border-color:var(--green);color:#fff}',
     'body.tpr-rail-expanded .tpr-shell{grid-template-columns:252px minmax(0,1fr)}body.tpr-rail-expanded .tpr-side{padding:7px;align-content:start}body.tpr-rail-expanded .tpr-side-toggle{width:100%;grid-template-columns:28px minmax(0,1fr);padding:0 9px;text-align:left}body.tpr-rail-expanded .tpr-side-toggle b{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em}body.tpr-rail-expanded .tpr-nav{width:100%;grid-template-columns:30px minmax(0,1fr);justify-items:start;padding:0 10px;gap:8px}body.tpr-rail-expanded .tpr-nav-label{display:block}',
     '@media(max-width:760px){.tpr-side-toggle{display:none}.tpr-sn textarea{width:68vw!important;min-width:170px!important}.tpr-scroll-window{max-height:360px}body.tpr-rail-expanded .tpr-shell{grid-template-columns:1fr}}',
-    '@media print{.tpr-scroll-progress,.tpr-side-toggle,#tprCollapseSerials,.tpr-row-count{display:none!important}.tpr-scroll-window{max-height:none!important;overflow:visible!important;border:0!important}.tpr-sn>details:not([open])>:not(summary){display:none!important}}'
+    '.tpr-data-gap{display:grid;gap:4px;margin:0 0 10px;padding:10px 12px;border:1px solid #e3bd70;border-left:5px solid #b87820;border-radius:10px;background:#fff8e8;color:#523b13}.tpr-data-gap b{font-size:10px;letter-spacing:.06em}.tpr-data-gap span{font-size:10px;line-height:1.45}.tpr-data-note{margin:0 0 10px;padding:9px 11px;border:1px solid #bfd4ea;border-radius:9px;background:#edf5fd;color:#315e87;font-size:10px;font-weight:700}.tpr-retest-note{color:#315e87!important}',
+    '@media print{.tpr-scroll-progress,.tpr-side-toggle,#tprCollapseSerials,#tprDownloadBacklog,.tpr-row-count{display:none!important}.tpr-scroll-window{max-height:none!important;overflow:visible!important;border:0!important}.tpr-sn>details:not([open])>:not(summary){display:none!important}}'
   ].join('');}
   function reportRuntime(){
     'use strict';
@@ -104,24 +149,25 @@
     function q(s,a){return (a||document).querySelector(s)}function qa(s,a){return Array.prototype.slice.call((a||document).querySelectorAll(s))}
     function closeSerials(){qa('.tpr-sn details[open]').forEach(function(x){x.removeAttribute('open')})}
     var collapse=q('#tprCollapseSerials');if(collapse)collapse.addEventListener('click',function(){closeSerials();this.textContent='Serials collapsed';var b=this;setTimeout(function(){b.textContent='Collapse serials'},1200)});
+    var downloadBacklog=q('#tprDownloadBacklog');if(downloadBacklog)downloadBacklog.addEventListener('click',function(){var node=q('#tprBacklogCsvData'),raw=node&&node.textContent||'';if(!raw)return;try{var csv=decodeURIComponent(escape(atob(raw))),a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download=downloadBacklog.getAttribute('data-file')||'SMTinel_Test_Backlog.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000)}catch(_){downloadBacklog.textContent='Backlog export unavailable'}});
     var toggle=q('#tprSideToggle');if(toggle)toggle.addEventListener('click',function(){var open=document.body.classList.toggle('tpr-rail-expanded');toggle.setAttribute('aria-expanded',open?'true':'false')});
     var progress=q('#tprScrollProgress');function onScroll(){if(progress){var d=document.documentElement,span=Math.max(1,d.scrollHeight-d.clientHeight);progress.style.width=Math.min(100,100*d.scrollTop/span)+'%'}}window.addEventListener('scroll',onScroll,{passive:true});onScroll();
     var links=qa('.tpr-nav'), sections=qa('.tpr-section, .tpr-filter-snapshot, #sec-cover');
     if('IntersectionObserver' in window){var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(!e.isIntersecting)return;links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id)})})},{rootMargin:'-18% 0px -70% 0px',threshold:0});sections.forEach(function(s){if(s.id)io.observe(s)})}
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSerials()});
   }
-  function enhance(html){
+  function enhance(html,filters,backlog){
     var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;
     Array.prototype.forEach.call(doc.querySelectorAll('.tpr-sn'),compactSerialBox);
-    addBoundedTableWindows(doc);addRailLabels(doc);addHeaderControls(doc);
+    fixCoverContract(doc,filters||{});improveEvidenceSections(doc);addBacklogPayload(doc,backlog);addBoundedTableWindows(doc);addRailLabels(doc);addHeaderControls(doc,backlog);
     var oldStyle=doc.getElementById(STYLE_ID);if(oldStyle)oldStyle.remove();var style=doc.createElement('style');style.id=STYLE_ID;style.textContent=styleText();doc.head.appendChild(style);
     var oldRuntime=doc.getElementById(RUNTIME_ID);if(oldRuntime)oldRuntime.remove();var runtime=doc.createElement('script');runtime.id=RUNTIME_ID;runtime.textContent='('+reportRuntime.toString()+')();';doc.body.appendChild(runtime);
     doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();
     return '<!doctype html>\n'+doc.documentElement.outerHTML;
   }
   function install(){
-    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelHandoffCompactV170)return true;
-    var base=api.reportHtmlFor,wrapped=function(filters){return enhance(base.call(api,filters||{}))};wrapped.__smtinelHandoffCompactV170=true;wrapped.__base=base;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.17.0 - Test Performance Handoff Compact - 2026-09-20';return true;
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelHandoffCompactV171)return true;
+    var base=api.reportHtmlFor,wrapped=function(filters){filters=filters||{};return enhance(base.call(api,filters),filters,backlogExport(filters))};wrapped.__smtinelHandoffCompactV171=true;wrapped.__base=base;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.17.1 - Test Performance Mail Coverage - 2026-09-20';return true;
   }
   if(!install()){var n=0,t=setInterval(function(){n++;if(install()||n>220)clearInterval(t)},100)}
 })();
