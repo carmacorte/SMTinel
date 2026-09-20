@@ -41135,11 +41135,12 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   var lastBuOptions='';
   function fillOptions(force){
     var a=api(),buEl=document.getElementById('testPerfBu');if(!a||!a.meta||!buEl)return false;
-    var globalMeta=a.meta('')||{},selectedBu=buEl.value||'';
-    if(force||buEl.options.length<=1){var keepBu=selectedBu;buEl.innerHTML='<option value="">Select BU first</option>';(globalMeta.bus||[]).forEach(function(x){ensureOption(buEl,x,x)});if(keepBu&&[].slice.call(buEl.options).some(function(o){return o.value===keepBu}))buEl.value=keepBu;selectedBu=buEl.value||'';}
+    var globalMeta=a.meta('')||{},selectedBu=buEl.value||'',bus=(globalMeta.bus||[]).slice();
+    var buWant=bus.join('|'),buHave=[].slice.call(buEl.options).map(function(o){return o.value}).filter(Boolean).join('|');
+    if(force||buEl.options.length<=1||buWant!==buHave){var keepBu=selectedBu;buEl.innerHTML='<option value="">Select BU first</option>';bus.forEach(function(x){ensureOption(buEl,x,x)});if(keepBu&&[].slice.call(buEl.options).some(function(o){return o.value===keepBu}))buEl.value=keepBu;selectedBu=buEl.value||'';}
     var m=selectedBu?(a.meta(selectedBu)||globalMeta):globalMeta,changed=(selectedBu!==lastBuOptions);
     var defs=[['testPerfLine','All lines',m.lines||[]],['testPerfModel','All products',m.models||[]],['testPerfSku','All SKU / UUT',m.skus||[]],['testPerfWo','All WO',m.wos||[]],['testPerfWeek','All weeks',m.weeks||[]],['testPerfArea','All Test Areas',m.areas||[]],['testPerfFailure','All failure modes',m.failures||[]]];
-    defs.forEach(function(d){var el=document.getElementById(d[0]);if(!el)return;el.disabled=!selectedBu;if(!force&&!changed&&el.options.length>1)return;var keep=changed?'ALL':(el.value||'ALL');el.innerHTML='<option value="ALL">'+d[1]+'</option>';if(selectedBu)d[2].forEach(function(x){ensureOption(el,x,x)});if([].slice.call(el.options).some(function(o){return o.value===keep}))el.value=keep;else el.value='ALL'});
+    defs.forEach(function(d){var el=document.getElementById(d[0]);if(!el)return;el.disabled=!selectedBu;var want=(selectedBu?d[2]:[]).join('|'),have=[].slice.call(el.options).map(function(o){return o.value}).filter(function(v){return v&&v!=='ALL'}).join('|');if(!force&&!changed&&el.options.length>1&&want===have)return;var keep=changed?'ALL':(el.value||'ALL');el.innerHTML='<option value="ALL">'+d[1]+'</option>';if(selectedBu)d[2].forEach(function(x){ensureOption(el,x,x)});if([].slice.call(el.options).some(function(o){return o.value===keep}))el.value=keep;else el.value='ALL'});
     var search=document.getElementById('testPerfSearch');if(search)search.disabled=!selectedBu;var from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(changed&&selectedBu&&m.latestDate&&from&&to){from.value=m.latestDate;to.value=m.latestDate}else if(m.latestDate&&from&&to&&!from.value&&!to.value){from.value=m.latestDate;to.value=m.latestDate}
     var target=document.getElementById('testPerfTarget');if(target&&!target.value){try{target.value=localStorage.getItem('smtinel_test_perf_target_v1')||''}catch(_){}}
     lastBuOptions=selectedBu;return true
@@ -73868,7 +73869,7 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
   function uniq(a){var m={},o=[];(a||[]).forEach(function(v){v=tx(v);if(v&&!m[v]){m[v]=1;o.push(v)}});return o}
   function compactAction(a){return {id:tx(a&&a.id),source:tx(a&&a.source),failureMode:tx(a&&(a.failureMode||a.focus)),focus:tx(a&&a.focus),scope:tx(a&&a.scope),context:tx(a&&a.context),model:tx(a&&a.model),sku:tx(a&&a.sku),station:tx(a&&a.station),workOrder:tx(a&&(a.workOrder||a.wo)),wo:tx(a&&a.wo),supportArea:tx(a&&a.supportArea),owner:tx(a&&a.owner),bu:tx(a&&(a.bu||a.businessUnit||a.BU)),action:tx(a&&(a.action||a.actionType)),dueDate:tx(a&&a.dueDate),status:tx(a&&a.status)||'Open',units:Number(a&&a.units||0)||0,serials:Array.isArray(a&&a.serials)?a.serials.map(tx).filter(Boolean):[],evidenceNotes:tx(a&&(a.evidenceNotes||a.comments)),evidenceCount:Array.isArray(a&&a.meta_files)?a.meta_files.length:0};}
   function collectActions(){var out=[],seen={};try{var raw=localStorage.getItem('traceops_yield_action_log_v1'),a=raw?JSON.parse(raw):[];(Array.isArray(a)?a:[]).forEach(function(x){out.push(x)})}catch(_){};(window.TRACEOPS_YIELD_ACTION_TRACKER_ROWS||[]).forEach(function(x){out.push(x)});return out.map(compactAction).filter(function(x){var s=x.id||[x.source,x.failureMode,x.owner,x.action].join('|');if(!s||seen[s]||/CANCELLED/i.test(x.status))return false;seen[s]=1;return true})}
-  function collectCalendar(){var src=window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP||{},out={},weeks={};Object.keys(src).forEach(function(d){var r=src[d]||{},w=tx(r.week||r.WFCSY||r['Cisco Week']),q=tx(r.quarter||r.Quarter);if(w||q)out[d]=[w,q];if(w){var z=weeks[w]||(weeks[w]={start:d,end:d});if(d<z.start)z.start=d;if(d>z.end)z.end=d}});var srcW=window.TRACEOPS_YIELD_CISCO_WEEK_RANGES||{};Object.keys(srcW).forEach(function(w){var r=srcW[w]||{};if(r.start&&r.end)weeks[w]={start:r.start,end:r.end}});return {dates:out,weeks:weeks}}
+  function collectCalendar(){var src=window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP||{},out={},weeks={};Object.keys(src).forEach(function(d){var r=src[d]||{},w=tx(r.week||r.WFCSY||r['Cisco Week']),q=tx(r.quarter||r.Quarter);if(w||q)out[d]=[w,q];if(w){var z=weeks[w]||(weeks[w]={start:d,end:d});if(d<z.start)z.start=d;if(d>z.end)z.end=d}});var srcW=window.TRACEOPS_YIELD_CISCO_WEEK_RANGES||{};Object.keys(srcW).forEach(function(w){var r=srcW[w]||{};if(r.start&&r.end){weeks[w]={start:r.start,end:r.end};var q=(String(w).match(/(FY\d{4}\s+Q\d)/i)||[])[1]||'';var a=String(r.start).split('-').map(Number),b=String(r.end).split('-').map(Number),x=Date.UTC(a[0],a[1]-1,a[2]),z=Date.UTC(b[0],b[1]-1,b[2]),guard=0;for(;x<=z&&guard<32;x+=86400000,guard++){var d=new Date(x),k=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');if(!out[k]||!out[k][0])out[k]=[w,q]}}});return {dates:out,weeks:weeks}}
   function collectRepairs(rows){var store=window.TRACEOPS_YIELD_REPAIRS_BY_SN||{},wanted={},items=[],itemMap={},links={};(rows||[]).forEach(function(r){[r.logicalUnit,r.logicalKey,r.testSn,r.parentSn,r.partSn,r.boxSn,r.sfcSn,r.sfcBox].concat(r.serialIds||[]).forEach(function(v){var k=key(v);if(k)wanted[k]=1})});function add(alias,x){var sig=[x&&x.sn,x&&x.repairTime,x&&x.failTime,x&&x.refdes,x&&x.failLocation,x&&x.failureMode,x&&x.rootCause,x&&x.rawRootCause,x&&x.repairType,x&&x.actionDesc,x&&x.repairman,x&&x.workOrder].map(tx).join('|'),idx=itemMap[sig];if(idx==null){idx=items.length;itemMap[sig]=idx;items.push([tx(x&&x.sn),Number(x&&x.repairTime||0)||0,Number(x&&x.failTime||0)||0,tx(x&&(x.refdes||x.failLocation)),tx(x&&x.failureMode),tx(x&&x.rootCause),tx(x&&x.rawRootCause),tx(x&&x.repairType),tx(x&&x.actionDesc),tx(x&&x.responsibleArea),tx(x&&x.station),tx(x&&x.repairman),tx(x&&x.line),tx(x&&x.shift),tx(x&&(x.workOrder||x.wo))])}var k=key(alias);if(k){var a=links[k]||(links[k]=[]);if(a.indexOf(idx)<0)a.push(idx)}}Object.keys(wanted).forEach(function(k){var arr=store[k]||store[up(k)]||[];(arr||[]).forEach(function(x){add(k,x);var sn=key(x&&x.sn);if(sn)add(sn,x)})});return {columns:['sn','repairTime','failTime','refdes','failureMode','rootCause','rawRootCause','repairType','actionDesc','responsibleArea','station','repairman','line','shift','workOrder'],items:items,links:links}}
   function encodePayload(p){var cols=p.columns||[],numeric={timeMs:1,bridgeCount:1},dict=[''],map={'':0},rows=(p.rows||[]).map(function(a){return a.map(function(v,i){if(numeric[cols[i]])return Number(v||0);v=v==null?'':String(v);var n=map[v];if(n==null){n=dict.length;map[v]=n;dict.push(v)}return n})});return {build:BUILD,bu:p.bu,filters:p.filters||{},format:'dict-v1',columns:cols,numeric:['timeMs','bridgeCount'],dict:dict,rows:rows}}
   function runtime(){return '<scr'+'ipt id="tpr-standalone-runtime-v161">'+String.raw`(function(){
@@ -73920,14 +73921,14 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
 })();
 </script>
 
-<!-- SMTinel Test Performance v1.6.2 - Yield Flow BU authority + Cesium Record Time fiscal calendar -->
+<!-- SMTinel Test Performance v1.6.3 - Yield Flow BU authority + Cesium Record Time 13WK fiscal calendar -->
 <script id="smtinel-test-performance-bu-calendar-v162">
 (function(){
   'use strict';
   if(window.__SMTINEL_TEST_BU_CALENDAR_V162__) return;
-  var BUILD='TEST-PERFORMANCE-V1.6.2-BU-CALENDAR';
+  var BUILD='TEST-PERFORMANCE-V1.6.3-BU-CALENDAR-13WK';
   window.__SMTINEL_TEST_BU_CALENDAR_V162__=BUILD;
-  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.63 - Test Performance v1.6.2 BU + Calendar Fix - 2026-09-19';
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.64 - Test Performance v1.6.3 BU + 13WK Calendar Fix - 2026-09-19';
 
   function tx(v){return String(v==null?'':v).trim()}
   function up(v){return tx(v).toUpperCase()}
@@ -73957,10 +73958,11 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
     for(;x<=z&&guard<4000;x+=86400000,guard++){var d=new Date(x),k=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');cb(k)}
   }
   function ensureCalendarMap(){
-    var map=window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP||{};
-    if(Object.keys(map).length)return map;
-    var ranges=window.TRACEOPS_YIELD_CISCO_WEEK_RANGES||{},built={};
-    Object.keys(ranges).forEach(function(w){var r=ranges[w]||{},q=quarterFromWeek(w);if(!r.start||!r.end)return;eachDate(r.start,r.end,function(d){built[d]={week:w,quarter:q,weekCisco:(String(w).match(/W[- ]?(\d+)/i)||[])[1]||''}})});
+    // Always merge the week ranges into the date map. A non-empty legacy map can still be partial.
+    var current=window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP||{},built={};
+    Object.keys(current).forEach(function(d){var r=current[d]||{};built[d]={week:tx(r.week||r.WFCSY||r['Cisco Week']),quarter:tx(r.quarter||r.Quarter)||quarterFromWeek(r.week||r.WFCSY),weekCisco:tx(r.weekCisco||r['Week Cisco'])}});
+    var ranges=window.TRACEOPS_YIELD_CISCO_WEEK_RANGES||{};
+    Object.keys(ranges).forEach(function(w){var r=ranges[w]||{},q=quarterFromWeek(w);if(!r.start||!r.end)return;eachDate(r.start,r.end,function(d){if(!built[d]||!built[d].week)built[d]={week:w,quarter:q,weekCisco:(String(w).match(/W[- ]?(\d+)/i)||[])[1]||''};else{built[d].week=built[d].week||w;built[d].quarter=built[d].quarter||q}})});
     window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP=built;
     return built;
   }
@@ -73983,7 +73985,16 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
     }
   }
   function activeYieldBus(){
+    // Use the exact same BU option source that Yield Flow renders on screen.
+    // This prevents Test from showing only the BUs that happen to have Cesium/SFC bridge rows.
     var seen={};function add(v){v=normBu(v);if(v)seen[v]=1}function fromRec(r){if(!r)return;var b=r.bu||r.BU||r.businessUnit||r.business_unit||r['Business Unit'];if(!b){var sku=tx(r.sku||r.skuno||r.SKU||r.model||r.MODEL),db=(window.TRACEOPS_YIELD_DB_MODEL_MAP||{})[sku]||(window.TRACEOPS_YIELD_DB_MODEL_MAP||{})[sku.replace(/[^A-Za-z0-9]/g,'').toLowerCase()];b=db&&db.bu}add(b)}
+    try{
+      if(typeof window.traceOpsBuildYieldFlowModelLocal==='function'){
+        var yf=window.traceOpsBuildYieldFlowModelLocal({bu:'ALL',family:'ALL',sku:'ALL',week:'ALL',line:'ALL',sfcStation:'ALL',cesiumArea:'ALL',wo:'ALL',sn:'',from:'',to:''});
+        (((yf||{}).options||{}).bu||[]).forEach(add);
+      }
+    }catch(_){}
+    if(Object.keys(seen).length)return Object.keys(seen).sort(function(a,b){return a.localeCompare(b)});
     try{Object.keys(window.TRACEOPS_YIELD_SN_TO_SFC||{}).forEach(function(k){fromRec(window.TRACEOPS_YIELD_SN_TO_SFC[k])})}catch(_){}
     try{(window.TRACEOPS_YIELD_FLOW_TRACKER||[]).forEach(fromRec)}catch(_){}
     try{(window.TRACEOPS_YIELD_BY_WO_ROWS||[]).forEach(fromRec)}catch(_){}
@@ -74039,5 +74050,124 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
   if(!patchApi()){var n=0,t=setInterval(function(){n++;exposeCalendarBuilder();patchCache();ensureCalendarMap();updateHints();if(patchApi()||n>160)clearInterval(t)},100)}
   document.addEventListener('change',function(e){var x=e&&e.target;if(x&&x.id==='reportType')setTimeout(updateHints,0)},true);
   window.addEventListener('smtinel:yield-data-updated',function(){ensureCalendarMap();},true);
+})();
+</script>
+
+<!-- SMTinel Test Performance v1.6.4 - authoritative Yield Flow BU union + Record Time fiscal hydration -->
+<script id="smtinel-test-performance-bu-calendar-v164">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_BU_CALENDAR_V164__) return;
+  var BUILD='TEST-PERFORMANCE-V1.6.4-BU5-RECORDTIME-13WK';
+  window.__SMTINEL_TEST_BU_CALENDAR_V164__=BUILD;
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.65 - Test Performance v1.6.4 BU5 + Record Time 13WK Fix - 2026-09-19';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function up(v){return tx(v).toUpperCase()}
+  function uniq(a){var m={},o=[];(a||[]).forEach(function(v){v=tx(v);if(v&&!m[v]){m[v]=1;o.push(v)}});return o}
+  function normBu(v){
+    v=tx(v);if(!v)return '';
+    try{if(typeof window.traceOpsYieldNormalizeBU==='function')v=tx(window.traceOpsYieldNormalizeBU(v));}catch(_){}
+    var u=up(v);
+    if(!u||/^(N\/?A|N\/?D|NA|ND|NULL|UNKNOWN|IMPORTED|IMPORTADO|BU|BUSINESS UNIT|BUSINESS_UNIT)$/.test(u))return '';
+    try{if(typeof window.traceOpsYieldIsCanonicalBU==='function'&&!window.traceOpsYieldIsCanonicalBU(v))return '';}catch(_){}
+    if(/^[A-Z0-9][A-Z0-9-]{1,24}BU$/.test(u)||/^(FIELDWORKS|JUNIPER|LONGBALL|C1K|MB-1K|MB-C1K)$/.test(u))return u;
+    return '';
+  }
+  function pick(row,names){
+    if(!row)return '';
+    try{if(typeof window.traceOpsYieldPick==='function')return window.traceOpsYieldPick(row,names)}catch(_){}
+    var ks=Object.keys(row||{}),compact=function(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'')};
+    for(var i=0;i<names.length;i++){var want=compact(names[i]);for(var j=0;j<ks.length;j++)if(compact(ks[j])===want)return row[ks[j]]}
+    return '';
+  }
+  function dbLookup(sku){
+    sku=tx(sku);if(!sku)return null;
+    try{if(typeof window.traceOpsYieldDbLookup==='function'){var x=window.traceOpsYieldDbLookup(sku);if(x)return x}}catch(_){}
+    var map=window.TRACEOPS_YIELD_DB_MODEL_MAP||{};
+    return map[sku]||map[sku.replace(/[^A-Za-z0-9]/g,'').toLowerCase()]||null;
+  }
+  function addDateRange(map,weeks,label,start,end){
+    label=tx(label);start=tx(start);end=tx(end);if(!label||!start||!end)return;
+    var a=start.split('-').map(Number),b=end.split('-').map(Number);if(a.length<3||b.length<3)return;
+    var x=Date.UTC(a[0],a[1]-1,a[2]),z=Date.UTC(b[0],b[1]-1,b[2]),guard=0,q=(label.match(/(FY\d{4}\s+Q\d)/i)||[])[1]||'';
+    weeks[label]={start:start,end:end};
+    for(;x<=z&&guard<4000;x+=86400000,guard++){
+      var d=new Date(x),k=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+      if(!map[k]||!tx(map[k].week))map[k]={week:label,quarter:q,weekCisco:(label.match(/W[- ]?(\d+)/i)||[])[1]||''};
+    }
+  }
+  function fullCalendar(){
+    var src=window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP||{},map={},weeks={};
+    Object.keys(src).forEach(function(d){var r=src[d]||{},w=tx(r.week||r.WFCSY||r['Cisco Week']),q=tx(r.quarter||r.Quarter);if(w)map[d]={week:w,quarter:q||((w.match(/(FY\d{4}\s+Q\d)/i)||[])[1]||''),weekCisco:tx(r.weekCisco||r['Week Cisco'])};});
+    try{(window.SMTINEL_FISCAL_PERIODS||[]).forEach(function(p){if(p&&p.label&&p.start&&p.end)addDateRange(map,weeks,p.label,p.start,p.end)})}catch(_){}
+    var ranges=window.TRACEOPS_YIELD_CISCO_WEEK_RANGES||{};Object.keys(ranges).forEach(function(w){var r=ranges[w]||{};if(r.start&&r.end)addDateRange(map,weeks,w,r.start,r.end)});
+    // Rebuild week ranges from any explicit date rows too.
+    Object.keys(map).sort().forEach(function(d){var w=tx(map[d]&&map[d].week);if(!w)return;var z=weeks[w]||(weeks[w]={start:d,end:d});if(d<z.start)z.start=d;if(d>z.end)z.end=d});
+    window.TRACEOPS_YIELD_CISCO_CALENDAR_MAP=map;
+    window.TRACEOPS_YIELD_CISCO_WEEK_RANGES=weeks;
+    return {dates:map,weeks:weeks};
+  }
+  function ymdFromMs(ms){var d=new Date(Number(ms));if(isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+  function recordDate(r){
+    var v=tx(r&&r.recordTime),m=v.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);if(m)return m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');
+    if(r&&isFinite(Number(r.timeMs)))return ymdFromMs(r.timeMs);
+    return tx(r&&r.opDate);
+  }
+  function hydrateRows(rows){
+    var c=fullCalendar().dates;
+    (rows||[]).forEach(function(r){if(!r)return;var d=recordDate(r),x=c[d];if(x&&x.week){r.week=x.week;r.quarter=x.quarter||((String(x.week).match(/(FY\d{4}\s+Q\d)/i)||[])[1]||'');r.fiscalDate=d}});
+    return rows||[];
+  }
+  function activeYieldBus(){
+    var seen={};function add(v){v=normBu(v);if(v)seen[v]=1}
+    function fromRec(r){if(!r)return;var b=pick(r,['BU','bu','Business Unit','businessUnit','business_unit']);if(!b){var sku=tx(pick(r,['skuno','SKU','sku','MODEL','model','moduleno','ModuleNo','Assy Part Number'])),db=dbLookup(sku);b=db&&db.bu}add(b)}
+    // 1) Same model that renders Yield Flow.
+    try{if(typeof window.traceOpsBuildYieldFlowModelLocal==='function'){var yf=window.traceOpsBuildYieldFlowModelLocal({bu:'ALL',family:'ALL',sku:'ALL',week:'ALL',line:'ALL',sfcStation:'ALL',cesiumArea:'ALL',wo:'ALL',sn:'',from:'',to:''});((((yf||{}).options||{}).bu)||[]).forEach(add)}}catch(_){}
+    // 2) Raw SFC + DB_Model is the authoritative fallback. Do not return early if the model is partially cached.
+    try{(window.TRACEOPS_YIELD_RAW_SFC_ROWS||[]).forEach(fromRec)}catch(_){}
+    try{var cp=window.SMTINEL_CROSSMODEL_LAST_PARSED;if(cp&&Array.isArray(cp.sfc))cp.sfc.forEach(fromRec)}catch(_){}
+    // 3) Enriched SFC and Yield collections.
+    try{Object.keys(window.TRACEOPS_YIELD_SN_TO_SFC||{}).forEach(function(k){fromRec(window.TRACEOPS_YIELD_SN_TO_SFC[k])})}catch(_){}
+    try{(window.TRACEOPS_YIELD_FLOW_TRACKER||[]).forEach(fromRec)}catch(_){}
+    try{(window.TRACEOPS_YIELD_BY_WO_ROWS||[]).forEach(fromRec)}catch(_){}
+    return Object.keys(seen).sort(function(a,b){return a.localeCompare(b)})
+  }
+  function vals(rows,field){var m={};(rows||[]).forEach(function(r){var v=tx(r&&r[field]);if(v&&v!=='N/D'&&v!=='Imported')m[v]=1});return Object.keys(m).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true})})}
+  function latest(rows){var x='';(rows||[]).forEach(function(r){var d=recordDate(r)||tx(r&&r.opDate);if(d>x)x=d});return x}
+  function valid(r){return r&&(r.kind==='pass'||r.kind==='fail')}
+  function debugStation(v){return /\*/.test(tx(v))||/DEBUG|REPAIR|REWORK|MRB|SCRAP/.test(up(v))}
+
+  function injectStandaloneHydrator(html){
+    html=String(html||'');
+    var marker='<script id="tpr-standalone-runtime-v161">';
+    if(html.indexOf(marker)<0||html.indexOf('tpr-standalone-calendar-hydrator-v164')>=0)return html;
+    var js='<script id="tpr-standalone-calendar-hydrator-v164">(function(){try{var n=document.getElementById("tprStandaloneData");if(!n)return;var P=JSON.parse(n.textContent||"{}");var C=P.calendar&&P.calendar.dates||{},cols=P.columns||[],rows=P.rows||[],dict=P.dict||[],wi=cols.indexOf("week"),ti=cols.indexOf("timeMs"),oi=cols.indexOf("opDate"),di={};for(var i=0;i<dict.length;i++)di[String(dict[i])]=i;function dec(v){return(typeof v==="number"&&v>=0&&v<dict.length)?String(dict[v]||""):String(v==null?"":v)}function enc(v){v=String(v||"");if(Object.prototype.hasOwnProperty.call(di,v))return di[v];di[v]=dict.length;dict.push(v);return di[v]}function ymd(ms){var d=new Date(Number(ms));if(isNaN(d.getTime()))return"";return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}if(wi>=0){for(var j=0;j<rows.length;j++){var r=rows[j],d=ti>=0?ymd(r[ti]):"";if(!C[d]&&oi>=0)d=dec(r[oi]);var c=C[d];if(c&&c[0])r[wi]=enc(c[0])}}P.dict=dict;P.build="'+BUILD+'";n.textContent=JSON.stringify(P)}catch(e){try{console.error("SMTinel standalone fiscal hydrate",e)}catch(_){}}})();<\/script>';
+    return html.replace(marker,js+marker).replace(/TEST-PERFORMANCE-V1\.6\.3-BU-CALENDAR-13WK/g,BUILD).replace(/TEST-PERFORMANCE-V1\.6\.1-STANDALONE-EVIDENCE/g,BUILD);
+  }
+
+  function patchApi(){
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||api.__smtinelBuCalendarV164)return false;
+    if(typeof api.ensureRows!=='function'||typeof api.compute!=='function')return false;
+    var baseEnsure=api.ensureRows,baseCompute=api.compute,baseReport=api.reportHtmlFor;
+    api.ensureRows=function(){var src=baseEnsure.call(api)||{rows:[]};hydrateRows(src.rows||[]);return src};
+    api.rowsForBu=function(bu){var src=api.ensureRows(),rows=src.rows||[],b=tx(bu);return(!b||b==='ALL')?rows:rows.filter(function(r){return tx(r&&r.bu)===b})};
+    api.computeFor=function(filters){filters=filters||{};var src=api.ensureRows(),rows=(filters.bu&&filters.bu!=='ALL')?api.rowsForBu(filters.bu):(src.rows||[]),m=baseCompute.call(api,rows,filters);m.source={rows:rows,mode:(src.mode||'full')+(filters.bu?'·BU':''),warning:src.warning||''};return m};
+    api.meta=function(bu){
+      var src=api.ensureRows(),all=src.rows||[],bus=activeYieldBus(),b=tx(bu),rows=(!b||b==='ALL')?all:all.filter(function(r){return tx(r&&r.bu)===b}),ff={};
+      if(!bus.length)bus=vals(all,'bu').map(normBu).filter(Boolean);
+      rows.forEach(function(r){if(valid(r)&&!debugStation(r.station)&&r.kind==='fail'&&r.failure)ff[r.failure]=1});
+      return{build:BUILD,selectedBu:b,latestDate:latest(rows),bus:uniq(bus),lines:vals(rows,'line'),wos:vals(rows,'wo'),weeks:vals(rows,'week'),models:vals(rows,'model'),skus:vals(rows,'sku'),areas:vals(rows,'station'),failures:Object.keys(ff).sort(),rowCount:rows.length,sourceMode:(src.mode||'')+(b?'·BU':''),warning:src.warning||''};
+    };
+    if(typeof baseReport==='function'){
+      var rr=function(filters){api.ensureRows();return injectStandaloneHydrator(baseReport.call(api,filters||{}))};rr.__smtinelBuCalendarV164=true;rr.__base=baseReport;api.reportHtmlFor=rr;
+    }
+    api.build=BUILD;api.__smtinelBuCalendarV164=true;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;return true;
+  }
+  function hint(){var h=document.querySelector('#testPerformanceControls .scope-hint');if(h)h.textContent='BU list mirrors Yield Flow (SFC + DB_Model). Cisco Week / Quarter are assigned from the Cesium Record Time date through Cisco Calendary; the 13WK trend uses the last 13 fiscal weeks with Test activity.'}
+  fullCalendar();hint();
+  if(!patchApi()){var n=0,t=setInterval(function(){n++;fullCalendar();hint();if(patchApi()||n>180)clearInterval(t)},100)}
+  window.addEventListener('smtinel:yield-data-updated',function(){fullCalendar();hint()},true);
+  document.addEventListener('change',function(e){var x=e&&e.target;if(x&&x.id==='reportType')setTimeout(hint,0)},true);
 })();
 </script>
