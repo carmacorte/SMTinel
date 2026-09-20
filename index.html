@@ -40925,7 +40925,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
     var button=document.getElementById('downloadEmail'),oldText=button&&button.textContent;
     try{
       if(button){button.disabled=true;button.textContent='Preparing DBN HTML...'}
-      var title=document.getElementById('emailSubject').value||('SMTinel DBN Follow-up - '+c.model),body=dbnReportHtml(true),html=dbnVerticalReportHtml(title,body,c),a=document.createElement('a'),safe=function(v){return String(v||'N_D').replace(/[^A-Za-z0-9_-]+/g,'_')},url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+      var title='SMTinel DBN Follow-up - '+c.model+' - '+(c.wo==='ALL'?'All WOs':c.wo)+' - '+c.date,body=dbnReportHtml(true),html=dbnVerticalReportHtml(title,body,c),a=document.createElement('a'),safe=function(v){return String(v||'N_D').replace(/[^A-Za-z0-9_-]+/g,'_')},url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
       a.href=url;a.download='SMTinel_DBN_Followup_'+safe(c.model)+'_'+safe(c.wo)+'_'+c.date+'.html';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
       setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},30000);
       if(button){button.textContent='DBN HTML downloaded';setTimeout(function(){button.disabled=false;button.textContent=oldText||'Download DBN HTML'},1400)}
@@ -41271,6 +41271,49 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   document.addEventListener('click',function(e){var t=e&&e.target;if(!isTest()||!t||t.id!=='testPerfReset')return;e.preventDefault();var ids=['testPerfSearch'];ids.forEach(function(id){var x=document.getElementById(id);if(x)x.value=''});['testPerfLine','testPerfModel','testPerfSku','testPerfWo','testPerfWeek','testPerfArea','testPerfFailure','testPerfShift','testPerfPreset'].forEach(function(id){var x=document.getElementById(id);if(x)x.value=(id==='testPerfPreset'?'day':'ALL')});var bu=(document.getElementById('testPerfBu')||{}).value||'',a=api(),m=a&&a.meta?a.meta(bu):null,from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(m&&m.latestDate){if(from)from.value=m.latestDate;if(to)to.value=m.latestDate}lastTestKey='';fullHtmlKey='';fullHtmlCache='';scheduleRender('reset')},true);
   document.addEventListener('click',function(e){if(!isTest())return;var t=e&&e.target;if(!t)return;var b=t.closest?t.closest('#downloadEmail,#downloadTestCsv,#copyHtml,#copyPlain'):t;if(!b)return;if(b.id==='downloadEmail'){e.preventDefault();e.stopImmediatePropagation();downloadHtml()}else if(b.id==='downloadTestCsv'){e.preventDefault();e.stopImmediatePropagation();downloadCsv()}else if(b.id==='copyHtml'){e.preventDefault();e.stopImmediatePropagation();fallbackCopyHtml(bodyHtml())}else if(b.id==='copyPlain'){e.preventDefault();e.stopImmediatePropagation();copyText(plainText())}},true);
   setInterval(function(){try{if(isTest()){fillOptions(false);var k=key();if(k!==lastTestKey)scheduleRender('watch')}}catch(_){ }},5000);
+})();
+
+/* Export Center mode isolation: each report owns its title, controls and download action. */
+(function(){
+  var priorUpdate=updateReportBuilder;
+  function normalizedType(){
+    var value=String(reportType()||'SHIFT').toUpperCase();
+    return value==='WEEKLY'||value==='DBN'||value==='TEST'?value:'SHIFT'
+  }
+  function reportLabels(type){
+    if(type==='DBN')return{title:'DBN Follow-up',download:'Download DBN HTML'};
+    if(type==='TEST')return{title:'Test Performance Report',download:'Export Test HTML'};
+    if(type==='WEEKLY')return{title:'Weekly Execution Review',download:'Download Weekly Execution HTML'};
+    return{title:'End-of-Shift Execution Review',download:'Download End-of-Shift HTML'}
+  }
+  function isolateMode(){
+    var type=normalizedType(),labels=reportLabels(type),title=document.getElementById('reportModalTitle'),download=document.getElementById('downloadEmail'),dbnExcel=document.getElementById('downloadDbnExcel');
+    if(title)title.textContent=labels.title;
+    if(download){
+      download.textContent=labels.download;
+      download.onclick=(type==='DBN'||type==='TEST')?null:downloadEmail
+    }
+    if(dbnExcel){
+      dbnExcel.style.display=type==='DBN'?'inline-block':'none';
+      if(type!=='DBN')dbnExcel.onclick=null
+    }
+    if(type==='DBN'){
+      var api=window.SMTinelDbnApi,subject=document.getElementById('emailSubject');
+      if(api&&api.context&&subject){
+        var c=api.context();
+        subject.value='SMTinel DBN Follow-up - '+c.model+' - '+(c.wo==='ALL'?'All WOs':c.wo)+' - '+c.date
+      }
+    }
+  }
+  updateReportBuilder=function(){
+    var result=priorUpdate.apply(this,arguments);
+    isolateMode();
+    return result
+  };
+  document.addEventListener('change',function(e){
+    if(e.target&&e.target.id==='reportType')setTimeout(isolateMode,0)
+  },true);
+  setTimeout(isolateMode,0)
 })();
 
 renderKpis();renderLayout();requestData();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastResponse>60000)requestData()})
