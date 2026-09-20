@@ -74271,3 +74271,156 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
 })();
 </script>
 
+
+
+<!-- SMTinel Test Performance v1.6.7 - time-centric scope + fiscal quarter summaries -->
+<style id="smtinel-test-time-centric-v167-css">
+#testPerformanceControls.time-centric-test .test-run-filter-grid label,
+#testPerformanceControls.time-centric-test .test-run-filter-grid button{display:none!important}
+#testPerformanceControls.time-centric-test .test-run-filter-grid label:has(#testPerfWeek),
+#testPerformanceControls.time-centric-test .test-run-filter-grid label:has(#testPerfFrom),
+#testPerformanceControls.time-centric-test .test-run-filter-grid label:has(#testPerfTo),
+#testPerformanceControls.time-centric-test .test-run-filter-grid .test-time-v167,
+#testPerformanceControls.time-centric-test .test-run-filter-grid #testPerfReset{display:flex!important}
+#testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#testPerformanceControls.time-centric-test .role-title{letter-spacing:.07em}
+@media(max-width:700px){#testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:1fr!important}}
+</style>
+<script id="smtinel-test-performance-time-centric-v167">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_TIME_CENTRIC_V167__)return;
+  var BUILD='TEST-PERFORMANCE-V1.6.7-TIME-SCOPE-QUARTERS';
+  window.__SMTINEL_TEST_TIME_CENTRIC_V167__=BUILD;
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.67 - Test Performance v1.6.7 Time Scope + Fiscal Quarter Summary - 2026-09-19';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function qFromWeek(w){var m=tx(w).match(/(FY\d{4}\s+Q\d)/i);return m?m[1].toUpperCase():''}
+  function uniq(a){var m={},o=[];(a||[]).forEach(function(v){v=tx(v);if(v&&!m[v]){m[v]=1;o.push(v)}});return o}
+  function api(){return window.SMTINEL_TEST_PERF_API||null}
+  function setv(id,v){var x=document.getElementById(id);if(x)x.value=v}
+  function fire(id){var x=document.getElementById(id);if(x)x.dispatchEvent(new Event('change',{bubbles:true}))}
+  function latestMeta(){var a=api(),bu=tx((document.getElementById('testPerfBu')||{}).value),m=a&&a.meta?a.meta(bu):null;return m||{}}
+  function weekRows(m){var a=api();return (m.weeks||[]).map(function(w){var r=a&&a.weekRange?a.weekRange(w):null;return {week:w,start:r&&r.start||'',end:r&&r.end||'',quarter:qFromWeek(w)}}).filter(function(x){return x.start&&x.end}).sort(function(x,y){return x.start.localeCompare(y.start)})}
+  function weekAt(date,m){var w=weekRows(m);for(var i=0;i<w.length;i++)if(w[i].start<=date&&date<=w[i].end)return w[i];return w.length?w[w.length-1]:null}
+  function quarterBounds(q,m){var w=weekRows(m).filter(function(x){return x.quarter===q});if(!w.length)return null;return {start:w[0].start,end:w[w.length-1].end}}
+  function closed13(m){var latest=tx(m.latestDate),w=weekRows(m),cur=weekAt(latest,m);var closed=w.filter(function(x){return !cur||x.start<cur.start}).slice(-13);if(!closed.length)return null;return {start:closed[0].start,end:closed[closed.length-1].end}}
+  function clampEnd(end,m){var latest=tx(m.latestDate);return latest&&end>latest?latest:end}
+  function resetGeneral(){
+    setv('testPerfSearch','');
+    ['testPerfLine','testPerfModel','testPerfSku','testPerfWo','testPerfArea','testPerfFailure','testPerfShift'].forEach(function(id){setv(id,'ALL')});
+  }
+  function fillQuarter(){
+    var q=document.getElementById('testPerfQuarterV167'),m=latestMeta();if(!q)return;
+    var old=q.value,qs=uniq(weekRows(m).map(function(x){return x.quarter}).filter(Boolean));
+    q.innerHTML='<option value="">Fiscal quarter</option>'+qs.map(function(v){return '<option value="'+v+'">'+v+'</option>'}).join('');
+    if(qs.indexOf(old)>=0)q.value=old;else{var cur=weekAt(tx(m.latestDate),m);if(cur&&cur.quarter)q.value=cur.quarter}
+  }
+  function applyMode(mode){
+    var m=latestMeta(),latest=tx(m.latestDate),cur=weekAt(latest,m),q=document.getElementById('testPerfQuarterV167');resetGeneral();
+    if(mode==='day'){
+      setv('testPerfWeek','ALL');setv('testPerfFrom',latest);setv('testPerfTo',latest);fire('testPerfTo');return;
+    }
+    if(mode==='week'){
+      if(cur){setv('testPerfWeek',cur.week);setv('testPerfFrom',cur.start);setv('testPerfTo',clampEnd(cur.end,m));if(q)q.value=cur.quarter;fire('testPerfWeek')}return;
+    }
+    if(mode==='quarter'){
+      var qq=tx(q&&q.value)||(cur&&cur.quarter)||'',b=quarterBounds(qq,m);setv('testPerfWeek','ALL');if(b){setv('testPerfFrom',b.start);setv('testPerfTo',clampEnd(b.end,m))}fire('testPerfTo');return;
+    }
+    if(mode==='13wk'){
+      var r=closed13(m);setv('testPerfWeek','ALL');if(r){setv('testPerfFrom',r.start);setv('testPerfTo',r.end)}fire('testPerfTo');return;
+    }
+    setv('testPerfWeek','ALL');
+  }
+  function ensureLive(){
+    var c=document.getElementById('testPerformanceControls');if(!c)return;
+    c.classList.add('time-centric-test');
+    var title=c.querySelector('.role-title');if(title)title.textContent='Test performance scope · Time filter';
+    var grid=c.querySelector('.test-run-filter-grid');if(!grid)return;
+    if(!document.getElementById('testPerfTimeModeV167')){
+      var lab=document.createElement('label');lab.className='field test-time-v167';lab.innerHTML='<span>Time view</span><select id="testPerfTimeModeV167"><option value="week">Current fiscal week</option><option value="day">Latest loaded day</option><option value="quarter">Fiscal quarter</option><option value="13wk">Last 13 closed fiscal weeks</option><option value="custom">Custom date range</option></select>';
+      grid.insertBefore(lab,grid.firstChild);
+      var q=document.createElement('label');q.className='field test-time-v167';q.innerHTML='<span>Fiscal quarter</span><select id="testPerfQuarterV167"><option value="">Fiscal quarter</option></select>';
+      var wk=document.getElementById('testPerfWeek');var wkLab=wk&&wk.closest('label');if(wkLab&&wkLab.nextSibling)grid.insertBefore(q,wkLab.nextSibling);else grid.appendChild(q);
+      document.getElementById('testPerfTimeModeV167').addEventListener('change',function(){applyMode(this.value)});
+      document.getElementById('testPerfQuarterV167').addEventListener('change',function(){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='quarter';applyMode('quarter')});
+      var from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');[from,to].forEach(function(x){if(x)x.addEventListener('change',function(){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='custom';setv('testPerfWeek','ALL');resetGeneral()})});
+      if(wk)wk.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){var mode=document.getElementById('testPerfTimeModeV167');if(mode)mode.value='custom';var qq=document.getElementById('testPerfQuarterV167');if(qq)qq.value=qFromWeek(this.value);resetGeneral()}});
+    }
+    fillQuarter();resetGeneral();
+    var p=document.getElementById('testPerfPreset');if(p)p.closest('label').style.display='none';
+    var h=c.querySelector('.scope-hint');if(h)h.innerHTML='<b>Time-only scope:</b> BU defines the report population. Choose the fiscal week, quarter or date range. Line, Product, SKU/UUT, WO, Test Area, Failure Mode and Shift remain <b>ALL</b>; the report shows their general summaries inside the selected period.';
+  }
+  function defaultWeekAfterBu(){setTimeout(function(){ensureLive();var mode=document.getElementById('testPerfTimeModeV167');if(mode&&!mode.dataset.seeded){mode.dataset.seeded='1';mode.value='week';applyMode('week')}},30)}
+
+  function normalizeFilters(f){f=Object.assign({},f||{});f.search='';f.line='ALL';f.model='ALL';f.sku='ALL';f.wo='ALL';f.area='ALL';f.failure='ALL';f.shift='ALL';return f}
+  function esc(v){return tx(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function addStandaloneTimeUi(html){
+    html=String(html||'');if(html.indexOf('id="tprStandaloneData"')<0)return html;
+    var doc=new DOMParser().parseFromString(html,'text/html'),n=doc.getElementById('tprStandaloneData');if(!n)return html;
+    var P;try{P=JSON.parse(n.textContent||'{}')}catch(_){return html}
+    P.filters=normalizeFilters(P.filters||{});P.build=BUILD;n.textContent=JSON.stringify(P).replace(/</g,'\\u003c');
+    var title=doc.querySelector('#sec-filters .tpr-filter-head b');if(title)title.textContent='REPORT TIME SCOPE · INTERACTIVE';
+    ['tprFSearch','tprFLine','tprFModel','tprFSku','tprFWo','tprFArea','tprFFailure','tprFShift','tprFTarget'].forEach(function(id){var x=doc.getElementById(id);if(x){var p=x.closest('.tpr-filter-field');if(p)p.style.display='none';if(x.tagName==='SELECT')x.value='ALL';else x.value=''}});
+    var bu=doc.getElementById('tprFBu');if(bu){var bl=bu.closest('.tpr-filter-field');if(bl){var s=bl.querySelector('small');if(s)s.textContent='BU · REPORT SCOPE'}}
+    var week=doc.getElementById('tprFWeek'),grid=doc.querySelector('#sec-filters .tpr-filter-grid.interactive');
+    if(grid&&!doc.getElementById('tprTimeModeV167')){
+      var d=doc.createElement('div');d.className='tpr-filter-field';d.innerHTML='<small>Time View</small><select id="tprTimeModeV167"><option value="week">Fiscal week</option><option value="quarter">Fiscal quarter</option><option value="13wk">Last 13 closed weeks</option><option value="custom">Custom range</option></select>';grid.insertBefore(d,week&&week.closest('.tpr-filter-field')||grid.firstChild);
+      var q=doc.createElement('div');q.className='tpr-filter-field';q.innerHTML='<small>Fiscal Quarter</small><select id="tprQuarterV167"></select>';if(week&&week.closest('.tpr-filter-field'))grid.insertBefore(q,week.closest('.tpr-filter-field').nextSibling);else grid.appendChild(q);
+    }
+    var act=doc.querySelector('#sec-filters .tpr-filter-actions span');if(act)act.textContent='Time controls are interactive. All non-time dimensions stay at ALL and are summarized automatically.';
+    var apply=doc.getElementById('tprApplyStandalone');if(apply)apply.style.display='none';var restore=doc.getElementById('tprRestoreStandalone');if(restore)restore.textContent='Restore export period';
+    if(!doc.getElementById('sec-quarter-summary-v167')){
+      var sec=doc.createElement('section');sec.id='sec-quarter-summary-v167';sec.className='tpr-section';sec.innerHTML='<div class="tpr-section-head"><span class="tpr-num">Q</span><div><b>Fiscal Quarter Summary</b><small>General BU summary by fiscal quarter</small></div><i>−</i></div><div class="tpr-section-body"><div id="tprQuarterSummaryV167" class="tpr-card">Loading fiscal quarter summary...</div></div>';
+      var filters=doc.getElementById('sec-filters');if(filters&&filters.parentNode)filters.parentNode.insertBefore(sec,filters.nextSibling);
+    }
+    var script=doc.createElement('script');script.id='tpr-time-centric-runtime-v167';script.textContent="("+standaloneRuntime.toString()+")();";doc.body.appendChild(script);
+    var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();doc.title='SMTinel Test Performance Review · '+BUILD;
+    return '<!doctype html>\n'+doc.documentElement.outerHTML
+  }
+
+  function standaloneRuntime(){
+    'use strict';
+    if(window.__TPR_TIME_V167__)return;window.__TPR_TIME_V167__=1;
+    function tx(v){return String(v==null?'':v).trim()}
+    function qfw(w){var m=tx(w).match(/(FY\d{4}\s+Q\d)/i);return m?m[1].toUpperCase():''}
+    function fp(v){return v==null||!isFinite(v)?'N/D':Number(v).toFixed(2)+'%'}
+    function parse(){var n=document.getElementById('tprStandaloneData');try{return JSON.parse(n&&n.textContent||'{}')}catch(_){return{}}}
+    var P=parse(),C=P.columns||[],D=P.dict||[],N={};(P.numeric||[]).forEach(function(k){N[k]=1});
+    function dec(a){var o={};for(var i=0;i<C.length;i++){var k=C[i],v=a[i];o[k]=N[k]?Number(v||0):(typeof v==='number'?(D[v]||''):tx(v))}return o}
+    var R=(P.rows||[]).map(dec),cal=P.calendar||{},wr=cal.weeks||{};
+    function weeks(){return Object.keys(wr).map(function(w){return{week:w,start:wr[w]&&wr[w].start||'',end:wr[w]&&wr[w].end||'',quarter:qfw(w)}}).filter(function(x){return x.start&&x.end}).sort(function(a,b){return a.start.localeCompare(b.start)})}
+    function latest(){var a=R.map(function(r){return r.opDate}).filter(Boolean).sort();return a.length?a[a.length-1]:''}
+    function weekAt(d){var a=weeks();for(var i=0;i<a.length;i++)if(a[i].start<=d&&d<=a[i].end)return a[i];return a.length?a[a.length-1]:null}
+    function quarterBounds(q){var a=weeks().filter(function(x){return x.quarter===q});return a.length?{start:a[0].start,end:a[a.length-1].end}:null}
+    function closed13(){var l=latest(),cur=weekAt(l),a=weeks().filter(function(x){return !cur||x.start<cur.start}).slice(-13);return a.length?{start:a[0].start,end:a[a.length-1].end}:null}
+    function trigger(id){var x=document.getElementById(id);if(x)x.dispatchEvent(new Event('change',{bubbles:true}))}
+    function set(id,v){var x=document.getElementById(id);if(x)x.value=v}
+    function fill(){
+      var q=document.getElementById('tprQuarterV167');if(q){var qs=[],seen={};weeks().forEach(function(x){if(x.quarter&&!seen[x.quarter]){seen[x.quarter]=1;qs.push(x.quarter)}});q.innerHTML=qs.map(function(x){return'<option value="'+x+'">'+x+'</option>'}).join('');var cur=weekAt(latest());if(cur)q.value=cur.quarter}
+      var mode=document.getElementById('tprTimeModeV167'),wf=document.getElementById('tprFWeek'),f=P.filters||{},cur=weekAt(f.to||latest());if(mode){if(f.week&&f.week!=='ALL')mode.value='week';else if(cur&&f.from&&f.to&&f.from===cur.start&&f.to===cur.end)mode.value='week';else mode.value='custom'}if(q&&cur)q.value=cur.quarter;
+    }
+    function mode(v){var l=latest(),cur=weekAt(l),q=document.getElementById('tprQuarterV167');if(v==='week'){var w=document.getElementById('tprFWeek'),sel=w&&w.value&&w.value!=='ALL'?weeks().filter(function(x){return x.week===w.value})[0]:cur;if(sel){set('tprFWeek',sel.week);set('tprFFrom',sel.start);set('tprFTo',sel.end>l?l:sel.end);if(q)q.value=sel.quarter;trigger('tprFWeek')}}else if(v==='quarter'){var b=quarterBounds(tx(q&&q.value)||(cur&&cur.quarter)||'');set('tprFWeek','ALL');if(b){set('tprFFrom',b.start);set('tprFTo',b.end>l?l:b.end)}trigger('tprFTo')}else if(v==='13wk'){var r=closed13();set('tprFWeek','ALL');if(r){set('tprFFrom',r.start);set('tprFTo',r.end)}trigger('tprFTo')}else set('tprFWeek','ALL')}
+    function quarterOf(r){var d=tx(r.opDate),x=cal.dates&&cal.dates[d];return x&&x[1]||qfw(r.week)}
+    function summary(){
+      var first={},pairs={};R.forEach(function(r){var k=tx(r.logicalKey)+'|'+tx(r.station);if(!k)return;(pairs[k]||(pairs[k]=[])).push(r);if(!first[k]||Number(r.timeMs)<Number(first[k].timeMs))first[k]=r});
+      var by={};Object.keys(first).forEach(function(k){var r=first[k],q=quarterOf(r);if(!q)return;var z=by[q]||(by[q]={units:{},pass:0,fail:0,rows:0,start:'',end:''}),u=tx(r.logicalKey);z.rows++;var x=z.units[u]||(z.units[u]={fail:false});if(tx(r.kind)==='fail')x.fail=true;var d=tx(r.opDate);if(d&&(!z.start||d<z.start))z.start=d;if(d&&(!z.end||d>z.end))z.end=d});
+      Object.keys(by).forEach(function(q){var z=by[q];Object.keys(z.units).forEach(function(u){if(z.units[u].fail)z.fail++;else z.pass++});z.tested=z.pass+z.fail;z.fpy=z.tested?100*z.pass/z.tested:null});
+      var sel=tx((document.getElementById('tprQuarterV167')||{}).value),out=Object.keys(by).sort().map(function(q){var z=by[q];return '<tr'+(q===sel?' style="background:#eef5ed"':'')+'><td><b>'+q+'</b></td><td>'+z.start+' → '+z.end+'</td><td>'+z.tested+'</td><td>'+z.pass+'</td><td>'+z.fail+'</td><td><b>'+fp(z.fpy)+'</b></td></tr>'}).join('');
+      var box=document.getElementById('tprQuarterSummaryV167');if(box)box.innerHTML='<div class="tpr-card-title">FISCAL QUARTER OVERVIEW</div><div class="tpr-scroll"><table><thead><tr><th>Quarter</th><th>Loaded activity</th><th>Tested</th><th>Pass</th><th>Fail</th><th>ETE / FPY</th></tr></thead><tbody>'+out+'</tbody></table></div><div class="tpr-footnote">All Product, SKU/UUT, WO, Line, Test Area, Failure Mode and Shift dimensions remain general (ALL). Time is the only interactive scope.</div>';
+    }
+    fill();summary();
+    var md=document.getElementById('tprTimeModeV167');if(md)md.addEventListener('change',function(){mode(this.value)});var q=document.getElementById('tprQuarterV167');if(q)q.addEventListener('change',function(){if(md)md.value='quarter';mode('quarter');summary()});var w=document.getElementById('tprFWeek');if(w)w.addEventListener('change',function(){if(this.value&&this.value!=='ALL'){if(md)md.value='week';if(q)q.value=qfw(this.value);summary()}});['tprFFrom','tprFTo'].forEach(function(id){var x=document.getElementById(id);if(x)x.addEventListener('change',function(){if(md&&document.activeElement===x)md.value='custom'})});
+  }
+
+  function install(){
+    var a=api();if(!a||typeof a.reportHtmlFor!=='function')return false;if(a.reportHtmlFor.__smtinelTimeCentricV167)return true;
+    var base=a.reportHtmlFor;var wrapped=function(f){return addStandaloneTimeUi(base.call(a,normalizeFilters(f)))};wrapped.__smtinelTimeCentricV167=true;wrapped.__base=base;a.reportHtmlFor=wrapped;a.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;return true
+  }
+  ensureLive();if(!install()){var n=0,t=setInterval(function(){n++;ensureLive();if(install()||n>200)clearInterval(t)},100)}
+  document.addEventListener('change',function(e){var x=e&&e.target;if(!x)return;if(x.id==='reportType'){setTimeout(function(){ensureLive();var b=tx((document.getElementById('testPerfBu')||{}).value);if(b)defaultWeekAfterBu()},0)}else if(x.id==='testPerfBu'){setTimeout(function(){ensureLive();fillQuarter();resetGeneral();defaultWeekAfterBu()},30)}},true);
+  window.addEventListener('smtinel:yield-data-updated',function(){setTimeout(function(){ensureLive();fillQuarter()},50)},true);
+  setTimeout(function(){ensureLive();fillQuarter()},250);
+})();
+</script>
+
