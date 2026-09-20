@@ -74171,3 +74171,103 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
   document.addEventListener('change',function(e){var x=e&&e.target;if(x&&x.id==='reportType')setTimeout(hint,0)},true);
 })();
 </script>
+
+
+<!-- SMTinel Test Performance v1.6.5 - standalone filter prefill + runtime guard -->
+<script id="smtinel-test-performance-export-filter-prefill-v165">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_EXPORT_FILTER_PREFILL_V165__) return;
+  var BUILD='TEST-PERFORMANCE-V1.6.5-EXPORT-FILTERS-LIVE';
+  window.__SMTINEL_TEST_EXPORT_FILTER_PREFILL_V165__=BUILD;
+  window.SMTINEL_BUILD_VERSION='SMTinel V13.16.66 - Test Performance v1.6.5 Export Filters Live - 2026-09-19';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function esc(v){return tx(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function uniq(a){var m={},o=[];(a||[]).forEach(function(v){v=tx(v);if(v&&v!=='N/D'&&v!=='Imported'&&!m[v]){m[v]=1;o.push(v)}});return o}
+  function decode(P){
+    var C=P.columns||[],D=P.dict||[],N={};(P.numeric||[]).forEach(function(x){N[x]=1});
+    return (P.rows||[]).map(function(a){var o={};for(var i=0;i<C.length;i++){var k=C[i];o[k]=N[k]?Number(a[i]||0):(typeof a[i]==='number'?(D[a[i]]||''):tx(a[i]))}return o});
+  }
+  function optionHtml(values,label,selected,sorter){
+    var vals=uniq(values);if(sorter)vals.sort(sorter);else vals.sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true})});
+    var h='<option value="ALL"'+((!selected||selected==='ALL')?' selected':'')+'>'+esc(label)+'</option>';
+    vals.forEach(function(v){h+='<option value="'+esc(v)+'"'+(v===selected?' selected':'')+'>'+esc(v)+'</option>'});return h;
+  }
+  function weekSort(P){
+    var wr=P&&P.calendar&&P.calendar.weeks||{};
+    return function(a,b){var aa=wr[a]&&wr[a].start||a,bb=wr[b]&&wr[b].start||b;return String(aa).localeCompare(String(bb),undefined,{numeric:true})};
+  }
+  function setSelect(doc,id,values,label,selected,sorter){var el=doc.getElementById(id);if(el)el.innerHTML=optionHtml(values,label,selected,sorter)}
+  function setInput(doc,id,value){var el=doc.getElementById(id);if(el)el.setAttribute('value',tx(value))}
+  function prefill(html){
+    html=String(html||'');if(html.indexOf('id="tprStandaloneData"')<0)return html;
+    var doc=new DOMParser().parseFromString(html,'text/html'),node=doc.getElementById('tprStandaloneData');if(!node)return html;
+    var P;try{P=JSON.parse(node.textContent||'{}')}catch(_){return html}
+    var R=decode(P),F=P.filters||{},BU=tx(P.bu||F.bu||'ALL');
+    var bu=doc.getElementById('tprFBu');if(bu){bu.innerHTML='<option value="'+esc(BU)+'" selected>'+esc(BU)+'</option>';bu.setAttribute('disabled','disabled')}
+    setSelect(doc,'tprFLine',R.map(function(r){return r.line}),'All lines',F.line);
+    setSelect(doc,'tprFModel',R.map(function(r){return r.model}),'All products',F.model);
+    setSelect(doc,'tprFSku',R.reduce(function(a,r){a.push(r.sku,r.cesiumSku,r.uutType);return a},[]),'All SKU / UUT',F.sku);
+    setSelect(doc,'tprFWo',R.map(function(r){return r.wo}),'All WO',F.wo);
+    setSelect(doc,'tprFWeek',R.map(function(r){return r.week}),'All weeks',F.week,weekSort(P));
+    setSelect(doc,'tprFArea',R.map(function(r){return r.station}),'All Test Areas',F.area);
+    setSelect(doc,'tprFFailure',R.filter(function(r){return r.kind==='fail'}).map(function(r){return r.failure}),'All failure modes',F.failure);
+    setSelect(doc,'tprFShift',R.map(function(r){return r.shift}),'All shifts',F.shift);
+    setInput(doc,'tprFSearch',F.search||'');setInput(doc,'tprFFrom',F.from||'');setInput(doc,'tprFTo',F.to||'');setInput(doc,'tprFTarget',F.target||'');
+    var dates=R.map(function(r){return r.opDate}).filter(Boolean).sort(),mn=dates[0]||'',mx=dates[dates.length-1]||'';
+    var fr=doc.getElementById('tprFFrom'),to=doc.getElementById('tprFTo');if(fr){if(mn)fr.setAttribute('min',mn);if(mx)fr.setAttribute('max',mx)}if(to){if(mn)to.setAttribute('min',mn);if(mx)to.setAttribute('max',mx)}
+    var sec=doc.getElementById('sec-filters');
+    if(sec&&!doc.getElementById('tprNoScriptNotice')){
+      var ns=doc.createElement('noscript');ns.id='tprNoScriptNotice';ns.innerHTML='<div style="margin-top:10px;padding:9px 11px;border:1px solid #e0c67b;border-radius:9px;background:#fff8dc;color:#765c00;font:700 10px/1.4 Segoe UI,Arial,sans-serif">Filter options are embedded in this file. Live recalculation requires a browser that executes JavaScript. iOS Quick Look / Files preview may display the report but does not run the standalone filter engine.</div>';sec.appendChild(ns)
+    }
+    var act=doc.querySelector('#sec-filters .tpr-filter-actions span');if(act)act.textContent='Options embedded · live recalculation runs locally in the browser.';
+    var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();
+    doc.title='SMTinel Test Performance Review · '+BUILD;P.build=BUILD;node.textContent=JSON.stringify(P).replace(/</g,'\\u003c');
+    return '<!doctype html>\n'+doc.documentElement.outerHTML;
+  }
+  function install(){
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;
+    if(api.reportHtmlFor.__smtinelStaticPrefillV165)return true;
+    var base=api.reportHtmlFor;
+    var wrapped=function(filters){return prefill(base.call(api,filters||{}))};
+    wrapped.__smtinelStaticPrefillV165=true;wrapped.__base=base;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;return true;
+  }
+  if(!install()){var n=0,t=setInterval(function(){n++;if(install()||n>200)clearInterval(t)},100)}
+})();
+</script>
+
+
+
+<!-- SMTinel Test Performance v1.6.6 - mobile interactive open action -->
+<script id="smtinel-test-performance-mobile-open-v166">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_MOBILE_OPEN_V166__)return;
+  window.__SMTINEL_TEST_MOBILE_OPEN_V166__=true;
+  function isTest(){var x=document.getElementById('reportType');return !!(x&&x.value==='TEST')}
+  function api(){try{return (window.parent&&window.parent.SMTINEL_TEST_PERF_API)||window.SMTINEL_TEST_PERF_API||null}catch(_){return window.SMTINEL_TEST_PERF_API||null}}
+  function filters(){return {search:(document.getElementById('testPerfSearch')||{}).value||'',from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'',line:(document.getElementById('testPerfLine')||{}).value||'ALL',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',wo:(document.getElementById('testPerfWo')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}
+  function openInteractive(e){
+    if(e){e.preventDefault();e.stopPropagation()}
+    var a=api(),f=filters();if(!a||typeof a.reportHtmlFor!=='function'){try{alert('Test Performance renderer is not ready.')}catch(_){}return}
+    if(!f.bu){try{alert('Select a BU first.')}catch(_){}return}
+    var w=null;try{w=window.open('about:blank','_blank')}catch(_){}
+    try{
+      var html=a.reportHtmlFor(f),url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+      if(w){w.location.href=url}else{w=window.open(url,'_blank')}
+      setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},120000);
+    }catch(err){try{if(w)w.close()}catch(_){}try{alert('Interactive Test HTML failed: '+String(err&&err.message||err))}catch(_){} }
+  }
+  function ensure(){
+    var dl=document.getElementById('downloadEmail');if(!dl||!dl.parentNode)return;
+    var b=document.getElementById('openInteractiveTestHtml');
+    if(!b){b=document.createElement('button');b.id='openInteractiveTestHtml';b.className=dl.className||'btn';b.type='button';b.textContent='Open Interactive HTML';b.addEventListener('click',openInteractive,true);dl.parentNode.insertBefore(b,dl)}
+    b.style.display=isTest()?'inline-block':'none';
+    if(isTest())dl.textContent='Download Test HTML';
+  }
+  document.addEventListener('change',function(e){if(e&&e.target&&e.target.id==='reportType')setTimeout(ensure,0)},true);
+  setTimeout(ensure,100);setInterval(ensure,2500);
+})();
+</script>
+
