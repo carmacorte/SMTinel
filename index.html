@@ -30,6 +30,102 @@
   }
 })();
 </script>
+
+<!-- SMTinel Test Performance v1.7.0 - Handoff interaction + compact serial evidence -->
+<script id="smtinel-test-performance-handoff-compact-v170">
+(function(){
+  'use strict';
+  var BUILD='TEST-PERFORMANCE-V1.7.0-HANDOFF-COMPACT';
+  var STYLE_ID='tpr-handoff-compact-style-v170';
+  var RUNTIME_ID='tpr-handoff-compact-runtime-v170';
+
+  function text(v){return String(v==null?'':v).trim()}
+  function serialCount(details){
+    var ta=details&&details.querySelector('textarea'), lines=ta?text(ta.value||ta.textContent).split(/\r?\n/).filter(Boolean):[];
+    if(lines.length)return lines.length;
+    var m=text(details&&details.querySelector('summary')&&details.querySelector('summary').textContent).match(/(\d+)/);
+    return m?Number(m[1]):0;
+  }
+  function compactSerialBox(box){
+    var details=box&&box.querySelector(':scope > details');
+    if(!details)return;
+    var count=serialCount(details), summary=details.querySelector('summary'), ta=details.querySelector('textarea');
+    Array.prototype.slice.call(box.childNodes).forEach(function(n){if(n!==details)box.removeChild(n)});
+    details.removeAttribute('open');
+    details.classList.add('tpr-sn-detail');
+    details.setAttribute('data-tpr-sn-count',String(count));
+    if(summary)summary.textContent='Serials: '+count+' · View / copy';
+    if(ta){ta.setAttribute('rows',String(Math.min(6,Math.max(2,count||2))));ta.setAttribute('aria-label',count+' serial numbers');}
+  }
+  function addBoundedTableWindows(doc){
+    Array.prototype.forEach.call(doc.querySelectorAll('.tpr-scroll'),function(scroller){
+      var rows=scroller.querySelectorAll('tbody > tr').length;
+      if(rows<=12)return;
+      scroller.classList.add('tpr-scroll-window');
+      scroller.setAttribute('data-tpr-row-count',String(rows));
+      var card=scroller.closest('.tpr-card'), title=card&&card.querySelector(':scope > .tpr-card-title');
+      if(title&&!title.querySelector('.tpr-row-count')){
+        var badge=doc.createElement('span');badge.className='tpr-row-count';badge.textContent=rows+' rows · bounded scroll';title.appendChild(badge);
+      }
+    });
+  }
+  function addRailLabels(doc){
+    var side=doc.querySelector('.tpr-side');if(!side)return;
+    side.id=side.id||'tprSideRail';
+    if(!side.querySelector('.tpr-side-toggle')){
+      var toggle=doc.createElement('button');toggle.type='button';toggle.className='tpr-side-toggle';toggle.id='tprSideToggle';toggle.setAttribute('aria-expanded','false');toggle.innerHTML='<span aria-hidden="true">☰</span><b>Report sections</b>';side.insertBefore(toggle,side.firstChild);
+    }
+    Array.prototype.forEach.call(side.querySelectorAll('.tpr-nav'),function(link){
+      if(link.querySelector('.tpr-nav-label'))return;
+      var label=doc.createElement('span');label.className='tpr-nav-label';label.textContent=link.getAttribute('title')||'Section';link.appendChild(label);
+    });
+  }
+  function addHeaderControls(doc){
+    var actions=doc.querySelector('.tpr-actions');if(actions&&!doc.getElementById('tprCollapseSerials')){
+      var b=doc.createElement('button');b.type='button';b.id='tprCollapseSerials';b.textContent='Collapse serials';actions.insertBefore(b,actions.firstChild);
+    }
+    var top=doc.querySelector('.tpr-top');
+    if(top&&!doc.getElementById('tprScrollProgress')){
+      var bar=doc.createElement('div');bar.id='tprScrollProgress';bar.className='tpr-scroll-progress';top.insertBefore(bar,top.firstChild);
+    }
+  }
+  function styleText(){return [
+    '.tpr-scroll-progress{height:3px;width:0;background:linear-gradient(90deg,var(--green),var(--olive));transition:width .08s linear}',
+    '.tpr-sn{min-width:116px}.tpr-sn>details{margin:0}.tpr-sn>details>summary{list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:27px;padding:4px 8px;border:1px solid #cbd7ce;border-radius:999px;background:#eef3ef;color:#274637!important;font-size:8.5px;font-weight:900;white-space:nowrap}.tpr-sn>details>summary::-webkit-details-marker{display:none}.tpr-sn>details>summary:before{content:"▸";font-size:10px}.tpr-sn>details[open]>summary:before{content:"▾"}.tpr-sn>details[open]>summary{border-radius:7px 7px 0 0;background:#e1ebe3}.tpr-sn textarea{width:min(320px,70vw)!important;min-width:190px!important;max-height:128px!important;resize:none!important;overflow:auto!important;margin-top:5px!important}.tpr-sn button{cursor:pointer}',
+    '.tpr-scroll-window{max-height:430px;overflow:auto;border:1px solid #d9e1dc;border-radius:6px}.tpr-scroll-window table{border:0}.tpr-scroll-window thead th{position:sticky;top:0;z-index:3;box-shadow:0 1px 0 #cbd5ce}.tpr-row-count{float:right;margin-left:8px;padding:3px 7px;border:1px solid #cbd7ce;border-radius:999px;background:#eef3ef;color:#627d70;font-size:8px;font-weight:800;text-transform:none;letter-spacing:0}',
+    '.tpr-side-toggle{width:42px;height:38px;border:1px solid var(--line);background:var(--soft);color:var(--green);border-radius:8px;display:grid;place-items:center;cursor:pointer}.tpr-side-toggle b{display:none}.tpr-nav{transition:background .16s ease,color .16s ease}.tpr-nav-label{display:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tpr-nav.active{background:var(--green);border-color:var(--green);color:#fff}',
+    'body.tpr-rail-expanded .tpr-shell{grid-template-columns:252px minmax(0,1fr)}body.tpr-rail-expanded .tpr-side{padding:7px;align-content:start}body.tpr-rail-expanded .tpr-side-toggle{width:100%;grid-template-columns:28px minmax(0,1fr);padding:0 9px;text-align:left}body.tpr-rail-expanded .tpr-side-toggle b{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em}body.tpr-rail-expanded .tpr-nav{width:100%;grid-template-columns:30px minmax(0,1fr);justify-items:start;padding:0 10px;gap:8px}body.tpr-rail-expanded .tpr-nav-label{display:block}',
+    '@media(max-width:760px){.tpr-side-toggle{display:none}.tpr-sn textarea{width:68vw!important;min-width:170px!important}.tpr-scroll-window{max-height:360px}body.tpr-rail-expanded .tpr-shell{grid-template-columns:1fr}}',
+    '@media print{.tpr-scroll-progress,.tpr-side-toggle,#tprCollapseSerials,.tpr-row-count{display:none!important}.tpr-scroll-window{max-height:none!important;overflow:visible!important;border:0!important}.tpr-sn>details:not([open])>:not(summary){display:none!important}}'
+  ].join('');}
+  function reportRuntime(){
+    'use strict';
+    if(window.__TPR_HANDOFF_COMPACT_V170__)return;window.__TPR_HANDOFF_COMPACT_V170__=1;
+    function q(s,a){return (a||document).querySelector(s)}function qa(s,a){return Array.prototype.slice.call((a||document).querySelectorAll(s))}
+    function closeSerials(){qa('.tpr-sn details[open]').forEach(function(x){x.removeAttribute('open')})}
+    var collapse=q('#tprCollapseSerials');if(collapse)collapse.addEventListener('click',function(){closeSerials();this.textContent='Serials collapsed';var b=this;setTimeout(function(){b.textContent='Collapse serials'},1200)});
+    var toggle=q('#tprSideToggle');if(toggle)toggle.addEventListener('click',function(){var open=document.body.classList.toggle('tpr-rail-expanded');toggle.setAttribute('aria-expanded',open?'true':'false')});
+    var progress=q('#tprScrollProgress');function onScroll(){if(progress){var d=document.documentElement,span=Math.max(1,d.scrollHeight-d.clientHeight);progress.style.width=Math.min(100,100*d.scrollTop/span)+'%'}}window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+    var links=qa('.tpr-nav'), sections=qa('.tpr-section, .tpr-filter-snapshot, #sec-cover');
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(!e.isIntersecting)return;links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id)})})},{rootMargin:'-18% 0px -70% 0px',threshold:0});sections.forEach(function(s){if(s.id)io.observe(s)})}
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSerials()});
+  }
+  function enhance(html){
+    var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;
+    Array.prototype.forEach.call(doc.querySelectorAll('.tpr-sn'),compactSerialBox);
+    addBoundedTableWindows(doc);addRailLabels(doc);addHeaderControls(doc);
+    var oldStyle=doc.getElementById(STYLE_ID);if(oldStyle)oldStyle.remove();var style=doc.createElement('style');style.id=STYLE_ID;style.textContent=styleText();doc.head.appendChild(style);
+    var oldRuntime=doc.getElementById(RUNTIME_ID);if(oldRuntime)oldRuntime.remove();var runtime=doc.createElement('script');runtime.id=RUNTIME_ID;runtime.textContent='('+reportRuntime.toString()+')();';doc.body.appendChild(runtime);
+    doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();
+    return '<!doctype html>\n'+doc.documentElement.outerHTML;
+  }
+  function install(){
+    var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelHandoffCompactV170)return true;
+    var base=api.reportHtmlFor,wrapped=function(filters){return enhance(base.call(api,filters||{}))};wrapped.__smtinelHandoffCompactV170=true;wrapped.__base=base;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.17.0 - Test Performance Handoff Compact - 2026-09-20';return true;
+  }
+  if(!install()){var n=0,t=setInterval(function(){n++;if(install()||n>220)clearInterval(t)},100)}
+})();
+</script>
 <!-- SMTinel stable baseline: index(10).zip | Global report scope + HxH identity fix | V13.14.85 -->
 
 <script id="smtinel-v63-8d-adaptive-themes">
