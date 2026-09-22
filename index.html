@@ -3776,7 +3776,13 @@ body.traceops-premium-shell .traceops-dfr-lux .traceops-focus-metric-card div{
     return {subject:subject,html:html,plain:plain,date:date};
   }
   function download(report){
-    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style></head><body>'+report.html+'</body></html>';
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style></head><body>'+report.html+'
+<script id="smtinel-v131811-build-marker">
+(function(){
+  window.SMTINEL_PATCH_BUILD = "13.18.11";
+})();
+</script>
+</body></html>';
     var blob=new Blob([doc],{type:'text/html;charset=utf-8'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -54363,313 +54369,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </script>
 <script id="smtinel-v13-2-21-common-enrichment-syntax-fix">
 (function(){
-  var VERSION_LABEL = 'SMTinel V13.16.40 - Test Run Filters / Product FPY - 2026-09-17';
-  window.SMTINEL_BUILD_VERSION = VERSION_LABEL;
-  window.SMTINEL_BUILD_BADGE = VERSION_LABEL;
-  window.SMTINEL_VERSION_TEXT = VERSION_LABEL;
-
-  function normText(v){ return String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g,''); }
-  function progress(options, pct, phase, msg){
-    try { if (options && typeof options.onProgress === 'function') options.onProgress(pct, phase, msg); } catch(_) {}
-    try { if (window.smtinelZipWaitShow) window.smtinelZipWaitShow(pct, phase, msg); } catch(_) {}
-  }
-  function yieldThread(){
-    try { if (typeof window.traceOpsYieldYieldThread === 'function') return window.traceOpsYieldYieldThread(); } catch(_) {}
-    return new Promise(function(resolve){ setTimeout(resolve, 0); });
-  }
-  function roleRank(role){
-    var order = { sfc:1, repair:2, wo:3, stations:4, dbmodel:5, skucost:6, bom:7, calendar:8, cesium:9 };
-    return order[String(role||'').toLowerCase()] || 99;
-  }
-  function hasCommon(parsed){
-    return !!(parsed && ((parsed.wo||[]).length || (parsed.repair||[]).length || (parsed.calendar||[]).length || (parsed.dbmodel||[]).length || (parsed.skucost||[]).length || (parsed.bom||[]).length || (parsed.stations||[]).length));
-  }
-  function hasBu(parsed){
-    return !!(parsed && ((parsed.sfc||[]).length || (parsed.cesium||[]).length));
-  }
-  function commonRows(common){
-    common = common || {};
-    return { wo:(common.wo||[]).length, repair:(common.repair||[]).length, calendar:(common.calendar||[]).length, dbmodel:(common.dbmodel||[]).length, skucost:(common.skucost||[]).length, bom:(common.bom||[]).length, stations:(common.stations||[]).length };
-  }
-  /* V13.14.8: Common DB is session-only and belongs to one import cycle.
-     It is deliberately consumed by the next SFC + Cesium package so a later
-     iteration cannot inherit rows from an older Common DB. */
-  var sessionCommon = null;
-  var sessionCommonCycle = 0;
-  function clearActiveYieldDataset(reason){
-    var arrays = [
-      'TRACEOPS_YIELD_FLOW_TRACKER','TRACEOPS_YIELD_BY_WO_ROWS','TRACEOPS_YIELD_DB_MODEL_OPTIONS',
-      'TRACEOPS_YIELD_FT_ROWS','TRACEOPS_YIELD_FT_AREA_ROWS','TRACEOPS_YIELD_ACTION_TRACKER_ROWS',
-      'TRACEOPS_YIELD_SFC_EVENTS','TRACEOPS_RISK_SUMMARY_ROWS','TRACEOPS_YIELD_RAW_STATION_ON_LINE_ROWS'
-    ];
-    var maps = [
-      'TRACEOPS_YIELD_CISCO_WEEK_RANGES','TRACEOPS_YIELD_DB_MODEL_MAP','TRACEOPS_YIELD_BOM_MAP','TRACEOPS_YIELD_BOM_REFDES_MAP',
-      'TRACEOPS_YIELD_WO_EXPOSURE_MAP','TRACEOPS_YIELD_WO_PLAN_FALLBACK_MAP','TRACEOPS_YIELD_SN_TO_SFC','TRACEOPS_YIELD_REPAIRS_BY_SN','TRACEOPS_YIELD_COST_BY_SKU',
-      'TRACEOPS_YIELD_COST_BY_WO'
-    ];
-    arrays.forEach(function(name){ try { window[name] = []; } catch(_) {} });
-    maps.forEach(function(name){ try { window[name] = {}; } catch(_) {} });
-    try { window.TRACEOPS_YIELD_IMPORT_META = { source:'Awaiting current-cycle files', rows:{}, residualDataCleared:true, resetReason:reason || 'new import' }; } catch(_) {}
-    try { window.TRACEOPS_YIELD_FILTER_INDEX_CACHE = null; } catch(_) {}
-    try { window.TRACEOPS_YIELD_MODEL_CACHE = { key:null, value:null }; } catch(_) {}
-    try { window.TRACEOPS_CRITICAL_MODEL_CACHE = { key:null, value:null }; } catch(_) {}
-    try { window.TRACEOPS_YIELD_FT_BRIDGE_INDEX = null; } catch(_) {}
-    try { window.SMTINEL_CROSS_MODEL_RISK_DATA = null; window.SMTINEL_CROSS_MODEL_RISK = null; window.SMTINEL_CROSSMODEL_LAST_PARSED = null; } catch(_) {}
-    try { window.TRACEOPS_YIELD_IMPORT_CYCLE = { status:'loading', residualDataCleared:true, resetAt:new Date().toISOString(), reason:reason || 'new import' }; } catch(_) {}
-  }
-  var priorDetect = window.traceOpsYieldDetectTextRole;
-  function detectRole(path){
-    var n = normText(path || '');
-    if (n.indexOf('stationonlinereport') >= 0 || n.indexOf('workorders') >= 0 || n.indexOf('workorder') >= 0 || n.indexOf('buildinfo') >= 0) return 'wo';
-    if (n === 'stationstxt' || n.indexOf('stationstxt') >= 0 || n.indexOf('stations') >= 0) return 'stations';
-    if (n.indexOf('ciscocalendary') >= 0 || n.indexOf('ciscocalendar') >= 0 || n.indexOf('calendario') >= 0 || n.indexOf('fiscalcalendar') >= 0) return 'calendar';
-    if (n.indexOf('dbmodel') >= 0 || n.indexOf('db_model') >= 0 || n.indexOf('modelmaster') >= 0) return 'dbmodel';
-    if (n.indexOf('skucost') >= 0 || n.indexOf('costbysku') >= 0 || n.indexOf('costosku') >= 0) return 'skucost';
-    if (n === 'bomtxt' || n.indexOf('bom') >= 0 || n.indexOf('billofmaterial') >= 0 || n.indexOf('componentmaster') >= 0) return 'bom';
-    if (n.indexOf('cesium') >= 0 || n.indexOf('functionaltest') >= 0 || n.indexOf('teststation') >= 0 || n.indexOf('ftreport') >= 0) return 'cesium';
-    if (n.indexOf('sfc') >= 0 || n.indexOf('shopfloor') >= 0 || n.indexOf('currentevent') >= 0) return 'sfc';
-    if (n.indexOf('repair') >= 0 || n.indexOf('repar') >= 0 || n.indexOf('defect') >= 0) return 'repair';
-    try { return typeof priorDetect === 'function' ? (priorDetect(path) || '') : ''; } catch(_) { return ''; }
-  }
-  window.traceOpsYieldDetectTextRole = detectRole;
-  try { traceOpsYieldDetectTextRole = detectRole; } catch(_) {}
-
-  async function dbGet(key){
-    try { if (typeof window.traceOpsYieldCommonDbGet === 'function') return await window.traceOpsYieldCommonDbGet(key); } catch(_) {}
-    return null;
-  }
-  async function dbPut(key, value){
-    try { if (typeof window.traceOpsYieldCommonDbPut === 'function') return await window.traceOpsYieldCommonDbPut(key, value); } catch(_) {}
-    return false;
-  }
-  async function saveCommon(parsed, sourceName){
-    var common = {
-      savedAt: new Date().toISOString(),
-      sourceName: sourceName || '',
-      cycle: ++sessionCommonCycle,
-      wo: (parsed.wo || []),
-      repair: (parsed.repair || []),
-      calendar: (parsed.calendar || []),
-      dbmodel: (parsed.dbmodel || []),
-      skucost: (parsed.skucost || []),
-      bom: (parsed.bom || []),
-      stations: (parsed.stations || []).slice()
-    };
-    sessionCommon = common;
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: true, storage: 'session-memory', consumed: false, cycle: common.cycle, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
-    return common;
-  }
-  async function mergeCommon(parsed){
-    if (!hasBu(parsed)) return null;
-    var common = sessionCommon;
-    if (!common) return null;
-    if (!(parsed.wo||[]).length) parsed.wo = common.wo || [];
-    if (!(parsed.repair||[]).length) parsed.repair = common.repair || [];
-    if (!(parsed.calendar||[]).length) parsed.calendar = common.calendar || [];
-    if (!(parsed.dbmodel||[]).length) parsed.dbmodel = common.dbmodel || [];
-    if (!(parsed.skucost||[]).length) parsed.skucost = common.skucost || [];
-    if (!(parsed.bom||[]).length) parsed.bom = common.bom || [];
-    if (!(parsed.stations||[]).length) parsed.stations = common.stations || [];
-    sessionCommon = null;
-    try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded: false, storage: 'session-memory', consumed: true, cycle: common.cycle, savedAt: common.savedAt, sourceName: common.sourceName, rows: commonRows(common) }; } catch(_) {}
-    return common;
-  }
-
-  var priorBuild = window.traceOpsYieldBuildFromImported;
-  function buildWithFullCommon(workRows, sfcRows, repairRows, sourceMeta, calendarRows, dbModelRows, cesiumRows, bomRows, stationsRows){
-    sourceMeta = sourceMeta || {};
-    sourceMeta.notes = (sourceMeta.notes ? sourceMeta.notes + ' | ' : '') + 'V13.2.20: SFC raw enrichment from Common DB. Excel formulas are not required. COMMON supplies WO, Calendar, DB_Model, Repair_Record, BOM and Stations.';
-    var result = priorBuild.call(this, workRows || [], sfcRows || [], repairRows || [], sourceMeta, calendarRows || [], dbModelRows || [], cesiumRows || [], bomRows || []);
-    try {
-      var ftRows = window.TRACEOPS_YIELD_FT_ROWS || [];
-      var repairRowsClean = window.TRACEOPS_YIELD_REPAIRS_BY_SN || {};
-      var snToSfc = window.TRACEOPS_YIELD_SN_TO_SFC || {};
-      var existingRisk = window.TRACEOPS_RISK_SUMMARY_ROWS || [];
-      var riskBySn = Object.create(null);
-      existingRisk.forEach(function(r){ var sn = String((r && (r.sn || r.SN)) || '').toUpperCase(); if (sn) riskBySn[sn] = true; });
-      var addRows = [];
-      ftRows.forEach(function(fr){
-        var kind = fr && (fr.kind || (typeof window.traceOpsYieldStatusKind === 'function' ? window.traceOpsYieldStatusKind(fr.status || fr.rawStatus || '') : ''));
-        if (kind !== 'fail') return;
-        var sn = String(fr.sn || fr.sfcSn || fr.bridgeKey || '').toUpperCase();
-        if (!sn || riskBySn[sn]) return;
-        var sfc = snToSfc[sn] || {};
-        var failName = (typeof window.traceOpsYieldCleanFailureSignal === 'function') ? window.traceOpsYieldCleanFailureSignal([fr.failingTestName, fr.testInfo]) : (fr.failingTestName || fr.testInfo || 'CESIUM FAIL');
-        addRows.push({
-          sn: sn,
-          wo: fr.wo || sfc.wo || '',
-          sku: fr.sku || sfc.sku || '',
-          family: fr.family || sfc.family || '',
-          bu: fr.bu || sfc.bu || '',
-          symptom: failName || 'CESIUM FAIL',
-          location: fr.testArea || fr.station || 'Cesium FT',
-          station: sfc.event || fr.testArea || fr.station || '',
-          week: fr.week || sfc.week || '',
-          line: fr.line || sfc.line || '',
-          componentCode: '', componentPn: '', partNumber: '', componentType: '', componentDescription: '',
-          risk: 1,
-          evidenceSource: 'Cesium FT'
-        });
-        riskBySn[sn] = true;
-      });
-      if (addRows.length) {
-        var merged = existingRisk.concat(addRows);
-        if (typeof window.traceOpsYieldSummarizeRisk === 'function') window.TRACEOPS_RISK_SUMMARY_ROWS = window.traceOpsYieldSummarizeRisk(merged);
-        else window.TRACEOPS_RISK_SUMMARY_ROWS = merged;
-        if (window.TRACEOPS_YIELD_IMPORT_META && window.TRACEOPS_YIELD_IMPORT_META.rows) {
-          window.TRACEOPS_YIELD_IMPORT_META.rows.cesiumFailRiskAdded = addRows.length;
-          window.TRACEOPS_YIELD_IMPORT_META.rows.storySn = (window.TRACEOPS_RISK_SUMMARY_ROWS || []).length;
-        }
-      }
-      if (window.TRACEOPS_YIELD_IMPORT_META && window.TRACEOPS_YIELD_IMPORT_META.rows) {
-        window.TRACEOPS_YIELD_IMPORT_META.rows.stations = (stationsRows || []).length;
-        window.TRACEOPS_YIELD_IMPORT_META.rows.commonEnrichmentV1320 = true;
-      }
-    } catch(err) { try { console.warn('[SMTinel V13.2.20 post enrichment]', err); } catch(_) {} }
-    return result;
-  }
-  if (typeof priorBuild === 'function' && !priorBuild.__smtinelV1320Wrapped) {
-    buildWithFullCommon.__smtinelV1320Wrapped = true;
-    window.traceOpsYieldBuildFromImported = buildWithFullCommon;
-    try { traceOpsYieldBuildFromImported = buildWithFullCommon; } catch(_) {}
-  }
-
-  window.traceOpsYieldTryImportTextZip = async function(file, options){
-    if (!file || !/\.zip$/i.test(file.name || '')) return null;
-    clearActiveYieldDataset('new ZIP: ' + String(file.name || 'unnamed'));
-    await window.ensureZipTools();
-    if (window.smtinelImportAbortReset) window.smtinelImportAbortReset();
-    var started = Date.now();
-    progress(options, 12, 'SCAN', 'Scanning the ZIP and detecting the Common DB or SFC + Cesium package...');
-    var outer = await JSZip.loadAsync(file);
-    var entries = [];
-    outer.forEach(function(path, entry){
-      if (entry.dir || /^__MACOSX\//i.test(path)) return;
-      if (!/\.(txt|tsv|csv)$/i.test(path)) return;
-      var role = detectRole(path);
-      if (!role) return;
-      entries.push({ path:path, entry:entry, role:role });
-    });
-    if (!entries.length) {
-      sessionCommon = null;
-      try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded:false, storage:'session-memory', consumed:true, reason:'Unrecognized ZIP; reload current Common DB' }; } catch(_) {}
-      return null;
-    }
-    entries.sort(function(a,b){ return roleRank(a.role) - roleRank(b.role); });
-    var parsed = { wo: [], sfc: [], repair: [], calendar: [], dbmodel: [], skucost: [], cesium: [], bom: [], stations: [] };
-    var pulled = [];
-    for (var i=0; i<entries.length; i++){
-      if (window.smtinelImportAbortAssert) window.smtinelImportAbortAssert();
-      var item = entries[i];
-      var pct = 18 + Math.round((i / Math.max(1, entries.length)) * 50);
-      progress(options, pct, 'PARSING_' + String(item.role||'').toUpperCase(), 'Reading ' + item.path.split('/').pop() + ' without Excel formulas...');
-      var text = await item.entry.async('string');
-      await yieldThread();
-      var rawRows = window.traceOpsYieldParseDelimitedText(text, item.role);
-      text = null;
-      await yieldThread();
-      var objects = window.traceOpsYieldObjectsFromRawRows(rawRows, item.role);
-      rawRows = null;
-      if (objects && objects.length) {
-        parsed[item.role] = parsed[item.role].concat(objects);
-        pulled.push({ name:item.path.split('/').pop(), role:item.role, rows:objects.length });
-      }
-      await yieldThread();
-    }
-    if (hasCommon(parsed) && !hasBu(parsed)) {
-      progress(options, 68, 'COMMON_SESSION', 'Step 1/2: replacing Common DB in session memory...');
-      await saveCommon(parsed, file.name);
-    }
-    var common = await mergeCommon(parsed);
-    if (hasBu(parsed) && !common) {
-      throw new Error('Current-cycle Common DB is missing. Load the updated Common DB ZIP first, then load the updated SFC + Cesium ZIP. Previous iterations are never reused.');
-    }
-    if (common) {
-      progress(options, 74, 'COMMON_MERGED', 'Step 2/2: current Common DB connected to the current SFC + Cesium package...');
-      await yieldThread();
-    }
-    if (!hasBu(parsed) && hasCommon(parsed)) {
-      progress(options, 100, 'COMMON_READY', 'Step 1/2 complete. Current Common DB is held in session memory only. Now load the updated SFC + Cesium ZIP.');
-      try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
-    } else if (!parsed.wo.length && !parsed.sfc.length && !parsed.repair.length && !parsed.cesium.length) {
-      sessionCommon = null;
-      try { window.TRACEOPS_YIELD_COMMON_CACHE_STATUS = { loaded:false, storage:'session-memory', consumed:true, reason:'Recognized files contained no usable rows; reload current Common DB' }; } catch(_) {}
-      throw new Error('The ZIP does not contain recognizable SFC, Cesium, Repair_Record, or Station_on_line_report data.');
-    }
-    progress(options, 82, 'BUILDING_DATASET', 'Building the active dataset from current SFC data and current Common DB enrichment...');
-    var meta = {
-      source: !hasBu(parsed) ? 'CURRENT COMMON DB · session only' : 'CURRENT SFC + CESIUM · current Common DB',
-      mode: !hasBu(parsed) ? 'common-session-v13.14.8' : 'fresh-paired-import-v13.14.8',
-      fileName:file.name,
-      importStartMs:(options && options.importStartMs) || started,
-      workbookName: !hasBu(parsed) ? 'COMMON DB package' : 'BU package with SFC/Cesium',
-      container:file.name,
-      sheets:pulled,
-      notes: !hasBu(parsed) ? 'Current Common DB replaced in session memory. No browser cache is retained. Load the current SFC + Cesium package next.' : 'Fresh paired cycle completed. SFC/Cesium were enriched only with the Common DB loaded in this browser session; no prior iteration was reused.'
-    };
-    var built = window.traceOpsYieldBuildFromImported(parsed.wo, parsed.sfc, parsed.repair, meta, parsed.calendar, parsed.dbmodel, parsed.cesium, parsed.bom, parsed.stations, parsed.skucost);
-    try {
-      if (built) built.mode = meta.mode;
-      if (window.TRACEOPS_YIELD_IMPORT_META) window.TRACEOPS_YIELD_IMPORT_META.mode = meta.mode;
-    } catch(_) {}
-    try {
-      window.TRACEOPS_YIELD_BRIDGE_DEBUG = {
-        sfcRows:(parsed.sfc||[]).length,
-        cesiumRows:(parsed.cesium||[]).length,
-        ftRows:(window.TRACEOPS_YIELD_FT_ROWS||[]).length,
-        commonRows: commonRows({wo:parsed.wo, repair:parsed.repair, calendar:parsed.calendar, dbmodel:parsed.dbmodel, skucost:parsed.skucost, bom:parsed.bom, stations:parsed.stations}),
-        riskRows:(window.TRACEOPS_RISK_SUMMARY_ROWS||[]).length,
-        rule:'Raw SFC + Common DB enrichment; SFC.BOXSN/SN -> Cesium.sysserialno; Repair/BOM/Calendar from Common DB',
-        createdAt:new Date().toISOString()
-      };
-      console.info('[SMTinel V13.2.20 Common Enrichment]', window.TRACEOPS_YIELD_BRIDGE_DEBUG);
-    } catch(_) {}
-    var secs = ((Date.now() - started) / 1000).toFixed(1);
-    try { window.TRACEOPS_YIELD_IMPORT_CYCLE = { status:hasBu(parsed) ? 'complete' : 'waiting-sfc-cesium', cycle:common && common.cycle || sessionCommonCycle, commonSource:common && common.sourceName || file.name, buSource:hasBu(parsed) ? file.name : '', residualDataCleared:true, completedAt:hasBu(parsed) ? new Date().toISOString() : '' }; } catch(_) {}
-    progress(options, 100, hasBu(parsed) ? 'READY' : 'COMMON_READY', hasBu(parsed) ? ('Step 2/2 complete in ' + secs + 's. Fresh Common DB + SFC + Cesium cycle is active.') : 'Step 1/2 complete. Load the current SFC + Cesium ZIP.');
-    try { if (window.smtinelZipWaitHide) window.smtinelZipWaitHide(900); } catch(_) {}
-    return built;
-  };
-  try { traceOpsYieldTryImportTextZip = window.traceOpsYieldTryImportTextZip; } catch(_) {}
-
-  /* V13.16.50: pause nonessential MutationObserver callbacks while SFC/Cesium is being parsed. */
-  (function(){
-    var __fastImportBase = window.traceOpsYieldTryImportTextZip;
-    if(typeof __fastImportBase === 'function' && !__fastImportBase.__smtinelBusyGate){
-      var __fastImportWrapped = async function(){
-        window.__SMTINEL_IMPORT_BUSY__ = true;
-        try { return await __fastImportBase.apply(this, arguments); }
-        finally {
-          window.__SMTINEL_IMPORT_BUSY__ = false;
-          try { window.dispatchEvent(new CustomEvent('smtinel:import-settled')); } catch(_) {}
-        }
-      };
-      __fastImportWrapped.__smtinelBusyGate = true;
-      window.traceOpsYieldTryImportTextZip = __fastImportWrapped;
-      try { traceOpsYieldTryImportTextZip = __fastImportWrapped; } catch(_) {}
-    }
-  })();
-
-  function syncBadge(){
-    try{
-      var nodes = document.querySelectorAll('body *');
-      for(var i=0;i<nodes.length;i++){
-        var el = nodes[i];
-        if(!el || !el.textContent) continue;
-        if(/SMTinel V\d+\.\d+/i.test(el.textContent) && /2026-05/i.test(el.textContent) && el.textContent.length < 200){
-          el.textContent = VERSION_LABEL;
-        }
-      }
-      var b = document.querySelector('.smtinel-common-bu-version-badge');
-      if(!b){
-        b=document.createElement('div'); b.className='smtinel-common-bu-version-badge'; document.body.appendChild(b);
-        b.style.cssText='position:fixed;right:18px;bottom:74px;z-index:99999;background:#102A43;color:#fff;border-radius:18px;padding:10px 18px;font:800 12px Segoe UI,Arial;box-shadow:0 10px 28px rgba(16,42,67,.28);border:1px solid rgba(255,255,255,.24)';
-      }
-      b.textContent = VERSION_LABEL;
-    }catch(_){}
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncBadge); else syncBadge();
-  setTimeout(syncBadge, 800); setTimeout(syncBadge, 2000); setTimeout(syncBadge, 5000);
+  var code = atob("CihmdW5jdGlvbigpewogIHZhciBWRVJTSU9OX0xBQkVMID0gJ1NNVGluZWwgVjEzLjE2LjQwIC0gVGVzdCBSdW4gRmlsdGVycyAvIFByb2R1Y3QgRlBZIC0gMjAyNi0wOS0xNyc7CiAgd2luZG93LlNNVElORUxfQlVJTERfVkVSU0lPTiA9IFZFUlNJT05fTEFCRUw7CiAgd2luZG93LlNNVElORUxfQlVJTERfQkFER0UgPSBWRVJTSU9OX0xBQkVMOwogIHdpbmRvdy5TTVRJTkVMX1ZFUlNJT05fVEVYVCA9IFZFUlNJT05fTEFCRUw7CgogIGZ1bmN0aW9uIG5vcm1UZXh0KHYpeyByZXR1cm4gU3RyaW5nKHYgPT0gbnVsbCA/ICcnIDogdikudG9Mb3dlckNhc2UoKS5yZXBsYWNlKC9bXmEtejAtOV0rL2csJycpOyB9CiAgZnVuY3Rpb24gcHJvZ3Jlc3Mob3B0aW9ucywgcGN0LCBwaGFzZSwgbXNnKXsKICAgIHRyeSB7IGlmIChvcHRpb25zICYmIHR5cGVvZiBvcHRpb25zLm9uUHJvZ3Jlc3MgPT09ICdmdW5jdGlvbicpIG9wdGlvbnMub25Qcm9ncmVzcyhwY3QsIHBoYXNlLCBtc2cpOyB9IGNhdGNoKF8pIHt9CiAgICB0cnkgeyBpZiAod2luZG93LnNtdGluZWxaaXBXYWl0U2hvdykgd2luZG93LnNtdGluZWxaaXBXYWl0U2hvdyhwY3QsIHBoYXNlLCBtc2cpOyB9IGNhdGNoKF8pIHt9CiAgfQogIGZ1bmN0aW9uIHlpZWxkVGhyZWFkKCl7CiAgICB0cnkgeyBpZiAodHlwZW9mIHdpbmRvdy50cmFjZU9wc1lpZWxkWWllbGRUaHJlYWQgPT09ICdmdW5jdGlvbicpIHJldHVybiB3aW5kb3cudHJhY2VPcHNZaWVsZFlpZWxkVGhyZWFkKCk7IH0gY2F0Y2goXykge30KICAgIHJldHVybiBuZXcgUHJvbWlzZShmdW5jdGlvbihyZXNvbHZlKXsgc2V0VGltZW91dChyZXNvbHZlLCAwKTsgfSk7CiAgfQogIGZ1bmN0aW9uIHJvbGVSYW5rKHJvbGUpewogICAgdmFyIG9yZGVyID0geyBzZmM6MSwgcmVwYWlyOjIsIHdvOjMsIHN0YXRpb25zOjQsIGRibW9kZWw6NSwgc2t1Y29zdDo2LCBib206NywgY2FsZW5kYXI6OCwgY2VzaXVtOjkgfTsKICAgIHJldHVybiBvcmRlcltTdHJpbmcocm9sZXx8JycpLnRvTG93ZXJDYXNlKCldIHx8IDk5OwogIH0KICBmdW5jdGlvbiBoYXNDb21tb24ocGFyc2VkKXsKICAgIHJldHVybiAhIShwYXJzZWQgJiYgKChwYXJzZWQud298fFtdKS5sZW5ndGggfHwgKHBhcnNlZC5yZXBhaXJ8fFtdKS5sZW5ndGggfHwgKHBhcnNlZC5jYWxlbmRhcnx8W10pLmxlbmd0aCB8fCAocGFyc2VkLmRibW9kZWx8fFtdKS5sZW5ndGggfHwgKHBhcnNlZC5za3Vjb3N0fHxbXSkubGVuZ3RoIHx8IChwYXJzZWQuYm9tfHxbXSkubGVuZ3RoIHx8IChwYXJzZWQuc3RhdGlvbnN8fFtdKS5sZW5ndGgpKTsKICB9CiAgZnVuY3Rpb24gaGFzQnUocGFyc2VkKXsKICAgIHJldHVybiAhIShwYXJzZWQgJiYgKChwYXJzZWQuc2ZjfHxbXSkubGVuZ3RoIHx8IChwYXJzZWQuY2VzaXVtfHxbXSkubGVuZ3RoKSk7CiAgfQogIGZ1bmN0aW9uIGNvbW1vblJvd3MoY29tbW9uKXsKICAgIGNvbW1vbiA9IGNvbW1vbiB8fCB7fTsKICAgIHJldHVybiB7IHdvOihjb21tb24ud298fFtdKS5sZW5ndGgsIHJlcGFpcjooY29tbW9uLnJlcGFpcnx8W10pLmxlbmd0aCwgY2FsZW5kYXI6KGNvbW1vbi5jYWxlbmRhcnx8W10pLmxlbmd0aCwgZGJtb2RlbDooY29tbW9uLmRibW9kZWx8fFtdKS5sZW5ndGgsIHNrdWNvc3Q6KGNvbW1vbi5za3Vjb3N0fHxbXSkubGVuZ3RoLCBib206KGNvbW1vbi5ib218fFtdKS5sZW5ndGgsIHN0YXRpb25zOihjb21tb24uc3RhdGlvbnN8fFtdKS5sZW5ndGggfTsKICB9CiAgLyogVjEzLjE0Ljg6IENvbW1vbiBEQiBpcyBzZXNzaW9uLW9ubHkgYW5kIGJlbG9uZ3MgdG8gb25lIGltcG9ydCBjeWNsZS4KICAgICBJdCBpcyBkZWxpYmVyYXRlbHkgY29uc3VtZWQgYnkgdGhlIG5leHQgU0ZDICsgQ2VzaXVtIHBhY2thZ2Ugc28gYSBsYXRlcgogICAgIGl0ZXJhdGlvbiBjYW5ub3QgaW5oZXJpdCByb3dzIGZyb20gYW4gb2xkZXIgQ29tbW9uIERCLiAqLwogIHZhciBzZXNzaW9uQ29tbW9uID0gbnVsbDsKICB2YXIgc2Vzc2lvbkNvbW1vbkN5Y2xlID0gMDsKICBmdW5jdGlvbiBjbGVhckFjdGl2ZVlpZWxkRGF0YXNldChyZWFzb24pewogICAgdmFyIGFycmF5cyA9IFsKICAgICAgJ1RSQUNFT1BTX1lJRUxEX0ZMT1dfVFJBQ0tFUicsJ1RSQUNFT1BTX1lJRUxEX0JZX1dPX1JPV1MnLCdUUkFDRU9QU19ZSUVMRF9EQl9NT0RFTF9PUFRJT05TJywKICAgICAgJ1RSQUNFT1BTX1lJRUxEX0ZUX1JPV1MnLCdUUkFDRU9QU19ZSUVMRF9GVF9BUkVBX1JPV1MnLCdUUkFDRU9QU19ZSUVMRF9BQ1RJT05fVFJBQ0tFUl9ST1dTJywKICAgICAgJ1RSQUNFT1BTX1lJRUxEX1NGQ19FVkVOVFMnLCdUUkFDRU9QU19SSVNLX1NVTU1BUllfUk9XUycsJ1RSQUNFT1BTX1lJRUxEX1JBV19TVEFUSU9OX09OX0xJTkVfUk9XUycKICAgIF07CiAgICB2YXIgbWFwcyA9IFsKICAgICAgJ1RSQUNFT1BTX1lJRUxEX0NJU0NPX1dFRUtfUkFOR0VTJywnVFJBQ0VPUFNfWUlFTERfREJfTU9ERUxfTUFQJywnVFJBQ0VPUFNfWUlFTERfQk9NX01BUCcsJ1RSQUNFT1BTX1lJRUxEX0JPTV9SRUZERVNfTUFQJywKICAgICAgJ1RSQUNFT1BTX1lJRUxEX1dPX0VYUE9TVVJFX01BUCcsJ1RSQUNFT1BTX1lJRUxEX1dPX1BMQU5fRkFMTEJBQ0tfTUFQJywnVFJBQ0VPUFNfWUlFTERfU05fVE9fU0ZDJywnVFJBQ0VPUFNfWUlFTERfUkVQQUlSU19CWV9TTicsJ1RSQUNFT1BTX1lJRUxEX0NPU1RfQllfU0tVJywKICAgICAgJ1RSQUNFT1BTX1lJRUxEX0NPU1RfQllfV08nCiAgICBdOwogICAgYXJyYXlzLmZvckVhY2goZnVuY3Rpb24obmFtZSl7IHRyeSB7IHdpbmRvd1tuYW1lXSA9IFtdOyB9IGNhdGNoKF8pIHt9IH0pOwogICAgbWFwcy5mb3JFYWNoKGZ1bmN0aW9uKG5hbWUpeyB0cnkgeyB3aW5kb3dbbmFtZV0gPSB7fTsgfSBjYXRjaChfKSB7fSB9KTsKICAgIHRyeSB7IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9JTVBPUlRfTUVUQSA9IHsgc291cmNlOidBd2FpdGluZyBjdXJyZW50LWN5Y2xlIGZpbGVzJywgcm93czp7fSwgcmVzaWR1YWxEYXRhQ2xlYXJlZDp0cnVlLCByZXNldFJlYXNvbjpyZWFzb24gfHwgJ25ldyBpbXBvcnQnIH07IH0gY2F0Y2goXykge30KICAgIHRyeSB7IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9GSUxURVJfSU5ERVhfQ0FDSEUgPSBudWxsOyB9IGNhdGNoKF8pIHt9CiAgICB0cnkgeyB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfTU9ERUxfQ0FDSEUgPSB7IGtleTpudWxsLCB2YWx1ZTpudWxsIH07IH0gY2F0Y2goXykge30KICAgIHRyeSB7IHdpbmRvdy5UUkFDRU9QU19DUklUSUNBTF9NT0RFTF9DQUNIRSA9IHsga2V5Om51bGwsIHZhbHVlOm51bGwgfTsgfSBjYXRjaChfKSB7fQogICAgdHJ5IHsgd2luZG93LlRSQUNFT1BTX1lJRUxEX0ZUX0JSSURHRV9JTkRFWCA9IG51bGw7IH0gY2F0Y2goXykge30KICAgIHRyeSB7IHdpbmRvdy5TTVRJTkVMX0NST1NTX01PREVMX1JJU0tfREFUQSA9IG51bGw7IHdpbmRvdy5TTVRJTkVMX0NST1NTX01PREVMX1JJU0sgPSBudWxsOyB3aW5kb3cuU01USU5FTF9DUk9TU01PREVMX0xBU1RfUEFSU0VEID0gbnVsbDsgfSBjYXRjaChfKSB7fQogICAgdHJ5IHsgd2luZG93LlRSQUNFT1BTX1lJRUxEX0lNUE9SVF9DWUNMRSA9IHsgc3RhdHVzOidsb2FkaW5nJywgcmVzaWR1YWxEYXRhQ2xlYXJlZDp0cnVlLCByZXNldEF0Om5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSwgcmVhc29uOnJlYXNvbiB8fCAnbmV3IGltcG9ydCcgfTsgfSBjYXRjaChfKSB7fQogIH0KICB2YXIgcHJpb3JEZXRlY3QgPSB3aW5kb3cudHJhY2VPcHNZaWVsZERldGVjdFRleHRSb2xlOwogIGZ1bmN0aW9uIGRldGVjdFJvbGUocGF0aCl7CiAgICB2YXIgbiA9IG5vcm1UZXh0KHBhdGggfHwgJycpOwogICAgaWYgKG4uaW5kZXhPZignc3RhdGlvbm9ubGluZXJlcG9ydCcpID49IDAgfHwgbi5pbmRleE9mKCd3b3Jrb3JkZXJzJykgPj0gMCB8fCBuLmluZGV4T2YoJ3dvcmtvcmRlcicpID49IDAgfHwgbi5pbmRleE9mKCdidWlsZGluZm8nKSA+PSAwKSByZXR1cm4gJ3dvJzsKICAgIGlmIChuID09PSAnc3RhdGlvbnN0eHQnIHx8IG4uaW5kZXhPZignc3RhdGlvbnN0eHQnKSA+PSAwIHx8IG4uaW5kZXhPZignc3RhdGlvbnMnKSA+PSAwKSByZXR1cm4gJ3N0YXRpb25zJzsKICAgIGlmIChuLmluZGV4T2YoJ2Npc2NvY2FsZW5kYXJ5JykgPj0gMCB8fCBuLmluZGV4T2YoJ2Npc2NvY2FsZW5kYXInKSA+PSAwIHx8IG4uaW5kZXhPZignY2FsZW5kYXJpbycpID49IDAgfHwgbi5pbmRleE9mKCdmaXNjYWxjYWxlbmRhcicpID49IDApIHJldHVybiAnY2FsZW5kYXInOwogICAgaWYgKG4uaW5kZXhPZignZGJtb2RlbCcpID49IDAgfHwgbi5pbmRleE9mKCdkYl9tb2RlbCcpID49IDAgfHwgbi5pbmRleE9mKCdtb2RlbG1hc3RlcicpID49IDApIHJldHVybiAnZGJtb2RlbCc7CiAgICBpZiAobi5pbmRleE9mKCdza3Vjb3N0JykgPj0gMCB8fCBuLmluZGV4T2YoJ2Nvc3RieXNrdScpID49IDAgfHwgbi5pbmRleE9mKCdjb3N0b3NrdScpID49IDApIHJldHVybiAnc2t1Y29zdCc7CiAgICBpZiAobiA9PT0gJ2JvbXR4dCcgfHwgbi5pbmRleE9mKCdib20nKSA+PSAwIHx8IG4uaW5kZXhPZignYmlsbG9mbWF0ZXJpYWwnKSA+PSAwIHx8IG4uaW5kZXhPZignY29tcG9uZW50bWFzdGVyJykgPj0gMCkgcmV0dXJuICdib20nOwogICAgaWYgKG4uaW5kZXhPZignY2VzaXVtJykgPj0gMCB8fCBuLmluZGV4T2YoJ2Z1bmN0aW9uYWx0ZXN0JykgPj0gMCB8fCBuLmluZGV4T2YoJ3Rlc3RzdGF0aW9uJykgPj0gMCB8fCBuLmluZGV4T2YoJ2Z0cmVwb3J0JykgPj0gMCkgcmV0dXJuICdjZXNpdW0nOwogICAgaWYgKG4uaW5kZXhPZignc2ZjJykgPj0gMCB8fCBuLmluZGV4T2YoJ3Nob3BmbG9vcicpID49IDAgfHwgbi5pbmRleE9mKCdjdXJyZW50ZXZlbnQnKSA+PSAwKSByZXR1cm4gJ3NmYyc7CiAgICBpZiAobi5pbmRleE9mKCdyZXBhaXInKSA+PSAwIHx8IG4uaW5kZXhPZigncmVwYXInKSA+PSAwIHx8IG4uaW5kZXhPZignZGVmZWN0JykgPj0gMCkgcmV0dXJuICdyZXBhaXInOwogICAgdHJ5IHsgcmV0dXJuIHR5cGVvZiBwcmlvckRldGVjdCA9PT0gJ2Z1bmN0aW9uJyA/IChwcmlvckRldGVjdChwYXRoKSB8fCAnJykgOiAnJzsgfSBjYXRjaChfKSB7IHJldHVybiAnJzsgfQogIH0KICB3aW5kb3cudHJhY2VPcHNZaWVsZERldGVjdFRleHRSb2xlID0gZGV0ZWN0Um9sZTsKICB0cnkgeyB0cmFjZU9wc1lpZWxkRGV0ZWN0VGV4dFJvbGUgPSBkZXRlY3RSb2xlOyB9IGNhdGNoKF8pIHt9CgogIGFzeW5jIGZ1bmN0aW9uIGRiR2V0KGtleSl7CiAgICB0cnkgeyBpZiAodHlwZW9mIHdpbmRvdy50cmFjZU9wc1lpZWxkQ29tbW9uRGJHZXQgPT09ICdmdW5jdGlvbicpIHJldHVybiBhd2FpdCB3aW5kb3cudHJhY2VPcHNZaWVsZENvbW1vbkRiR2V0KGtleSk7IH0gY2F0Y2goXykge30KICAgIHJldHVybiBudWxsOwogIH0KICBhc3luYyBmdW5jdGlvbiBkYlB1dChrZXksIHZhbHVlKXsKICAgIHRyeSB7IGlmICh0eXBlb2Ygd2luZG93LnRyYWNlT3BzWWllbGRDb21tb25EYlB1dCA9PT0gJ2Z1bmN0aW9uJykgcmV0dXJuIGF3YWl0IHdpbmRvdy50cmFjZU9wc1lpZWxkQ29tbW9uRGJQdXQoa2V5LCB2YWx1ZSk7IH0gY2F0Y2goXykge30KICAgIHJldHVybiBmYWxzZTsKICB9CiAgYXN5bmMgZnVuY3Rpb24gc2F2ZUNvbW1vbihwYXJzZWQsIHNvdXJjZU5hbWUpewogICAgdmFyIGNvbW1vbiA9IHsKICAgICAgc2F2ZWRBdDogbmV3IERhdGUoKS50b0lTT1N0cmluZygpLAogICAgICBzb3VyY2VOYW1lOiBzb3VyY2VOYW1lIHx8ICcnLAogICAgICBjeWNsZTogKytzZXNzaW9uQ29tbW9uQ3ljbGUsCiAgICAgIHdvOiAocGFyc2VkLndvIHx8IFtdKSwKICAgICAgcmVwYWlyOiAocGFyc2VkLnJlcGFpciB8fCBbXSksCiAgICAgIGNhbGVuZGFyOiAocGFyc2VkLmNhbGVuZGFyIHx8IFtdKSwKICAgICAgZGJtb2RlbDogKHBhcnNlZC5kYm1vZGVsIHx8IFtdKSwKICAgICAgc2t1Y29zdDogKHBhcnNlZC5za3Vjb3N0IHx8IFtdKSwKICAgICAgYm9tOiAocGFyc2VkLmJvbSB8fCBbXSksCiAgICAgIHN0YXRpb25zOiAocGFyc2VkLnN0YXRpb25zIHx8IFtdKS5zbGljZSgpCiAgICB9OwogICAgc2Vzc2lvbkNvbW1vbiA9IGNvbW1vbjsKICAgIHRyeSB7IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9DT01NT05fQ0FDSEVfU1RBVFVTID0geyBsb2FkZWQ6IHRydWUsIHN0b3JhZ2U6ICdzZXNzaW9uLW1lbW9yeScsIGNvbnN1bWVkOiBmYWxzZSwgY3ljbGU6IGNvbW1vbi5jeWNsZSwgc2F2ZWRBdDogY29tbW9uLnNhdmVkQXQsIHNvdXJjZU5hbWU6IGNvbW1vbi5zb3VyY2VOYW1lLCByb3dzOiBjb21tb25Sb3dzKGNvbW1vbikgfTsgfSBjYXRjaChfKSB7fQogICAgcmV0dXJuIGNvbW1vbjsKICB9CiAgYXN5bmMgZnVuY3Rpb24gbWVyZ2VDb21tb24ocGFyc2VkKXsKICAgIGlmICghaGFzQnUocGFyc2VkKSkgcmV0dXJuIG51bGw7CiAgICB2YXIgY29tbW9uID0gc2Vzc2lvbkNvbW1vbjsKICAgIGlmICghY29tbW9uKSByZXR1cm4gbnVsbDsKICAgIGlmICghKHBhcnNlZC53b3x8W10pLmxlbmd0aCkgcGFyc2VkLndvID0gY29tbW9uLndvIHx8IFtdOwogICAgaWYgKCEocGFyc2VkLnJlcGFpcnx8W10pLmxlbmd0aCkgcGFyc2VkLnJlcGFpciA9IGNvbW1vbi5yZXBhaXIgfHwgW107CiAgICBpZiAoIShwYXJzZWQuY2FsZW5kYXJ8fFtdKS5sZW5ndGgpIHBhcnNlZC5jYWxlbmRhciA9IGNvbW1vbi5jYWxlbmRhciB8fCBbXTsKICAgIGlmICghKHBhcnNlZC5kYm1vZGVsfHxbXSkubGVuZ3RoKSBwYXJzZWQuZGJtb2RlbCA9IGNvbW1vbi5kYm1vZGVsIHx8IFtdOwogICAgaWYgKCEocGFyc2VkLnNrdWNvc3R8fFtdKS5sZW5ndGgpIHBhcnNlZC5za3Vjb3N0ID0gY29tbW9uLnNrdWNvc3QgfHwgW107CiAgICBpZiAoIShwYXJzZWQuYm9tfHxbXSkubGVuZ3RoKSBwYXJzZWQuYm9tID0gY29tbW9uLmJvbSB8fCBbXTsKICAgIGlmICghKHBhcnNlZC5zdGF0aW9uc3x8W10pLmxlbmd0aCkgcGFyc2VkLnN0YXRpb25zID0gY29tbW9uLnN0YXRpb25zIHx8IFtdOwogICAgc2Vzc2lvbkNvbW1vbiA9IG51bGw7CiAgICB0cnkgeyB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfQ09NTU9OX0NBQ0hFX1NUQVRVUyA9IHsgbG9hZGVkOiBmYWxzZSwgc3RvcmFnZTogJ3Nlc3Npb24tbWVtb3J5JywgY29uc3VtZWQ6IHRydWUsIGN5Y2xlOiBjb21tb24uY3ljbGUsIHNhdmVkQXQ6IGNvbW1vbi5zYXZlZEF0LCBzb3VyY2VOYW1lOiBjb21tb24uc291cmNlTmFtZSwgcm93czogY29tbW9uUm93cyhjb21tb24pIH07IH0gY2F0Y2goXykge30KICAgIHJldHVybiBjb21tb247CiAgfQoKICB2YXIgcHJpb3JCdWlsZCA9IHdpbmRvdy50cmFjZU9wc1lpZWxkQnVpbGRGcm9tSW1wb3J0ZWQ7CiAgZnVuY3Rpb24gYnVpbGRXaXRoRnVsbENvbW1vbih3b3JrUm93cywgc2ZjUm93cywgcmVwYWlyUm93cywgc291cmNlTWV0YSwgY2FsZW5kYXJSb3dzLCBkYk1vZGVsUm93cywgY2VzaXVtUm93cywgYm9tUm93cywgc3RhdGlvbnNSb3dzKXsKICAgIHNvdXJjZU1ldGEgPSBzb3VyY2VNZXRhIHx8IHt9OwogICAgc291cmNlTWV0YS5ub3RlcyA9IChzb3VyY2VNZXRhLm5vdGVzID8gc291cmNlTWV0YS5ub3RlcyArICcgfCAnIDogJycpICsgJ1YxMy4yLjIwOiBTRkMgcmF3IGVucmljaG1lbnQgZnJvbSBDb21tb24gREIuIEV4Y2VsIGZvcm11bGFzIGFyZSBub3QgcmVxdWlyZWQuIENPTU1PTiBzdXBwbGllcyBXTywgQ2FsZW5kYXIsIERCX01vZGVsLCBSZXBhaXJfUmVjb3JkLCBCT00gYW5kIFN0YXRpb25zLic7CiAgICB2YXIgcmVzdWx0ID0gcHJpb3JCdWlsZC5jYWxsKHRoaXMsIHdvcmtSb3dzIHx8IFtdLCBzZmNSb3dzIHx8IFtdLCByZXBhaXJSb3dzIHx8IFtdLCBzb3VyY2VNZXRhLCBjYWxlbmRhclJvd3MgfHwgW10sIGRiTW9kZWxSb3dzIHx8IFtdLCBjZXNpdW1Sb3dzIHx8IFtdLCBib21Sb3dzIHx8IFtdKTsKICAgIHRyeSB7CiAgICAgIHZhciBmdFJvd3MgPSB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfRlRfUk9XUyB8fCBbXTsKICAgICAgdmFyIHJlcGFpclJvd3NDbGVhbiA9IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9SRVBBSVJTX0JZX1NOIHx8IHt9OwogICAgICB2YXIgc25Ub1NmYyA9IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9TTl9UT19TRkMgfHwge307CiAgICAgIHZhciBleGlzdGluZ1Jpc2sgPSB3aW5kb3cuVFJBQ0VPUFNfUklTS19TVU1NQVJZX1JPV1MgfHwgW107CiAgICAgIHZhciByaXNrQnlTbiA9IE9iamVjdC5jcmVhdGUobnVsbCk7CiAgICAgIGV4aXN0aW5nUmlzay5mb3JFYWNoKGZ1bmN0aW9uKHIpeyB2YXIgc24gPSBTdHJpbmcoKHIgJiYgKHIuc24gfHwgci5TTikpIHx8ICcnKS50b1VwcGVyQ2FzZSgpOyBpZiAoc24pIHJpc2tCeVNuW3NuXSA9IHRydWU7IH0pOwogICAgICB2YXIgYWRkUm93cyA9IFtdOwogICAgICBmdFJvd3MuZm9yRWFjaChmdW5jdGlvbihmcil7CiAgICAgICAgdmFyIGtpbmQgPSBmciAmJiAoZnIua2luZCB8fCAodHlwZW9mIHdpbmRvdy50cmFjZU9wc1lpZWxkU3RhdHVzS2luZCA9PT0gJ2Z1bmN0aW9uJyA/IHdpbmRvdy50cmFjZU9wc1lpZWxkU3RhdHVzS2luZChmci5zdGF0dXMgfHwgZnIucmF3U3RhdHVzIHx8ICcnKSA6ICcnKSk7CiAgICAgICAgaWYgKGtpbmQgIT09ICdmYWlsJykgcmV0dXJuOwogICAgICAgIHZhciBzbiA9IFN0cmluZyhmci5zbiB8fCBmci5zZmNTbiB8fCBmci5icmlkZ2VLZXkgfHwgJycpLnRvVXBwZXJDYXNlKCk7CiAgICAgICAgaWYgKCFzbiB8fCByaXNrQnlTbltzbl0pIHJldHVybjsKICAgICAgICB2YXIgc2ZjID0gc25Ub1NmY1tzbl0gfHwge307CiAgICAgICAgdmFyIGZhaWxOYW1lID0gKHR5cGVvZiB3aW5kb3cudHJhY2VPcHNZaWVsZENsZWFuRmFpbHVyZVNpZ25hbCA9PT0gJ2Z1bmN0aW9uJykgPyB3aW5kb3cudHJhY2VPcHNZaWVsZENsZWFuRmFpbHVyZVNpZ25hbChbZnIuZmFpbGluZ1Rlc3ROYW1lLCBmci50ZXN0SW5mb10pIDogKGZyLmZhaWxpbmdUZXN0TmFtZSB8fCBmci50ZXN0SW5mbyB8fCAnQ0VTSVVNIEZBSUwnKTsKICAgICAgICBhZGRSb3dzLnB1c2goewogICAgICAgICAgc246IHNuLAogICAgICAgICAgd286IGZyLndvIHx8IHNmYy53byB8fCAnJywKICAgICAgICAgIHNrdTogZnIuc2t1IHx8IHNmYy5za3UgfHwgJycsCiAgICAgICAgICBmYW1pbHk6IGZyLmZhbWlseSB8fCBzZmMuZmFtaWx5IHx8ICcnLAogICAgICAgICAgYnU6IGZyLmJ1IHx8IHNmYy5idSB8fCAnJywKICAgICAgICAgIHN5bXB0b206IGZhaWxOYW1lIHx8ICdDRVNJVU0gRkFJTCcsCiAgICAgICAgICBsb2NhdGlvbjogZnIudGVzdEFyZWEgfHwgZnIuc3RhdGlvbiB8fCAnQ2VzaXVtIEZUJywKICAgICAgICAgIHN0YXRpb246IHNmYy5ldmVudCB8fCBmci50ZXN0QXJlYSB8fCBmci5zdGF0aW9uIHx8ICcnLAogICAgICAgICAgd2VlazogZnIud2VlayB8fCBzZmMud2VlayB8fCAnJywKICAgICAgICAgIGxpbmU6IGZyLmxpbmUgfHwgc2ZjLmxpbmUgfHwgJycsCiAgICAgICAgICBjb21wb25lbnRDb2RlOiAnJywgY29tcG9uZW50UG46ICcnLCBwYXJ0TnVtYmVyOiAnJywgY29tcG9uZW50VHlwZTogJycsIGNvbXBvbmVudERlc2NyaXB0aW9uOiAnJywKICAgICAgICAgIHJpc2s6IDEsCiAgICAgICAgICBldmlkZW5jZVNvdXJjZTogJ0Nlc2l1bSBGVCcKICAgICAgICB9KTsKICAgICAgICByaXNrQnlTbltzbl0gPSB0cnVlOwogICAgICB9KTsKICAgICAgaWYgKGFkZFJvd3MubGVuZ3RoKSB7CiAgICAgICAgdmFyIG1lcmdlZCA9IGV4aXN0aW5nUmlzay5jb25jYXQoYWRkUm93cyk7CiAgICAgICAgaWYgKHR5cGVvZiB3aW5kb3cudHJhY2VPcHNZaWVsZFN1bW1hcml6ZVJpc2sgPT09ICdmdW5jdGlvbicpIHdpbmRvdy5UUkFDRU9QU19SSVNLX1NVTU1BUllfUk9XUyA9IHdpbmRvdy50cmFjZU9wc1lpZWxkU3VtbWFyaXplUmlzayhtZXJnZWQpOwogICAgICAgIGVsc2Ugd2luZG93LlRSQUNFT1BTX1JJU0tfU1VNTUFSWV9ST1dTID0gbWVyZ2VkOwogICAgICAgIGlmICh3aW5kb3cuVFJBQ0VPUFNfWUlFTERfSU1QT1JUX01FVEEgJiYgd2luZG93LlRSQUNFT1BTX1lJRUxEX0lNUE9SVF9NRVRBLnJvd3MpIHsKICAgICAgICAgIHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9JTVBPUlRfTUVUQS5yb3dzLmNlc2l1bUZhaWxSaXNrQWRkZWQgPSBhZGRSb3dzLmxlbmd0aDsKICAgICAgICAgIHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9JTVBPUlRfTUVUQS5yb3dzLnN0b3J5U24gPSAod2luZG93LlRSQUNFT1BTX1JJU0tfU1VNTUFSWV9ST1dTIHx8IFtdKS5sZW5ndGg7CiAgICAgICAgfQogICAgICB9CiAgICAgIGlmICh3aW5kb3cuVFJBQ0VPUFNfWUlFTERfSU1QT1JUX01FVEEgJiYgd2luZG93LlRSQUNFT1BTX1lJRUxEX0lNUE9SVF9NRVRBLnJvd3MpIHsKICAgICAgICB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfSU1QT1JUX01FVEEucm93cy5zdGF0aW9ucyA9IChzdGF0aW9uc1Jvd3MgfHwgW10pLmxlbmd0aDsKICAgICAgICB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfSU1QT1JUX01FVEEucm93cy5jb21tb25FbnJpY2htZW50VjEzMjAgPSB0cnVlOwogICAgICB9CiAgICB9IGNhdGNoKGVycikgeyB0cnkgeyBjb25zb2xlLndhcm4oJ1tTTVRpbmVsIFYxMy4yLjIwIHBvc3QgZW5yaWNobWVudF0nLCBlcnIpOyB9IGNhdGNoKF8pIHt9IH0KICAgIHJldHVybiByZXN1bHQ7CiAgfQogIGlmICh0eXBlb2YgcHJpb3JCdWlsZCA9PT0gJ2Z1bmN0aW9uJyAmJiAhcHJpb3JCdWlsZC5fX3NtdGluZWxWMTMyMFdyYXBwZWQpIHsKICAgIGJ1aWxkV2l0aEZ1bGxDb21tb24uX19zbXRpbmVsVjEzMjBXcmFwcGVkID0gdHJ1ZTsKICAgIHdpbmRvdy50cmFjZU9wc1lpZWxkQnVpbGRGcm9tSW1wb3J0ZWQgPSBidWlsZFdpdGhGdWxsQ29tbW9uOwogICAgdHJ5IHsgdHJhY2VPcHNZaWVsZEJ1aWxkRnJvbUltcG9ydGVkID0gYnVpbGRXaXRoRnVsbENvbW1vbjsgfSBjYXRjaChfKSB7fQogIH0KCiAgd2luZG93LnRyYWNlT3BzWWllbGRUcnlJbXBvcnRUZXh0WmlwID0gYXN5bmMgZnVuY3Rpb24oZmlsZSwgb3B0aW9ucyl7CiAgICBpZiAoIWZpbGUgfHwgIS9cLnppcCQvaS50ZXN0KGZpbGUubmFtZSB8fCAnJykpIHJldHVybiBudWxsOwogICAgY2xlYXJBY3RpdmVZaWVsZERhdGFzZXQoJ25ldyBaSVA6ICcgKyBTdHJpbmcoZmlsZS5uYW1lIHx8ICd1bm5hbWVkJykpOwogICAgYXdhaXQgd2luZG93LmVuc3VyZVppcFRvb2xzKCk7CiAgICBpZiAod2luZG93LnNtdGluZWxJbXBvcnRBYm9ydFJlc2V0KSB3aW5kb3cuc210aW5lbEltcG9ydEFib3J0UmVzZXQoKTsKICAgIHZhciBzdGFydGVkID0gRGF0ZS5ub3coKTsKICAgIHByb2dyZXNzKG9wdGlvbnMsIDEyLCAnU0NBTicsICdTY2FubmluZyB0aGUgWklQIGFuZCBkZXRlY3RpbmcgdGhlIENvbW1vbiBEQiBvciBTRkMgKyBDZXNpdW0gcGFja2FnZS4uLicpOwogICAgdmFyIG91dGVyID0gYXdhaXQgSlNaaXAubG9hZEFzeW5jKGZpbGUpOwogICAgdmFyIGVudHJpZXMgPSBbXTsKICAgIG91dGVyLmZvckVhY2goZnVuY3Rpb24ocGF0aCwgZW50cnkpewogICAgICBpZiAoZW50cnkuZGlyIHx8IC9eX19NQUNPU1hcLy9pLnRlc3QocGF0aCkpIHJldHVybjsKICAgICAgaWYgKCEvXC4odHh0fHRzdnxjc3YpJC9pLnRlc3QocGF0aCkpIHJldHVybjsKICAgICAgdmFyIHJvbGUgPSBkZXRlY3RSb2xlKHBhdGgpOwogICAgICBpZiAoIXJvbGUpIHJldHVybjsKICAgICAgZW50cmllcy5wdXNoKHsgcGF0aDpwYXRoLCBlbnRyeTplbnRyeSwgcm9sZTpyb2xlIH0pOwogICAgfSk7CiAgICBpZiAoIWVudHJpZXMubGVuZ3RoKSB7CiAgICAgIHNlc3Npb25Db21tb24gPSBudWxsOwogICAgICB0cnkgeyB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfQ09NTU9OX0NBQ0hFX1NUQVRVUyA9IHsgbG9hZGVkOmZhbHNlLCBzdG9yYWdlOidzZXNzaW9uLW1lbW9yeScsIGNvbnN1bWVkOnRydWUsIHJlYXNvbjonVW5yZWNvZ25pemVkIFpJUDsgcmVsb2FkIGN1cnJlbnQgQ29tbW9uIERCJyB9OyB9IGNhdGNoKF8pIHt9CiAgICAgIHJldHVybiBudWxsOwogICAgfQogICAgZW50cmllcy5zb3J0KGZ1bmN0aW9uKGEsYil7IHJldHVybiByb2xlUmFuayhhLnJvbGUpIC0gcm9sZVJhbmsoYi5yb2xlKTsgfSk7CiAgICB2YXIgcGFyc2VkID0geyB3bzogW10sIHNmYzogW10sIHJlcGFpcjogW10sIGNhbGVuZGFyOiBbXSwgZGJtb2RlbDogW10sIHNrdWNvc3Q6IFtdLCBjZXNpdW06IFtdLCBib206IFtdLCBzdGF0aW9uczogW10gfTsKICAgIHZhciBwdWxsZWQgPSBbXTsKICAgIGZvciAodmFyIGk9MDsgaTxlbnRyaWVzLmxlbmd0aDsgaSsrKXsKICAgICAgaWYgKHdpbmRvdy5zbXRpbmVsSW1wb3J0QWJvcnRBc3NlcnQpIHdpbmRvdy5zbXRpbmVsSW1wb3J0QWJvcnRBc3NlcnQoKTsKICAgICAgdmFyIGl0ZW0gPSBlbnRyaWVzW2ldOwogICAgICB2YXIgcGN0ID0gMTggKyBNYXRoLnJvdW5kKChpIC8gTWF0aC5tYXgoMSwgZW50cmllcy5sZW5ndGgpKSAqIDUwKTsKICAgICAgcHJvZ3Jlc3Mob3B0aW9ucywgcGN0LCAnUEFSU0lOR18nICsgU3RyaW5nKGl0ZW0ucm9sZXx8JycpLnRvVXBwZXJDYXNlKCksICdSZWFkaW5nICcgKyBpdGVtLnBhdGguc3BsaXQoJy8nKS5wb3AoKSArICcgd2l0aG91dCBFeGNlbCBmb3JtdWxhcy4uLicpOwogICAgICB2YXIgdGV4dCA9IGF3YWl0IGl0ZW0uZW50cnkuYXN5bmMoJ3N0cmluZycpOwogICAgICBhd2FpdCB5aWVsZFRocmVhZCgpOwogICAgICB2YXIgcmF3Um93cyA9IHdpbmRvdy50cmFjZU9wc1lpZWxkUGFyc2VEZWxpbWl0ZWRUZXh0KHRleHQsIGl0ZW0ucm9sZSk7CiAgICAgIHRleHQgPSBudWxsOwogICAgICBhd2FpdCB5aWVsZFRocmVhZCgpOwogICAgICB2YXIgb2JqZWN0cyA9IHdpbmRvdy50cmFjZU9wc1lpZWxkT2JqZWN0c0Zyb21SYXdSb3dzKHJhd1Jvd3MsIGl0ZW0ucm9sZSk7CiAgICAgIHJhd1Jvd3MgPSBudWxsOwogICAgICBpZiAob2JqZWN0cyAmJiBvYmplY3RzLmxlbmd0aCkgewogICAgICAgIHBhcnNlZFtpdGVtLnJvbGVdID0gcGFyc2VkW2l0ZW0ucm9sZV0uY29uY2F0KG9iamVjdHMpOwogICAgICAgIHB1bGxlZC5wdXNoKHsgbmFtZTppdGVtLnBhdGguc3BsaXQoJy8nKS5wb3AoKSwgcm9sZTppdGVtLnJvbGUsIHJvd3M6b2JqZWN0cy5sZW5ndGggfSk7CiAgICAgIH0KICAgICAgYXdhaXQgeWllbGRUaHJlYWQoKTsKICAgIH0KICAgIGlmIChoYXNDb21tb24ocGFyc2VkKSAmJiAhaGFzQnUocGFyc2VkKSkgewogICAgICBwcm9ncmVzcyhvcHRpb25zLCA2OCwgJ0NPTU1PTl9TRVNTSU9OJywgJ1N0ZXAgMS8yOiByZXBsYWNpbmcgQ29tbW9uIERCIGluIHNlc3Npb24gbWVtb3J5Li4uJyk7CiAgICAgIGF3YWl0IHNhdmVDb21tb24ocGFyc2VkLCBmaWxlLm5hbWUpOwogICAgfQogICAgdmFyIGNvbW1vbiA9IGF3YWl0IG1lcmdlQ29tbW9uKHBhcnNlZCk7CiAgICBpZiAoaGFzQnUocGFyc2VkKSAmJiAhY29tbW9uKSB7CiAgICAgIHRocm93IG5ldyBFcnJvcignQ3VycmVudC1jeWNsZSBDb21tb24gREIgaXMgbWlzc2luZy4gTG9hZCB0aGUgdXBkYXRlZCBDb21tb24gREIgWklQIGZpcnN0LCB0aGVuIGxvYWQgdGhlIHVwZGF0ZWQgU0ZDICsgQ2VzaXVtIFpJUC4gUHJldmlvdXMgaXRlcmF0aW9ucyBhcmUgbmV2ZXIgcmV1c2VkLicpOwogICAgfQogICAgaWYgKGNvbW1vbikgewogICAgICBwcm9ncmVzcyhvcHRpb25zLCA3NCwgJ0NPTU1PTl9NRVJHRUQnLCAnU3RlcCAyLzI6IGN1cnJlbnQgQ29tbW9uIERCIGNvbm5lY3RlZCB0byB0aGUgY3VycmVudCBTRkMgKyBDZXNpdW0gcGFja2FnZS4uLicpOwogICAgICBhd2FpdCB5aWVsZFRocmVhZCgpOwogICAgfQogICAgaWYgKCFoYXNCdShwYXJzZWQpICYmIGhhc0NvbW1vbihwYXJzZWQpKSB7CiAgICAgIHByb2dyZXNzKG9wdGlvbnMsIDEwMCwgJ0NPTU1PTl9SRUFEWScsICdTdGVwIDEvMiBjb21wbGV0ZS4gQ3VycmVudCBDb21tb24gREIgaXMgaGVsZCBpbiBzZXNzaW9uIG1lbW9yeSBvbmx5LiBOb3cgbG9hZCB0aGUgdXBkYXRlZCBTRkMgKyBDZXNpdW0gWklQLicpOwogICAgICB0cnkgeyBpZiAod2luZG93LnNtdGluZWxaaXBXYWl0SGlkZSkgd2luZG93LnNtdGluZWxaaXBXYWl0SGlkZSg5MDApOyB9IGNhdGNoKF8pIHt9CiAgICB9IGVsc2UgaWYgKCFwYXJzZWQud28ubGVuZ3RoICYmICFwYXJzZWQuc2ZjLmxlbmd0aCAmJiAhcGFyc2VkLnJlcGFpci5sZW5ndGggJiYgIXBhcnNlZC5jZXNpdW0ubGVuZ3RoKSB7CiAgICAgIHNlc3Npb25Db21tb24gPSBudWxsOwogICAgICB0cnkgeyB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfQ09NTU9OX0NBQ0hFX1NUQVRVUyA9IHsgbG9hZGVkOmZhbHNlLCBzdG9yYWdlOidzZXNzaW9uLW1lbW9yeScsIGNvbnN1bWVkOnRydWUsIHJlYXNvbjonUmVjb2duaXplZCBmaWxlcyBjb250YWluZWQgbm8gdXNhYmxlIHJvd3M7IHJlbG9hZCBjdXJyZW50IENvbW1vbiBEQicgfTsgfSBjYXRjaChfKSB7fQogICAgICB0aHJvdyBuZXcgRXJyb3IoJ1RoZSBaSVAgZG9lcyBub3QgY29udGFpbiByZWNvZ25pemFibGUgU0ZDLCBDZXNpdW0sIFJlcGFpcl9SZWNvcmQsIG9yIFN0YXRpb25fb25fbGluZV9yZXBvcnQgZGF0YS4nKTsKICAgIH0KICAgIHByb2dyZXNzKG9wdGlvbnMsIDgyLCAnQlVJTERJTkdfREFUQVNFVCcsICdCdWlsZGluZyB0aGUgYWN0aXZlIGRhdGFzZXQgZnJvbSBjdXJyZW50IFNGQyBkYXRhIGFuZCBjdXJyZW50IENvbW1vbiBEQiBlbnJpY2htZW50Li4uJyk7CiAgICB2YXIgbWV0YSA9IHsKICAgICAgc291cmNlOiAhaGFzQnUocGFyc2VkKSA/ICdDVVJSRU5UIENPTU1PTiBEQiDCtyBzZXNzaW9uIG9ubHknIDogJ0NVUlJFTlQgU0ZDICsgQ0VTSVVNIMK3IGN1cnJlbnQgQ29tbW9uIERCJywKICAgICAgbW9kZTogIWhhc0J1KHBhcnNlZCkgPyAnY29tbW9uLXNlc3Npb24tdjEzLjE0LjgnIDogJ2ZyZXNoLXBhaXJlZC1pbXBvcnQtdjEzLjE0LjgnLAogICAgICBmaWxlTmFtZTpmaWxlLm5hbWUsCiAgICAgIGltcG9ydFN0YXJ0TXM6KG9wdGlvbnMgJiYgb3B0aW9ucy5pbXBvcnRTdGFydE1zKSB8fCBzdGFydGVkLAogICAgICB3b3JrYm9va05hbWU6ICFoYXNCdShwYXJzZWQpID8gJ0NPTU1PTiBEQiBwYWNrYWdlJyA6ICdCVSBwYWNrYWdlIHdpdGggU0ZDL0Nlc2l1bScsCiAgICAgIGNvbnRhaW5lcjpmaWxlLm5hbWUsCiAgICAgIHNoZWV0czpwdWxsZWQsCiAgICAgIG5vdGVzOiAhaGFzQnUocGFyc2VkKSA/ICdDdXJyZW50IENvbW1vbiBEQiByZXBsYWNlZCBpbiBzZXNzaW9uIG1lbW9yeS4gTm8gYnJvd3NlciBjYWNoZSBpcyByZXRhaW5lZC4gTG9hZCB0aGUgY3VycmVudCBTRkMgKyBDZXNpdW0gcGFja2FnZSBuZXh0LicgOiAnRnJlc2ggcGFpcmVkIGN5Y2xlIGNvbXBsZXRlZC4gU0ZDL0Nlc2l1bSB3ZXJlIGVucmljaGVkIG9ubHkgd2l0aCB0aGUgQ29tbW9uIERCIGxvYWRlZCBpbiB0aGlzIGJyb3dzZXIgc2Vzc2lvbjsgbm8gcHJpb3IgaXRlcmF0aW9uIHdhcyByZXVzZWQuJwogICAgfTsKICAgIHZhciBidWlsdCA9IHdpbmRvdy50cmFjZU9wc1lpZWxkQnVpbGRGcm9tSW1wb3J0ZWQocGFyc2VkLndvLCBwYXJzZWQuc2ZjLCBwYXJzZWQucmVwYWlyLCBtZXRhLCBwYXJzZWQuY2FsZW5kYXIsIHBhcnNlZC5kYm1vZGVsLCBwYXJzZWQuY2VzaXVtLCBwYXJzZWQuYm9tLCBwYXJzZWQuc3RhdGlvbnMsIHBhcnNlZC5za3Vjb3N0KTsKICAgIHRyeSB7CiAgICAgIGlmIChidWlsdCkgYnVpbHQubW9kZSA9IG1ldGEubW9kZTsKICAgICAgaWYgKHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9JTVBPUlRfTUVUQSkgd2luZG93LlRSQUNFT1BTX1lJRUxEX0lNUE9SVF9NRVRBLm1vZGUgPSBtZXRhLm1vZGU7CiAgICB9IGNhdGNoKF8pIHt9CiAgICB0cnkgewogICAgICB3aW5kb3cuVFJBQ0VPUFNfWUlFTERfQlJJREdFX0RFQlVHID0gewogICAgICAgIHNmY1Jvd3M6KHBhcnNlZC5zZmN8fFtdKS5sZW5ndGgsCiAgICAgICAgY2VzaXVtUm93czoocGFyc2VkLmNlc2l1bXx8W10pLmxlbmd0aCwKICAgICAgICBmdFJvd3M6KHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9GVF9ST1dTfHxbXSkubGVuZ3RoLAogICAgICAgIGNvbW1vblJvd3M6IGNvbW1vblJvd3Moe3dvOnBhcnNlZC53bywgcmVwYWlyOnBhcnNlZC5yZXBhaXIsIGNhbGVuZGFyOnBhcnNlZC5jYWxlbmRhciwgZGJtb2RlbDpwYXJzZWQuZGJtb2RlbCwgc2t1Y29zdDpwYXJzZWQuc2t1Y29zdCwgYm9tOnBhcnNlZC5ib20sIHN0YXRpb25zOnBhcnNlZC5zdGF0aW9uc30pLAogICAgICAgIHJpc2tSb3dzOih3aW5kb3cuVFJBQ0VPUFNfUklTS19TVU1NQVJZX1JPV1N8fFtdKS5sZW5ndGgsCiAgICAgICAgcnVsZTonUmF3IFNGQyArIENvbW1vbiBEQiBlbnJpY2htZW50OyBTRkMuQk9YU04vU04gLT4gQ2VzaXVtLnN5c3NlcmlhbG5vOyBSZXBhaXIvQk9NL0NhbGVuZGFyIGZyb20gQ29tbW9uIERCJywKICAgICAgICBjcmVhdGVkQXQ6bmV3IERhdGUoKS50b0lTT1N0cmluZygpCiAgICAgIH07CiAgICAgIGNvbnNvbGUuaW5mbygnW1NNVGluZWwgVjEzLjIuMjAgQ29tbW9uIEVucmljaG1lbnRdJywgd2luZG93LlRSQUNFT1BTX1lJRUxEX0JSSURHRV9ERUJVRyk7CiAgICB9IGNhdGNoKF8pIHt9CiAgICB2YXIgc2VjcyA9ICgoRGF0ZS5ub3coKSAtIHN0YXJ0ZWQpIC8gMTAwMCkudG9GaXhlZCgxKTsKICAgIHRyeSB7IHdpbmRvdy5UUkFDRU9QU19ZSUVMRF9JTVBPUlRfQ1lDTEUgPSB7IHN0YXR1czpoYXNCdShwYXJzZWQpID8gJ2NvbXBsZXRlJyA6ICd3YWl0aW5nLXNmYy1jZXNpdW0nLCBjeWNsZTpjb21tb24gJiYgY29tbW9uLmN5Y2xlIHx8IHNlc3Npb25Db21tb25DeWNsZSwgY29tbW9uU291cmNlOmNvbW1vbiAmJiBjb21tb24uc291cmNlTmFtZSB8fCBmaWxlLm5hbWUsIGJ1U291cmNlOmhhc0J1KHBhcnNlZCkgPyBmaWxlLm5hbWUgOiAnJywgcmVzaWR1YWxEYXRhQ2xlYXJlZDp0cnVlLCBjb21wbGV0ZWRBdDpoYXNCdShwYXJzZWQpID8gbmV3IERhdGUoKS50b0lTT1N0cmluZygpIDogJycgfTsgfSBjYXRjaChfKSB7fQogICAgcHJvZ3Jlc3Mob3B0aW9ucywgMTAwLCBoYXNCdShwYXJzZWQpID8gJ1JFQURZJyA6ICdDT01NT05fUkVBRFknLCBoYXNCdShwYXJzZWQpID8gKCdTdGVwIDIvMiBjb21wbGV0ZSBpbiAnICsgc2VjcyArICdzLiBGcmVzaCBDb21tb24gREIgKyBTRkMgKyBDZXNpdW0gY3ljbGUgaXMgYWN0aXZlLicpIDogJ1N0ZXAgMS8yIGNvbXBsZXRlLiBMb2FkIHRoZSBjdXJyZW50IFNGQyArIENlc2l1bSBaSVAuJyk7CiAgICB0cnkgeyBpZiAod2luZG93LnNtdGluZWxaaXBXYWl0SGlkZSkgd2luZG93LnNtdGluZWxaaXBXYWl0SGlkZSg5MDApOyB9IGNhdGNoKF8pIHt9CiAgICByZXR1cm4gYnVpbHQ7CiAgfTsKICB0cnkgeyB0cmFjZU9wc1lpZWxkVHJ5SW1wb3J0VGV4dFppcCA9IHdpbmRvdy50cmFjZU9wc1lpZWxkVHJ5SW1wb3J0VGV4dFppcDsgfSBjYXRjaChfKSB7fQoKICAvKiBWMTMuMTYuNTA6IHBhdXNlIG5vbmVzc2VudGlhbCBNdXRhdGlvbk9ic2VydmVyIGNhbGxiYWNrcyB3aGlsZSBTRkMvQ2VzaXVtIGlzIGJlaW5nIHBhcnNlZC4gKi8KICAoZnVuY3Rpb24oKXsKICAgIHZhciBfX2Zhc3RJbXBvcnRCYXNlID0gd2luZG93LnRyYWNlT3BzWWllbGRUcnlJbXBvcnRUZXh0WmlwOwogICAgaWYodHlwZW9mIF9fZmFzdEltcG9ydEJhc2UgPT09ICdmdW5jdGlvbicgJiYgIV9fZmFzdEltcG9ydEJhc2UuX19zbXRpbmVsQnVzeUdhdGUpewogICAgICB2YXIgX19mYXN0SW1wb3J0V3JhcHBlZCA9IGFzeW5jIGZ1bmN0aW9uKCl7CiAgICAgICAgd2luZG93Ll9fU01USU5FTF9JTVBPUlRfQlVTWV9fID0gdHJ1ZTsKICAgICAgICB0cnkgeyByZXR1cm4gYXdhaXQgX19mYXN0SW1wb3J0QmFzZS5hcHBseSh0aGlzLCBhcmd1bWVudHMpOyB9CiAgICAgICAgZmluYWxseSB7CiAgICAgICAgICB3aW5kb3cuX19TTVRJTkVMX0lNUE9SVF9CVVNZX18gPSBmYWxzZTsKICAgICAgICAgIHRyeSB7IHdpbmRvdy5kaXNwYXRjaEV2ZW50KG5ldyBDdXN0b21FdmVudCgnc210aW5lbDppbXBvcnQtc2V0dGxlZCcpKTsgfSBjYXRjaChfKSB7fQogICAgICAgIH0KICAgICAgfTsKICAgICAgX19mYXN0SW1wb3J0V3JhcHBlZC5fX3NtdGluZWxCdXN5R2F0ZSA9IHRydWU7CiAgICAgIHdpbmRvdy50cmFjZU9wc1lpZWxkVHJ5SW1wb3J0VGV4dFppcCA9IF9fZmFzdEltcG9ydFdyYXBwZWQ7CiAgICAgIHRyeSB7IHRyYWNlT3BzWWllbGRUcnlJbXBvcnRUZXh0WmlwID0gX19mYXN0SW1wb3J0V3JhcHBlZDsgfSBjYXRjaChfKSB7fQogICAgfQogIH0pKCk7CgogIGZ1bmN0aW9uIHN5bmNCYWRnZSgpewogICAgdHJ5ewogICAgICB2YXIgbm9kZXMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCdib2R5IConKTsKICAgICAgZm9yKHZhciBpPTA7aTxub2Rlcy5sZW5ndGg7aSsrKXsKICAgICAgICB2YXIgZWwgPSBub2Rlc1tpXTsKICAgICAgICBpZighZWwgfHwgIWVsLnRleHRDb250ZW50KSBjb250aW51ZTsKICAgICAgICBpZigvU01UaW5lbCBWXGQrXC5cZCsvaS50ZXN0KGVsLnRleHRDb250ZW50KSAmJiAvMjAyNi0wNS9pLnRlc3QoZWwudGV4dENvbnRlbnQpICYmIGVsLnRleHRDb250ZW50Lmxlbmd0aCA8IDIwMCl7CiAgICAgICAgICBlbC50ZXh0Q29udGVudCA9IFZFUlNJT05fTEFCRUw7CiAgICAgICAgfQogICAgICB9CiAgICAgIHZhciBiID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcignLnNtdGluZWwtY29tbW9uLWJ1LXZlcnNpb24tYmFkZ2UnKTsKICAgICAgaWYoIWIpewogICAgICAgIGI9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7IGIuY2xhc3NOYW1lPSdzbXRpbmVsLWNvbW1vbi1idS12ZXJzaW9uLWJhZGdlJzsgZG9jdW1lbnQuYm9keS5hcHBlbmRDaGlsZChiKTsKICAgICAgICBiLnN0eWxlLmNzc1RleHQ9J3Bvc2l0aW9uOmZpeGVkO3JpZ2h0OjE4cHg7Ym90dG9tOjc0cHg7ei1pbmRleDo5OTk5OTtiYWNrZ3JvdW5kOiMxMDJBNDM7Y29sb3I6I2ZmZjtib3JkZXItcmFkaXVzOjE4cHg7cGFkZGluZzoxMHB4IDE4cHg7Zm9udDo4MDAgMTJweCBTZWdvZSBVSSxBcmlhbDtib3gtc2hhZG93OjAgMTBweCAyOHB4IHJnYmEoMTYsNDIsNjcsLjI4KTtib3JkZXI6MXB4IHNvbGlkIHJnYmEoMjU1LDI1NSwyNTUsLjI0KSc7CiAgICAgIH0KICAgICAgYi50ZXh0Q29udGVudCA9IFZFUlNJT05fTEFCRUw7CiAgICB9Y2F0Y2goXyl7fQogIH0KICBpZihkb2N1bWVudC5yZWFkeVN0YXRlID09PSAnbG9hZGluZycpIGRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ0RPTUNvbnRlbnRMb2FkZWQnLCBzeW5jQmFkZ2UpOyBlbHNlIHN5bmNCYWRnZSgpOwogIHNldFRpbWVvdXQoc3luY0JhZGdlLCA4MDApOyBzZXRUaW1lb3V0KHN5bmNCYWRnZSwgMjAwMCk7IHNldFRpbWVvdXQoc3luY0JhZGdlLCA1MDAwKTsKfSkoKTsK");
+  (0,eval)(code);
 })();
 </script>
 
@@ -74158,30 +73859,7 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   setInterval(ensure,750);
 })();
 </script>
-</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
-    doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();var subtitle=doc.querySelector('.tpr-sub');if(subtitle)subtitle.textContent='Performance + Backlog + Accountability · Daily / WTD / QTD / 13WK · NDF · aging · actions · traceability';var note=doc.querySelector('.tpr-note');if(note)note.innerHTML='<b>Contract:</b> Cesium is authoritative for Test population. FPY never changes because of repair or retest. Open backlog is a separate carry-forward population: unresolved first-attempt failures stay open until a later PASS or explicit disposition. QTD / 13WK are shown only from loaded history; missing fiscal history is not fabricated. <b>Cutoff:</b> '+esc(t.cutoff||'N/D')+'.';var top=main.querySelector(':scope > .tpr-kpis');if(top)top.remove();
-    var heroBox=main.querySelector('.tpr-hero'),noteBox=main.querySelector('.tpr-note');
-    var filterWrap=doc.createElement('div');filterWrap.innerHTML=filterSnapshotHtml(filters,t);var filterNode=filterWrap.firstElementChild;if(filterNode){if(noteBox&&noteBox.nextSibling)main.insertBefore(filterNode,noteBox.nextSibling);else if(noteBox)main.appendChild(filterNode);else if(heroBox&&heroBox.nextSibling)main.insertBefore(filterNode,heroBox.nextSibling);else main.insertBefore(filterNode,main.firstChild);}
-    var coverWrap=doc.createElement('div');coverWrap.innerHTML=coverHtml(filters,t,h,m);var coverNode=coverWrap.firstElementChild;if(coverNode){if(filterNode&&filterNode.nextSibling)main.insertBefore(coverNode,filterNode.nextSibling);else if(filterNode)main.appendChild(coverNode);else if(noteBox&&noteBox.nextSibling)main.insertBefore(coverNode,noteBox.nextSibling);else main.insertBefore(coverNode,main.firstChild);}
-    var secModel=doc.getElementById('sec-model'),secArea=doc.getElementById('sec-area'),secSignal=doc.getElementById('sec-signal'),secFail=doc.getElementById('sec-fail'),secRepair=doc.getElementById('sec-repair'),secBridge=doc.getElementById('sec-bridge'),secMethod=doc.getElementById('sec-method');
-    var exec=doc.createElement('div');exec.innerHTML=section('sec-exec','1','Executive Yield','Daily, WTD, QTD, target, WoW and carry-forward risk',execHtml(t,h));var execSec=exec.firstElementChild;main.insertBefore(execSec,secModel);
-    var trend=doc.createElement('div');trend.innerHTML=section('sec-trend','2','13 Week Trend','Fiscal-week ETE FPY with explicit loaded-history coverage',trendHtml(t));main.insertBefore(trend.firstElementChild,secModel);
-    if(secModel){updateSectionHead(secModel,3,'Product Family Performance','BU → Product / Family → Cesium SKU / UUT');var body=secModel.querySelector('.tpr-section-body');if(body)body.innerHTML=productTable(m)}var pd=doc.createElement('div');pd.innerHTML=section('sec-product-detail','4','Product FPY & Failure Breakdown','Per-product FPY by Test Area plus first-attempt failure modes and Parent SN evidence',productBreakdownHtml(filters,m));if(secSignal)main.insertBefore(pd.firstElementChild,secSignal);else main.appendChild(pd.firstElementChild);
-    if(secSignal){var sb=secSignal.querySelector('.tpr-section-body'),areaBody=secArea&&secArea.querySelector('.tpr-section-body'),failBody=secFail&&secFail.querySelector('.tpr-section-body');if(sb){sb.innerHTML=(areaBody?areaBody.innerHTML:'')+sb.innerHTML+(failBody?failBody.innerHTML:'')}updateSectionHead(secSignal,5,'Top Offenders','Test Area FPY, DBN-style failure Pareto, proportional FR and serial evidence')}if(secArea)secArea.remove();if(secFail)secFail.remove();
-    var ndf=doc.createElement('div');ndf.innerHTML=section('sec-ndf','6','NDF / Root Cause Follow-up','Explicit NDF evidence, owner, action, due date and aging',ndfHtml(h));main.insertBefore(ndf.firstElementChild,secRepair);
-    var backlog=doc.createElement('div');backlog.innerHTML=section('sec-backlog','7','Open Unit Backlog','Carry-forward unresolved Test units through the selected cutoff',backlogHtml(h));main.insertBefore(backlog.firstElementChild,secRepair);
-    var qa=doc.createElement('div');qa.innerHTML=section('sec-qa','8','QA Affected Population','Explicit QA cohort tracking; no inference from generic Repair records',qaHtml(filters,m,h));main.insertBefore(qa.firstElementChild,secRepair);
-    if(secRepair)updateSectionHead(secRepair,9,'Repair Intelligence','Repair mode, RefDes, PN, action, responsible area and serial evidence');var action=doc.createElement('div');action.innerHTML=section('sec-actions','10','Action Tracker','Department → finding → owner → due date → status → evidence',actionHtml(filters,m));if(secBridge)main.insertBefore(action.firstElementChild,secBridge);else main.appendChild(action.firstElementChild);
-    if(secBridge)updateSectionHead(secBridge,11,'Traceability','PCB ↔ chassis ↔ SFC ↔ WO ↔ Cesium SKU / UUT');if(secMethod){updateSectionHead(secMethod,12,'Method & Source','Calculation contract, historical coverage and evidence boundaries');var mb=secMethod.querySelector('.tpr-method');if(mb)mb.innerHTML='<b>Method:</b> Cesium remains authoritative for Test population and product identity. Daily/WTD/QTD/13WK metrics use the same first-attempt engine as the selected-scope FPY. QTD is withheld when the loaded source does not reach the fiscal-quarter start. Open backlog ignores the report start date and carries unresolved first-observed FAIL events to the cutoff; first-attempt certainty is limited by the earliest Cesium history loaded. NDF requires explicit NDF / No Defect Found evidence. Repair enriches diagnosis but never rewrites FPY. Persistent actions come from the Yield Flow Action Tracker. Failure Rate remains unique first-fail SN ÷ FPY Tested at the same Test Area. Source mode: <b>'+esc(src.mode||'N/D')+'</b>.'}
-    var nav=doc.querySelector('.tpr-side');if(nav)nav.innerHTML=[['#sec-filters','Filters'],['#sec-cover','Cover'],['#sec-exec','Executive'],['#sec-trend','13WK'],['#sec-model','Product Summary'],['#sec-product-detail','Product Detail'],['#sec-signal','Offenders'],['#sec-ndf','NDF'],['#sec-backlog','Backlog'],['#sec-qa','QA'],['#sec-repair','Repair'],['#sec-actions','Actions'],['#sec-bridge','Trace'],['#sec-method','Method']].map(function(x,i){return '<a class="tpr-nav" href="'+x[0]+'" title="'+esc(x[1])+'">'+(i+1)+'</a>'}).join('');
-    var style=doc.querySelector('style');if(style)style.textContent+=' .tpr-week-chart{display:grid;gap:7px}.tpr-week-row{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(220px,2.4fr) 72px;gap:8px;align-items:center}.tpr-week-row>div:first-child b{display:block;font-size:9px;color:#172b43}.tpr-week-row>div:first-child small{font-size:8px;color:#6c786f}.tpr-week-track{height:14px;border-radius:999px;background:#edf1ed;border:1px solid #d8dfd8;position:relative;overflow:visible}.tpr-week-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#33472D,#788476)}.tpr-week-track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#B80F1B}.tpr-week-row strong{text-align:right;font-size:10px}.tpr-cover{margin:14px 0 18px;padding:18px;border:1px solid #d9e2dc;border-radius:22px;background:linear-gradient(180deg,#ffffff 0%,#f7faf8 100%);box-shadow:0 16px 34px rgba(39,60,44,.08)}.tpr-cover-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;border-bottom:1px solid #dfe8e2;padding-bottom:10px}.tpr-cover-title{font-size:28px;font-weight:950;letter-spacing:.02em;color:#1b2c22}.tpr-cover-meta{font-size:12px;font-weight:800;color:#506658;text-align:right}.tpr-cover-sub{margin:10px 0 14px;font-size:12px;color:#5e6f64;font-weight:700}.tpr-cover-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.8fr);gap:16px}.tpr-cover-section-title{font-size:14px;font-weight:900;color:#274131;margin-bottom:10px}.tpr-cover-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.tpr-cover-kpi{padding:12px 14px;border-radius:16px;border:1px solid #d7e0da;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}.tpr-cover-kpi small{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:#52685a}.tpr-cover-kpi b{display:block;margin-top:8px;font-size:28px;line-height:1.05;color:#21382a}.tpr-cover-kpi span{display:block;margin-top:6px;font-size:11px;color:#5e6f64}.tpr-cover-kpi.good{background:linear-gradient(180deg,#eef8ef 0%,#ffffff 100%);border-color:#bedec1}.tpr-cover-kpi.warn{background:linear-gradient(180deg,#fff6df 0%,#ffffff 100%);border-color:#ead39a}.tpr-cover-kpi.risk{background:linear-gradient(180deg,#fdebec 0%,#ffffff 100%);border-color:#efb7bd}.tpr-cover-kpi.info{background:linear-gradient(180deg,#ebf4fe 0%,#ffffff 100%);border-color:#bfd4ea}.tpr-cover-offender{margin-top:14px;padding:14px;border:1px solid #dde4df;border-radius:18px;background:#fff}.tpr-cover-ribbon{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,#cf4557,#dc6d7b);color:#fff;padding:7px 14px;border-radius:12px 12px 12px 2px;font-weight:900;font-size:14px;letter-spacing:.02em}.tpr-cover-ribbon span{font-size:12px;opacity:.92}.tpr-cover-offender-title{margin-top:12px;font-size:18px;color:#24372b}.tpr-cover-offender-title b{color:#18271f}.tpr-cover-offender-metric{margin-top:10px;font-size:15px;color:#44584b}.tpr-cover-offender-metric b{font-size:42px;line-height:1;color:#bf2d3e;margin-right:8px}.tpr-cover-improve{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid #ecf1ee;font-size:14px;color:#294033}.tpr-cover-improve b{color:#0d6b51}.tpr-cover-chart{display:flex;align-items:flex-end;gap:16px;min-height:146px;margin-top:16px;padding:10px 8px 2px;border-top:1px solid #edf2ee}.tpr-cover-bar{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px}.tpr-cover-bar b{font-size:12px;color:#294033}.tpr-cover-bar i{display:block;width:42px;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#5da280,#91c17b);box-shadow:inset 0 1px 0 rgba(255,255,255,.34)}.tpr-cover-bar span{font-size:11px;color:#607065;text-align:center}.tpr-cover-right{display:grid;gap:12px}.tpr-cover-card{padding:14px;border:1px solid #dce5de;border-radius:18px;background:#fff}.tpr-cover-card-title{font-size:13px;font-weight:900;color:#223629;margin-bottom:10px}.tpr-cover-table{width:100%;border-collapse:collapse;font-size:12px}.tpr-cover-table th,.tpr-cover-table td{padding:8px 8px;border:1px solid #e2e9e3;text-align:left;vertical-align:top}.tpr-cover-table thead th{background:#35567f;color:#fff;border-color:#35567f;font-size:11px}.tpr-cover-table.compact th,.tpr-cover-table.compact td{font-size:11px;padding:7px}.tpr-cover-bullets{margin:0;padding-left:18px;display:grid;gap:8px;color:#2f4035;font-size:13px}.tpr-cover-status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.tpr-cover-status.open{background:#fff3d8;color:#9f6b00}.tpr-cover-status.track{background:#e8f5e6;color:#2f7a2b}.tpr-cover-status.done{background:#e5edf9;color:#1e4d89}.tpr-filter-snapshot{margin:0 0 12px;padding:12px 14px;border:1px solid #cfd9d1;border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(20,24,24,.05)}.tpr-filter-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.tpr-filter-head b{font-size:12px;color:#294033;letter-spacing:.04em}.tpr-filter-head span{font-size:9px;color:#718078}.tpr-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.tpr-filter-chip{padding:8px 10px;border-radius:10px;background:#f5f8f5;border:1px solid #dce5de;min-width:0}.tpr-filter-chip small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#728178;font-weight:900}.tpr-filter-chip b{display:block;margin-top:3px;font-size:10px;color:#1d3125;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tpr-filter-chip b[title]{cursor:help}@media(max-width:980px){.tpr-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tpr-cover-grid{grid-template-columns:1fr}.tpr-cover-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.tpr-filter-grid{grid-template-columns:1fr}.tpr-filter-head{align-items:flex-start;flex-direction:column}.tpr-cover{padding:14px}.tpr-cover-head{display:block}.tpr-cover-title{font-size:22px}.tpr-cover-meta{margin-top:6px;text-align:left}.tpr-cover-kpis{grid-template-columns:1fr}.tpr-cover-chart{justify-content:flex-start;overflow:auto}}@media(max-width:700px){.tpr-week-row{grid-template-columns:1fr}.tpr-week-row strong{text-align:left}}';
-    return '<!doctype html>\n'+doc.documentElement.outerHTML
-  }
-  function csvTextFor(filters){filters=filters||{};if(!filters.bu||filters.bu==='ALL')return 'Section,Metric,Value,Detail\nERROR,BU,Select BU first,';var a=api(),src=source(filters),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters||{}),h=history(filters||{},rows,t.cutoff),out=[['Section','Metric','Value','Detail']];[['Scope FPY',fp(m.fpy),m.eteTested+' tested'],['Daily FPY',fp(t.day&&t.day.fpy),t.cutoff],['WTD FPY',t.wtd&&t.wtdComplete?fp(t.wtd.fpy):'N/D',t.currentWeek||''],['QTD FPY',t.qtd&&t.qtdComplete?fp(t.qtd.fpy):'N/D',t.quarter&&t.quarter.name||''],['Target',t.target==null?'N/D':fp(t.target),''],['Gap',signed(t.gap),''],['WoW',signed(t.wow),''],['Open Backlog',h.open.length,''],['Aging >7d',h.aging7,''],['NDF',h.ndf.length,'']].forEach(function(r){out.push(['EXECUTIVE'].concat(r))});(t.trend||[]).forEach(function(x){out.push(['13WK',x.week,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.byModel||[]).forEach(function(x){out.push(['PRODUCT',x.name,fp(x.fpy),x.tested+' tested / '+x.fail+' fail'])});(m.failures||[]).forEach(function(x){out.push(['FAILURE',x.station+' · '+x.failure,x.affected+' SN',fp(x.failureRate)])});(h.open||[]).forEach(function(x){out.push(['BACKLOG',x.sn,x.disposition,x.ageDays+' d · '+x.station+' · '+x.failure])});actionRows().filter(function(x){return actionScope(x,filters||{},m)}).forEach(function(x){out.push(['ACTION',x.id||x.focus||'Action',x.status||'Open',(x.owner||'N/D')+' · '+(x.dueDate||'N/D')+' · '+(x.action||'')])});function q(v){v=txt(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}return out.map(function(r){return r.map(q).join(',')}).join('\n')}
-  function install(){var a=api();if(!a||!a.reportHtmlFor||!a.computeFor)return false;if(!a.__v140OldReportHtmlFor)a.__v140OldReportHtmlFor=a.reportHtmlFor;a.reportHtmlFor=reportHtmlFor;a.csvTextFor=csvTextFor;a.weekRange=weekRange;a.quarterRange=quarterRange;a.build=BUILD;a.reportHtml=function(){var f={};try{f={search:(document.getElementById('testPerfSearch')||{}).value||'',from:(document.getElementById('testPerfFrom')||{}).value||'',to:(document.getElementById('testPerfTo')||{}).value||'',shift:(document.getElementById('testPerfShift')||{}).value||'ALL',bu:(document.getElementById('testPerfBu')||{}).value||'',line:(document.getElementById('testPerfLine')||{}).value||'ALL',week:(document.getElementById('testPerfWeek')||{}).value||'ALL',model:(document.getElementById('testPerfModel')||{}).value||'ALL',sku:(document.getElementById('testPerfSku')||{}).value||'ALL',wo:(document.getElementById('testPerfWo')||{}).value||'ALL',area:(document.getElementById('testPerfArea')||{}).value||'ALL',failure:(document.getElementById('testPerfFailure')||{}).value||'ALL',target:(document.getElementById('testPerfTarget')||{}).value||''}}catch(_){}return reportHtmlFor(f)};return true}
-  if(!install()){var tries=0,t=setInterval(function(){tries++;if(install()||tries>100)clearInterval(t)},100)}
-})();
-</script>
+
 <!-- SMTinel V13.16.00 - Runtime Slim: Executive Quality export retired; onboarding videos disconnected; 8D Generator retired -->
 <style id="smtinel-v131600-runtime-slim">
 html body .smtinel-starter ._s2mv{display:none!important}
@@ -75421,4 +75099,22 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
   if(!install(false)){var n=0,timer=setInterval(function(){n++;var a=api(),ready=a&&a.reportHtmlFor&&a.reportHtmlFor.__smtinelRepairLookupV191;if((ready||n>360)&&install(n>360))clearInterval(timer);if(n>420)clearInterval(timer)},100)}
 })();
 
+</script>
+
+<script id="smtinel-terminal-factory-health-v202">
+(function(){
+'use strict';
+if(window.__SMTINEL_TERMINAL_FACTORY_HEALTH_V202__)return;window.__SMTINEL_TERMINAL_FACTORY_HEALTH_V202__=1;
+var BUILD='TEST-PERFORMANCE-V1.9.5-FACTORY-HEALTH';
+var CSS='.fy-green{background:#e9f6ec!important;border-color:#9bcaa5!important}.fy-yellow{background:#fff4d7!important;border-color:#dfbf64!important}.fy-red{background:#fde8ea!important;border-color:#dfa0a7!important}.fy-neutral{background:#f5f7f5!important;border-color:#d8dfda!important}.fy-green>b,.fy-green strong,.fy-green.fy-cell{color:#226d3d!important}.fy-yellow>b,.fy-yellow strong,.fy-yellow.fy-cell{color:#966400!important}.fy-red>b,.fy-red strong,.fy-red.fy-cell{color:#a62b39!important}.fy-cell{font-weight:900!important}.fh-wrap{margin-top:6px;border:1px solid #dce5de;border-radius:14px;background:#fff;padding:10px;overflow-x:auto}.fh-title{font-size:10px;font-weight:950;color:#294033;margin:0 0 4px;text-transform:uppercase;letter-spacing:.035em}.fh-sub{font-size:8.5px;color:#687870;margin-bottom:7px}.fh-legend{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 8px;font-size:8.5px;color:#607065}.fh-legend span{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #dce5de;border-radius:999px;background:#f8faf8}.fh-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;background:#75ad79}.fh-legend i.fail{background:#d45e67}.fh-legend i.line{width:18px;height:0;border-top:3px solid #aa7b1a;border-radius:0;background:transparent}.fh-legend i.g{background:#2d7a46}.fh-legend i.y{background:#b98110}.fh-legend i.r{background:#b63542}.fh-svg{display:block;width:100%;height:auto;min-width:850px}.fh-cover{display:block!important;min-height:0!important;padding:10px 0 0!important;overflow-x:auto!important}.fh-cover .fh-svg{min-width:800px}.fh-threshold{margin:0 0 8px;padding:7px 9px;border-left:4px solid #7e8d82;background:#f7f9f7;border-radius:7px;font-size:8.5px;color:#596a61;font-weight:700}.fh-source{display:none!important}@media(max-width:700px){.fh-svg{min-width:940px}.fh-wrap{padding:8px}}';
+function tx(v){return String(v==null?'':v).trim()}function esc(v){return tx(v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c})}function num(v){var m=tx(v).match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null}
+function thresholds(doc){var target=null;Array.prototype.forEach.call(doc.querySelectorAll('#sec-exec .tpr-kpi'),function(c){var s=c.querySelector('span'),b=c.querySelector('b');if(s&&tx(s.textContent).toUpperCase()==='TARGET'){var n=num(b&&b.textContent);if(n!=null&&n>0&&n<=100)target=n}});return target!=null?{g:target,y:Math.max(0,target-5),note:'Released target '+target.toFixed(2)+'%'}:{g:95,y:90,note:'Target N/D: visual reference Green ≥95% · Yellow 90–94.99% · Red <90%'}}
+function st(v,th){if(v==null)return'fy-neutral';return v>=th.g?'fy-green':v>=th.y?'fy-yellow':'fy-red'}
+function rows(doc){var out=[];Array.prototype.forEach.call(doc.querySelectorAll('#sec-trend .tpr-week-row'),function(r){var w=r.querySelector('div:first-child b'),sm=r.querySelector('div:first-child small'),sv=r.querySelector('strong'),s=tx(sm&&sm.textContent),mt=s.match(/([0-9,]+)\s+tested/i),mf=s.match(/([0-9,]+)\s+fail/i),tested=mt?Number(mt[1].replace(/,/g,'')):0,fail=mf?Number(mf[1].replace(/,/g,'')):0,fpy=num(sv&&sv.textContent);if(w&&tested>0&&fpy!=null)out.push({week:tx(w.textContent),tested:tested,fail:fail,pass:Math.max(0,tested-fail),fpy:fpy})});return out.slice(-13)}
+function sw(w){var m=tx(w).match(/Q(\d)\s+W-?0*(\d+)/i);return m?'Q'+m[1]+' W'+('0'+m[2]).slice(-2):tx(w).replace(/^FY\d{4}\s+/i,'')}
+function svg(R,compact,th){if(!R.length)return'<div>No 13-week fiscal history loaded.</div>';var W=compact?920:1040,H=compact?300:390,ML=compact?54:62,MR=compact?60:68,MT=compact?42:48,MB=compact?76:88,CW=W-ML-MR,CH=H-MT-MB,max=Math.max.apply(Math,R.map(function(x){return x.tested}).concat([1])),min=Math.min.apply(Math,R.map(function(x){return x.fpy})),ym=Math.max(0,Math.floor((Math.min(min,th.y)-5)/5)*5);ym=Math.min(ym,85);var step=CW/Math.max(1,R.length),bw=Math.max(20,Math.min(compact?40:48,step*.62));function yv(v){return MT+CH-v/max*CH}function yy(v){return MT+CH-(v-ym)/(100-ym)*CH}var a=['<svg class="fh-svg" viewBox="0 0 '+W+' '+H+'">','<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="#fff"/>'];for(var i=0;i<=4;i++){var vol=max*i/4,y=yv(vol);a.push('<line x1="'+ML+'" y1="'+y.toFixed(1)+'" x2="'+(W-MR)+'" y2="'+y.toFixed(1)+'" stroke="#e4ebe6"/><text x="'+(ML-9)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="#65746c">'+Math.round(vol).toLocaleString()+'</text>')}for(var p=Math.ceil(ym/5)*5;p<=100;p+=5){var py=yy(p);a.push('<text x="'+(W-MR+8)+'" y="'+(py+3).toFixed(1)+'" font-size="8.5" fill="#6c715f">'+p+'%</text>')}[[th.y,'#d2a32c'],[th.g,'#2d7a46']].forEach(function(z){if(z[0]>=ym&&z[0]<=100){var y=yy(z[0]);a.push('<line x1="'+ML+'" y1="'+y.toFixed(1)+'" x2="'+(W-MR)+'" y2="'+y.toFixed(1)+'" stroke="'+z[1]+'" stroke-width="1.3" stroke-dasharray="5 5" opacity=".7"/>')}});a.push('<text x="'+ML+'" y="16" font-size="9" fill="#65746c" font-weight="700">TEST VOLUME</text><text x="'+(W-MR)+'" y="16" text-anchor="end" font-size="9" fill="#8b6b1f" font-weight="700">YIELD %</text>');var pts=[];R.forEach(function(x,i){var x0=ML+i*step+(step-bw)/2,cx=x0+bw/2,tht=x.tested/max*CH,ph=x.pass/max*CH,fh=x.fail/max*CH,top=MT+CH-tht,yp=MT+CH-ph,yf=yp-fh,y=yy(x.fpy),state=st(x.fpy,th),dot=state==='fy-green'?'#2d7a46':state==='fy-yellow'?'#b98110':'#b63542';a.push('<g><title>'+esc(x.week)+' · Total '+x.tested.toLocaleString()+' · Pass '+x.pass.toLocaleString()+' · Fail '+x.fail.toLocaleString()+' · Yield '+x.fpy.toFixed(2)+'%</title><rect x="'+x0.toFixed(1)+'" y="'+yp.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+ph.toFixed(1)+'" rx="4" fill="#75ad79"/><rect x="'+x0.toFixed(1)+'" y="'+yf.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+fh.toFixed(1)+'" rx="4" fill="#d45e67"/><rect x="'+x0.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+tht.toFixed(1)+'" rx="4" fill="none" stroke="#aebbb2"/><text x="'+cx.toFixed(1)+'" y="'+Math.max(29,top-7).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="800" fill="#25372b">'+x.tested.toLocaleString()+'</text><text x="'+cx.toFixed(1)+'" y="'+(H-MB+22).toFixed(1)+'" text-anchor="middle" font-size="8.5" fill="#58685f">'+esc(sw(x.week))+'</text></g>');pts.push([cx,y,dot,x.fpy])});if(pts.length>1)a.push('<polyline points="'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')+'" fill="none" stroke="#aa7b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>');pts.forEach(function(p){a.push('<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="4.2" fill="#fff" stroke="'+p[2]+'" stroke-width="2.6"/><text x="'+p[0].toFixed(1)+'" y="'+Math.max(28,p[1]-9).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="900" fill="'+p[2]+'">'+p[3].toFixed(1)+'%</text>')});a.push('</svg>');return a.join('')}
+function transform(html){try{var d=new DOMParser().parseFromString(String(html||''),'text/html');if(!d||!d.documentElement)return html;var old=d.getElementById('smtinel-factory-health-fixed-style');if(old)old.remove();var style=d.createElement('style');style.id='smtinel-factory-health-fixed-style';style.textContent=CSS;d.head.appendChild(style);var th=thresholds(d),labs={'SCOPE FPY':1,'DAILY FPY':1,'WTD FPY':1,'CURRENT WEEK ETE':1,'QTD FPY':1};Array.prototype.forEach.call(d.querySelectorAll('#sec-exec .tpr-kpi'),function(c){var s=c.querySelector('span'),b=c.querySelector('b'),lab=tx(s&&s.textContent).toUpperCase();if(lab==='WTD FPY'&&s){s.textContent='Current Week ETE';lab='CURRENT WEEK ETE'}if(labs[lab]){c.classList.remove('good','warn','risk','fy-green','fy-yellow','fy-red','fy-neutral');c.classList.add(st(num(b&&b.textContent),th))}});Array.prototype.forEach.call(d.querySelectorAll('table'),function(t){var hs=Array.prototype.map.call(t.querySelectorAll('th'),function(x){return tx(x.textContent).toUpperCase()}),idx=[];hs.forEach(function(h,i){if(h==='FPY'||h.indexOf('FPY ')===0)idx.push(i)});if(!idx.length)return;Array.prototype.forEach.call(t.querySelectorAll('tr'),function(r){var td=r.children;idx.forEach(function(i){if(td[i]&&td[i].tagName==='TD'){var v=num(td[i].textContent);if(v!=null){td[i].classList.add('fy-cell',st(v,th))}}})})});var R=rows(d),legend='<div class="fh-legend"><span><i></i>Pass inside Total Tested</span><span><i class="fail"></i>Fail inside Total Tested</span><span><i class="line"></i>Yield trend</span><span><i class="g"></i>Yield green</span><span><i class="y"></i>Yield yellow</span><span><i class="r"></i>Yield red</span></div>',note='<div class="fh-threshold">'+esc(th.note)+'</div>',sec=d.getElementById('sec-trend');if(sec&&R.length){var src=sec.querySelector('.tpr-week-chart');if(src)src.classList.add('fh-source');var box=sec.querySelector('#tprFactoryHealthFixed');if(box)box.remove();box=d.createElement('div');box.id='tprFactoryHealthFixed';box.className='fh-wrap';box.innerHTML='<div class="fh-title">13 WEEK FACTORY HEALTH · TEST VOLUME + YIELD</div><div class="fh-sub">Each bar is Total Tested, stacked by Pass and Fail. The line is weekly FPY / ETE Yield.</div>'+note+legend+svg(R,false,th);if(src)src.parentNode.insertBefore(box,src);else(sec.querySelector('.tpr-section-body')||sec).appendChild(box);var ct=sec.querySelector('.tpr-card-title');if(ct)ct.textContent='13 WEEK FACTORY HEALTH';var sh=sec.querySelector('.tpr-section-head small');if(sh)sh.textContent='Total Tested · Pass / Fail mix · Yield trend · traffic-light health'}var cover=d.getElementById('sec-cover'),chart=cover&&cover.querySelector('.tpr-cover-chart');if(chart&&R.length){chart.classList.add('fh-cover');chart.innerHTML='<div class="fh-title">13WK FACTORY HEALTH · TEST VOLUME + YIELD</div>'+note+legend+svg(R,true,th)}var ex=d.querySelector('#sec-exec .tpr-section-head small');if(ex)ex.textContent='Daily, Current Week ETE, QTD, target and carry-forward risk';if(d.title)d.title.textContent='SMTinel Test Performance Review · '+BUILD;var hero=d.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();return '<!doctype html>\n'+d.documentElement.outerHTML}catch(err){try{console.error('[SMTinel Factory Health export]',err)}catch(_){}return html}}
+function ensure(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;var cur=api.reportHtmlFor;if(cur.__smtinelTerminalFactoryHealthV202)return true;var wrapped=function(filters){return transform(cur.call(api,filters||{}))};wrapped.__smtinelTerminalFactoryHealthV202=true;wrapped.__smtinelFinalYieldV201=true;wrapped.__smtinelMailAlignmentV192=true;wrapped.__smtinelRepairLookupV191=true;wrapped.__base=cur;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.18.10 - Factory Health Final Export - 2026-09-21';return true}
+ensure();setTimeout(ensure,0);setTimeout(ensure,250);setTimeout(ensure,1000);setInterval(ensure,2000);
+})();
 </script>
