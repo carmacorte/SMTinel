@@ -73925,7 +73925,83 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
     return '<section class="tpr-cover" id="sec-cover">'+'<div class="tpr-cover-head"><div class="tpr-cover-title">WEEKLY FACTORY HEALTH CHECK</div><div class="tpr-cover-meta">BU: '+esc(filters&&filters.bu&&filters.bu!=='ALL'?filters.bu:'ALL')+' • Area: '+esc(filters&&filters.area&&filters.area!=='ALL'?filters.area:'ALL')+' • Week: '+esc(filters&&filters.week&&filters.week!=='ALL'?filters.week:(t&&t.currentWeek)||'Loaded')+'</div></div>'+'<div class="tpr-cover-sub">Weeks: '+esc(weekLabel)+'</div>'+'<div class="tpr-cover-grid">'+'<div class="tpr-cover-left">'+'<div class="tpr-cover-section-title">KPI Snapshot</div>'+'<div class="tpr-cover-kpis">'+'<div class="tpr-cover-kpi good"><small>CLEAN YIELD %</small><b>'+fp(clean)+'</b><span>Target 95%</span></div>'+'<div class="tpr-cover-kpi warn"><small>TOUCH RATE %</small><b>'+(touch==null?'N/D':fp(touch))+'</b><span>Target &lt;5%</span></div>'+'<div class="tpr-cover-kpi risk"><small>RISK UNITS</small><b>'+Number(impacted||0)+'</b><span>'+(h&&h.open&&h.open.length?'Open backlog '+h.open.length:'Top offender impact')+'</span></div>'+'<div class="tpr-cover-kpi info"><small>TOTAL UNITS</small><b>'+Number(tested||0)+'</b><span>FPY tested scope</span></div>'+'</div>'+'<div class="tpr-cover-offender">'+'<div class="tpr-cover-ribbon">TOP OFFENDER <span>(This Scope)</span></div>'+'<div class="tpr-cover-offender-title">#1 Symptom: <b>'+esc(symptom)+'</b></div>'+'<div class="tpr-cover-offender-metric"><b>'+Number(impacted||0)+'</b> Units Impacted · <span>'+(failureRate==null?'N/D':fp(failureRate))+' of scoped tested units</span></div>'+'<div class="tpr-cover-improve"><div>✓ If fixed (100%): Clean Yield <b>↑ '+(fullGain==null?'N/D':fp(fullGain))+'</b> → '+fp(clean)+' → <b>'+(fullYield==null?'N/D':fp(fullYield))+'</b></div><div>◎ Target (50%): Clean Yield <b>↑ '+(halfGain==null?'N/D':fp(halfGain))+'</b> → '+fp(clean)+' → <b>'+(halfYield==null?'N/D':fp(halfYield))+'</b></div></div>'+coverMiniTrend(t)+'</div>'+'</div>'+'<div class="tpr-cover-right">'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Realistic Improvement Scenarios</div><table class="tpr-cover-table"><thead><tr><th>Scenario</th><th>Units Saved</th><th>Clean Yield</th></tr></thead><tbody>'+scenarios.map(function(x){return '<tr><td>'+esc(x.label)+'</td><td>'+x.saved+'</td><td>+'+(x.gain==null?'N/D':fp(x.gain))+' → <b>'+(x.next==null?'N/D':fp(x.next))+'</b></td></tr>';}).join('')+'</tbody></table></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Main Location Driver</div><ul class="tpr-cover-bullets"><li><b>Top Location:</b> '+esc(loc)+'</li><li><b>Main Symptom:</b> '+esc(symptom)+'</li><li><b>Focus:</b> '+esc(coverFocus(symptom))+'</li></ul></div>'+'<div class="tpr-cover-card"><div class="tpr-cover-card-title">Action Tracker</div><table class="tpr-cover-table compact"><thead><tr><th>Issue</th><th>Owner</th><th>Action</th><th>Status</th></tr></thead><tbody>'+coverActionRows(filters,m)+'</tbody></table></div>'+'</div>'+'</div>'+'</section>';
   }
   function reportHtmlFor(filters){
-    var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';filters=filters||{};if(!filters.bu||filters.bu==='ALL')return '<!doctype html><meta charset="utf-8"><body style="font-family:Segoe UI,Arial;padding:24px"><h2>Select a BU first</h2><p>Test Performance is intentionally BU-scoped to reduce processing time and keep ownership/accountability separated.</p></body>';var src=source(filters),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters),h=history(filters,rows,t.cutoff),old=a.__v140OldReportHtmlFor||a.reportHtmlFor,html='';try{html=old.call(a,filters)}catch(err){return '<!doctype html><meta charset="utf-8"><body>Base Test report unavailable: '+esc(err&&err.message||err)+'</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
+    var a=api();if(!a||!a.computeFor)return '<!doctype html><meta charset="utf-8"><body>Test Performance engine unavailable.</body>';filters=filters||{};if(!filters.bu||filters.bu==='ALL')return '<!doctype html><meta charset="utf-8"><body style="font-family:Segoe UI,Arial;padding:24px"><h2>Select a BU first</h2><p>Test Performance is intentionally BU-scoped to reduce processing time and keep ownership/accountability separated.</p></body>';var src=source(filters),rows=src.rows||[],t=temporal(filters,rows),m=t.scope||computeScoped(filters),h=history(filters,rows,t.cutoff),old=a.__v140OldReportHtmlFor||a.reportHtmlFor,html='';try{html=old.call(a,filters)}catch(err){return '<!doctype html><meta charset="utf-8"><body>Base Test report unavailable: '+esc(err&&err.message||err)+'
+<script id="smtinel-test-performance-mail-export-authority-v193">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_MAIL_EXPORT_AUTHORITY_V193__)return;
+  window.__SMTINEL_TEST_MAIL_EXPORT_AUTHORITY_V193__=true;
+  var BUILD='TEST-PERFORMANCE-V1.9.3-MAIL-EXPORT-AUTHORITY';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function isTest(){var x=document.getElementById('reportType');return !!(x&&x.value==='TEST')}
+  function api(){return window.SMTINEL_TEST_PERF_API||null}
+  function filters(){
+    function v(id,d){var x=document.getElementById(id);return x?x.value:d}
+    return {
+      search:v('testPerfSearch',''),from:v('testPerfFrom',''),to:v('testPerfTo',''),
+      shift:v('testPerfShift','ALL'),bu:v('testPerfBu',''),line:v('testPerfLine','ALL'),
+      week:v('testPerfWeek','ALL'),model:v('testPerfModel','ALL'),sku:v('testPerfSku','ALL'),
+      wo:v('testPerfWo','ALL'),area:v('testPerfArea','ALL'),failure:v('testPerfFailure','ALL'),
+      target:v('testPerfTarget','')
+    }
+  }
+  function safeName(v){return tx(v).replace(/[^A-Za-z0-9_-]+/g,'_')||'BU'}
+  function filename(f){var scope=(f.from||'all')+(f.to&&f.to!==f.from?'_to_'+f.to:'');return 'SMTinel_Test_Performance_'+safeName(f.bu)+'_'+scope+'.html'}
+  function save(name,html){
+    var a=document.createElement('a'),url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},1200)
+  }
+  function forceMail(html,f){
+    html=String(html||'');
+    if(html.indexOf('TEST-PERFORMANCE-V1.9.2-MAIL-ALIGNMENT')>=0 && html.indexOf('sec-reported-cohorts')>=0)return html;
+    var en=window.SMTINEL_TEST_MAIL_ALIGN_ENHANCE_V192;
+    if(typeof en==='function'){try{return en(html,f||{})}catch(_){}}
+    return html
+  }
+  function fresh(){
+    var a=api(),f=filters();if(!a||typeof a.reportHtmlFor!=='function')throw new Error('Test Performance renderer is not ready.');
+    if(!f.bu)throw new Error('Select a BU before generating Test Performance.');
+    var html=a.reportHtmlFor(f);
+    html=forceMail(html,f);
+    if(html.indexOf('sec-reported-cohorts')<0 || html.indexOf('Current Week ETE')<0){
+      throw new Error('Mail Alignment did not attach to the fresh report. Reload SMTinel once and export again.');
+    }
+    return {html:html,filters:f}
+  }
+  function downloadFresh(btn){
+    var old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Generating fresh Test HTML...'}
+    try{var r=fresh();save(filename(r.filters),r.html)}
+    catch(err){try{alert(String(err&&err.message||err))}catch(_){}}
+    finally{if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}}
+  }
+  function openFresh(){
+    var w=null;try{w=window.open('about:blank','_blank')}catch(_){}
+    try{
+      var r=fresh(),url=URL.createObjectURL(new Blob([r.html],{type:'text/html;charset=utf-8'}));
+      if(w)w.location.href=url;else window.open(url,'_blank');
+      setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},120000)
+    }catch(err){try{if(w)w.close()}catch(_){}try{alert(String(err&&err.message||err))}catch(_){}}
+  }
+
+  /* Window-capture runs before the older document-capture exporter, so stale fullHtmlCache cannot win. */
+  window.addEventListener('click',function(e){
+    if(!isTest())return;
+    var t=e&&e.target,b=t&&t.closest?t.closest('#downloadEmail,#openInteractiveTestHtml'):null;if(!b)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    if(b.id==='downloadEmail')downloadFresh(b);else openFresh()
+  },true);
+
+  function mark(){
+    window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;
+    window.SMTINEL_BUILD_VERSION='SMTinel V13.18.5 - Test Performance Fresh Mail Export - 2026-09-21';
+    var b=document.getElementById('downloadEmail');if(b&&isTest())b.title='Fresh export authority: bypasses stale cached Test HTML';
+  }
+  setTimeout(mark,120);setTimeout(mark,800);setInterval(mark,5000);
+})();
+</script>
+</body>'}var doc=new DOMParser().parseFromString(html,'text/html'),main=doc.querySelector('.tpr-main');if(!main)return html;
     doc.title='SMTinel Test Performance Review · '+BUILD;var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();var subtitle=doc.querySelector('.tpr-sub');if(subtitle)subtitle.textContent='Performance + Backlog + Accountability · Daily / WTD / QTD / 13WK · NDF · aging · actions · traceability';var note=doc.querySelector('.tpr-note');if(note)note.innerHTML='<b>Contract:</b> Cesium is authoritative for Test population. FPY never changes because of repair or retest. Open backlog is a separate carry-forward population: unresolved first-attempt failures stay open until a later PASS or explicit disposition. QTD / 13WK are shown only from loaded history; missing fiscal history is not fabricated. <b>Cutoff:</b> '+esc(t.cutoff||'N/D')+'.';var top=main.querySelector(':scope > .tpr-kpis');if(top)top.remove();
     var heroBox=main.querySelector('.tpr-hero'),noteBox=main.querySelector('.tpr-note');
     var filterWrap=doc.createElement('div');filterWrap.innerHTML=filterSnapshotHtml(filters,t);var filterNode=filterWrap.firstElementChild;if(filterNode){if(noteBox&&noteBox.nextSibling)main.insertBefore(filterNode,noteBox.nextSibling);else if(noteBox)main.appendChild(filterNode);else if(heroBox&&heroBox.nextSibling)main.insertBefore(filterNode,heroBox.nextSibling);else main.insertBefore(filterNode,main.firstChild);}
@@ -75025,4 +75101,167 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
   }
   if(!install(false)){var n=0,t=setInterval(function(){n++;var a=api(),ready=a&&a.reportHtmlFor&&a.reportHtmlFor.__smtinelDualRepairV190;if((ready||n>320)&&install(n>320))clearInterval(t);if(n>380)clearInterval(t)},100)}
 })();
+</script>
+
+
+<!-- SMTinel V13.18.4 - Test Performance Mail Alignment -->
+<script id="smtinel-test-performance-mail-alignment-v192">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TEST_MAIL_ALIGNMENT_V192__)return;
+  window.__SMTINEL_TEST_MAIL_ALIGNMENT_V192__=true;
+  var BUILD='TEST-PERFORMANCE-V1.9.2-MAIL-ALIGNMENT';
+  var COHORT_KEY='smtinel_test_reported_cohorts_v2';
+  var BAND_KEY='smtinel_test_target_yellow_band_v1';
+
+  function tx(v){return String(v==null?'':v).trim()}
+  function esc(v){return tx(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function api(){return window.SMTINEL_TEST_PERF_API||null}
+  function currentBu(){return tx((document.getElementById('testPerfBu')||{}).value)}
+  function loadJson(k,fallback){try{var x=JSON.parse(localStorage.getItem(k)||'null');return x==null?fallback:x}catch(_){return fallback}}
+  function saveJson(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}}
+  function allCohorts(){var x=loadJson(COHORT_KEY,{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
+  function cohortRows(bu){var x=allCohorts(),a=x[bu];return Array.isArray(a)?a:[]}
+  function normCohort(c){c=c||{};return{id:tx(c.id)||('COH-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)),type:tx(c.type)||'OTHER',label:tx(c.label)||'Reported pending population',qty:Number(c.qty||0)||0,openQty:c.openQty===''||c.openQty==null?'':Math.max(0,Number(c.openQty)||0),owner:tx(c.owner),due:tx(c.due),status:tx(c.status)||'Open',serials:tx(c.serials),notes:tx(c.notes)}}
+  function putCohorts(bu,rows){if(!bu)return;var x=allCohorts();x[bu]=(rows||[]).map(normCohort);saveJson(COHORT_KEY,x)}
+  function yellowBand(){var n=Number(localStorage.getItem(BAND_KEY)||'1');return isFinite(n)&&n>=0?n:1}
+  function invalidateTestCache(){var s=document.getElementById('testPerfSearch');if(s){try{s.dispatchEvent(new Event('input',{bubbles:true}))}catch(_){}}}
+
+  function editorCss(){
+    if(document.getElementById('smtinel-test-mail-v192-css'))return;
+    var st=document.createElement('style');st.id='smtinel-test-mail-v192-css';st.textContent=[
+      '#testPerformanceControls.time-centric-test .test-run-filter-grid label:has(#testPerfTarget),#testPerformanceControls.time-centric-test .test-run-filter-grid .test-mail-v192{display:flex!important}',
+      '#testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}',
+      '.tpr-mail-setup-v192{margin-top:10px;border:1px solid #d9e6f7;border-radius:14px;background:#f7faff;padding:10px 12px}',
+      '.tpr-mail-setup-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.tpr-mail-setup-head b{font-size:11px;color:#102a43}.tpr-mail-setup-head span{font-size:9.5px;color:#5f766c}',
+      '.tpr-mail-cohort-tools{display:flex;gap:7px;flex-wrap:wrap}.tpr-mail-cohort-tools button{border:1px solid #c9daf5;background:#fff;color:#1f3a5f;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}',
+      '.tpr-mail-cohort-list{display:grid;gap:8px}.tpr-mail-cohort-row{display:grid;grid-template-columns:110px minmax(150px,1.2fr) 84px 92px minmax(120px,1fr) 118px 110px minmax(190px,1.5fr) 30px;gap:6px;align-items:start;border-top:1px solid #e5edf8;padding-top:8px}',
+      '.tpr-mail-cohort-row input,.tpr-mail-cohort-row select,.tpr-mail-cohort-row textarea{width:100%;box-sizing:border-box;border:1px solid #c9d7e8;border-radius:7px;background:#fff;color:#102a43;font:inherit;font-size:10px;padding:6px}.tpr-mail-cohort-row textarea{min-height:48px;resize:vertical;line-height:1.3}',
+      '.tpr-mail-cohort-row button{width:30px;height:30px;border:1px solid #e1b7ae;border-radius:7px;background:#fff4f1;color:#a13c27;font-weight:900;cursor:pointer}',
+      '.tpr-mail-empty{font-size:10px;color:#738279;padding:7px 0}',
+      '@media(max-width:1100px){#testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.tpr-mail-cohort-row{grid-template-columns:1fr 1fr 100px 100px 1fr 120px 120px 1fr 30px}}',
+      '@media(max-width:700px){#testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:1fr!important}.tpr-mail-cohort-row{grid-template-columns:1fr}.tpr-mail-cohort-row button{width:100%}}'
+    ].join('');document.head.appendChild(st)
+  }
+
+  function rowHtml(r){r=normCohort(r);return '<div class="tpr-mail-cohort-row" data-cohort-id="'+esc(r.id)+'">'+
+    '<select data-cf="type"><option value="QA"'+(r.type==='QA'?' selected':'')+'>QA</option><option value="OTHER"'+(r.type==='OTHER'?' selected':'')+'>Other pending</option><option value="NDF"'+(r.type==='NDF'?' selected':'')+'>NDF / IE</option><option value="CUSTOM"'+(r.type==='CUSTOM'?' selected':'')+'>Custom</option></select>'+
+    '<input data-cf="label" value="'+esc(r.label)+'" placeholder="Cohort / finding">'+
+    '<input data-cf="qty" type="number" min="0" step="1" value="'+(r.qty||'')+'" placeholder="Affected">'+
+    '<input data-cf="openQty" type="number" min="0" step="1" value="'+(r.openQty===''?'':r.openQty)+'" placeholder="Still NG">'+
+    '<input data-cf="owner" value="'+esc(r.owner)+'" placeholder="Owner">'+
+    '<input data-cf="due" type="date" value="'+esc(r.due)+'">'+
+    '<select data-cf="status"><option'+(r.status==='Open'?' selected':'')+'>Open</option><option'+(r.status==='In progress'?' selected':'')+'>In progress</option><option'+(r.status==='Monitoring'?' selected':'')+'>Monitoring</option><option'+(r.status==='Closed'?' selected':'')+'>Closed</option></select>'+
+    '<textarea data-cf="serials" placeholder="Optional serials, one per line">'+esc(r.serials)+'</textarea>'+
+    '<button type="button" data-cohort-remove title="Remove">×</button></div>'}
+
+  function renderEditor(){
+    var panel=document.getElementById('tprMailSetupV192');if(!panel)return;var bu=currentBu(),list=panel.querySelector('.tpr-mail-cohort-list'),hint=panel.querySelector('[data-mail-hint]');
+    if(hint)hint.textContent=bu?('BU '+bu+' · cohort data is persistent and exported with Test Performance.'):'Select BU first to store reported cohorts.';
+    if(!list)return;var rows=bu?cohortRows(bu):[];list.innerHTML=rows.length?rows.map(rowHtml).join(''):'<div class="tpr-mail-empty">No reported cohort loaded. Add QA or Other pending only when the email / review explicitly reports that population.</div>';
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-add-cohort]'),function(b){b.disabled=!bu})
+  }
+
+  function ensureEditor(){
+    editorCss();var c=document.getElementById('testPerformanceControls');if(!c)return;c.classList.add('time-centric-test');var grid=c.querySelector('.test-run-filter-grid');
+    var target=document.getElementById('testPerfTarget');if(target&&target.closest('label'))target.closest('label').classList.add('test-mail-v192');
+    if(grid&&!document.getElementById('testPerfYellowBandV192')){var lab=document.createElement('label');lab.className='field test-mail-v192';lab.innerHTML='<span>Yellow band (pp)</span><input id="testPerfYellowBandV192" type="number" min="0" max="20" step="0.1" value="'+yellowBand()+'">';var tl=target&&target.closest('label');if(tl&&tl.nextSibling)grid.insertBefore(lab,tl.nextSibling);else grid.appendChild(lab)}
+    if(!document.getElementById('tprMailSetupV192')){var p=document.createElement('div');p.id='tprMailSetupV192';p.className='tpr-mail-setup-v192';p.innerHTML='<div class="tpr-mail-setup-head"><div><b>Mail alignment · reported cohorts</b><br><span data-mail-hint></span></div><div class="tpr-mail-cohort-tools"><button type="button" data-add-cohort="QA">+ QA cohort</button><button type="button" data-add-cohort="OTHER">+ Other pending</button><button type="button" data-add-cohort="NDF">+ NDF / IE</button></div></div><div class="tpr-mail-cohort-list"></div>';var hint=c.querySelector('.scope-hint');if(hint&&hint.parentNode)hint.parentNode.insertBefore(p,hint.nextSibling);else c.appendChild(p);renderEditor()}
+    var y=document.getElementById('testPerfYellowBandV192');if(y&&!y.dataset.bound){y.dataset.bound='1';y.addEventListener('change',function(){var n=Number(this.value);if(!isFinite(n)||n<0)n=1;this.value=n;try{localStorage.setItem(BAND_KEY,String(n))}catch(_){}invalidateTestCache()})}
+  }
+
+  document.addEventListener('click',function(e){var panel=document.getElementById('tprMailSetupV192');if(!panel||!panel.contains(e.target))return;var add=e.target.closest&&e.target.closest('[data-add-cohort]');if(add){var bu=currentBu();if(!bu)return;var rows=cohortRows(bu).slice(),type=tx(add.getAttribute('data-add-cohort'))||'OTHER',label=type==='QA'?'QA affected population':type==='NDF'?'NDF / IE reported population':'Other pending population';rows.push(normCohort({type:type,label:label}));putCohorts(bu,rows);renderEditor();invalidateTestCache();return}var del=e.target.closest&&e.target.closest('[data-cohort-remove]');if(del){var bu2=currentBu(),row=del.closest('[data-cohort-id]'),id=row&&row.getAttribute('data-cohort-id');if(!bu2||!id)return;putCohorts(bu2,cohortRows(bu2).filter(function(x){return tx(x.id)!==id}));renderEditor();invalidateTestCache()}},true);
+  function updateFromField(el){var panel=document.getElementById('tprMailSetupV192');if(!panel||!panel.contains(el)||!el.hasAttribute('data-cf'))return;var bu=currentBu(),row=el.closest('[data-cohort-id]');if(!bu||!row)return;var id=row.getAttribute('data-cohort-id'),rows=cohortRows(bu).map(function(x){x=normCohort(x);if(x.id===id){var f=el.getAttribute('data-cf'),v=el.value;if(f==='qty')v=Math.max(0,Number(v)||0);else if(f==='openQty')v=v===''?'':Math.max(0,Number(v)||0);x[f]=v}return x});putCohorts(bu,rows);invalidateTestCache()}
+  document.addEventListener('change',function(e){var t=e&&e.target;if(!t)return;if(t.id==='testPerfBu'){setTimeout(function(){ensureEditor();renderEditor()},0);return}updateFromField(t)},true);
+  var editTimer=null;document.addEventListener('input',function(e){var t=e&&e.target;if(!t||!t.hasAttribute('data-cf'))return;clearTimeout(editTimer);editTimer=setTimeout(function(){updateFromField(t)},180)},true);
+  setTimeout(ensureEditor,80);setInterval(function(){ensureEditor();renderEditor()},3500);
+
+  function activeCohorts(bu){return cohortRows(bu).map(normCohort)}
+  function reportStyle(doc){var st=doc.createElement('style');st.id='tpr-mail-alignment-style-v192';st.textContent=[
+    '.tpr-mail-horizon-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.tpr-mail-horizon-card{border:1px solid #d9e2dc;border-radius:14px;background:#fff;overflow:hidden}.tpr-mail-horizon-card h4{margin:0;padding:10px 12px;background:#f3f7f3;border-bottom:1px solid #dfe7e1;font-size:11px;color:#294033}.tpr-mail-horizon-card h4 small{display:block;margin-top:3px;color:#708078;font-weight:600}.tpr-mail-horizon-card table{font-size:9px}.tpr-mail-horizon-card th,.tpr-mail-horizon-card td{padding:6px 7px}',
+    '.tpr-kpi.mail-green,.tpr-mail-status.mail-green{background:#edf8ef!important;border-color:#a9d7b1!important}.tpr-kpi.mail-yellow,.tpr-mail-status.mail-yellow{background:#fff6dd!important;border-color:#e4c56d!important}.tpr-kpi.mail-red,.tpr-mail-status.mail-red{background:#fdebed!important;border-color:#e7a0a8!important}.tpr-kpi.mail-neutral,.tpr-mail-status.mail-neutral{background:#f5f7f5!important;border-color:#d8dfda!important}',
+    '.tpr-mail-target-badge{display:inline-flex;margin-top:5px;padding:3px 6px;border-radius:999px;font-size:8px;font-weight:900;border:1px solid currentColor}.mail-green .tpr-mail-target-badge{color:#28713a}.mail-yellow .tpr-mail-target-badge{color:#9a6a00}.mail-red .tpr-mail-target-badge{color:#a52a38}.mail-neutral .tpr-mail-target-badge{color:#68766d}',
+    '.tpr-mail-cohort-table td,.tpr-mail-cohort-table th{font-size:9px;padding:7px}.tpr-mail-cohort-table code{font-size:8px}.tpr-mail-data-gap{padding:10px 12px;border:1px solid #e4c56d;border-left:5px solid #b87820;border-radius:10px;background:#fff8e8;color:#5d4316;font-size:10px;line-height:1.45}',
+    '.tpr-mail-dept-summary{margin-bottom:10px}.tpr-mail-dept-summary table{font-size:9px}.tpr-mail-dept-summary th,.tpr-mail-dept-summary td{padding:6px 8px}',
+    '#sec-trend .tpr-week-row.mail-green strong{color:#28713a}#sec-trend .tpr-week-row.mail-yellow strong{color:#9a6a00}#sec-trend .tpr-week-row.mail-red strong{color:#a52a38}',
+    '@media(max-width:980px){.tpr-mail-horizon-grid{grid-template-columns:1fr}}'
+  ].join('');doc.head.appendChild(st)}
+  function sectionHtml(id,num,title,sub){return '<section class="tpr-section" id="'+id+'"><div class="tpr-section-head" data-tpr-toggle><span class="tpr-num">'+num+'</span><div><b>'+title+'</b><small>'+sub+'</small></div><i>−</i></div><div class="tpr-section-body"></div></section>'}
+  function addNav(doc,id,title,symbol){var side=doc.querySelector('.tpr-side');if(!side||side.querySelector('a[href="#'+id+'"]'))return;var a=doc.createElement('a');a.className='tpr-nav';a.href='#'+id;a.title=title;a.innerHTML=(symbol||'•')+'<span class="tpr-nav-label">'+title+'</span>';side.appendChild(a)}
+  function seedSections(doc){
+    var signal=doc.getElementById('sec-signal'),qa=doc.getElementById('sec-qa'),main=doc.querySelector('.tpr-main');if(!main)return;
+    if(!doc.getElementById('sec-offender-horizons')){var w=doc.createElement('div');w.innerHTML=sectionHtml('sec-offender-horizons','5A','Top Offenders by Time Horizon','Daily · Current Week / WTD · selected-scope accumulated');var s=w.firstElementChild;if(signal)main.insertBefore(s,signal);else main.appendChild(s);addNav(doc,'sec-offender-horizons','Offender Horizons','↗')}
+    if(signal){var b=signal.querySelector('.tpr-section-head b'),sm=signal.querySelector('.tpr-section-head small');if(b)b.textContent='Top Offenders · Selected Scope Detail';if(sm)sm.textContent='Detailed Test Area FPY, Pareto, FR and serial evidence for the active report scope'}
+    if(!doc.getElementById('sec-reported-cohorts')){var w2=doc.createElement('div');w2.innerHTML=sectionHtml('sec-reported-cohorts','8A','Reported Cohorts','Explicit QA / Other / NDF populations from the email or review; serial-backed when available');var s2=w2.firstElementChild;if(qa)main.insertBefore(s2,qa);else main.appendChild(s2);addNav(doc,'sec-reported-cohorts','Reported Cohorts','◎')}
+  }
+  function enhance(html,filters){
+    try{var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;var n=doc.getElementById('tprStandaloneData'),P={};if(n){try{P=JSON.parse(n.textContent||'{}')}catch(_){P={}}P.mailAlignment={yellowBand:yellowBand(),cohorts:activeCohorts(tx(filters&&filters.bu)||tx(P.bu)),build:BUILD};n.textContent=JSON.stringify(P).replace(/</g,'\\u003c')}
+      var oldStyle=doc.getElementById('tpr-mail-alignment-style-v192');if(oldStyle)oldStyle.remove();reportStyle(doc);seedSections(doc);
+      var run=doc.createElement('script');run.id='tpr-mail-alignment-runtime-v192';run.textContent='('+standaloneRuntime.toString()+')();';doc.body.appendChild(run);
+      var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();doc.title='SMTinel Test Performance Review · '+BUILD;return '<!doctype html>\n'+doc.documentElement.outerHTML
+    }catch(_){return html}
+  }
+
+  window.SMTINEL_TEST_MAIL_ALIGN_ENHANCE_V192=enhance;
+  function standaloneRuntime(){
+    'use strict';
+    if(window.__TPR_MAIL_ALIGNMENT_RUNTIME_V192__)return;window.__TPR_MAIL_ALIGNMENT_RUNTIME_V192__=1;
+    function t(v){return String(v==null?'':v).trim()}function u(v){return t(v).toUpperCase()}function k(v){return u(v).replace(/\s+/g,'')}function e(v){return t(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}function fp(v){return v==null||!isFinite(v)?'N/D':Number(v).toFixed(2)+'%'}function pct(a,b){return b?100*Number(a||0)/Number(b):null}function valid(r){return r&&(r.kind==='pass'||r.kind==='fail')}function dbg(s){return /\*/.test(t(s))||/DEBUG|REPAIR|REWORK|MRB|SCRAP/.test(u(s))}
+    var node=document.getElementById('tprStandaloneData'),P={};try{P=JSON.parse(node&&node.textContent||'{}')}catch(_){P={}}var C=P.columns||[],D=P.dict||[],N={};(P.numeric||[]).forEach(function(x){N[x]=1});function dec(a){var o={};for(var i=0;i<C.length;i++){var q=C[i],v=a[i];o[q]=N[q]?Number(v||0):(typeof v==='number'?(D[v]||''):t(v))}return o}var R=(P.rows||[]).map(dec),PROD=R.filter(function(r){return valid(r)&&!dbg(r.station)}),CAL=P.calendar||{},WR=CAL.weeks||{},MAIL=P.mailAlignment||{},REP=P.repairs||{},RL=REP.links||{},PAIR={},FIRST={};PROD.forEach(function(r){var z=t(r.logicalKey)+'|'+t(r.station);(PAIR[z]||(PAIR[z]=[])).push(r)});Object.keys(PAIR).forEach(function(z){PAIR[z].sort(function(a,b){return Number(a.timeMs||0)-Number(b.timeMs||0)});FIRST[z]=PAIR[z][0]});
+    function weeks(){return Object.keys(WR).map(function(w){var r=WR[w]||{};return{week:w,start:t(r.start),end:t(r.end)}}).filter(function(x){return x.start&&x.end}).sort(function(a,b){return a.start.localeCompare(b.start)})}
+    function latestDate(){var a=PROD.map(function(r){return t(r.opDate)}).filter(Boolean).sort();return a.length?a[a.length-1]:t(P.filters&&P.filters.to)}
+    function weekAt(d){var a=weeks();for(var i=0;i<a.length;i++)if(a[i].start<=d&&d<=a[i].end)return a[i];return a.length?a[a.length-1]:null}
+    function readFilters(){var f=Object.assign({},P.filters||{}),ids={week:'tprFWeek',from:'tprFFrom',to:'tprFTo',target:'tprFTarget'};Object.keys(ids).forEach(function(q){var x=document.getElementById(ids[q]);if(x)f[q]=x.value});['search','line','model','sku','wo','area','failure','shift'].forEach(function(q){if(!f[q])f[q]=q==='search'?'':'ALL'});return f}
+    function baseMatch(r,f){if(!r)return false;if(f.from&&r.opDate<f.from)return false;if(f.to&&r.opDate>f.to)return false;if(f.week&&f.week!=='ALL'&&r.week!==f.week)return false;if(f.shift&&f.shift!=='ALL'&&r.shift!==f.shift)return false;if(f.line&&f.line!=='ALL'&&r.line!==f.line)return false;if(f.model&&f.model!=='ALL'&&r.model!==f.model)return false;if(f.sku&&f.sku!=='ALL'&&r.sku!==f.sku&&r.cesiumSku!==f.sku&&r.uutType!==f.sku)return false;if(f.wo&&f.wo!=='ALL'&&r.wo!==f.wo)return false;if(f.area&&f.area!=='ALL'&&r.station!==f.area)return false;return true}
+    function compute(f){var first=[],unit={},station={},failMap={};Object.keys(FIRST).forEach(function(z){var r=FIRST[z];if(!baseMatch(r,f))return;first.push(r);var q=unit[r.logicalKey]||(unit[r.logicalKey]={fail:false});if(r.kind==='fail')q.fail=true;station[r.station]=(station[r.station]||0)+1;if(r.kind==='fail'){var id=t(r.station)+'|'+t(r.failure||'N/D'),g=failMap[id]||(failMap[id]={station:r.station,failure:r.failure||'N/D',sns:{},models:{}});g.sns[r.logicalKey]=1;if(r.model)g.models[r.model]=1}});var pass=0,fail=0;Object.keys(unit).forEach(function(z){if(unit[z].fail)fail++;else pass++});var failures=Object.keys(failMap).map(function(z){var g=failMap[z],affected=Object.keys(g.sns).length,den=station[g.station]||0;return{station:g.station,failure:g.failure,affected:affected,stationTested:den,failureRate:pct(affected,den),models:Object.keys(g.models)}}).sort(function(a,b){return b.affected-a.affected||Number(b.failureRate||0)-Number(a.failureRate||0)});return{tested:pass+fail,pass:pass,fail:fail,fpy:pct(pass,pass+fail),failures:failures}}
+    function statusClass(v,target,band){if(v==null||!isFinite(v)||target==null||!isFinite(target))return'mail-neutral';if(v>=target)return'mail-green';if(v>=target-band)return'mail-yellow';return'mail-red'}
+    function parsePct(v){var n=Number(t(v).replace(/[^0-9.-]/g,''));return isFinite(n)?n:null}
+    function currentTarget(){var f=readFilters(),n=Number(f.target);return isFinite(n)&&n>0?n:null}
+    function band(){var n=Number(MAIL.yellowBand);return isFinite(n)&&n>=0?n:1}
+    function table(m){var rows=(m.failures||[]).slice(0,8);return '<table><thead><tr><th>#</th><th>Failure</th><th>Area</th><th>SN</th><th>FR</th></tr></thead><tbody>'+(rows.map(function(x,i){return'<tr><td>'+(i+1)+'</td><td><b>'+e(x.failure)+'</b></td><td>'+e(x.station)+'</td><td>'+x.affected+'</td><td>'+fp(x.failureRate)+'</td></tr>'}).join('')||'<tr><td colspan="5">No first-attempt failures.</td></tr>')+'</tbody></table>'}
+    function patchHorizons(){var sec=document.getElementById('sec-offender-horizons');if(!sec)return;var b=sec.querySelector('.tpr-section-body');if(!b)return;var f=readFilters(),cut=t(f.to)||latestDate(),wk=weekAt(cut),daily=Object.assign({},f,{from:cut,to:cut,week:'ALL',failure:'ALL'}),wtd=Object.assign({},f,{from:wk&&wk.start||cut,to:cut,week:wk&&wk.week||'ALL',failure:'ALL'}),acc=Object.assign({},f,{failure:'ALL'}),dm=compute(daily),wm=compute(wtd),am=compute(acc),sig=[cut,wk&&wk.week,f.from,f.to,dm.fail,wm.fail,am.fail].join('|');if(b.getAttribute('data-mail-sig')===sig)return;b.setAttribute('data-mail-sig',sig);b.innerHTML='<div class="tpr-mail-horizon-grid"><div class="tpr-mail-horizon-card"><h4>Daily<small>'+e(cut)+' · '+dm.tested+' FPY tested</small></h4>'+table(dm)+'</div><div class="tpr-mail-horizon-card"><h4>Current Week / WTD<small>'+e(wk&&wk.week||'N/D')+' · '+wm.tested+' FPY tested</small></h4>'+table(wm)+'</div><div class="tpr-mail-horizon-card"><h4>Accumulated · Selected Scope<small>'+e(f.from||'…')+' → '+e(f.to||'…')+' · '+am.tested+' FPY tested</small></h4>'+table(am)+'</div></div>'}
+    function patchExec(){var sec=document.getElementById('sec-exec');if(!sec)return;var target=currentTarget(),bd=band();Array.prototype.forEach.call(sec.querySelectorAll('.tpr-kpi'),function(card){var s=card.querySelector('span'),v=card.querySelector('b'),small=card.querySelector('small');if(!s||!v)return;var label=t(s.textContent);if(label==='WTD FPY')s.textContent='Current Week ETE';label=t(s.textContent);if(['Current Week ETE','QTD FPY','Daily FPY','Scope FPY'].indexOf(label)<0)return;card.classList.remove('mail-green','mail-yellow','mail-red','mail-neutral');var n=parsePct(v.textContent),cl=statusClass(n,target,bd);card.classList.add(cl);var old=card.querySelector('.tpr-mail-target-badge');if(old)old.remove();var badge=document.createElement('em');badge.className='tpr-mail-target-badge';badge.textContent=target==null?'Target N/D':'Target '+target.toFixed(2)+'% · Yellow ≥ '+Math.max(0,target-bd).toFixed(2)+'%';card.appendChild(badge);if(label==='Current Week ETE'&&small){var f=readFilters(),wk=weekAt(t(f.to)||latestDate());small.textContent=(wk&&wk.week?wk.week:'WTD')+' · same report cutoff'}})}
+    function patchTrend(){var sec=document.getElementById('sec-trend');if(!sec)return;var body=sec.querySelector('.tpr-section-body');if(!body)return;var f=readFilters(),cut=t(f.to)||latestDate(),cur=weekAt(cut),closed=weeks().filter(function(x){return !cur||x.start<cur.start}).slice(-13),target=currentTarget(),bd=band(),rows=closed.map(function(w){var q=Object.assign({},f,{from:w.start,to:w.end,week:w.week,failure:'ALL'}),m=compute(q);return{week:w.week,tested:m.tested,fail:m.fail,fpy:m.fpy}}).filter(function(x){return x.tested>0}),sig=[cut,target,bd].concat(rows.map(function(x){return x.week+':'+x.tested+':'+x.fail+':'+x.fpy})).join('|');if(body.getAttribute('data-mail-trend-sig')===sig)return;body.setAttribute('data-mail-trend-sig',sig);body.innerHTML='<div class="tpr-card"><div class="tpr-card-title">13 CLOSED WEEK FPY TREND</div><div class="tpr-week-chart">'+(rows.map(function(x){var w=Math.max(0,Math.min(100,Number(x.fpy||0))),cl=statusClass(x.fpy,target,bd);return'<div class="tpr-week-row '+cl+'"><div><b>'+e(x.week)+'</b><small>'+x.tested+' tested · '+x.fail+' fail</small></div><div class="tpr-week-track"><i style="width:'+w.toFixed(2)+'%"></i>'+(target!=null?'<em style="left:'+Math.max(0,Math.min(100,target)).toFixed(2)+'%"></em>':'')+'</div><strong>'+fp(x.fpy)+'</strong></div>'}).join('')||'<div class="tpr-empty-chart">No closed fiscal-week history is available.</div>')+'</div><div class="tpr-footnote">'+rows.length+'/13 closed fiscal weeks loaded. The active/current fiscal week is excluded from this trend and is reported separately as Current Week ETE.'+(target!=null?' Target '+fp(target)+' · yellow band '+bd.toFixed(2)+' pp.':' Target remains N/D until a released target is entered in Export Center.')+'</div></div>'}
+    function headerIndex(table,label){var out=-1,needle=u(label);Array.prototype.some.call(table?table.querySelectorAll('thead th'):[],function(th,i){if(u(th.textContent)===needle){out=i;return true}return false});return out}
+    function patchNdf(){
+      var sec=document.getElementById('sec-ndf');if(!sec)return;
+      var body=sec.querySelector('.tpr-section-body'),table=sec.querySelector('table');if(!body||!table)return;
+      var iState=headerIndex(table,'State'),
+          rows=Array.prototype.slice.call(table.querySelectorAll('tbody tr')).filter(function(r){return r.children.length>1&&!/No explicit NDF/i.test(r.textContent)}),
+          ndfCoh=(Array.isArray(MAIL.cohorts)?MAIL.cohorts:[]).filter(function(c){return u(c&&c.type)==='NDF'}),
+          cut=t(readFilters().to)||latestDate(),
+          acc=null,open=null,rec=null,source='explicit classifications';
+      if(ndfCoh.length){
+        var ss=ndfCoh.map(function(c){return cohortStats(c,cut)}),
+            nums=function(k){var a=ss.map(function(x){var v=x&&x[k];return (v==='N/D'||v==null||v==='')?null:Number(v)}).filter(function(v){return v!=null&&isFinite(v)});return a.length?a.reduce(function(s,v){return s+v},0):null};
+        acc=nums('affected');open=nums('open');rec=nums('pass');source='reported NDF / IE cohort';
+      }else if(rows.length){
+        acc=rows.length;open=0;rec=0;
+        rows.forEach(function(r){var s=iState>=0&&r.children[iState]?u(r.children[iState].textContent):'';if(/RECOVERED|PASS/.test(s))rec++;else open++});
+      }
+      var old=body.querySelector('#tprNdfSummaryV192');if(old)old.remove();
+      var fmt=function(v){return v==null?'N/D':v},cl=function(v){return v==null?'mail-neutral':(Number(v)>0?'mail-red':'mail-green')};
+      var d=document.createElement('div');d.id='tprNdfSummaryV192';d.className='tpr-kpis';
+      d.innerHTML='<div class="tpr-kpi '+(acc==null?'mail-neutral':'')+'"><span>NDF Accumulated</span><b>'+fmt(acc)+'</b><small>'+source+'</small></div>'+
+        '<div class="tpr-kpi '+cl(open)+'"><span>NDF Open</span><b>'+fmt(open)+'</b><small>'+(open==null?'classification / cohort not loaded':'not recovered at cutoff')+'</small></div>'+
+        '<div class="tpr-kpi '+(rec==null?'mail-neutral':'mail-green')+'"><span>NDF Recovered</span><b>'+fmt(rec)+'</b><small>'+(rec==null?'recovery evidence not loaded':'later PASS evidence')+'</small></div>';
+      body.insertBefore(d,body.firstChild)
+    }
+    function patchActions(){var sec=document.getElementById('sec-actions');if(!sec)return;var body=sec.querySelector('.tpr-section-body'),table=sec.querySelector('table');if(!body||!table)return;var iDept=headerIndex(table,'Department'),iDue=headerIndex(table,'Due Date'),iStatus=headerIndex(table,'Status'),map={},cut=t(readFilters().to)||latestDate();Array.prototype.slice.call(table.querySelectorAll('tbody tr')).forEach(function(r){if(r.children.length<2||/No persistent/i.test(r.textContent))return;var dept=iDept>=0?t(r.children[iDept].textContent):'N/D',due=iDue>=0?t(r.children[iDue].textContent):'',st=iStatus>=0?t(r.children[iStatus].textContent):'Open',g=map[dept]||(map[dept]={open:0,progress:0,closed:0,overdue:0});if(/CLOSED|DONE|COMPLETE/i.test(st))g.closed++;else{g.open++;if(/PROGRESS|MONITOR|REVIEW|VALIDATION/i.test(st))g.progress++;if(due&&due!=='N/D'&&due<cut)g.overdue++}});var names=Object.keys(map).sort(),old=body.querySelector('#tprActionDeptSummaryV192');if(old)old.remove();var d=document.createElement('div');d.id='tprActionDeptSummaryV192';d.className='tpr-card tpr-mail-dept-summary';d.innerHTML='<div class="tpr-card-title">DEPARTMENT FOLLOW-UP SUMMARY</div><table><thead><tr><th>Department</th><th>Open</th><th>In progress / monitoring</th><th>Overdue</th><th>Closed</th></tr></thead><tbody>'+(names.map(function(n){var g=map[n];return'<tr><td><b>'+e(n)+'</b></td><td>'+g.open+'</td><td>'+g.progress+'</td><td>'+g.overdue+'</td><td>'+g.closed+'</td></tr>'}).join('')||'<tr><td colspan="5">No scoped department actions loaded.</td></tr>')+'</tbody></table>';body.insertBefore(d,body.firstChild)}
+    function serialsOf(c){var a=t(c&&c.serials).split(/[\n,;\t ]+/).map(t).filter(Boolean),m={},o=[];a.forEach(function(s){var q=k(s);if(q&&!m[q]){m[q]=1;o.push(q)}});return o}
+    function aliases(r){return[r.logicalKey,r.logicalUnit,r.testSn,r.parentSn,r.partSn,r.boxSn,r.sfcSn,r.sfcBox].map(k).filter(Boolean)}
+    var serialIndex={};PROD.forEach(function(r){aliases(r).forEach(function(s){(serialIndex[s]||(serialIndex[s]=[])).push(r)})});Object.keys(serialIndex).forEach(function(s){serialIndex[s].sort(function(a,b){return Number(a.timeMs||0)-Number(b.timeMs||0)})});
+    function cohortStats(c,cut){var sns=serialsOf(c),pass=0,ng=0,nf=0,rep=0;if(sns.length){sns.forEach(function(sn){var arr=(serialIndex[sn]||[]).filter(function(r){return !cut||r.opDate<=cut}),last=arr.length?arr[arr.length-1]:null;if(!last)nf++;else if(last.kind==='pass')pass++;else ng++;if(RL[sn]&&RL[sn].length)rep++});return{affected:sns.length,serialBacked:sns.length,repaired:rep,pass:pass,open:ng,notFound:nf,manual:false}}var qty=Number(c.qty||0)||0,op=c.openQty===''||c.openQty==null?null:Number(c.openQty);return{affected:qty||'N/D',serialBacked:0,repaired:'N/D',pass:(op!=null&&qty)?Math.max(0,qty-op):'N/D',open:op==null?'N/D':op,notFound:'N/D',manual:true}}
+    function patchCohorts(){var sec=document.getElementById('sec-reported-cohorts');if(!sec)return;var b=sec.querySelector('.tpr-section-body');if(!b)return;var coh=Array.isArray(MAIL.cohorts)?MAIL.cohorts:[],cut=t(readFilters().to)||latestDate();if(!coh.length){b.innerHTML='<div class="tpr-mail-data-gap"><b>REPORTED COHORT DATA GAP</b><br>No explicit QA / Other / NDF cohort was loaded for this BU. Add a cohort in Export Center only when the email or review provides a quantity or serial population. SMTinel will not infer “25 pieces” or “41 affected” from the global backlog.</div>';return}var stats=coh.map(function(c){return{c:c,s:cohortStats(c,cut)}}),rows=stats.map(function(x){var c=x.c,s=x.s;return'<tr><td><b>'+e(c.label||'Reported population')+'</b></td><td>'+e(c.type||'CUSTOM')+'</td><td>'+e(s.affected)+'</td><td>'+e(s.serialBacked)+'</td><td>'+e(s.repaired)+'</td><td>'+e(s.pass)+'</td><td><b>'+e(s.open)+'</b></td><td>'+e(s.notFound)+'</td><td>'+e(c.owner||'N/D')+'</td><td>'+e(c.due||'N/D')+'</td><td>'+e(c.status||'Open')+'</td></tr>'}).join('');b.innerHTML='<div class="tpr-card"><div class="tpr-card-title">EXPLICIT REPORTED POPULATIONS · CUTOFF '+e(cut)+'</div><div class="tpr-scroll"><table class="tpr-mail-cohort-table"><thead><tr><th>Cohort</th><th>Type</th><th>Affected</th><th>Serial-backed</th><th>Repair linked</th><th>Retest PASS</th><th>Still NG</th><th>Not found</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="tpr-footnote">When serials are loaded, Retest PASS / Still NG are recalculated from the latest Test evidence at the selected cutoff. Without serials, only explicit manual quantities are shown; missing detail stays N/D.</div></div>';syncQa(stats)}
+    function syncQa(stats){var qa=stats.filter(function(x){return u(x.c.type)==='QA'})[0],sec=document.getElementById('sec-qa');if(!qa||!sec)return;var cards=sec.querySelectorAll('.tpr-kpi');if(!cards.length)return;var vals={'QA AFFECTED':qa.s.affected,'DIAGNOSED':qa.s.repaired,'REPAIRED':qa.s.repaired,'RETEST PASS':qa.s.pass,'STILL NG':qa.s.open};Array.prototype.forEach.call(cards,function(card){var s=card.querySelector('span'),b=card.querySelector('b');if(!s||!b)return;var key=u(s.textContent);if(Object.prototype.hasOwnProperty.call(vals,key))b.textContent=vals[key]});var meth=sec.querySelector('.tpr-method');if(meth)meth.textContent='QA population is driven by the explicit Reported Cohort. Serial-backed rows recalculate Repair / PASS / Still NG at the report cutoff; quantity-only cohorts keep unsupported breakdowns as N/D.'}
+    var busy=false,timer=null;function apply(){if(busy)return;busy=true;try{patchExec();patchTrend();patchHorizons();patchNdf();patchActions();patchCohorts()}finally{busy=false}}function schedule(){clearTimeout(timer);timer=setTimeout(apply,70)}
+    document.addEventListener('change',function(e){var id=e&&e.target&&e.target.id||'';if(/^tprF/.test(id)||id==='tprTimeModeV167'||id==='tprQuarterV167')schedule()},true);document.addEventListener('input',function(e){var id=e&&e.target&&e.target.id||'';if(id==='tprFTarget')schedule()},true);var main=document.querySelector('.tpr-main');if(main&&window.MutationObserver){try{new MutationObserver(function(){schedule()}).observe(main,{childList:true,subtree:true})}catch(_){}}setTimeout(apply,0);setTimeout(apply,250);setTimeout(apply,900)
+  }
+
+  function install(force){
+    var a=api();if(!a||typeof a.reportHtmlFor!=='function')return false;if(a.reportHtmlFor.__smtinelMailAlignmentV192)return true;if(!force&&!a.reportHtmlFor.__smtinelRepairLookupV191)return false;var base=a.reportHtmlFor,wrapped=function(filters){return enhance(base.call(a,filters||{}),filters||{})};wrapped.__smtinelMailAlignmentV192=true;wrapped.__base=base;a.reportHtmlFor=wrapped;a.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.18.4 - Test Performance Mail Alignment - 2026-09-21';return true
+  }
+  if(!install(false)){var n=0,timer=setInterval(function(){n++;var a=api(),ready=a&&a.reportHtmlFor&&a.reportHtmlFor.__smtinelRepairLookupV191;if((ready||n>360)&&install(n>360))clearInterval(timer);if(n>420)clearInterval(timer)},100)}
+})();
+
 </script>
