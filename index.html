@@ -75392,3 +75392,44 @@ if(!install()){var n=0,tm=setInterval(function(){n++;if(install()||n>180)clearIn
 })();
 </script>
 
+
+<script id="smtinel-weekly-failure-static-export-v1325">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_WEEKLY_FAILURE_STATIC_EXPORT_V1325__)return;
+  window.__SMTINEL_WEEKLY_FAILURE_STATIC_EXPORT_V1325__=1;
+  var BUILD='SMTinel V13.18.25 - Safari-safe Weekly Failure Trend - 2026-09-23';
+  function t(v){return String(v==null?'':v).trim()}
+  function esc(v){return t(v).replace(/[&<>\"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[c]||c})}
+  function pct(v){return v==null||!isFinite(Number(v))?'N/D':Number(v).toFixed(2)+'%'}
+  function pp(v){if(v==null||!isFinite(Number(v)))return'N/D';var n=Number(v);return(n>0?'+':'')+n.toFixed(2)+' pp'}
+  function shortWeek(w){var m=t(w).match(/Q(\d+)\s+W-?0*(\d+)/i);return m?'Q'+m[1]+' W'+('0'+m[2]).slice(-2):t(w).replace(/^FY\d+\s*/,'')}
+  function payload(d){var n=d.getElementById('tprStandaloneData');try{return JSON.parse(n&&n.textContent||'{}')}catch(_){return null}}
+  function maps(P){var ix={};(P.columns||[]).forEach(function(n,i){ix[n]=i});return ix}
+  function dv(P,a,ix,key){var i=ix[key];if(i==null||i<0)return'';var v=a[i];if((P.numeric||[]).indexOf(key)>=0)return Number(v||0);return typeof v==='number'?(P.dict[v]||''):t(v)}
+  function debugStation(v){return /DEBUG|REPAIR|RETEST/i.test(t(v))}
+  function scopeMatch(r,F){if(F.line&&F.line!=='ALL'&&r.line!==F.line)return false;if(F.sku&&F.sku!=='ALL'&&r.sku!==F.sku)return false;if(F.wo&&F.wo!=='ALL'&&r.wo!==F.wo)return false;if(F.shift&&F.shift!=='ALL'&&r.shift!==F.shift)return false;return true}
+  function buildIndex(P){
+    var ix=maps(P),F=P.filters||{},first={};
+    (P.rows||[]).forEach(function(a){var logical=t(dv(P,a,ix,'logicalKey')),station=t(dv(P,a,ix,'station')),kind=t(dv(P,a,ix,'kind'));if(!logical||!station||(kind!=='pass'&&kind!=='fail')||debugStation(station))return;var k=logical+'|'+station,tm=Number(dv(P,a,ix,'timeMs'))||0,o=first[k];if(o&&o.timeMs<=tm)return;first[k]={timeMs:tm,opDate:t(dv(P,a,ix,'opDate')),shift:t(dv(P,a,ix,'shift')),logicalKey:logical,station:station,kind:kind,failure:t(dv(P,a,ix,'failure')),model:t(dv(P,a,ix,'model')),sku:t(dv(P,a,ix,'sku')),wo:t(dv(P,a,ix,'wo')),line:t(dv(P,a,ix,'line'))}});
+    var by={},arr=[];Object.keys(first).forEach(function(k){var r=first[k];if(!scopeMatch(r,F))return;arr.push(r);var z=r.model+'\u001f'+r.station;(by[z]||(by[z]=[])).push(r)});
+    var weeks=[],W=(P.calendar&&P.calendar.weeks)||{};Object.keys(W).forEach(function(k){var z=W[k]||{},s=t(z.start),e=t(z.end);if(s&&e)weeks.push({week:k,start:s,end:e})});weeks.sort(function(a,b){return a.start.localeCompare(b.start)});var cut=t(F.to),last=cut||(weeks.length?weeks[weeks.length-1].end:'');weeks=weeks.filter(function(w){return !last||w.start<=last}).slice(-13);
+    return{by:by,weeks:weeks,last:last,F:F}
+  }
+  function trend(I,product,station,failure){var arr=I.by[product+'\u001f'+station]||[];return I.weeks.map(function(w){var den=0,num=0;arr.forEach(function(r){var d=r.opDate;if(!d||d<w.start||d>w.end||(I.last&&d>I.last))return;den++;if(r.kind==='fail'&&r.failure===failure)num++});return{week:w.week,fail:num,tested:den,rate:den?100*num/den:null}})}
+  function spark(series){var W=150,H=38,L=3,R=3,T=5,B=7,vals=series.map(function(x){return x.rate==null?0:Number(x.rate)}),mx=Math.max.apply(Math,vals.concat([0.1])),n=series.length,pts=[];series.forEach(function(x,i){var xx=L+(n<=1?0:(W-L-R)*i/(n-1)),yy=T+(H-T-B)*(1-(x.rate==null?0:Number(x.rate))/mx);pts.push(xx.toFixed(1)+','+yy.toFixed(1))});var last=series.length?series[series.length-1]:null,prev=series.length>1?series[series.length-2]:null,delta=last&&prev&&last.rate!=null&&prev.rate!=null?last.rate-prev.rate:null,cls=delta==null?'neutral':(delta>0.0001?'worse':delta<-0.0001?'better':'neutral');return '<svg class="tpr-ft-spark '+cls+'" width="150" height="38" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-label="13 week failure-rate trend"><line x1="'+L+'" y1="'+(H-B)+'" x2="'+(W-R)+'" y2="'+(H-B)+'" class="base"/><polyline points="'+pts.join(' ')+'" class="trend"/>'+(pts.length?'<circle cx="'+pts[pts.length-1].split(',')[0]+'" cy="'+pts[pts.length-1].split(',')[1]+'" r="2.7" class="last"/>':'')+'</svg>'}
+  function details(series){return '<details class="tpr-ft-details"><summary>13WK values</summary><div class="tpr-ft-values">'+series.map(function(x){return '<span><b>'+esc(shortWeek(x.week))+'</b>'+pct(x.rate)+' <small>('+x.fail+'/'+x.tested+')</small></span>'}).join('')+'</div></details>'}
+  function headers(table){return Array.prototype.map.call(table.querySelectorAll('thead th'),function(x){return t(x.textContent).toUpperCase().replace(/[\u21c5\u2191\u2193]/g,'').trim()})}
+  function enhanceTable(d,table,product,I){
+    if(!table||table.getAttribute('data-weekly-failure-trend')==='1')return false;var hs=headers(table),fi=hs.indexOf('FAILURE MODE');if(fi<0)fi=hs.indexOf('FAILING TEST NAME');var ai=hs.indexOf('TEST AREA'),fri=hs.indexOf('FAILURE RATE');if(fi<0||ai<0||fri<0)return false;
+    table.setAttribute('data-weekly-failure-trend','1');var hr=table.querySelector('thead tr'),hAnchor=hr.children[fri+1]||null;['Latest WK FR','WoW \u0394','13WK Avg','Peak FR','13WK Trend'].forEach(function(label){var th=d.createElement('th');th.textContent=label;th.className='tpr-ft-head';hr.insertBefore(th,hAnchor)});
+    Array.prototype.forEach.call(table.querySelectorAll('tbody tr'),function(tr){var cells=Array.prototype.slice.call(tr.children);if(cells.length<=Math.max(fi,ai,fri))return;var failure=t(cells[fi].textContent),station=t(cells[ai].textContent);if(!failure||!station)return;var s=trend(I,product,station,failure),usable=s.filter(function(x){return x.rate!=null}),latest=usable.length?usable[usable.length-1]:null,prev=usable.length>1?usable[usable.length-2]:null,delta=latest&&prev?latest.rate-prev.rate:null,avg=usable.length?usable.reduce(function(a,x){return a+x.rate},0)/usable.length:null,peak=usable.length?Math.max.apply(Math,usable.map(function(x){return x.rate})):null,cls=delta==null?'tpr-ft-neutral':delta>0.0001?'tpr-ft-worse':delta<-0.0001?'tpr-ft-better':'tpr-ft-neutral',anchor=cells[fri+1]||null;
+      function add(markup,cl){var td=d.createElement('td');if(cl)td.className=cl;td.innerHTML=markup;tr.insertBefore(td,anchor)}
+      add('<b>'+pct(latest&&latest.rate)+'</b><small class="tpr-ft-sub">'+esc(latest?shortWeek(latest.week):'N/D')+'</small>');add('<b>'+pp(delta)+'</b>',cls);add('<b>'+pct(avg)+'</b>');add('<b>'+pct(peak)+'</b>');add(spark(s)+details(s),'tpr-ft-trend-cell')
+    });return true
+  }
+  function transform(html){try{var d=new DOMParser().parseFromString(String(html||''),'text/html');if(!d||!d.documentElement)return html;var P=payload(d);if(!P)return html;var I=buildIndex(P),sec=d.getElementById('sec-product-detail'),count=0;if(sec){var body=sec.querySelector('.tpr-section-body');if(body)Array.prototype.forEach.call(body.children,function(card){if(!card.classList||!card.classList.contains('tpr-card'))return;var title=card.querySelector('.tpr-card-title'),product=t(title&&title.textContent);if(!product)return;Array.prototype.forEach.call(card.querySelectorAll('table'),function(tb){if(enhanceTable(d,tb,product,I))count++})})}if(d.body){d.body.setAttribute('data-smtinel-weekly-failure-static','13.18.25');d.body.setAttribute('data-smtinel-weekly-failure-static-tables',String(count))}return '<!doctype html>\n'+d.documentElement.outerHTML}catch(e){try{console.error('[SMTinel weekly failure static export]',e)}catch(_){}return html}}
+  function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelWeeklyFailureStaticV1325)return true;var prev=api.reportHtmlFor,wrapped=function(filters){return transform(prev.call(api,filters||{}))};wrapped.__smtinelWeeklyFailureStaticV1325=true;wrapped.__base=prev;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION=BUILD;return true}
+  if(!install()){var n=0,tm=setInterval(function(){if(install()||++n>240)clearInterval(tm)},100)}
+})();
+</script>
