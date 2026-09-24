@@ -75290,3 +75290,105 @@ function transform(html){try{var d=new DOMParser().parseFromString(String(html||
 function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;if(api.reportHtmlFor.__smtinelWeeklyFailureV223)return true;var prev=api.reportHtmlFor;var wrapped=function(filters){return transform(prev.call(api,filters||{}))};wrapped.__smtinelWeeklyFailureV223=true;wrapped.__base=prev;api.reportHtmlFor=wrapped;window.SMTINEL_BUILD_VERSION=BUILD;return true}
 if(!install()){var n=0,tm=setInterval(function(){n++;if(install()||n>180)clearInterval(tm)},100)}
 })();</script>
+
+<style id="smtinel-test-performance-cover-only-v1324-style">
+#sec-trend{display:none!important}
+#tprFailHoverTip{position:fixed;z-index:99999;display:none;max-width:350px;padding:10px 12px;border-radius:10px;background:rgba(24,39,30,.97);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);font:12px/1.35 Segoe UI,Arial,sans-serif;pointer-events:none}
+#tprFailHoverTip b{display:block;margin-bottom:5px;font-size:12px;color:#fff}
+#tprFailHoverTip .muted{color:#cdd8d0;font-size:10px}
+#tprFailHoverTip .metric{margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px}
+#tprFailHoverTip .metric strong{color:#ffd36a}
+#sec-cover svg rect[data-tpr-fail-hover="1"]{cursor:help;transition:opacity .12s ease,stroke-width .12s ease}
+#sec-cover svg rect[data-tpr-fail-hover="1"]:hover{opacity:.82;stroke:#8d2630;stroke-width:1.2}
+@media print{#tprFailHoverTip{display:none!important}}
+</style>
+<script id="smtinel-test-performance-cover-only-v1324">
+(function(){
+  'use strict';
+  if(window.__SMTINEL_TP_COVER_ONLY_V1324__)return;
+  window.__SMTINEL_TP_COVER_ONLY_V1324__=1;
+  var STYLE='#sec-trend{display:none!important}#tprFailHoverTip{position:fixed;z-index:99999;display:none;max-width:350px;padding:10px 12px;border-radius:10px;background:rgba(24,39,30,.97);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);font:12px/1.35 Segoe UI,Arial,sans-serif;pointer-events:none}#tprFailHoverTip b{display:block;margin-bottom:5px;font-size:12px;color:#fff}#tprFailHoverTip .muted{color:#cdd8d0;font-size:10px}#tprFailHoverTip .metric{margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px}#tprFailHoverTip .metric strong{color:#ffd36a}#sec-cover svg rect[data-tpr-fail-hover="1"]{cursor:help;transition:opacity .12s ease,stroke-width .12s ease}#sec-cover svg rect[data-tpr-fail-hover="1"]:hover{opacity:.82;stroke:#8d2630;stroke-width:1.2}@media print{#tprFailHoverTip{display:none!important}}';
+
+  function standaloneRuntime(){
+    if(window.__SMTINEL_TP_COVER_RUNTIME_V1324__)return;
+    window.__SMTINEL_TP_COVER_RUNTIME_V1324__=1;
+    var cache=null,observer=null,pending=false;
+    function tx(v){return String(v==null?'':v).trim()}
+    function esc(v){return tx(v).replace(/[&<>\"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c})}
+    function payload(){var n=document.getElementById('tprStandaloneData');if(!n)return null;try{return JSON.parse(n.textContent||'{}')}catch(_){return null}}
+    function decode(P,a,i){if(i==null||i<0)return'';var v=a[i],name=P.columns[i];if((P.numeric||[]).indexOf(name)>=0)return v;return typeof v==='number'?(P.dict[v]||''):v}
+    function weeklyTop(){
+      var P=payload();if(!P||!P.rows||!P.columns)return{};
+      var c=P.columns,ix={};c.forEach(function(n,i){ix[n]=i});
+      if(ix.week==null||ix.logicalKey==null||ix.station==null)return{};
+      var first={},rows=P.rows;
+      for(var i=0;i<rows.length;i++){
+        var a=rows[i],wk=tx(decode(P,a,ix.week)),lk=tx(decode(P,a,ix.logicalKey)),st=tx(decode(P,a,ix.station));
+        if(!wk||!lk||!st)continue;
+        var k=wk+'|'+lk+'|'+st,t=Number(decode(P,a,ix.timeMs))||0;
+        if(!first[k]||t<first[k].t)first[k]={a:a,t:t,wk:wk,lk:lk,st:st};
+      }
+      var tested={},weekFailUnits={},groups={};
+      Object.keys(first).forEach(function(k){
+        var o=first[k],a=o.a,wk=o.wk,st=o.st,lk=o.lk,denKey=wk+'|'+st;
+        (tested[denKey]||(tested[denKey]={}))[lk]=1;
+        if(tx(decode(P,a,ix.kind)).toLowerCase()!=='fail')return;
+        (weekFailUnits[wk]||(weekFailUnits[wk]={}))[lk]=1;
+        var fail=tx(decode(P,a,ix.failure))||'UNSPECIFIED FAILURE',model=tx(decode(P,a,ix.model))||'N/D',gk=wk+'|'+st+'|'+fail;
+        var g=groups[gk]||(groups[gk]={week:wk,station:st,failure:fail,units:{},models:{}});g.units[lk]=1;if(model)g.models[model]=1;
+      });
+      var byWeek={};Object.keys(groups).forEach(function(k){
+        var g=groups[k],qty=Object.keys(g.units).length,den=Object.keys(tested[g.week+'|'+g.station]||{}).length,all=Object.keys(weekFailUnits[g.week]||{}).length;
+        g.qty=qty;g.tested=den;g.fr=den?100*qty/den:0;g.share=all?100*qty/all:0;g.models=Object.keys(g.models);
+        if(!byWeek[g.week]||qty>byWeek[g.week].qty||(qty===byWeek[g.week].qty&&g.fr>byWeek[g.week].fr))byWeek[g.week]=g;
+      });
+      return byWeek;
+    }
+    function tip(){var d=document.getElementById('tprFailHoverTip');if(!d){d=document.createElement('div');d.id='tprFailHoverTip';document.body.appendChild(d)}return d}
+    function hideTip(){var d=document.getElementById('tprFailHoverTip');if(d)d.style.display='none'}
+    function moveTip(e){var d=tip(),x=(e.clientX||0)+14,y=(e.clientY||0)+14,w=d.offsetWidth||320,h=d.offsetHeight||130;if(x+w>window.innerWidth-8)x=(e.clientX||0)-w-14;if(y+h>window.innerHeight-8)y=(e.clientY||0)-h-14;d.style.left=Math.max(8,x)+'px';d.style.top=Math.max(8,y)+'px'}
+    function showTip(rect,e){
+      var wk=rect.getAttribute('data-week')||'',g=cache&&cache[wk],d=tip();
+      if(g)d.innerHTML='<b>'+esc(wk)+' · Top fail offender</b><div>'+esc(g.failure)+'</div><div class="muted">Test Area: '+esc(g.station)+(g.models.length?' · Model(s): '+esc(g.models.join(', ')):'')+'</div><div class="metric"><span>Affected FPY SN <strong>'+g.qty.toLocaleString()+'</strong></span><span>Station tested <strong>'+g.tested.toLocaleString()+'</strong></span><span>Failure Rate <strong>'+g.fr.toFixed(2)+'%</strong></span><span>Share of weekly fails <strong>'+g.share.toFixed(1)+'%</strong></span></div>';
+      else d.innerHTML='<b>'+esc(wk)+' · Fail population</b><div class="muted">No first-attempt offender detail was available for this week.</div>';
+      d.style.display='block';moveTip(e);
+    }
+    function weekFromRect(r){var g=r.parentNode,t=g&&g.querySelector('title'),s=tx(t&&t.textContent);return s?s.split(' · ')[0]:''}
+    function decorate(){
+      cache=weeklyTop();var cover=document.getElementById('sec-cover');if(!cover)return;
+      Array.prototype.forEach.call(cover.querySelectorAll('svg rect[fill="#d45e67"],svg rect[fill="#d96a6a"]'),function(r){
+        var wk=weekFromRect(r);if(!wk)return;r.setAttribute('data-week',wk);r.setAttribute('data-tpr-fail-hover','1');
+        if(r.__tprHoverBound)return;r.__tprHoverBound=1;r.addEventListener('mouseenter',function(e){showTip(r,e)});r.addEventListener('mousemove',moveTip);r.addEventListener('mouseleave',hideTip);
+      });
+    }
+    function cleanup(){
+      var s=document.getElementById('sec-trend');if(s)s.setAttribute('aria-hidden','true');
+      Array.prototype.forEach.call(document.querySelectorAll('a[href="#sec-trend"]'),function(a){a.remove()});
+      Array.prototype.forEach.call(document.querySelectorAll('button'),function(b){if(b.id==='printReport'||/print\s*\/\s*pdf/i.test(tx(b.textContent)))b.remove()});
+      var n=0;Array.prototype.forEach.call(document.querySelectorAll('.tpr-section'),function(sec){if(sec.id==='sec-trend'||getComputedStyle(sec).display==='none')return;var q=sec.querySelector('.tpr-num');if(q&&/^\d+$/.test(tx(q.textContent)))q.textContent=String(++n)});
+    }
+    function run(){pending=false;cleanup();decorate()}
+    function schedule(){if(pending)return;pending=true;setTimeout(run,80)}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){run();observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true})});else{run();observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true})}
+    document.addEventListener('change',function(){cache=null;schedule()},true);
+  }
+
+  function transform(html){
+    try{
+      var d=new DOMParser().parseFromString(String(html||''),'text/html');if(!d||!d.documentElement)return html;
+      var st=d.createElement('style');st.id='smtinel-test-performance-cover-only-v1324-style';st.textContent=STYLE;d.head.appendChild(st);
+      Array.prototype.forEach.call(d.querySelectorAll('a[href="#sec-trend"]'),function(a){a.remove()});
+      Array.prototype.forEach.call(d.querySelectorAll('button'),function(b){if(b.id==='printReport'||/print\s*\/\s*pdf/i.test(String(b.textContent||'')))b.remove()});
+      var sc=d.createElement('script');sc.id='smtinel-test-performance-cover-only-v1324-runtime';sc.textContent='('+standaloneRuntime.toString()+')();';d.body.appendChild(sc);
+      return '<!doctype html>\n'+d.documentElement.outerHTML;
+    }catch(err){try{console.error('[SMTinel cover-only transform]',err)}catch(_){}return html}
+  }
+  function install(){
+    var a=window.SMTINEL_TEST_PERF_API;if(!a||typeof a.reportHtmlFor!=='function')return false;if(a.reportHtmlFor.__coverOnlyV1324)return true;
+    var base=a.reportHtmlFor,wrap=function(f){return transform(base.call(a,f))};wrap.__coverOnlyV1324=true;wrap.__base=base;a.reportHtmlFor=wrap;return true;
+  }
+  standaloneRuntime();
+  if(!install()){var n=0,t=setInterval(function(){if(install()||++n>240)clearInterval(t)},100)}
+})();
+</script>
+
