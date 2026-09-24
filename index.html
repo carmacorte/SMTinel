@@ -41496,6 +41496,44 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   setTimeout(isolateMode,0)
 })();
 
+/* Yokoten Export Center direct route v13.18.33 - Safari safe */
+(function(){
+  'use strict';
+  function closeExportModal(){
+    try{var m=document.getElementById('emailModal');if(m)m.classList.remove('open')}catch(_){}
+  }
+  function openYokotenDirect(source){
+    closeExportModal();
+    try{
+      var p=window.parent;
+      var fn=p&&(p.SMTinelOpenManufacturingHistoryMatrix||p.SMTinelOpenYokotenMatrix||p.SMTinelOpenManufacturingQualificationMatrix);
+      if(typeof fn==='function'){
+        fn.call(p);
+        return true;
+      }
+    }catch(err){try{console.error('[SMTinel Yokoten direct route]',err)}catch(_){}}
+    try{
+      window.parent.postMessage({type:'smtinel:yokoten:open',source:source||'export-center-direct'},'*');
+      return true;
+    }catch(err2){try{console.error('[SMTinel Yokoten postMessage fallback]',err2)}catch(_){}}
+    return false;
+  }
+  document.addEventListener('change',function(e){
+    var x=e&&e.target;
+    if(!x||x.id!=='reportType'||String(x.value||'').toUpperCase()!=='YOKOTEN')return;
+    try{e.stopImmediatePropagation()}catch(_){}
+    setTimeout(function(){openYokotenDirect('report-type-select')},0);
+  },true);
+  document.addEventListener('click',function(e){
+    var t=e&&e.target;
+    var card=t&&t.closest?t.closest('[data-report-type="YOKOTEN"],[data-yokoten-open="1"]'):null;
+    if(!card)return;
+    try{e.preventDefault();e.stopImmediatePropagation()}catch(_){}
+    openYokotenDirect('export-center-card');
+  },true);
+  window.SMTinelOpenYokotenFromExportCenter=openYokotenDirect;
+})();
+
 renderKpis();renderLayout();requestData();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastResponse>60000)requestData()})
 })();
 ${'</scr'+'ipt>'}
@@ -75622,10 +75660,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-<style id="smtinel-yokoten-route-v131832-style">
+<style id="smtinel-yokoten-route-v131833-style">
 /* Export Center integration: Yokoten is a control view, not a report-builder preview. */
 </style>
-<script id="smtinel-yokoten-route-v131832">
+<script id="smtinel-yokoten-route-v131833">
 (function(){
 'use strict';
 if(window.__SMTINEL_YOKOTEN_ROUTE_V131830__)return;window.__SMTINEL_YOKOTEN_ROUTE_V131830__=1;
@@ -75643,6 +75681,6 @@ window.addEventListener('message',function(event){
   if(!openHistory())setTimeout(openHistory,250);
 });
 window.SMTinelOpenManufacturingQualificationMatrix=openHistory;
-try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.18.32')}catch(_){}
+try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.18.33')}catch(_){}
 })();
 </script>
