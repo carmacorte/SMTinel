@@ -39374,7 +39374,7 @@ function traceOpsBonepileBuildPayload() {
             <p>Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.</p>
             <span class="export-type-meta"><span>Date / shift</span><span>FPY + retest</span><span>HTML + CSV</span></span>
           </button>
-          <button type="button" class="export-type-card export-type-card-yokoten" data-yokoten-open="1">
+          <button type="button" class="export-type-card export-type-card-yokoten" data-report-type="YOKOTEN" data-yokoten-open="1">
             <span class="export-type-icon">&#8862;</span>
             <b>Manufacturing Qualification &amp; Yokoten Matrix</b>
             <p>Product + revision by line. Common DB builds the run/WO/quantity history; selecting a cell opens the linked Handoff, Test Performance, Repair and Yokoten tracker.</p>
@@ -39394,6 +39394,7 @@ function traceOpsBonepileBuildPayload() {
                   <option value="SHIFT">Shift Handoff</option>
                   <option value="DBN">DBN Follow-up</option>
                   <option value="TEST">Test Performance Report</option>
+                  <option value="YOKOTEN">Manufacturing Qualification &amp; Yokoten Matrix</option>
                 </select>
               </label>
               <div class="period-controls" id="periodControls">
@@ -39672,7 +39673,47 @@ function closeEmail(){document.getElementById('emailModal').classList.remove('op
 function copyText(text){if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();return Promise.resolve()}
 function fallbackCopyHtml(html){var div=document.createElement('div');div.contentEditable='true';div.style.position='fixed';div.style.left='-9999px';div.innerHTML=html;document.body.appendChild(div);var range=document.createRange();range.selectNodeContents(div);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand('copy');sel.removeAllRanges();div.remove()}
 function copyHtml(){var html=emailHtml(),plain=document.getElementById('emailPreview').innerText;if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]).catch(function(){fallbackCopyHtml(html)})}else fallbackCopyHtml(html)}
-function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body style="margin:0;padding:16px;background:#f3f6fa;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;text-align:left">'+emailHtml()+'</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
+function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body style="margin:0;padding:16px;background:#f3f6fa;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;text-align:left">'+emailHtml()+'
+<script id="smtinel-yokoten-export-route-v131831">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_EXPORT_ROUTE_V131831__)return;window.__SMTINEL_YOKOTEN_EXPORT_ROUTE_V131831__=1;
+function openYokoten(source){
+  try{
+    var modal=document.getElementById('emailModal');
+    if(modal)modal.classList.remove('open');
+    window.parent.postMessage({type:'smtinel:yokoten:open',source:source||'export-center'},'*');
+  }catch(err){try{console.error('[SMTinel Yokoten route]',err)}catch(_){}}
+}
+function ensure(){
+  var sel=document.getElementById('reportType');
+  if(sel&&!sel.querySelector('option[value="YOKOTEN"]')){
+    var o=document.createElement('option');o.value='YOKOTEN';o.textContent='Manufacturing Qualification & Yokoten Matrix';sel.appendChild(o);
+  }
+  if(sel&&!sel.dataset.yokotenRoute){
+    sel.dataset.yokotenRoute='1';
+    sel.addEventListener('change',function(e){
+      if(this.value!=='YOKOTEN')return;
+      if(e){e.preventDefault();e.stopImmediatePropagation()}
+      openYokoten('report-type-selector');
+      setTimeout(function(){try{sel.value='TEST'}catch(_){}},0);
+    },true);
+  }
+  var card=document.querySelector('[data-yokoten-open="1"]');
+  if(card&&!card.dataset.yokotenRoute){
+    card.dataset.yokotenRoute='1';card.setAttribute('data-report-type','YOKOTEN');
+    card.addEventListener('click',function(e){
+      if(e){e.preventDefault();e.stopImmediatePropagation()}
+      openYokoten('export-center-card');
+    },true);
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
+window.addEventListener('load',function(){setTimeout(ensure,100)},{once:true});
+})();
+</script>
+
+</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
 var shiftReportHtml=emailHtml;
 var REPORT_ROLES={
   QUALITY:{label:'Quality Focus',short:'QUALITY',icon:'&#128737;',color:'#b42318',soft:'#fff1f2',border:'#f2b8bd',purpose:'Failure prioritization, containment and support allocation',question:'What quality risk should be attacked first?'},
@@ -40186,7 +40227,7 @@ async function downloadExecutivePptx(){
 }
 function smtinelLocalDateISO(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function setDefaultReportSubject(){var subject=document.getElementById('emailSubject'),date=smtinelLocalDateISO(new Date()),type=reportType();if(!subject)return;if(type==='SHIFT'){subject.value='SMTinel End-of-Shift Execution Review - '+reportLineLabel()+' - '+date;return}if(type==='EXEC_QUALITY'){var c=eqContext();subject.value='SMTinel Executive Quality Report - '+String(c.model||'N/D')+' - '+String(c.componentMode?(c.refSelection+' Component Exposure'):c.failure||'N/D')+' - '+String(c.analysis||date);return}subject.value='SMTinel '+reportRole().label+' - '+reportPeriod()+' - '+reportLineLabel()}
-function updateReportBuilder(){var type=reportType(),weekly=type==='WEEKLY',eq=type==='EXEC_QUALITY',role=reportRole(),roleWrap=document.getElementById('roleSelectorWrap'),periodWrap=document.getElementById('periodControls'),eqWrap=document.getElementById('executiveQualityControls'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),ppt=document.getElementById('downloadExecutivePptx');if(roleWrap)roleWrap.style.display=weekly?'block':'none';if(periodWrap)periodWrap.style.display=weekly?'grid':'none';if(eqWrap)eqWrap.style.display=eq?'block':'none';if(ppt)ppt.style.display=eq?'inline-block':'none';if(eq){eqPopulateControls();title.textContent='Executive Quality Report';sub.textContent='Evidence correlation, component exposure, immediate containment, RCCA ownership, and effectiveness tracking.';if(hint)hint.innerHTML='<b>Executive quality scope:</b> Select a model. Use ALL REFERENCES + one Failure Mode for defect analysis, or select a specific RefDes and ALL MODES for consolidated component Failure Rate. Component FR uses unique failed SN divided by covered WO exposure using Build Qty / REAL_QTY / SN_QTY, with Plan as fallback. Missing WOs are excluded and coverage is declared.'}else if(weekly){title.textContent='Weekly Execution Review';sub.textContent=role.purpose;if(hint)hint.innerHTML='<b>Available views:</b> Quality Focus and Executive Focus. <b>Fiscal filter:</b> the selected week filters the report population using each serial\'s fiscal label or SFC build-start date. Serials without a usable fiscal date are excluded from the weekly view. <b>Delivery:</b> Copy HTML body keeps the compact static email layout without board drawings or expandable serial text boxes; Download Landing HTML creates the complete interactive browser view.'}else{title.textContent='End-of-Shift Execution Review';sub.textContent='Commit readiness, JIT forecast, blocker detection, FT performance and CFT mobilization from the captured shift baseline.';if(hint)hint.innerHTML='<b>Shift handoff:</b> requirement vs. progress, Planning Due proxy (WO START + 7 days), Cesium HxH / FPY, blocker detection, repair exposure and CFT mobilization. Forecast is evidence-based and declares confidence.'} [].slice.call(document.querySelectorAll('.role-card')).forEach(function(card){var active=card.getAttribute('data-focus')===selectedReportFocus;card.classList.toggle('active',active);card.style.borderColor=active?role.color:'';card.style.boxShadow=active?'0 0 0 3px '+role.soft:'none'});setDefaultReportSubject();refreshEmail()}
+function updateReportBuilder(){var type=reportType();if(type==='YOKOTEN'){try{window.parent.postMessage({type:'smtinel:yokoten:open',source:'reportType'},'*')}catch(error){try{console.error('[SMTinel Yokoten selector]',error)}catch(_){}}var modalY=document.getElementById('emailModal');if(modalY)modalY.classList.remove('open');return}var weekly=type==='WEEKLY',eq=type==='EXEC_QUALITY',role=reportRole(),roleWrap=document.getElementById('roleSelectorWrap'),periodWrap=document.getElementById('periodControls'),eqWrap=document.getElementById('executiveQualityControls'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub'),hint=document.getElementById('reportScopeHint'),ppt=document.getElementById('downloadExecutivePptx');if(roleWrap)roleWrap.style.display=weekly?'block':'none';if(periodWrap)periodWrap.style.display=weekly?'grid':'none';if(eqWrap)eqWrap.style.display=eq?'block':'none';if(ppt)ppt.style.display=eq?'inline-block':'none';if(eq){eqPopulateControls();title.textContent='Executive Quality Report';sub.textContent='Evidence correlation, component exposure, immediate containment, RCCA ownership, and effectiveness tracking.';if(hint)hint.innerHTML='<b>Executive quality scope:</b> Select a model. Use ALL REFERENCES + one Failure Mode for defect analysis, or select a specific RefDes and ALL MODES for consolidated component Failure Rate. Component FR uses unique failed SN divided by covered WO exposure using Build Qty / REAL_QTY / SN_QTY, with Plan as fallback. Missing WOs are excluded and coverage is declared.'}else if(weekly){title.textContent='Weekly Execution Review';sub.textContent=role.purpose;if(hint)hint.innerHTML='<b>Available views:</b> Quality Focus and Executive Focus. <b>Fiscal filter:</b> the selected week filters the report population using each serial\'s fiscal label or SFC build-start date. Serials without a usable fiscal date are excluded from the weekly view. <b>Delivery:</b> Copy HTML body keeps the compact static email layout without board drawings or expandable serial text boxes; Download Landing HTML creates the complete interactive browser view.'}else{title.textContent='End-of-Shift Execution Review';sub.textContent='Commit readiness, JIT forecast, blocker detection, FT performance and CFT mobilization from the captured shift baseline.';if(hint)hint.innerHTML='<b>Shift handoff:</b> requirement vs. progress, Planning Due proxy (WO START + 7 days), Cesium HxH / FPY, blocker detection, repair exposure and CFT mobilization. Forecast is evidence-based and declares confidence.'} [].slice.call(document.querySelectorAll('.role-card')).forEach(function(card){var active=card.getAttribute('data-focus')===selectedReportFocus;card.classList.toggle('active',active);card.style.borderColor=active?role.color:'';card.style.boxShadow=active?'0 0 0 3px '+role.soft:'none'});setDefaultReportSubject();refreshEmail()}
 function initReportBuilder(){populateFiscalPeriodOptions();eqPopulateControls();[].slice.call(document.querySelectorAll('.role-card')).forEach(function(card){card.onclick=function(){selectedReportFocus=this.getAttribute('data-focus')||'QUALITY';updateReportBuilder()}});document.getElementById('reportType').onchange=updateReportBuilder;var fiscalWeek=document.getElementById('reportFiscalWeek');if(fiscalWeek)fiscalWeek.onchange=function(){updateFiscalPeriodFields();setDefaultReportSubject();refreshEmail()};var em=document.getElementById('eqModel'),er=document.getElementById('eqRef'),ef=document.getElementById('eqFailure'),ea=document.getElementById('eqAnalysisDate'),es=document.getElementById('eqStartDate'),ee=document.getElementById('eqEndDate');if(em)em.onchange=function(){eqPopulateRefOptions();eqPopulateFailureOptions();setDefaultReportSubject();refreshEmail()};if(er)er.onchange=function(){eqPopulateFailureOptions();if(ef&&er.value!=='ALL REFERENCES')ef.value='ALL MODES';setDefaultReportSubject();refreshEmail()};[ef,ea,es,ee].forEach(function(el){if(el)el.onchange=function(){setDefaultReportSubject();refreshEmail()}})}
 function showExportLanding(){
   var landing=document.getElementById('exportLanding'),builder=document.getElementById('reportBuilder'),back=document.getElementById('exportBack'),title=document.getElementById('reportModalTitle'),sub=document.getElementById('reportModalSub');
@@ -40197,6 +40238,11 @@ function showExportLanding(){
   if(sub)sub.textContent='Choose a report first. Configuration and export actions stay beside the preview.';
 }
 function showReportBuilder(type){
+  if(type==='YOKOTEN'){
+    try{window.parent.postMessage({type:'smtinel:yokoten:open',source:'exportCard'},'*')}catch(error){try{console.error('[SMTinel Yokoten Export Center]',error)}catch(_){}}
+    var modalY=document.getElementById('emailModal');if(modalY)modalY.classList.remove('open');
+    return;
+  }
   var sel=document.getElementById('reportType'),landing=document.getElementById('exportLanding'),builder=document.getElementById('reportBuilder'),back=document.getElementById('exportBack');
   if(sel&&type)sel.value=type;
   if(landing)landing.style.display='none';
@@ -40212,10 +40258,7 @@ function bindExportLanding(){
     card.onclick=function(){showReportBuilder(this.getAttribute('data-report-type')||'WEEKLY')};
   });
   var yokoten=document.querySelector('[data-yokoten-open="1"]');
-  if(yokoten)yokoten.onclick=function(){
-    try{window.parent.postMessage({type:'smtinel:yokoten:open'},'*')}
-    catch(error){try{console.error('[SMTinel Yokoten Export Center]',error)}catch(_){}}
-  };
+  if(yokoten)yokoten.onclick=function(){showReportBuilder('YOKOTEN')};
   var back=document.getElementById('exportBack');
   if(back)back.onclick=showExportLanding;
 }
@@ -75611,9 +75654,35 @@ function wireDetail(cell,tracker){var trs=document.querySelectorAll('[data-yh-tr
 function exportMatrix(){if(!state.ctx)state.ctx=workContext();var rows=['Product,Part Number,Revision,Line,Runs,Work Orders,Build Qty,First Run,Last Run,Status'];state.ctx.rows.forEach(function(r){state.ctx.lines.forEach(function(l){var c=r.cells[l];if(!c)return;function q(v){return'"'+t(v).replace(/"/g,'""')+'"'}rows.push([r.product,r.sku,r.rev,l,Object.keys(c.runTokens).length,Object.keys(c.wos).length,c.qty,c.first,c.last,statusFor(c)].map(q).join(','))})});var a=document.createElement('a'),u=URL.createObjectURL(new Blob([rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='SMTinel_Manufacturing_History_Yokoten_Matrix.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},1000)}
 function open(){ensureOverlay();state.ctx=workContext();var d=document.getElementById('smtYokotenHistoryOverlay');d.classList.add('open');document.body.setAttribute('data-smtinel-yokoten-build','13.18.29');render()}
 function close(){var d=document.getElementById('smtYokotenHistoryOverlay');if(d)d.classList.remove('open')}
-window.SMTinelOpenYokotenMatrix=open;window.SMTINEL_YOKOTEN_MATRIX_BUILD=BUILD;window.SMTINEL_BUILD_VERSION=BUILD;
+window.SMTinelOpenYokotenMatrix=open;window.SMTinelOpenManufacturingHistoryMatrix=open;window.SMTINEL_YOKOTEN_MATRIX_BUILD=BUILD;window.SMTINEL_BUILD_VERSION=BUILD;
 function rewire(){var old=document.getElementById('smtYokotenLauncher');if(old)old.onclick=open}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(rewire,500)});else setTimeout(rewire,500);window.addEventListener('load',function(){setTimeout(rewire,900)},{once:true});
 })();
 </script>
 
+
+
+<style id="smtinel-yokoten-route-v131831-style">
+/* Export Center integration: Yokoten is a control view, not a report-builder preview. */
+</style>
+<script id="smtinel-yokoten-route-v131831">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_ROUTE_V131831__)return;window.__SMTINEL_YOKOTEN_ROUTE_V131831__=1;
+function openHistory(){
+  try{
+    var fn=window.SMTinelOpenManufacturingHistoryMatrix||window.SMTinelOpenYokotenMatrix;
+    if(typeof fn==='function'){fn();return true;}
+    var launcher=document.getElementById('smtYokotenLauncher');
+    if(launcher){launcher.click();return true;}
+  }catch(err){try{console.error('[SMTinel Manufacturing History route]',err)}catch(_){}}
+  return false;
+}
+window.addEventListener('message',function(event){
+  var d=event&&event.data;if(!d||d.type!=='smtinel:yokoten:open')return;
+  if(!openHistory())setTimeout(openHistory,250);
+});
+window.SMTinelOpenManufacturingQualificationMatrix=openHistory;
+try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.18.31')}catch(_){}
+})();
+</script>
