@@ -39256,6 +39256,8 @@ function traceOpsBonepileBuildPayload() {
 .export-type-card[data-report-type="DBN"] .export-type-icon{color:#F5A623;border-color:rgba(245,166,35,.26);background:rgba(245,166,35,.08)}
 .export-type-card[data-report-type="TEST"] .export-type-icon{color:#69B7FF;border-color:rgba(105,183,255,.26);background:rgba(105,183,255,.08)}
 .export-type-card[data-report-type="EXEC_QUALITY"] .export-type-icon{color:#C73E54;border-color:rgba(199,62,84,.24);background:rgba(199,62,84,.08)}
+.export-type-card[data-yokoten-open="1"] .export-type-icon{color:#B87820;border-color:rgba(184,120,32,.26);background:rgba(184,120,32,.08)}
+.export-type-card[data-yokoten-open="1"]{border-color:rgba(107,142,90,.28)}
 .export-type-card b{display:block;color:#F2F2EF;font-size:17px;line-height:1.2;position:relative}
 .export-type-card p{margin:8px 0 0;color:#AAAAAA;font-size:11.5px;line-height:1.5;position:relative}
 .export-type-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;position:relative}
@@ -39344,8 +39346,8 @@ function traceOpsBonepileBuildPayload() {
       <section class="export-landing" id="exportLanding">
         <div class="export-landing-hero">
           <div class="export-landing-kicker">SMTinel Export Center</div>
-          <h2>Build the report you need</h2>
-          <p>Start from the report type instead of scrolling through one long builder. Once selected, filters and export controls remain next to the live preview.</p>
+          <h2>Build the report or control view you need</h2>
+          <p>Start from the report or control module instead of scrolling through one long builder. Reports keep their filters beside the live preview; Yokoten opens the product-by-line qualification matrix.</p>
         </div>
         <div class="export-type-grid">
           <button type="button" class="export-type-card" data-report-type="SHIFT">
@@ -39371,6 +39373,12 @@ function traceOpsBonepileBuildPayload() {
             <b>Test Performance Report</b>
             <p>Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.</p>
             <span class="export-type-meta"><span>Date / shift</span><span>FPY + retest</span><span>HTML + CSV</span></span>
+          </button>
+          <button type="button" class="export-type-card export-type-card-yokoten" data-yokoten-open="1">
+            <span class="export-type-icon">&#8862;</span>
+            <b>Manufacturing Qualification &amp; Yokoten Matrix</b>
+            <p>Product-by-line manufacturing history from Common DB, enriched with qualification status, critical characteristics, historical findings and migration gates.</p>
+            <span class="export-type-meta"><span>Common DB</span><span>Product × Line</span><span>Migration / Yokoten</span></span>
           </button>
         </div>
         <div class="export-landing-foot"><b style="color:#E8E8E6">Current data scope is preserved.</b> Choosing a report does not reset Bonepile filters, loaded SFC data, Repair Records, fiscal periods or the captured shift baseline.</div>
@@ -40203,6 +40211,11 @@ function bindExportLanding(){
   [].slice.call(document.querySelectorAll('[data-report-type]')).forEach(function(card){
     card.onclick=function(){showReportBuilder(this.getAttribute('data-report-type')||'WEEKLY')};
   });
+  var yokoten=document.querySelector('[data-yokoten-open="1"]');
+  if(yokoten)yokoten.onclick=function(){
+    try{window.parent.postMessage({type:'smtinel:yokoten:open'},'*')}
+    catch(error){try{console.error('[SMTinel Yokoten Export Center]',error)}catch(_){}}
+  };
   var back=document.getElementById('exportBack');
   if(back)back.onclick=showExportLanding;
 }
@@ -75491,3 +75504,27 @@ window.addEventListener('load',function(){setTimeout(ensureLauncher,700)},{once:
 })();
 </script>
 
+
+<style id="smtinel-yokoten-export-center-style-v131828">
+.export-type-card[data-yokoten-open="1"] .export-type-icon{color:#B87820!important;border-color:rgba(184,120,32,.30)!important;background:rgba(184,120,32,.09)!important}
+.export-type-card[data-yokoten-open="1"]{border-color:rgba(107,142,90,.34)!important}
+@media(min-width:900px){.export-type-card[data-yokoten-open="1"]{grid-column:1/-1;min-height:170px}}
+</style>
+<script id="smtinel-yokoten-export-center-runtime-v131828">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_EXPORT_CENTER_V131828__)return;window.__SMTINEL_YOKOTEN_EXPORT_CENTER_V131828__=1;
+function openMatrix(){
+  try{
+    if(typeof window.SMTinelOpenYokotenMatrix==='function'){window.SMTinelOpenYokotenMatrix();return true;}
+    var launcher=document.getElementById('smtYokotenLauncher');
+    if(launcher){launcher.click();return true;}
+  }catch(err){try{console.error('[SMTinel Yokoten Export Center]',err)}catch(_){}}
+  return false;
+}
+window.addEventListener('message',function(event){
+  var data=event&&event.data;if(!data||data.type!=='smtinel:yokoten:open')return;
+  if(!openMatrix())setTimeout(openMatrix,300);
+});
+})();
+</script>
