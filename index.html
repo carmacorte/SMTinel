@@ -39673,47 +39673,7 @@ function closeEmail(){document.getElementById('emailModal').classList.remove('op
 function copyText(text){if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();return Promise.resolve()}
 function fallbackCopyHtml(html){var div=document.createElement('div');div.contentEditable='true';div.style.position='fixed';div.style.left='-9999px';div.innerHTML=html;document.body.appendChild(div);var range=document.createRange();range.selectNodeContents(div);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand('copy');sel.removeAllRanges();div.remove()}
 function copyHtml(){var html=emailHtml(),plain=document.getElementById('emailPreview').innerText;if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]).catch(function(){fallbackCopyHtml(html)})}else fallbackCopyHtml(html)}
-function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body style="margin:0;padding:16px;background:#f3f6fa;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;text-align:left">'+emailHtml()+'
-<script id="smtinel-yokoten-export-route-v131831">
-(function(){
-'use strict';
-if(window.__SMTINEL_YOKOTEN_EXPORT_ROUTE_V131831__)return;window.__SMTINEL_YOKOTEN_EXPORT_ROUTE_V131831__=1;
-function openYokoten(source){
-  try{
-    var modal=document.getElementById('emailModal');
-    if(modal)modal.classList.remove('open');
-    window.parent.postMessage({type:'smtinel:yokoten:open',source:source||'export-center'},'*');
-  }catch(err){try{console.error('[SMTinel Yokoten route]',err)}catch(_){}}
-}
-function ensure(){
-  var sel=document.getElementById('reportType');
-  if(sel&&!sel.querySelector('option[value="YOKOTEN"]')){
-    var o=document.createElement('option');o.value='YOKOTEN';o.textContent='Manufacturing Qualification & Yokoten Matrix';sel.appendChild(o);
-  }
-  if(sel&&!sel.dataset.yokotenRoute){
-    sel.dataset.yokotenRoute='1';
-    sel.addEventListener('change',function(e){
-      if(this.value!=='YOKOTEN')return;
-      if(e){e.preventDefault();e.stopImmediatePropagation()}
-      openYokoten('report-type-selector');
-      setTimeout(function(){try{sel.value='TEST'}catch(_){}},0);
-    },true);
-  }
-  var card=document.querySelector('[data-yokoten-open="1"]');
-  if(card&&!card.dataset.yokotenRoute){
-    card.dataset.yokotenRoute='1';card.setAttribute('data-report-type','YOKOTEN');
-    card.addEventListener('click',function(e){
-      if(e){e.preventDefault();e.stopImmediatePropagation()}
-      openYokoten('export-center-card');
-    },true);
-  }
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
-window.addEventListener('load',function(){setTimeout(ensure,100)},{once:true});
-})();
-</script>
-
-</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
+function downloadEmail(){var html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(document.getElementById('emailSubject').value)+'</title></head><body style="margin:0;padding:16px;background:#f3f6fa;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;text-align:left">'+emailHtml()+'</body></html>',a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='SMTinel_End_of_Shift_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500)}
 var shiftReportHtml=emailHtml;
 var REPORT_ROLES={
   QUALITY:{label:'Quality Focus',short:'QUALITY',icon:'&#128737;',color:'#b42318',soft:'#fff1f2',border:'#f2b8bd',purpose:'Failure prioritization, containment and support allocation',question:'What quality risk should be attacked first?'},
@@ -75599,7 +75559,7 @@ window.addEventListener('message',function(event){
 (function(){
 'use strict';
 if(window.__SMTINEL_MANUFACTURING_HISTORY_MATRIX_V131829__)return;window.__SMTINEL_MANUFACTURING_HISTORY_MATRIX_V131829__=1;
-var BUILD='SMTinel V13.18.29 - Manufacturing History & Yokoten Matrix';
+var BUILD='SMTinel V13.18.32 - Manufacturing History & Yokoten Matrix';
 var QUAL_STORE='smtinel_yokoten_matrix_v1',FIND_STORE='smtinel_yokoten_findings_v1',TRACK_STORE='smtinel_yokoten_cell_tracker_v2';
 var state={ctx:null,selected:'',search:'',onlyHistory:true};
 function t(v){return String(v==null?'':v).trim()}
@@ -75662,13 +75622,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-<style id="smtinel-yokoten-route-v131831-style">
+<style id="smtinel-yokoten-route-v131832-style">
 /* Export Center integration: Yokoten is a control view, not a report-builder preview. */
 </style>
-<script id="smtinel-yokoten-route-v131831">
+<script id="smtinel-yokoten-route-v131832">
 (function(){
 'use strict';
-if(window.__SMTINEL_YOKOTEN_ROUTE_V131831__)return;window.__SMTINEL_YOKOTEN_ROUTE_V131831__=1;
+if(window.__SMTINEL_YOKOTEN_ROUTE_V131830__)return;window.__SMTINEL_YOKOTEN_ROUTE_V131830__=1;
 function openHistory(){
   try{
     var fn=window.SMTinelOpenManufacturingHistoryMatrix||window.SMTinelOpenYokotenMatrix;
@@ -75683,6 +75643,6 @@ window.addEventListener('message',function(event){
   if(!openHistory())setTimeout(openHistory,250);
 });
 window.SMTinelOpenManufacturingQualificationMatrix=openHistory;
-try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.18.31')}catch(_){}
+try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.18.32')}catch(_){}
 })();
 </script>
