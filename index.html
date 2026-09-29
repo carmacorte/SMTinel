@@ -76419,3 +76419,147 @@ try{document.body&&document.body.setAttribute('data-smtinel-yokoten-export-fix',
 .yh-chip.tech{background:#eee7ff!important;color:#5b3d8c!important;border-color:#aa91d7!important}
 .yh-exposure-copy{display:grid;gap:2px;margin-top:7px;color:#7a5b10}.yh-exposure-copy b{font-size:9px}.yh-exposure-copy span{font-size:8px}
 </style>
+
+
+<style id="smtinel-yokoten-color-semantics-v9">
+/* V9 color semantics: color describes action/state, not merely the existence of a family relation. */
+:root{
+  --yk-neutral-bg:#f7f8f7;
+  --yk-neutral-border:#d5dbd7;
+  --yk-neutral-ink:#66736b;
+  --yk-tech-bg:#edf5ff;
+  --yk-tech-border:#315e87;
+  --yk-tech-ink:#234d78;
+  --yk-warn-bg:#fff3e3;
+  --yk-warn-border:#c97800;
+  --yk-warn-ink:#8a5200;
+  --yk-risk-bg:#fff0f1;
+  --yk-risk-border:#b73140;
+  --yk-risk-ink:#962733;
+  --yk-good-bg:#edf7ee;
+  --yk-good-border:#4d8a57;
+  --yk-good-ink:#2f7237;
+}
+/* Family-only pre-run context is neutral. No yellow wall for "never ran here". */
+.yh-cell.yh-family-exposure:not(.yh-direct-yokoten):not(.yh-first-run),
+.yh-cell.yh-pre-run.yh-family-exposure:not(.yh-direct-yokoten){
+  background:var(--yk-neutral-bg)!important;
+  border:1px dashed var(--yk-neutral-border)!important;
+  box-shadow:none!important;
+  color:#39453f!important;
+}
+.yh-cell.yh-family-exposure:not(.yh-direct-yokoten):not(.yh-first-run) .yh-exposure-copy,
+.yh-cell.yh-pre-run.yh-family-exposure:not(.yh-direct-yokoten) .yh-exposure-copy{color:var(--yk-neutral-ink)!important}
+.yh-cell .yh-chip.family{background:#eef1ef!important;color:#5f6c64!important;border-color:#cfd6d1!important}
+/* Technical match is blue: important evidence / applicability, not an alarm by itself. */
+.yh-cell.yh-direct-yokoten:not(.yh-first-run):not(.yk-requal-state):not(.yk-review-state){
+  background:var(--yk-tech-bg)!important;
+  border:2px solid var(--yk-tech-border)!important;
+  box-shadow:none!important;
+}
+.yh-cell .yh-chip.tech{background:#e8f1fb!important;color:var(--yk-tech-ink)!important;border-color:#86a9cc!important}
+/* First run with inherited Yokoten is a true warning. */
+.yh-cell.yh-first-run:not(.yk-requal-state){
+  background:var(--yk-warn-bg)!important;
+  border:2px solid var(--yk-warn-border)!important;
+  box-shadow:inset 4px 0 0 var(--yk-warn-border)!important;
+}
+.yh-cell.yh-first-run .yh-cell-top .yh-chip{background:#fff0cf!important;color:var(--yk-warn-ink)!important;border-color:#dfad57!important}
+/* Review required is amber, Requalification required is red. */
+.yh-cell.yk-review-state:not(.yk-requal-state){
+  background:var(--yk-warn-bg)!important;
+  border:2px solid var(--yk-warn-border)!important;
+  box-shadow:inset 4px 0 0 var(--yk-warn-border)!important;
+}
+.yh-cell.yk-requal-state{
+  background:var(--yk-risk-bg)!important;
+  border:2px solid var(--yk-risk-border)!important;
+  box-shadow:inset 5px 0 0 var(--yk-risk-border)!important;
+}
+.yh-cell.yk-requal-state .yh-cell-top .yh-chip{background:#fde4e7!important;color:var(--yk-risk-ink)!important;border-color:#dd8f99!important}
+.yh-cell.yk-qualified-state:not(.yh-first-run):not(.yk-requal-state):not(.yk-review-state){
+  background:var(--yk-good-bg)!important;
+  border:1px solid #b9d8bd!important;
+}
+/* Keep selection visible without overriding semantic risk colors. */
+.yh-cell.selected{outline:3px solid #5f7f63!important;outline-offset:-3px!important}
+.yk-color-legend-v9{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-top:1px solid #d9e1da;background:#fbfcfb;font-size:8px;color:#5f6e65}
+.yk-color-legend-v9 span{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #d9dfdb;border-radius:999px;background:#fff;font-weight:850}
+.yk-color-legend-v9 i{width:9px;height:9px;border-radius:3px;display:inline-block;border:1px solid transparent}
+.yk-color-legend-v9 .n i{background:var(--yk-neutral-bg);border-color:var(--yk-neutral-border)}
+.yk-color-legend-v9 .t i{background:var(--yk-tech-bg);border-color:var(--yk-tech-border)}
+.yk-color-legend-v9 .w i{background:var(--yk-warn-bg);border-color:var(--yk-warn-border)}
+.yk-color-legend-v9 .r i{background:var(--yk-risk-bg);border-color:var(--yk-risk-border)}
+.yk-color-legend-v9 .g i{background:var(--yk-good-bg);border-color:var(--yk-good-border)}
+@media(max-width:700px){.yk-color-legend-v9{gap:5px;padding:7px}.yk-color-legend-v9 span{padding:4px 6px;font-size:7.5px}}
+</style>
+<script id="smtinel-yokoten-color-semantics-runtime-v9">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_COLOR_SEMANTICS_V9__)return;
+window.__SMTINEL_YOKOTEN_COLOR_SEMANTICS_V9__=1;
+function tx(v){return String(v==null?'':v).trim()}
+function up(v){return tx(v).toUpperCase()}
+function addLegend(){
+  var panel=document.querySelector('#smtYokotenHistoryOverlay .yh-panel');
+  if(!panel||panel.querySelector('.yk-color-legend-v9'))return;
+  var head=panel.querySelector('.yh-panel-head');if(!head)return;
+  var d=document.createElement('div');d.className='yk-color-legend-v9';
+  d.innerHTML='<span class="n"><i></i>Neutral / no history</span><span class="t"><i></i>Technical match</span><span class="w"><i></i>First run / review</span><span class="r"><i></i>Requal / action required</span><span class="g"><i></i>Qualified</span>';
+  head.insertAdjacentElement('afterend',d);
+}
+function relabelCell(c){
+  if(!c||!c.classList)return;
+  c.classList.remove('yk-review-state','yk-requal-state','yk-qualified-state');
+  var top=c.querySelector('.yh-cell-top .yh-chip'), status=up(top&&top.textContent);
+  if(status.indexOf('REQUAL')>=0)c.classList.add('yk-requal-state');
+  else if(status.indexOf('REVIEW')>=0)c.classList.add('yk-review-state');
+  else if(status.indexOf('QUALIFIED')>=0)c.classList.add('yk-qualified-state');
+  var pre=c.classList.contains('yh-pre-run'), fam=c.classList.contains('yh-family-exposure'), tech=c.classList.contains('yh-direct-yokoten'), first=c.classList.contains('yh-first-run');
+  if(pre&&fam&&!tech){
+    if(top&&/YOKOTEN EXPOSURE/i.test(top.textContent))top.textContent='No history';
+    var f=c.querySelector('.yh-chip.family');if(f)f.textContent='Family context';
+    var copy=c.querySelector('.yh-exposure-copy span');if(copy)copy.textContent=tx(copy.textContent).replace(/inherited family \/ technical lesson\(s\)/i,'family lesson(s) available for review');
+  }
+  if(tech){
+    var t=c.querySelector('.yh-chip.tech');if(t)t.textContent='Technical match';
+    if(pre&&top&&/YOKOTEN EXPOSURE/i.test(top.textContent))top.textContent='Technical match · no history';
+  }
+  if(first&&top&&!/REQUAL|REVIEW/i.test(top.textContent))top.textContent='FIRST RUN + YOKOTEN';
+}
+function apply(){
+  addLegend();
+  Array.prototype.forEach.call(document.querySelectorAll('#smtYokotenHistoryOverlay .yh-cell'),relabelCell);
+}
+var timer=0;function queue(){clearTimeout(timer);timer=setTimeout(apply,20)}
+var mo=new MutationObserver(queue);
+function start(){try{mo.observe(document.documentElement,{childList:true,subtree:true});apply()}catch(_){}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+
+/* Patch standalone Yokoten exports produced after V9. */
+var originalBuild=window.SMTinelBuildYokotenExportHtml;
+if(typeof originalBuild==='function'){
+  window.SMTinelBuildYokotenExportHtml=function(){
+    var html=originalBuild();
+    if(typeof html!=='string'||html.indexOf('smtinel-yokoten-standalone-colors-v9')>=0)return html;
+    var css='<style id="smtinel-yokoten-standalone-colors-v9">'+
+      '.cell.family-exposure:not(.direct-yokoten):not(.first-run),.cell.pre-run.family-exposure:not(.direct-yokoten){background:#f7f8f7!important;border:1px dashed #d5dbd7!important;box-shadow:none!important;color:#39453f!important}'+
+      '.cell.family-exposure:not(.direct-yokoten):not(.first-run) .exposure-copy,.cell.pre-run.family-exposure:not(.direct-yokoten) .exposure-copy{color:#66736b!important}'+
+      '.chip.family{background:#eef1ef!important;color:#5f6c64!important;border-color:#cfd6d1!important}'+
+      '.cell.direct-yokoten:not(.first-run):not(.v9-requal):not(.v9-review){background:#edf5ff!important;border:2px solid #315e87!important;box-shadow:none!important}.chip.tech{background:#e8f1fb!important;color:#234d78!important;border-color:#86a9cc!important}'+
+      '.cell.first-run:not(.v9-requal),.cell.v9-review:not(.v9-requal){background:#fff3e3!important;border:2px solid #c97800!important;box-shadow:inset 4px 0 0 #c97800!important}'+
+      '.cell.v9-requal{background:#fff0f1!important;border:2px solid #b73140!important;box-shadow:inset 5px 0 0 #b73140!important}.cell.v9-requal .celltop .chip{background:#fde4e7!important;color:#962733!important;border-color:#dd8f99!important}'+
+      '.cell.v9-qualified:not(.first-run):not(.v9-requal):not(.v9-review){background:#edf7ee!important;border:1px solid #b9d8bd!important}'+
+      '.cell.sel{outline:3px solid #5f7f63!important;outline-offset:-3px!important}'+
+      '.yk-v9-legend{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 9px;padding:7px 8px;border:1px solid #d7ded8;border-radius:9px;background:#fbfcfb;font-size:8px;color:#5f6e65}.yk-v9-legend span{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #d9dfdb;border-radius:999px;background:#fff;font-weight:850}.yk-v9-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}.yk-v9-legend .n i{background:#f7f8f7;border:1px solid #d5dbd7}.yk-v9-legend .t i{background:#edf5ff;border:1px solid #315e87}.yk-v9-legend .w i{background:#fff3e3;border:1px solid #c97800}.yk-v9-legend .r i{background:#fff0f1;border:1px solid #b73140}.yk-v9-legend .g i{background:#edf7ee;border:1px solid #4d8a57}'+
+      '</style>';
+    var js='<script id="smtinel-yokoten-standalone-colors-runtime-v9">(function(){function u(v){return String(v||\"\").trim().toUpperCase()}function fix(){var tools=document.querySelector(\".tools\");if(tools&&!document.querySelector(\".yk-v9-legend\")){var d=document.createElement(\"div\");d.className=\"yk-v9-legend\";d.innerHTML=\'<span class="n"><i></i>Neutral / no history</span><span class="t"><i></i>Technical match</span><span class="w"><i></i>First run / review</span><span class="r"><i></i>Requal / action required</span><span class="g"><i></i>Qualified</span>\';tools.insertAdjacentElement(\"afterend\",d)}document.querySelectorAll(\".cell\").forEach(function(c){c.classList.remove(\"v9-review\",\"v9-requal\",\"v9-qualified\");var top=c.querySelector(\".celltop .chip\"),s=u(top&&top.textContent);if(s.indexOf(\"REQUAL\")>=0)c.classList.add(\"v9-requal\");else if(s.indexOf(\"REVIEW\")>=0)c.classList.add(\"v9-review\");else if(s.indexOf(\"QUALIFIED\")>=0)c.classList.add(\"v9-qualified\");var pre=c.classList.contains(\"pre-run\"),fam=c.classList.contains(\"family-exposure\"),tech=c.classList.contains(\"direct-yokoten\"),first=c.classList.contains(\"first-run\");if(pre&&fam&&!tech){if(top&&/Yokoten Exposure/i.test(top.textContent))top.textContent=\"No history\";var f=c.querySelector(\".chip.family\");if(f)f.textContent=\"Family context\";var cp=c.querySelector(\".exposure-copy span\");if(cp)cp.textContent=cp.textContent.replace(/inherited family \\/ technical lesson\\(s\\)/i,\"family lesson(s) available for review\")}if(tech){var t=c.querySelector(\".chip.tech\");if(t)t.textContent=\"Technical match\";if(pre&&top&&/Yokoten Exposure/i.test(top.textContent))top.textContent=\"Technical match · no history\"}if(first&&top&&!/REQUAL|REVIEW/i.test(top.textContent))top.textContent=\"FIRST RUN + YOKOTEN\"})}var n=0;new MutationObserver(function(){clearTimeout(n);n=setTimeout(fix,20)}).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState===\"loading\")document.addEventListener(\"DOMContentLoaded\",fix,{once:true});else fix()})();<\/script>';
+    if(html.indexOf('</head>')>=0)html=html.replace('</head>',css+'</head>');
+    if(html.indexOf('</body>')>=0)html=html.replace('</body>',js+'</body>');
+    return html;
+  };
+}
+try{document.body&&document.body.setAttribute('data-smtinel-yokoten-color-semantics','v9')}catch(_){}
+})();
+</script>
+
