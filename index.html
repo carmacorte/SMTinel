@@ -76302,3 +76302,77 @@ html body.smtinel-nav-collapsed .smtinel-side-btn{border-radius:12px!important;}
 @media (max-width:899px){html body .smtinel-desktop-sidebar{display:none!important;}}
 </style>
 
+
+<style id="smtinel-yokoten-mobile-export-fix-v7">
+@media (max-width:900px){
+  body.smt-yokoten-export-mode #emailModal{padding:0!important;align-items:stretch!important;justify-content:stretch!important}
+  body.smt-yokoten-export-mode #emailModal .dialog.export-dialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important;margin:0!important}
+  body.smt-yokoten-export-mode #emailModal .dialog-head{position:sticky!important;top:0!important;z-index:40!important;padding:10px 12px!important;gap:8px!important}
+  body.smt-yokoten-export-mode #emailModal .dialog-head>div{min-width:0!important;flex:1 1 auto!important}
+  body.smt-yokoten-export-mode #emailModal #reportModalTitle{font-size:14px!important;line-height:1.2!important}
+  body.smt-yokoten-export-mode #emailModal #reportModalSub{font-size:9px!important;line-height:1.3!important;margin-top:3px!important}
+  body.smt-yokoten-export-mode #emailModal .dialog-body.export-dialog-body{overflow:auto!important;-webkit-overflow-scrolling:touch!important;background:#EEF2EC!important}
+  body.smt-yokoten-export-mode #emailModal .report-builder{display:block!important;height:auto!important;min-height:0!important;overflow:visible!important}
+  body.smt-yokoten-export-mode #emailModal .report-builder-sidebar{overflow:visible!important;padding:12px!important;border-right:0!important;border-bottom:0!important;min-height:0!important}
+  body.smt-yokoten-export-mode #emailModal .report-preview-pane{display:none!important}
+  body.smt-yokoten-export-mode #emailModal .export-action-panel{position:sticky!important;bottom:0!important;z-index:35!important;margin:12px -4px 0!important;padding:10px!important;background:rgba(252,253,251,.98)!important;box-shadow:0 -8px 24px rgba(24,33,25,.08)!important;padding-bottom:calc(10px + env(safe-area-inset-bottom))!important}
+  body.smt-yokoten-export-mode #emailModal .export-action-grid{grid-template-columns:1fr!important}
+  body.smt-yokoten-export-mode #emailModal #downloadEmail{grid-column:auto!important;width:100%!important;min-height:52px!important;font-size:14px!important;font-weight:900!important}
+  body.smt-yokoten-export-mode #emailModal #closeEmail{min-height:42px!important;flex:0 0 auto!important}
+  body.smt-yokoten-export-mode #emailModal .report-config{margin-bottom:10px!important}
+}
+</style>
+<script id="smtinel-yokoten-mobile-export-runtime-v7">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_MOBILE_EXPORT_V7__)return;
+window.__SMTINEL_YOKOTEN_MOBILE_EXPORT_V7__=1;
+function isY(){var x=document.getElementById('reportType');return !!(x&&String(x.value||'').toUpperCase()==='YOKOTEN')}
+function syncMode(){try{document.body.classList.toggle('smt-yokoten-export-mode',isY()&&!!document.getElementById('emailModal'))}catch(_){}}
+function fileName(){return 'SMTinel_Manufacturing_Qualification_Yokoten_'+new Date().toISOString().slice(0,10)+'.html'}
+function validateHtml(html){
+  if(typeof html!=='string'||html.length<1024)throw new Error('The Yokoten renderer returned an incomplete HTML file.');
+  if(!/^\s*<!doctype html>/i.test(html))throw new Error('The Yokoten file is missing the HTML document header.');
+  if(html.indexOf('window.__YK__=')<0)throw new Error('The Yokoten data payload is missing from the export.');
+  if(!/<\/html>\s*$/i.test(html))throw new Error('The Yokoten HTML is truncated before the closing document tag.');
+  return html;
+}
+function anchorDownload(html,name){
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=name;a.rel='noopener';a.style.position='fixed';a.style.left='-9999px';a.style.top='0';
+  document.body.appendChild(a);
+  try{a.click()}finally{setTimeout(function(){try{a.remove()}catch(_){}try{URL.revokeObjectURL(url)}catch(_){}},120000)}
+  return {bytes:blob.size,name:name};
+}
+function shareFallback(html,name){
+  if(!(typeof File==='function'&&navigator.share))return Promise.reject(new Error('Browser download is not available.'));
+  var f=new File([html],name,{type:'text/html;charset=utf-8'}),payload={files:[f],title:'SMTinel Manufacturing Qualification & Yokoten Matrix'};
+  if(navigator.canShare&&!navigator.canShare(payload))return Promise.reject(new Error('This browser cannot share HTML files.'));
+  return navigator.share(payload).then(function(){return{bytes:f.size,name:name,shared:true}});
+}
+function robustDownload(){
+  var build=window.SMTinelBuildYokotenExportHtml;
+  if(typeof build!=='function')throw new Error('Yokoten export engine is not available yet.');
+  var html=validateHtml(build()),name=fileName(),a=document.createElement('a'),canDownload='download' in a;
+  try{
+    if(canDownload){var meta=anchorDownload(html,name);window.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:meta.bytes,name:name,method:'download'};return true}
+  }catch(err){try{console.warn('[SMTinel Yokoten Export v7] direct download failed',err)}catch(_){}}
+  shareFallback(html,name).then(function(meta){window.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:meta.bytes,name:name,method:'share'}}).catch(function(err){try{alert('Yokoten HTML export failed: '+String(err&&err.message||err))}catch(_){}});
+  return true;
+}
+var originalPreview=window.SMTinelBuildYokotenPreviewHtml;
+window.SMTinelBuildYokotenPreviewHtml=function(){
+  try{if(window.matchMedia&&window.matchMedia('(max-width:900px)').matches){return '<div style="padding:18px;background:#111;color:#e8e8e6;border:1px solid #2a2a2a;border-radius:12px"><b>Mobile export mode</b><div style="margin-top:6px;color:#aaa;font-size:11px;line-height:1.45">Preview is suppressed on mobile to keep the full Yokoten HTML export responsive. The exported file still contains the complete Product / Revision x Line matrix, WO history and linked evidence.</div></div>'}}catch(_){}
+  return typeof originalPreview==='function'?originalPreview():'';
+};
+window.SMTinelDownloadYokotenHtml=function(){try{return robustDownload()}catch(err){try{console.error('[SMTinel Yokoten Export v7]',err)}catch(_){}try{alert('Yokoten HTML export failed: '+String(err&&err.message||err))}catch(_){}return false}};
+document.addEventListener('change',function(e){if(e&&e.target&&e.target.id==='reportType')setTimeout(syncMode,0)},true);
+document.addEventListener('click',function(e){var t=e&&e.target;if(t&&t.closest&&t.closest('[data-report-type="YOKOTEN"],#shiftEmail,#exportBack,#closeEmail'))setTimeout(syncMode,0)},true);
+window.addEventListener('resize',syncMode,{passive:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncMode,{once:true});else syncMode();
+try{document.body&&document.body.setAttribute('data-smtinel-yokoten-export-fix','v7')}catch(_){}
+})();
+</script>
+
