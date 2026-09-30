@@ -76697,3 +76697,224 @@ var timer=0;new MutationObserver(function(){clearTimeout(timer);timer=setTimeout
 <script id="smtinel-yokoten-history-export-wrapper-v11">
 (function(){'use strict';var prev=window.SMTinelBuildYokotenExportHtml;if(typeof prev!=='function'||prev.__v11)return;var css="<style id=\"smtinel-yokoten-history-semantics-v11\">\n/* V11: Run history and Yokoten applicability are separate visual axes. */\n:root{--yk-neutral-bg:#f7f8f7;--yk-neutral-border:#d5dbd7;--yk-neutral-ink:#66736b;--yk-tech-bg:#edf5ff;--yk-tech-border:#315e87;--yk-tech-ink:#234d78}\n.cell .chip.v11-neutral,.yh-cell .yh-chip.v11-neutral{background:#f1f3f1!important;color:#66736b!important;border-color:#cfd6d1!important}\n.cell .chip.v11-tech,.yh-cell .yh-chip.v11-tech{background:#e8f1fb!important;color:#234d78!important;border-color:#86a9cc!important;font-weight:950!important}\n.cell.v11-family-context,.yh-cell.yk-v11-family-context{background:var(--yk-neutral-bg)!important;border:1px dashed var(--yk-neutral-border)!important;box-shadow:none!important}\n.cell.v11-pre-run-tech,.yh-cell.yk-v11-pre-run-tech{background:var(--yk-tech-bg)!important;border:2px solid var(--yk-tech-border)!important;box-shadow:inset 4px 0 0 var(--yk-tech-border)!important}\n.cell.v11-pre-run-tech .exposure-copy,.yh-cell.yk-v11-pre-run-tech .yh-exposure-copy{color:var(--yk-tech-ink)!important}\n.cell.v11-family-context .exposure-copy,.yh-cell.yk-v11-family-context .yh-exposure-copy{color:var(--yk-neutral-ink)!important}\n.cell.empty.v11-no-history,.yh-cell.empty.yk-v11-no-history{background:#fff!important;color:#9aa39d!important;border:0!important;box-shadow:none!important}\n</style>";var js="<script id=\"smtinel-yokoten-history-semantics-runtime-v11\">\n(function(){\n'use strict';\nif(window.__SMTINEL_YOKOTEN_HISTORY_V11__)return;window.__SMTINEL_YOKOTEN_HISTORY_V11__=1;\nfunction setChip(chip,text,kind){if(!chip)return;chip.textContent=text;chip.classList.remove('risk','warn','good','tech','family','v11-neutral','v11-tech');chip.classList.add(kind==='tech'?'v11-tech':'v11-neutral')}\nfunction countFrom(el){var s=(el&&el.textContent)||'';var m=s.match(/\\b(\\d+)\\b/);return m?m[1]:'0'}\nfunction fixStandalone(){\n  document.querySelectorAll('.cell.empty').forEach(function(c){c.classList.add('v11-no-history');if(c.textContent.trim()==='No history')c.textContent='No run history'});\n  document.querySelectorAll('.cell.pre-run').forEach(function(c){\n    var top=c.querySelector('.celltop .chip'),copy=c.querySelector('.exposure-copy'),b=copy&&copy.querySelector('b'),sp=copy&&copy.querySelector('span'),tech=c.classList.contains('direct-yokoten');\n    c.classList.remove('v11-family-context','v11-pre-run-tech');if(b)b.textContent='No run history';\n    if(tech){c.classList.add('v11-pre-run-tech');setChip(top,'PRE-RUN TECHNICAL MATCH','tech');var t=c.querySelector('.chip.tech');if(t)t.textContent='Technical match';if(sp)sp.textContent=countFrom(sp)+' applicable technical lesson(s)'}\n    else{c.classList.add('v11-family-context');setChip(top,'No run history','neutral');var f=c.querySelector('.chip.family');if(f)f.textContent='Family context';if(sp)sp.textContent=countFrom(sp)+' family lesson(s) available for review'}\n  });\n}\nfunction fixLive(){\n  document.querySelectorAll('.yh-cell.empty').forEach(function(c){c.classList.add('yk-v11-no-history');if(c.textContent.trim()==='No history')c.textContent='No run history'});\n  document.querySelectorAll('.yh-cell.yh-pre-run').forEach(function(c){\n    var top=c.querySelector('.yh-cell-top .yh-chip'),copy=c.querySelector('.yh-exposure-copy'),b=copy&&copy.querySelector('b'),sp=copy&&copy.querySelector('span'),tech=c.classList.contains('yh-direct-yokoten');\n    c.classList.remove('yk-v11-family-context','yk-v11-pre-run-tech');if(b)b.textContent='No run history';\n    if(tech){c.classList.add('yk-v11-pre-run-tech');setChip(top,'PRE-RUN TECHNICAL MATCH','tech');var t=c.querySelector('.yh-chip.tech');if(t)t.textContent='Technical match';if(sp)sp.textContent=countFrom(sp)+' applicable technical lesson(s)'}\n    else{c.classList.add('yk-v11-family-context');setChip(top,'No run history','neutral');var f=c.querySelector('.yh-chip.family');if(f)f.textContent='Family context';if(sp)sp.textContent=countFrom(sp)+' family lesson(s) available for review'}\n  });\n}\nfunction fix(){fixStandalone();fixLive()}\nvar timer=0;new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(fix,45)}).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();\n})();\n<\/script>";var wrapped=function(){var html=prev();if(typeof html!=='string'||html.indexOf('smtinel-yokoten-history-semantics-runtime-v11')>=0)return html;if(html.indexOf('</head>')>=0)html=html.replace('</head>',css+'</head>');else html=css+html;if(html.indexOf('</body>')>=0)html=html.replace('</body>',js+'</body>');else html+=js;return html};wrapped.__v11=true;wrapped.__base=prev;window.SMTinelBuildYokotenExportHtml=wrapped})();
 </script>
+
+<style id="smtinel-yokoten-es-blue-v14">
+/* V14 — Español + semántica visual simplificada + tema industrial azul. */
+:root{
+  --yk14-navy:#0b3558;
+  --yk14-blue:#0b5ea8;
+  --yk14-blue-2:#2d79b3;
+  --yk14-blue-soft:#eef5fb;
+  --yk14-line:#d7e0e7;
+  --yk14-muted:#667681;
+  --yk14-neutral:#f7f9fa;
+  --yk14-amber:#b66a00;
+  --yk14-amber-soft:#fff5e6;
+  --yk14-red:#b42332;
+  --yk14-red-soft:#fff0f2;
+}
+/* Standalone theme */
+body{background:#f3f6f8!important;color:#18252e!important}
+header{border-bottom-color:var(--yk14-line)!important;box-shadow:0 1px 0 rgba(18,54,78,.04)}
+.brand-copy h1,.brand-word .accent{color:var(--yk14-navy)!important}
+.brand-tag{color:var(--yk14-blue-2)!important}
+.btn{color:var(--yk14-navy)!important;border-color:#bccbd6!important}
+.btn:hover{background:#f1f6fa!important;border-color:#91adc2!important}
+.kpi,.panel,.card{border-color:var(--yk14-line)!important;box-shadow:0 2px 10px rgba(30,66,92,.035)}
+.matrix thead th{background:var(--yk14-navy)!important;color:#fff!important;border-color:#315873!important}
+.rowhead{background:#f7f9fb!important}.rowhead b{color:#18354a!important}.rowhead small{color:var(--yk14-muted)!important}
+.hero{background:linear-gradient(135deg,#0b3558,#17689d)!important}
+.ct,.mini th,.tracker th{background:#edf3f7!important;color:#24465d!important}
+.cell.sel{outline:3px solid var(--yk14-blue)!important;outline-offset:-3px!important;background:#f7fbff!important}
+/* Sin historial SIEMPRE neutral: nada de fondos de alerta por simple ausencia de corrida. */
+.cell.empty,
+.cell.pre-run,
+.cell.pre-run.family-exposure,
+.cell.pre-run.direct-yokoten,
+.cell.v11-family-context,
+.cell.v11-pre-run-tech{
+  background:#fff!important;
+  border:1px solid #e0e6ea!important;
+  box-shadow:none!important;
+  color:#51616b!important;
+}
+.cell.pre-run:hover{background:#fafcfd!important}
+.cell.pre-run .exposure-copy,.cell.v11-family-context .exposure-copy,.cell.v11-pre-run-tech .exposure-copy{color:#687782!important}
+.cell.pre-run .chip.family,.cell.v11-family-context .chip.family,.chip.v11-neutral{
+  background:#f2f4f5!important;color:#65727a!important;border-color:#d3dade!important
+}
+/* Coincidencia técnica: el dato importa, pero no coloreamos toda una línea sin historial. */
+.cell.pre-run.direct-yokoten .chip.tech,
+.cell.v11-pre-run-tech .chip.tech,
+.cell.pre-run .chip.v11-tech{
+  background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important
+}
+.cell.direct-yokoten:not(.pre-run):not(.first-run):not(.v9-requal):not(.v10-qualification-required){
+  background:#fff!important;border:1px solid #cbdbe6!important;border-left:4px solid var(--yk14-blue)!important;box-shadow:none!important
+}
+.chip.tech,.chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}
+/* Primera corrida / revisión: ámbar. */
+.cell.first-run:not(.v9-requal):not(.v10-qualification-required),
+.cell.v9-review:not(.v9-requal){
+  background:var(--yk14-amber-soft)!important;border:1px solid #e3bd82!important;border-left:5px solid var(--yk14-amber)!important;box-shadow:none!important
+}
+.chip.first,.cell.first-run .celltop .chip{background:#fff0d2!important;color:#8c5200!important;border-color:#dda955!important}
+/* NPI y Recalificación: misma criticidad, rojo. */
+.cell.v9-requal,.cell.v10-qualification-required{
+  background:var(--yk14-red-soft)!important;border:1px solid #e2a9b0!important;border-left:6px solid var(--yk14-red)!important;box-shadow:none!important
+}
+.cell.v9-requal .celltop .chip,.cell.v10-qualification-required .celltop .chip{background:#fde5e8!important;color:#9c2432!important;border-color:#df929c!important}
+/* Calificado: azul, no verde. */
+.cell.v9-qualified:not(.first-run):not(.v9-requal):not(.v9-review){background:#f1f7fb!important;border:1px solid #a8c7dc!important;border-left:4px solid #387ba8!important}
+.good,.chip.good{background:#eaf3f9!important;color:#205f88!important;border-color:#9abfd8!important}
+/* Leyenda simplificada */
+.yk-v9-legend{border-color:var(--yk14-line)!important;background:#f8fafb!important;color:#50616d!important}
+.yk-v9-legend .n i{background:#fff!important;border:1px solid #cfd8de!important}
+.yk-v9-legend .t i{background:#fff!important;border:2px solid var(--yk14-blue)!important}
+.yk-v9-legend .w i{background:var(--yk14-amber-soft)!important;border:1px solid var(--yk14-amber)!important}
+.yk-v9-legend .r i{background:var(--yk14-red-soft)!important;border:1px solid var(--yk14-red)!important}
+.yk-v9-legend .g i{background:#f1f7fb!important;border:1px solid #387ba8!important}
+/* Live module */
+#smtYokotenHistoryOverlay{background:rgba(7,29,46,.58)!important}
+.yh-shell{background:#f3f6f8!important;border-color:#aebfcb!important;box-shadow:0 30px 90px rgba(4,31,49,.30)!important;color:#18252e!important}
+.yh-kicker{color:var(--yk14-blue-2)!important}.yh-title{color:var(--yk14-navy)!important}.yh-sub{color:#647580!important}
+.yh-btn,.yh-close{border-color:#b9c8d3!important;color:#173f5a!important}.yh-btn.primary{background:var(--yk14-blue)!important;border-color:var(--yk14-blue)!important;color:#fff!important}
+.yh-kpi,.yh-toolbar,.yh-panel,.yh-card,.yh-detail-kpi{border-color:var(--yk14-line)!important;box-shadow:0 2px 10px rgba(30,66,92,.035)!important}
+.yh-kpi b,.yh-detail-kpi b{color:#163c57!important}.yh-panel-head,.yh-card-title{background:#edf3f7!important;border-color:var(--yk14-line)!important}.yh-panel-head b,.yh-card-title{color:#24465d!important}
+.yh-matrix th,.yh-matrix td{border-color:#dbe3e8!important}.yh-matrix thead th{background:var(--yk14-navy)!important;border-color:#315873!important}.yh-rowhead{background:#f7f9fb!important}.yh-rowhead b{color:#18354a!important}.yh-rowhead span{color:#6b7982!important}
+.yh-detail-hero{background:linear-gradient(135deg,#0b3558,#17689d)!important}.yh-detail-hero p{color:#dceaf3!important}
+.yh-tracker th{background:var(--yk14-navy)!important}
+.yh-cell.selected{outline:3px solid var(--yk14-blue)!important;outline-offset:-3px!important;box-shadow:none!important;background:#f7fbff!important}
+/* Live: cualquier celda sin corrida es neutral aunque tenga Yokoten aplicable. */
+.yh-cell.empty,
+.yh-cell.yh-pre-run,
+.yh-cell.yh-pre-run.yh-family-exposure,
+.yh-cell.yh-pre-run.yh-direct-yokoten,
+.yh-cell.yk-v11-family-context,
+.yh-cell.yk-v11-pre-run-tech{
+  background:#fff!important;border:1px solid #e0e6ea!important;box-shadow:none!important;color:#51616b!important
+}
+.yh-cell.yh-pre-run .yh-exposure-copy,.yh-cell.yk-v11-family-context .yh-exposure-copy,.yh-cell.yk-v11-pre-run-tech .yh-exposure-copy{color:#687782!important}
+.yh-cell.yh-pre-run .yh-chip.family,.yh-chip.v11-neutral{background:#f2f4f5!important;color:#65727a!important;border-color:#d3dade!important}
+.yh-cell.yh-pre-run.yh-direct-yokoten .yh-chip.tech,.yh-cell.yk-v11-pre-run-tech .yh-chip.tech,.yh-cell.yh-pre-run .yh-chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}
+.yh-cell.yh-direct-yokoten:not(.yh-pre-run):not(.yh-first-run):not(.yk-v10-qualification-required){background:#fff!important;border:1px solid #cbdbe6!important;border-left:4px solid var(--yk14-blue)!important;box-shadow:none!important}
+.yh-chip.tech,.yh-chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}
+.yh-cell.yh-first-run:not(.yk-v10-qualification-required),.yh-cell.yk-v10-line-migration:not(.yk-v10-qualification-required){background:var(--yk14-amber-soft)!important;border:1px solid #e3bd82!important;border-left:5px solid var(--yk14-amber)!important;box-shadow:none!important}
+.yh-cell.yk-v10-qualification-required{background:var(--yk14-red-soft)!important;border:1px solid #e2a9b0!important;border-left:6px solid var(--yk14-red)!important;box-shadow:none!important}
+.yh-status-qualified{background:#eaf3f9!important;border-color:#9abfd8!important;color:#205f88!important}
+.yh-chip.good{background:#eaf3f9!important;border-color:#9abfd8!important;color:#205f88!important}
+/* Pequeño refuerzo visual: menos saturación, más jerarquía. */
+.yh-cell,.cell{transition:background .14s ease,border-color .14s ease,box-shadow .14s ease}
+</style>
+<script id="smtinel-yokoten-es-blue-runtime-v14">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_ES_BLUE_V14__)return;
+window.__SMTINEL_YOKOTEN_ES_BLUE_V14__=1;
+var exact={
+'Manufacturing Qualification & Yokoten Matrix':'Matriz de Calificación de Manufactura y Yokoten',
+'Export Selected Tracker CSV':'Exportar Tracker Seleccionado CSV',
+'Product + Rev':'Producto + Rev','Products + Rev':'Productos + Rev','Lines':'Líneas','WO History':'Historial WO',
+'Total Build Qty':'Cantidad total construida','Populated Cells':'Celdas con datos','Run Records':'Registros de corrida','Selected Cell':'Celda seleccionada',
+'Product / PN / Rev':'Producto / PN / Rev','Product / PN / Rev / RefDes / Component':'Producto / PN / Rev / RefDes / Componente',
+'All lines':'Todas las líneas','ALL':'TODOS','Search':'Buscar','Product':'Producto','Line':'Línea','Status':'Estatus','Side':'Lado',
+'No history':'Sin historial','No run history':'Sin historial de corrida','History Only':'Solo historial','Review Required':'Revisión requerida',
+'Requal Required':'Recalificación requerida','Qualified / LL':'Calificado / LL','Qualified':'Calificado',
+'Technical match':'Coincidencia técnica','PRE-RUN TECHNICAL MATCH':'YOKOTEN TÉCNICO · SIN CORRIDA','Technical match · no history':'Yokoten técnico · sin corrida',
+'Family context':'Contexto de familia','Yokoten Exposure':'Yokoten aplicable','FIRST RUN + YOKOTEN':'PRIMERA CORRIDA + YOKOTEN',
+'NPI REQUIRED':'NPI REQUERIDO','REQUALIFICATION REQUIRED':'RECALIFICACIÓN REQUERIDA','NEW INTRODUCTION':'NUEVA INTRODUCCIÓN',
+'LINE MIGRATION · REVIEW':'MIGRACIÓN DE LÍNEA · REVISAR','NEW MODEL':'MODELO NUEVO','NEW REVISION':'REVISIÓN NUEVA',
+'New model':'Modelo nuevo','New revision':'Revisión nueva','First run on line':'Primera corrida en línea','Line migration':'Migración de línea',
+'Runs':'Corridas','Build Qty':'Cant. construida','Current WIP':'WIP actual','Test FPY':'FPY de prueba','Repair SN':'SN reparados',
+'Last Run':'Última corrida','First Run':'Primera corrida','Historical lines':'Líneas históricas','Target status':'Estatus objetivo','Inherited findings':'Hallazgos heredados',
+'Critical characteristics':'Características críticas','Required migration gate':'Gate de migración requerido','Migration readiness view':'Vista de preparación para migración',
+'Target line':'Línea objetivo','Permanent Yokoten reminder':'Recordatorio Yokoten permanente',
+'WO history · Common DB':'Historial WO · Common DB','Filtered Issue Tracker · Handoff + Test + Repair + Yokoten':'Tracker de issues filtrado · Handoff + Test + Repair + Yokoten',
+'Severity':'Severidad','Source':'Fuente','Issue':'Problema','Context':'Contexto','Impact':'Impacto','Owner':'Responsable','Action':'Acción','Due':'Fecha compromiso',
+'Issue provenance':'Procedencia del issue','Test Performance':'Desempeño de pruebas','Repair Record':'Registro de reparación','Qualification':'Calificación',
+'Inherited Yokoten / Critical Characteristics':'Yokoten heredado / Características críticas','Finding':'Hallazgo','Family':'Familia','Source PN':'PN origen',
+'Component PN':'PN componente','Match':'Coincidencia','Migration Gate':'Gate de migración','Open':'Abierto','Monitoring':'Monitoreo','Closed':'Cerrado',
+'Neutral / no history':'Sin historial / contexto','First run / review':'Primera corrida / revisión','Requal / action required':'Calificación / acción requerida',
+'NPI / Requalification required':'NPI / Recalificación requerida','New model / revision':'Modelo / revisión nueva',
+'MANUFACTURING HISTORY MATRIX':'MATRIZ DE HISTORIAL DE MANUFACTURA','PRODUCT x LINE QUALIFICATION MATRIX':'MATRIZ DE CALIFICACIÓN PRODUCTO x LÍNEA',
+'Export Yokoten HTML':'Exportar Yokoten HTML','Manufacturing Qualification & Yokoten Matrix - ':'Matriz de Calificación de Manufactura y Yokoten - '
+};
+function tr(s){
+  if(!s)return s;
+  var raw=s, t=raw.trim();
+  if(exact[t])return raw.replace(t,exact[t]);
+  var r=raw;
+  r=r.replace(/\bNo linked issues for this cell\.?/gi,'Sin issues vinculados para esta celda.')
+     .replace(/\bNo inherited Yokoten records\.?/gi,'Sin registros Yokoten heredados.')
+     .replace(/\bNo Common DB manufacturing history is loaded\.?/gi,'No hay historial de manufactura de Common DB cargado.')
+     .replace(/\bShow only rows with Common DB history\b/gi,'Mostrar solo filas con historial de Common DB')
+     .replace(/\bmatrix rows\b/gi,'filas de matriz')
+     .replace(/\bhistory columns\b/gi,'columnas de historial')
+     .replace(/\bdistinct work orders\b/gi,'órdenes de trabajo distintas')
+     .replace(/\bselect a matrix cell\b/gi,'selecciona una celda')
+     .replace(/\btracker filtered\b/gi,'tracker filtrado')
+     .replace(/\bruns\b/gi,'corridas')
+     .replace(/\bpcs\b/gi,'pzas')
+     .replace(/\bNo run history\b/gi,'Sin historial de corrida')
+     .replace(/\bNo history\b/gi,'Sin historial')
+     .replace(/\bTechnical match\b/gi,'Coincidencia técnica')
+     .replace(/\bFamily context\b/gi,'Contexto de familia')
+     .replace(/\bFirst run\b/gi,'Primera corrida')
+     .replace(/\bHistory Only\b/gi,'Solo historial')
+     .replace(/\bRequal Required\b/gi,'Recalificación requerida')
+     .replace(/\bReview Required\b/gi,'Revisión requerida')
+     .replace(/\bQualified\b/gi,'Calificado');
+  return r;
+}
+function translateTextNodes(root){
+  if(!root)return;
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(n){
+    var p=n.parentElement;if(!p||/SCRIPT|STYLE|TEXTAREA/.test(p.tagName))return NodeFilter.FILTER_REJECT;
+    return n.nodeValue&&n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
+  }}), nodes=[],n;while(n=w.nextNode())nodes.push(n);
+  nodes.forEach(function(x){var y=tr(x.nodeValue);if(y!==x.nodeValue)x.nodeValue=y});
+}
+function translateControls(root){
+  if(!root)return;
+  root.querySelectorAll('input[placeholder]').forEach(function(el){var p=el.getAttribute('placeholder')||'';if(/Search product, PN or revision/i.test(p)||/Product, board PN, RefDes, component PN/i.test(p))el.setAttribute('placeholder','Buscar producto, PN, revisión, RefDes o PN componente...')});
+  root.querySelectorAll('select option').forEach(function(o){var raw=o.getAttribute('data-v14-raw-value');if(raw===null){raw=o.value;o.setAttribute('data-v14-raw-value',raw)}var txt=tr(o.textContent);if(txt!==o.textContent){o.textContent=txt;o.value=raw}});
+}
+function semanticCleanup(root){
+  if(!root)return;
+  /* La ausencia de historial no debe colorear una celda. El match se comunica con chip, no con fondo. */
+  root.querySelectorAll('.cell.pre-run,.yh-cell.yh-pre-run').forEach(function(c){c.classList.add('yk14-neutral-no-history')});
+  root.querySelectorAll('.cell.empty,.yh-cell.empty').forEach(function(c){c.classList.add('yk14-neutral-no-history')});
+  root.querySelectorAll('.cell.pre-run.direct-yokoten,.yh-cell.yh-pre-run.yh-direct-yokoten').forEach(function(c){
+    var top=c.querySelector('.celltop .chip,.yh-cell-top .yh-chip');if(top)top.textContent='YOKOTEN TÉCNICO · SIN CORRIDA';
+  });
+  root.querySelectorAll('.cell.pre-run.family-exposure:not(.direct-yokoten),.yh-cell.yh-pre-run.yh-family-exposure:not(.yh-direct-yokoten)').forEach(function(c){
+    var top=c.querySelector('.celltop .chip,.yh-cell-top .yh-chip');if(top)top.textContent='Sin historial';
+  });
+}
+function fix(){
+  var roots=[document.body,document.getElementById('smtYokotenHistoryOverlay')].filter(Boolean);
+  roots.forEach(function(r){translateTextNodes(r);translateControls(r);semanticCleanup(r)});
+  if(document.title.indexOf('Manufacturing Qualification')>=0)document.title='SMTinel · Matriz de Calificación de Manufactura y Yokoten';
+  var h1=document.querySelector('.brand-copy h1');if(h1&&/Manufacturing Qualification/i.test(h1.textContent))h1.textContent='Matriz de Calificación de Manufactura y Yokoten';
+}
+var timer=0;new MutationObserver(function(muts){var relevant=muts.some(function(m){return m.addedNodes&&m.addedNodes.length});if(!relevant)return;clearTimeout(timer);timer=setTimeout(fix,70)}).observe(document.documentElement,{childList:true,subtree:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();
+})();
+</script>
+<script id="smtinel-yokoten-es-blue-export-wrapper-v14">
+(function(){
+'use strict';
+var prev=window.SMTinelBuildYokotenExportHtml;
+if(typeof prev!=='function'||prev.__v14_es_blue)return;
+var css="<style id=\"smtinel-yokoten-es-blue-v14\">\n/* V14 — Español + semántica visual simplificada + tema industrial azul. */\n:root{\n  --yk14-navy:#0b3558;\n  --yk14-blue:#0b5ea8;\n  --yk14-blue-2:#2d79b3;\n  --yk14-blue-soft:#eef5fb;\n  --yk14-line:#d7e0e7;\n  --yk14-muted:#667681;\n  --yk14-neutral:#f7f9fa;\n  --yk14-amber:#b66a00;\n  --yk14-amber-soft:#fff5e6;\n  --yk14-red:#b42332;\n  --yk14-red-soft:#fff0f2;\n}\n/* Standalone theme */\nbody{background:#f3f6f8!important;color:#18252e!important}\nheader{border-bottom-color:var(--yk14-line)!important;box-shadow:0 1px 0 rgba(18,54,78,.04)}\n.brand-copy h1,.brand-word .accent{color:var(--yk14-navy)!important}\n.brand-tag{color:var(--yk14-blue-2)!important}\n.btn{color:var(--yk14-navy)!important;border-color:#bccbd6!important}\n.btn:hover{background:#f1f6fa!important;border-color:#91adc2!important}\n.kpi,.panel,.card{border-color:var(--yk14-line)!important;box-shadow:0 2px 10px rgba(30,66,92,.035)}\n.matrix thead th{background:var(--yk14-navy)!important;color:#fff!important;border-color:#315873!important}\n.rowhead{background:#f7f9fb!important}.rowhead b{color:#18354a!important}.rowhead small{color:var(--yk14-muted)!important}\n.hero{background:linear-gradient(135deg,#0b3558,#17689d)!important}\n.ct,.mini th,.tracker th{background:#edf3f7!important;color:#24465d!important}\n.cell.sel{outline:3px solid var(--yk14-blue)!important;outline-offset:-3px!important;background:#f7fbff!important}\n/* Sin historial SIEMPRE neutral: nada de fondos de alerta por simple ausencia de corrida. */\n.cell.empty,\n.cell.pre-run,\n.cell.pre-run.family-exposure,\n.cell.pre-run.direct-yokoten,\n.cell.v11-family-context,\n.cell.v11-pre-run-tech{\n  background:#fff!important;\n  border:1px solid #e0e6ea!important;\n  box-shadow:none!important;\n  color:#51616b!important;\n}\n.cell.pre-run:hover{background:#fafcfd!important}\n.cell.pre-run .exposure-copy,.cell.v11-family-context .exposure-copy,.cell.v11-pre-run-tech .exposure-copy{color:#687782!important}\n.cell.pre-run .chip.family,.cell.v11-family-context .chip.family,.chip.v11-neutral{\n  background:#f2f4f5!important;color:#65727a!important;border-color:#d3dade!important\n}\n/* Coincidencia técnica: el dato importa, pero no coloreamos toda una línea sin historial. */\n.cell.pre-run.direct-yokoten .chip.tech,\n.cell.v11-pre-run-tech .chip.tech,\n.cell.pre-run .chip.v11-tech{\n  background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important\n}\n.cell.direct-yokoten:not(.pre-run):not(.first-run):not(.v9-requal):not(.v10-qualification-required){\n  background:#fff!important;border:1px solid #cbdbe6!important;border-left:4px solid var(--yk14-blue)!important;box-shadow:none!important\n}\n.chip.tech,.chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}\n/* Primera corrida / revisión: ámbar. */\n.cell.first-run:not(.v9-requal):not(.v10-qualification-required),\n.cell.v9-review:not(.v9-requal){\n  background:var(--yk14-amber-soft)!important;border:1px solid #e3bd82!important;border-left:5px solid var(--yk14-amber)!important;box-shadow:none!important\n}\n.chip.first,.cell.first-run .celltop .chip{background:#fff0d2!important;color:#8c5200!important;border-color:#dda955!important}\n/* NPI y Recalificación: misma criticidad, rojo. */\n.cell.v9-requal,.cell.v10-qualification-required{\n  background:var(--yk14-red-soft)!important;border:1px solid #e2a9b0!important;border-left:6px solid var(--yk14-red)!important;box-shadow:none!important\n}\n.cell.v9-requal .celltop .chip,.cell.v10-qualification-required .celltop .chip{background:#fde5e8!important;color:#9c2432!important;border-color:#df929c!important}\n/* Calificado: azul, no verde. */\n.cell.v9-qualified:not(.first-run):not(.v9-requal):not(.v9-review){background:#f1f7fb!important;border:1px solid #a8c7dc!important;border-left:4px solid #387ba8!important}\n.good,.chip.good{background:#eaf3f9!important;color:#205f88!important;border-color:#9abfd8!important}\n/* Leyenda simplificada */\n.yk-v9-legend{border-color:var(--yk14-line)!important;background:#f8fafb!important;color:#50616d!important}\n.yk-v9-legend .n i{background:#fff!important;border:1px solid #cfd8de!important}\n.yk-v9-legend .t i{background:#fff!important;border:2px solid var(--yk14-blue)!important}\n.yk-v9-legend .w i{background:var(--yk14-amber-soft)!important;border:1px solid var(--yk14-amber)!important}\n.yk-v9-legend .r i{background:var(--yk14-red-soft)!important;border:1px solid var(--yk14-red)!important}\n.yk-v9-legend .g i{background:#f1f7fb!important;border:1px solid #387ba8!important}\n/* Live module */\n#smtYokotenHistoryOverlay{background:rgba(7,29,46,.58)!important}\n.yh-shell{background:#f3f6f8!important;border-color:#aebfcb!important;box-shadow:0 30px 90px rgba(4,31,49,.30)!important;color:#18252e!important}\n.yh-kicker{color:var(--yk14-blue-2)!important}.yh-title{color:var(--yk14-navy)!important}.yh-sub{color:#647580!important}\n.yh-btn,.yh-close{border-color:#b9c8d3!important;color:#173f5a!important}.yh-btn.primary{background:var(--yk14-blue)!important;border-color:var(--yk14-blue)!important;color:#fff!important}\n.yh-kpi,.yh-toolbar,.yh-panel,.yh-card,.yh-detail-kpi{border-color:var(--yk14-line)!important;box-shadow:0 2px 10px rgba(30,66,92,.035)!important}\n.yh-kpi b,.yh-detail-kpi b{color:#163c57!important}.yh-panel-head,.yh-card-title{background:#edf3f7!important;border-color:var(--yk14-line)!important}.yh-panel-head b,.yh-card-title{color:#24465d!important}\n.yh-matrix th,.yh-matrix td{border-color:#dbe3e8!important}.yh-matrix thead th{background:var(--yk14-navy)!important;border-color:#315873!important}.yh-rowhead{background:#f7f9fb!important}.yh-rowhead b{color:#18354a!important}.yh-rowhead span{color:#6b7982!important}\n.yh-detail-hero{background:linear-gradient(135deg,#0b3558,#17689d)!important}.yh-detail-hero p{color:#dceaf3!important}\n.yh-tracker th{background:var(--yk14-navy)!important}\n.yh-cell.selected{outline:3px solid var(--yk14-blue)!important;outline-offset:-3px!important;box-shadow:none!important;background:#f7fbff!important}\n/* Live: cualquier celda sin corrida es neutral aunque tenga Yokoten aplicable. */\n.yh-cell.empty,\n.yh-cell.yh-pre-run,\n.yh-cell.yh-pre-run.yh-family-exposure,\n.yh-cell.yh-pre-run.yh-direct-yokoten,\n.yh-cell.yk-v11-family-context,\n.yh-cell.yk-v11-pre-run-tech{\n  background:#fff!important;border:1px solid #e0e6ea!important;box-shadow:none!important;color:#51616b!important\n}\n.yh-cell.yh-pre-run .yh-exposure-copy,.yh-cell.yk-v11-family-context .yh-exposure-copy,.yh-cell.yk-v11-pre-run-tech .yh-exposure-copy{color:#687782!important}\n.yh-cell.yh-pre-run .yh-chip.family,.yh-chip.v11-neutral{background:#f2f4f5!important;color:#65727a!important;border-color:#d3dade!important}\n.yh-cell.yh-pre-run.yh-direct-yokoten .yh-chip.tech,.yh-cell.yk-v11-pre-run-tech .yh-chip.tech,.yh-cell.yh-pre-run .yh-chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}\n.yh-cell.yh-direct-yokoten:not(.yh-pre-run):not(.yh-first-run):not(.yk-v10-qualification-required){background:#fff!important;border:1px solid #cbdbe6!important;border-left:4px solid var(--yk14-blue)!important;box-shadow:none!important}\n.yh-chip.tech,.yh-chip.v11-tech{background:#e9f3fb!important;color:#0b5b98!important;border-color:#86b0cf!important}\n.yh-cell.yh-first-run:not(.yk-v10-qualification-required),.yh-cell.yk-v10-line-migration:not(.yk-v10-qualification-required){background:var(--yk14-amber-soft)!important;border:1px solid #e3bd82!important;border-left:5px solid var(--yk14-amber)!important;box-shadow:none!important}\n.yh-cell.yk-v10-qualification-required{background:var(--yk14-red-soft)!important;border:1px solid #e2a9b0!important;border-left:6px solid var(--yk14-red)!important;box-shadow:none!important}\n.yh-status-qualified{background:#eaf3f9!important;border-color:#9abfd8!important;color:#205f88!important}\n.yh-chip.good{background:#eaf3f9!important;border-color:#9abfd8!important;color:#205f88!important}\n/* Pequeño refuerzo visual: menos saturación, más jerarquía. */\n.yh-cell,.cell{transition:background .14s ease,border-color .14s ease,box-shadow .14s ease}\n</style>";
+var js="<script id=\"smtinel-yokoten-es-blue-runtime-v14\">\n(function(){\n'use strict';\nif(window.__SMTINEL_YOKOTEN_ES_BLUE_V14__)return;\nwindow.__SMTINEL_YOKOTEN_ES_BLUE_V14__=1;\nvar exact={\n'Manufacturing Qualification & Yokoten Matrix':'Matriz de Calificación de Manufactura y Yokoten',\n'Export Selected Tracker CSV':'Exportar Tracker Seleccionado CSV',\n'Product + Rev':'Producto + Rev','Products + Rev':'Productos + Rev','Lines':'Líneas','WO History':'Historial WO',\n'Total Build Qty':'Cantidad total construida','Populated Cells':'Celdas con datos','Run Records':'Registros de corrida','Selected Cell':'Celda seleccionada',\n'Product / PN / Rev':'Producto / PN / Rev','Product / PN / Rev / RefDes / Component':'Producto / PN / Rev / RefDes / Componente',\n'All lines':'Todas las líneas','ALL':'TODOS','Search':'Buscar','Product':'Producto','Line':'Línea','Status':'Estatus','Side':'Lado',\n'No history':'Sin historial','No run history':'Sin historial de corrida','History Only':'Solo historial','Review Required':'Revisión requerida',\n'Requal Required':'Recalificación requerida','Qualified / LL':'Calificado / LL','Qualified':'Calificado',\n'Technical match':'Coincidencia técnica','PRE-RUN TECHNICAL MATCH':'YOKOTEN TÉCNICO · SIN CORRIDA','Technical match · no history':'Yokoten técnico · sin corrida',\n'Family context':'Contexto de familia','Yokoten Exposure':'Yokoten aplicable','FIRST RUN + YOKOTEN':'PRIMERA CORRIDA + YOKOTEN',\n'NPI REQUIRED':'NPI REQUERIDO','REQUALIFICATION REQUIRED':'RECALIFICACIÓN REQUERIDA','NEW INTRODUCTION':'NUEVA INTRODUCCIÓN',\n'LINE MIGRATION · REVIEW':'MIGRACIÓN DE LÍNEA · REVISAR','NEW MODEL':'MODELO NUEVO','NEW REVISION':'REVISIÓN NUEVA',\n'New model':'Modelo nuevo','New revision':'Revisión nueva','First run on line':'Primera corrida en línea','Line migration':'Migración de línea',\n'Runs':'Corridas','Build Qty':'Cant. construida','Current WIP':'WIP actual','Test FPY':'FPY de prueba','Repair SN':'SN reparados',\n'Last Run':'Última corrida','First Run':'Primera corrida','Historical lines':'Líneas históricas','Target status':'Estatus objetivo','Inherited findings':'Hallazgos heredados',\n'Critical characteristics':'Características críticas','Required migration gate':'Gate de migración requerido','Migration readiness view':'Vista de preparación para migración',\n'Target line':'Línea objetivo','Permanent Yokoten reminder':'Recordatorio Yokoten permanente',\n'WO history · Common DB':'Historial WO · Common DB','Filtered Issue Tracker · Handoff + Test + Repair + Yokoten':'Tracker de issues filtrado · Handoff + Test + Repair + Yokoten',\n'Severity':'Severidad','Source':'Fuente','Issue':'Problema','Context':'Contexto','Impact':'Impacto','Owner':'Responsable','Action':'Acción','Due':'Fecha compromiso',\n'Issue provenance':'Procedencia del issue','Test Performance':'Desempeño de pruebas','Repair Record':'Registro de reparación','Qualification':'Calificación',\n'Inherited Yokoten / Critical Characteristics':'Yokoten heredado / Características críticas','Finding':'Hallazgo','Family':'Familia','Source PN':'PN origen',\n'Component PN':'PN componente','Match':'Coincidencia','Migration Gate':'Gate de migración','Open':'Abierto','Monitoring':'Monitoreo','Closed':'Cerrado',\n'Neutral / no history':'Sin historial / contexto','First run / review':'Primera corrida / revisión','Requal / action required':'Calificación / acción requerida',\n'NPI / Requalification required':'NPI / Recalificación requerida','New model / revision':'Modelo / revisión nueva',\n'MANUFACTURING HISTORY MATRIX':'MATRIZ DE HISTORIAL DE MANUFACTURA','PRODUCT x LINE QUALIFICATION MATRIX':'MATRIZ DE CALIFICACIÓN PRODUCTO x LÍNEA',\n'Export Yokoten HTML':'Exportar Yokoten HTML','Manufacturing Qualification & Yokoten Matrix - ':'Matriz de Calificación de Manufactura y Yokoten - '\n};\nfunction tr(s){\n  if(!s)return s;\n  var raw=s, t=raw.trim();\n  if(exact[t])return raw.replace(t,exact[t]);\n  var r=raw;\n  r=r.replace(/\\bNo linked issues for this cell\\.?/gi,'Sin issues vinculados para esta celda.')\n     .replace(/\\bNo inherited Yokoten records\\.?/gi,'Sin registros Yokoten heredados.')\n     .replace(/\\bNo Common DB manufacturing history is loaded\\.?/gi,'No hay historial de manufactura de Common DB cargado.')\n     .replace(/\\bShow only rows with Common DB history\\b/gi,'Mostrar solo filas con historial de Common DB')\n     .replace(/\\bmatrix rows\\b/gi,'filas de matriz')\n     .replace(/\\bhistory columns\\b/gi,'columnas de historial')\n     .replace(/\\bdistinct work orders\\b/gi,'órdenes de trabajo distintas')\n     .replace(/\\bselect a matrix cell\\b/gi,'selecciona una celda')\n     .replace(/\\btracker filtered\\b/gi,'tracker filtrado')\n     .replace(/\\bruns\\b/gi,'corridas')\n     .replace(/\\bpcs\\b/gi,'pzas')\n     .replace(/\\bNo run history\\b/gi,'Sin historial de corrida')\n     .replace(/\\bNo history\\b/gi,'Sin historial')\n     .replace(/\\bTechnical match\\b/gi,'Coincidencia técnica')\n     .replace(/\\bFamily context\\b/gi,'Contexto de familia')\n     .replace(/\\bFirst run\\b/gi,'Primera corrida')\n     .replace(/\\bHistory Only\\b/gi,'Solo historial')\n     .replace(/\\bRequal Required\\b/gi,'Recalificación requerida')\n     .replace(/\\bReview Required\\b/gi,'Revisión requerida')\n     .replace(/\\bQualified\\b/gi,'Calificado');\n  return r;\n}\nfunction translateTextNodes(root){\n  if(!root)return;\n  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(n){\n    var p=n.parentElement;if(!p||/SCRIPT|STYLE|TEXTAREA/.test(p.tagName))return NodeFilter.FILTER_REJECT;\n    return n.nodeValue&&n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;\n  }}), nodes=[],n;while(n=w.nextNode())nodes.push(n);\n  nodes.forEach(function(x){var y=tr(x.nodeValue);if(y!==x.nodeValue)x.nodeValue=y});\n}\nfunction translateControls(root){\n  if(!root)return;\n  root.querySelectorAll('input[placeholder]').forEach(function(el){var p=el.getAttribute('placeholder')||'';if(/Search product, PN or revision/i.test(p)||/Product, board PN, RefDes, component PN/i.test(p))el.setAttribute('placeholder','Buscar producto, PN, revisión, RefDes o PN componente...')});\n  root.querySelectorAll('select option').forEach(function(o){var raw=o.getAttribute('data-v14-raw-value');if(raw===null){raw=o.value;o.setAttribute('data-v14-raw-value',raw)}var txt=tr(o.textContent);if(txt!==o.textContent){o.textContent=txt;o.value=raw}});\n}\nfunction semanticCleanup(root){\n  if(!root)return;\n  /* La ausencia de historial no debe colorear una celda. El match se comunica con chip, no con fondo. */\n  root.querySelectorAll('.cell.pre-run,.yh-cell.yh-pre-run').forEach(function(c){c.classList.add('yk14-neutral-no-history')});\n  root.querySelectorAll('.cell.empty,.yh-cell.empty').forEach(function(c){c.classList.add('yk14-neutral-no-history')});\n  root.querySelectorAll('.cell.pre-run.direct-yokoten,.yh-cell.yh-pre-run.yh-direct-yokoten').forEach(function(c){\n    var top=c.querySelector('.celltop .chip,.yh-cell-top .yh-chip');if(top)top.textContent='YOKOTEN TÉCNICO · SIN CORRIDA';\n  });\n  root.querySelectorAll('.cell.pre-run.family-exposure:not(.direct-yokoten),.yh-cell.yh-pre-run.yh-family-exposure:not(.yh-direct-yokoten)').forEach(function(c){\n    var top=c.querySelector('.celltop .chip,.yh-cell-top .yh-chip');if(top)top.textContent='Sin historial';\n  });\n}\nfunction fix(){\n  var roots=[document.body,document.getElementById('smtYokotenHistoryOverlay')].filter(Boolean);\n  roots.forEach(function(r){translateTextNodes(r);translateControls(r);semanticCleanup(r)});\n  if(document.title.indexOf('Manufacturing Qualification')>=0)document.title='SMTinel · Matriz de Calificación de Manufactura y Yokoten';\n  var h1=document.querySelector('.brand-copy h1');if(h1&&/Manufacturing Qualification/i.test(h1.textContent))h1.textContent='Matriz de Calificación de Manufactura y Yokoten';\n}\nvar timer=0;new MutationObserver(function(muts){var relevant=muts.some(function(m){return m.addedNodes&&m.addedNodes.length});if(!relevant)return;clearTimeout(timer);timer=setTimeout(fix,70)}).observe(document.documentElement,{childList:true,subtree:true});\nif(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();\n})();\n<\\/script>";
+var wrapped=function(){
+  var html=prev();
+  if(typeof html!=='string'||html.indexOf('smtinel-yokoten-es-blue-runtime-v14')>=0)return html;
+  if(html.indexOf('</head>')>=0)html=html.replace('</head>',css+'</head>');else html=css+html;
+  if(html.indexOf('</body>')>=0)html=html.replace('</body>',js+'</body>');else html+=js;
+  return html;
+};
+wrapped.__v14_es_blue=true;wrapped.__base=prev;window.SMTinelBuildYokotenExportHtml=wrapped;
+})();
+</script>
