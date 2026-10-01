@@ -77059,3 +77059,118 @@ function installTest(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.
 }
 })();
 </script>
+
+
+<!-- SMTinel Yokoten V17: Reference Drawing Integration -->
+<style id="smtinel-yokoten-reference-drawing-v17-style">
+/* V17: evidence generated only after a Product x Line cell is selected. */
+.yk17-map-status{display:inline-flex;align-items:center;gap:6px;font-size:8px;font-weight:900;color:#607482}
+.yk17-map-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#0b5ea8;box-shadow:0 0 0 3px rgba(11,94,168,.10)}
+.yk17-map-status.warn::before{background:#b66a00}.yk17-map-status.fail::before{background:#b42332}
+.yk17-map-source{margin-top:7px;padding:7px 9px;border:1px solid #d7e3eb;border-radius:7px;background:#f7fafc;color:#607482;font-size:8px;line-height:1.4;word-break:break-all}
+.yk17-map-source b{color:#254b66}
+</style>
+<script id="smtinel-yokoten-reference-drawing-v17">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_REFERENCE_DRAWING_V17__)return;
+window.__SMTINEL_YOKOTEN_REFERENCE_DRAWING_V17__=1;
+
+var BASE='https://smtinel.com/docs/datasheets/';
+var pdfCache=Object.create(null);
+var renderCache=Object.create(null);
+var MANIFEST={
+  'QUEENS PARK PINNER':'QUEENS-PARK-PINNER.pdf','QUEENS PARK CROXLEY':'QUEENS-PARK-CROXLEY.pdf',
+  'WESTMINSTER DESKTOP':'WESTMINSTER-DESKTOP.pdf','WESTMINSTER RACKMOUNT':'WESTMINSTER-RACKMOUNT.pdf','WESTMINSTER, DESKTOP':'WESTMINSTER-DESKTOP.pdf',
+  'WOODSIDE PARK SINGLE':'WOODSIDE-PARK.pdf','WOODSIDE PARK DUAL':'WOODSIDE-PARK-DUAL.pdf','ESW CARD WOODSIDE PARK':'WOODSIDE-PARK.pdf',
+  'TUFFNEL PARK HIGH':'TUFFNEL-PARK-HIGH.pdf','TUFFNEL PARK LOW':'TUFFNEL-PARK-LOW.pdf','TUFFNELL PARK HIGH':'TUFFNEL-PARK-HIGH.pdf','TUFFNELL PARK LOW':'TUFFNEL-PARK-LOW.pdf',
+  'VICTORIA DESKTOP':'VICTORIA-DESKTOP.pdf','VICTORIA RACKMOUNT':'VICTORIA-RACKMOUNT.pdf',
+  'MARYLAND':'MARYLAND.pdf','MOORK PARK':'MOORK-PARK.pdf','MOOR PARK':'MOORK-PARK.pdf','LANCER':'Lancer.pdf','WARWICK':'WARWICK.pdf',
+  'PICTORIS':'PICTORIS.pdf','CHARON':'CHARON.pdf','ARATA':'ARATA.pdf','TAYLOR':'TAYLOR.pdf','HEIMDALL':'HEIMDALL.pdf',
+  'HEIMDALL MIC':'HEIMDALL-MIC.pdf','NIXIE MIC BOARD':'NIXIE-MIC-BOARD.pdf','OCTAVIO':'OCTAVIO.pdf','BROOKLYN':'BROOKLYN.pdf',
+  'DAVINCI':'DAVINCI.pdf','MILLENNIUM':'MILLENNIUM.pdf','TYNE':'TYNE.pdf','TYNE MB RADIO':'TYNE-MB-RADIO.pdf','TYNE CODEC MB':'TYNE-CODEC-MB.pdf',
+  'KING CROSS':'KING-CROSS.pdf','BAYFRONT':'BAYFRONT.pdf','ADELPHI':'ADELPHI.pdf','BANDAI':'BANDAI.pdf'
+};
+function text(v){return String(v==null?'':v).trim()}
+function norm(v){return text(v).toUpperCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim()}
+function normRef(v){return text(v).toUpperCase().replace(/[^A-Z0-9_]+/g,'')}
+function uniq(a){var o=[],s={};(a||[]).forEach(function(v){v=text(v);if(v&&!s[v]){s[v]=1;o.push(v)}});return o}
+function validRef(v){return /^(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/i.test(normRef(v))}
+function manifestFile(identity){var key=norm(identity),keys=Object.keys(MANIFEST);if(MANIFEST[key])return MANIFEST[key];for(var i=0;i<keys.length;i++){if(key.indexOf(keys[i])>=0||keys[i].indexOf(key)>=0)return MANIFEST[keys[i]]}return ''}
+function fileCandidates(family,meta){
+  meta=meta||{};var ids=uniq([family].concat(meta.aliases||[]).concat([meta.model,meta.product,meta.family]).filter(Boolean)),files=[];
+  ids.forEach(function(id){
+    var m=manifestFile(id);if(m)files.push(m);
+    var raw=text(id),key=norm(id);if(!key)return;
+    files.push(key.replace(/\s+/g,'-')+'.pdf');
+    if(raw&&raw.toUpperCase()!==key)files.push(raw.replace(/\s+/g,'-')+'.pdf');
+  });
+  /* Board PN is only a fallback. Family/model remains the preferred drawing identity. */
+  [meta.sku,meta.sourceSku,meta.targetSku].filter(Boolean).forEach(function(pn){files.push(text(pn)+'.pdf')});
+  return uniq(files);
+}
+function urlsFor(family,meta){return fileCandidates(family,meta).map(function(f){return BASE+encodeURIComponent(f)})}
+async function ensurePdf(){if(typeof window.ensurePdfTools==='function')await window.ensurePdfTools();if(!window.pdfjsLib)throw new Error('PDF renderer no disponible en SMTinel.')}
+async function openUrl(url){if(pdfCache[url])return pdfCache[url];pdfCache[url]=(async function(){await ensurePdf();var pdf=await window.pdfjsLib.getDocument({url:url,disableAutoFetch:false,disableStream:false}).promise;return{pdf:pdf,url:url}})();try{return await pdfCache[url]}catch(err){delete pdfCache[url];throw err}}
+function itemMatches(item,ref){var target=normRef(ref),raw=text(item&&item.str);if(!target||!raw)return false;if(normRef(raw)===target)return true;var tokens=raw.toUpperCase().split(/[^A-Z0-9_]+/).filter(Boolean).map(normRef);return tokens.indexOf(target)>=0}
+function findItems(tc,ref,max){var out=[],items=tc&&tc.items||[],lim=max||3;for(var i=0;i<items.length;i++){if(itemMatches(items[i],ref)){out.push(items[i]);if(out.length>=lim)break}}return out}
+function box(viewport,item){var tx=window.pdfjsLib.Util.transform(viewport.transform,item.transform),h=Math.max(10,Math.abs(tx[3])||(item.height||8)*(viewport.scale||1)),w=Math.max(34,(item.width||28)*(viewport.scale||1));return{x:tx[4],y:tx[5]-h,w:w,h:h}}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function mark(ctx,b,label,index){var pad=Math.max(7,Math.min(20,Math.max(b.w,b.h)*.48)),x=b.x-pad,y=b.y-pad,w=b.w+pad*2,h=b.h+pad*2;ctx.save();ctx.fillStyle=index===0?'rgba(255,59,48,.28)':'rgba(255,149,0,.23)';ctx.strokeStyle=index===0?'#e03131':'#e68700';ctx.lineWidth=3;ctx.shadowColor='rgba(255,59,48,.38)';ctx.shadowBlur=14;rr(ctx,x,y,w,h,9);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.font='700 12px Segoe UI,Arial';var tw=ctx.measureText(label).width+12,lx=Math.max(4,Math.min(ctx.canvas.width-tw-4,x)),ly=Math.max(4,y-20);ctx.fillStyle='rgba(255,255,255,.98)';ctx.fillRect(lx,ly,tw,18);ctx.strokeStyle='#d0d7e2';ctx.lineWidth=1;ctx.strokeRect(lx,ly,tw,18);ctx.fillStyle='#102a43';ctx.fillText(label,lx+6,ly+13);ctx.restore()}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+async function renderLoaded(loaded,refs){
+  var pdf=loaded.pdf,pageHits={},found={};refs=uniq((refs||[]).map(normRef).filter(validRef));
+  for(var p=1;p<=Math.min(2,pdf.numPages||1);p++){
+    var pg=await pdf.getPage(p),tc=await pg.getTextContent(),hits=[];
+    refs.forEach(function(ref,idx){findItems(tc,ref,3).forEach(function(item){hits.push({ref:ref,item:item,index:idx});found[ref]=1})});pageHits[p]=hits;
+  }
+  var cards=[];
+  for(var pageNo=1;pageNo<=Math.min(2,pdf.numPages||1);pageNo++){
+    var list=pageHits[pageNo]||[];if(!list.length)continue;var page=await pdf.getPage(pageNo),base=page.getViewport({scale:1});
+    var os=Math.max(.7,Math.min(1.8,900/base.width)),ov=page.getViewport({scale:os}),overview=document.createElement('canvas');overview.width=Math.floor(ov.width);overview.height=Math.floor(ov.height);var oc=overview.getContext('2d');oc.fillStyle='#fff';oc.fillRect(0,0,overview.width,overview.height);await page.render({canvasContext:oc,viewport:ov}).promise;list.forEach(function(h,i){try{mark(oc,box(ov,h.item),h.ref,i)}catch(_){}});
+    var ds=Math.max(2.15,Math.min(4.0,2100/base.width)),dv=page.getViewport({scale:ds}),full=document.createElement('canvas');full.width=Math.floor(dv.width);full.height=Math.floor(dv.height);var fc=full.getContext('2d');fc.fillStyle='#fff';fc.fillRect(0,0,full.width,full.height);await page.render({canvasContext:fc,viewport:dv}).promise;
+    var refSet={},sel=[];list.forEach(function(h){if(refSet[h.ref])return;refSet[h.ref]=1;try{sel.push({ref:h.ref,box:box(dv,h.item)})}catch(_){}});
+    var detail='';if(sel.length){var minX=Math.min.apply(null,sel.map(function(x){return x.box.x})),minY=Math.min.apply(null,sel.map(function(x){return x.box.y})),maxX=Math.max.apply(null,sel.map(function(x){return x.box.x+x.box.w})),maxY=Math.max.apply(null,sel.map(function(x){return x.box.y+x.box.h})),cw=Math.max(1,maxX-minX),ch=Math.max(1,maxY-minY),px=Math.max(130,cw*.30),py=Math.max(110,ch*.70),cropW=Math.max(900,cw+px*2),cropH=Math.max(460,ch+py*2),ratio=2.15;if(cropW/cropH<ratio)cropW=cropH*ratio;else cropH=cropW/ratio;cropW=Math.min(full.width,Math.round(cropW));cropH=Math.min(full.height,Math.round(cropH));var cx=(minX+maxX)/2,cy=(minY+maxY)/2,sx=clamp(Math.round(cx-cropW/2),0,Math.max(0,full.width-cropW)),sy=clamp(Math.round(cy-cropH/2),0,Math.max(0,full.height-cropH)),crop=document.createElement('canvas');crop.width=cropW;crop.height=cropH;var cc=crop.getContext('2d');cc.fillStyle='#fff';cc.fillRect(0,0,cropW,cropH);cc.drawImage(full,sx,sy,cropW,cropH,0,0,cropW,cropH);sel.forEach(function(x,i){var b=x.box;mark(cc,{x:b.x-sx,y:b.y-sy,w:b.w,h:b.h},x.ref,i)});detail=crop.toDataURL('image/png')}
+    cards.push({sideLabel:pageNo===1?'TOP side':'BOTTOM side',refs:Object.keys(refSet),dataUrl:overview.toDataURL('image/png'),detailDataUrl:detail,detailRefs:sel.map(function(x){return x.ref})});
+  }
+  return{cards:cards,unfound:refs.filter(function(r){return !found[r]}),source:loaded.url,foundCount:Object.keys(found).length};
+}
+async function build(family,refs,meta){
+  meta=meta||{};refs=uniq((refs||[]).map(normRef).filter(validRef));if(!refs.length)return{error:'No hay RefDes válidos en la lección aprendida.',cards:[],unfound:[]};
+  var cacheKey=[norm(family),refs.slice().sort().join(','),text(meta.sku),text(meta.sourceSku)].join('|');if(renderCache[cacheKey])return renderCache[cacheKey];
+  renderCache[cacheKey]=(async function(){var urls=urlsFor(family,meta),errors=[],best=null;for(var i=0;i<urls.length;i++){try{var loaded=await openUrl(urls[i]),payload=await renderLoaded(loaded,refs);payload.resolvedAs=decodeURIComponent(urls[i].split('/').pop());payload.tried=urls.slice(0,i+1);if(payload.foundCount>0)return payload;if(!best)best=payload}catch(err){errors.push(decodeURIComponent(urls[i].split('/').pop())+': '+text(err&&err.message||err))}}if(best){best.error='El dibujo abrió, pero no se localizaron los RefDes solicitados.';best.tried=urls;return best}return{error:'No se encontró un dibujo compatible para '+text(family)+'.',cards:[],unfound:refs,tried:urls,details:errors}})();
+  try{return await renderCache[cacheKey]}catch(err){delete renderCache[cacheKey];throw err}
+}
+window.SMTinelYokotenReferenceDrawingV17={build:build,urlsFor:urlsFor,validRef:validRef,version:'17.0'};
+})();
+</script>
+
+<script id="smtinel-yokoten-reference-ui-v17">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_REFERENCE_UI_V17__)return;window.__SMTINEL_YOKOTEN_REFERENCE_UI_V17__=1;
+var timer=0,seq=0;
+function t(v){return String(v==null?'':v).trim()}function e(v){return t(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function refs(v){var m=t(v).toUpperCase().match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g)||[],o=[],s={};m.forEach(function(x){x=x.replace(/[^A-Z0-9_]/g,'');if(x&&!s[x]){s[x]=1;o.push(x)}});return o}
+function evidenceRows(detail){var cards=[].slice.call(detail.querySelectorAll('.yh-card,.card')),card=null;for(var i=0;i<cards.length;i++){var h=cards[i].querySelector('.yh-card-title,.ct');if(h&&/Yokoten heredado|Inherited Yokoten|Caracter[ií]sticas cr[ií]ticas/i.test(t(h.textContent))){card=cards[i];break}}if(!card)return[];var table=card.querySelector('table'),rows=[];if(!table)return rows;var headers=[].slice.call(table.querySelectorAll('thead th')).map(function(h){return t(h.textContent).toUpperCase()});function ix(re,fallback){for(var j=0;j<headers.length;j++)if(re.test(headers[j]))return j;return fallback}var iFinding=ix(/HALLAZGO|FINDING/,0),iFamily=ix(/FAMILIA|FAMILY/,1),iSource=ix(/PN ORIGEN|SOURCE PN/,2),iComp=ix(/PN COMPONENTE|COMPONENT PN/,3),iRef=ix(/REFDES/,4),iMatch=ix(/COINCIDENCIA|MATCH/,5),iSrc=ix(/^FUENTE$|^SOURCE$/,7);[].slice.call(table.querySelectorAll('tbody tr')).forEach(function(r){var c=r.cells;if(!c||!c.length)return;var rr=refs(t(c[iRef]&&c[iRef].textContent));if(!rr.length)return;rows.push({title:t(c[iFinding]&&c[iFinding].textContent)||'Lección aprendida',family:t(c[iFamily]&&c[iFamily].textContent),sourceSku:t(c[iSource]&&c[iSource].textContent),component:t(c[iComp]&&c[iComp].textContent),refs:rr,match:t(c[iMatch]&&c[iMatch].textContent),source:t(c[iSrc]&&c[iSrc].textContent)})});return rows}
+function mapHtml(p){if(!p)return'<div class="yk16-map-note warn">Sin respuesta del motor de dibujo.</div>';if(p.error&&!p.cards.length)return'<div class="yk16-map-note warn"><b>Mapa no disponible.</b><br>'+e(p.error)+(p.tried&&p.tried.length?'<div class="yk17-map-source"><b>Intentos:</b> '+e(p.tried.map(function(x){try{return decodeURIComponent(x.split('/').pop())}catch(_){return x}}).join(' · '))+'</div>':'')+'</div>';var cards=p.cards||[],h=cards.map(function(c){var rr=c.detailRefs&&c.detailRefs.length?c.detailRefs:(c.refs||[]);return'<div class="yk16-map-side"><div class="yk16-map-side-title">'+e(c.sideLabel||'Board')+' · Ubicación detallada · '+e(rr.join(', '))+'</div>'+(c.detailDataUrl?'<img loading="lazy" src="'+c.detailDataUrl+'" alt="Ubicación detallada '+e(rr.join(', '))+'">':'')+(c.dataUrl?'<details><summary>Ver dibujo completo con referencias marcadas</summary><div><img loading="lazy" src="'+c.dataUrl+'" alt="Dibujo completo"></div></details>':'')+'</div>'}).join('');if(p.unfound&&p.unfound.length)h+='<div class="yk16-map-note warn" style="margin-top:8px"><b>No localizado:</b> '+e(p.unfound.join(', '))+'</div>';if(p.source)h+='<div class="yk17-map-source"><b>Dibujo:</b> '+e(p.resolvedAs||p.source)+'</div>';return h}
+function heroFamily(detail){var h=detail.querySelector('.yh-detail-hero h3,.hero h2');return t(h&&h.textContent).split('/')[0].trim()}
+function selectedMeta(detail,rows){var h=detail.querySelector('.yh-detail-hero h3,.hero h2'),p=t(h&&h.textContent).split('/').map(function(x){return t(x)});return{product:p[0]||'',sku:p[1]||'',sourceSku:rows[0]&&rows[0].sourceSku||'',aliases:rows.map(function(x){return x.family}).filter(Boolean)}}
+function ensureCard(detail,rows){var existing=detail.querySelector('.yk16-evidence-card'),family=heroFamily(detail),all=[],seen={};rows.forEach(function(x){x.refs.forEach(function(r){if(!seen[r]){seen[r]=1;all.push(r)}})});if(!family||!all.length)return null;if(!existing){existing=document.createElement('div');existing.className=(detail.id==='yhDetail'?'yh-card ':'card ')+'yk16-evidence-card';var tracker=[].slice.call(detail.querySelectorAll('.yh-card,.card')).find(function(c){var h=c.querySelector('.yh-card-title,.ct');return h&&/Tracker|Filtered Issue/i.test(t(h.textContent))});if(tracker&&tracker.parentElement)tracker.parentElement.insertBefore(existing,tracker);else detail.appendChild(existing)}var token=[family,all.join(','),rows.map(function(x){return x.title}).join('|')].join('::');if(existing.getAttribute('data-yk17-token')===token)return existing;existing.setAttribute('data-yk17-token',token);existing.innerHTML='<div class="yk16-evidence-head">Evidencia visual de lecciones aprendidas</div><div class="yk16-evidence-intro">Se genera únicamente después de seleccionar un modelo × línea. Las referencias se toman del Yokoten heredado y se buscan con la misma lógica de dibujo usada por Repair Location Map.</div><div class="yk16-tags"><span class="yk16-tag">Modelo '+e(family)+'</span>'+all.map(function(r){return'<span class="yk16-tag ref">RefDes '+e(r)+'</span>'}).join('')+'</div><div class="yk16-lessons">'+rows.map(function(x){return'<div class="yk16-lesson"><div><b>'+e(x.title)+'</b><small>'+e(x.source)+(x.match?' · '+e(x.match):'')+(x.sourceSku?' · PN origen '+e(x.sourceSku):'')+'</small></div><div class="yk16-lesson-ref">'+e(x.refs.join(', '))+(x.component?'<br>CPN '+e(x.component):'')+'</div></div>'}).join('')+'</div><div class="yk16-boardmap"><div class="yk16-boardmap-title"><b>Ubicación de referencias en dibujo</b><span class="yk17-map-status">Buscando dibujo y RefDes…</span></div><div class="yk16-map-note">Preparando '+e(all.join(', '))+' para '+e(family)+'…</div></div>';var node=existing.querySelector('.yk16-boardmap'),meta=selectedMeta(detail,rows),my=++seq;window.SMTinelYokotenReferenceDrawingV17.build(family,all,meta).then(function(p){if(my!==seq||!node.isConnected)return;var status=node.querySelector('.yk17-map-status');node.innerHTML='<div class="yk16-boardmap-title"><b>Ubicación de referencias en dibujo</b><span class="yk17-map-status '+(p.error?'warn':'')+'">'+(p.error?'Revisión requerida':'Mapa generado')+'</span></div>'+mapHtml(p)}).catch(function(err){if(my!==seq||!node.isConnected)return;node.innerHTML='<div class="yk16-boardmap-title"><b>Ubicación de referencias en dibujo</b><span class="yk17-map-status fail">Error</span></div><div class="yk16-map-note warn">'+e(err&&err.message||err)+'</div>'});return existing}
+function fix(){var detail=document.getElementById('yhDetail')||document.getElementById('detail');if(!detail||!detail.classList.contains('open'))return;var rows=evidenceRows(detail);if(!rows.length)return;ensureCard(detail,rows)}
+function schedule(){clearTimeout(timer);timer=setTimeout(fix,80)}document.addEventListener('click',function(ev){if(ev.target&&ev.target.closest&&ev.target.closest('[data-yh-cell],.cell[data-k]'))setTimeout(schedule,25)},true);new MutationObserver(function(m){if(m.some(function(x){return x.addedNodes&&x.addedNodes.length}))schedule()}).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+<script id="smtinel-yokoten-export-drawing-v17">
+(function(){
+'use strict';
+if(window.__SMTINEL_YOKOTEN_EXPORT_DRAWING_V17__)return;window.__SMTINEL_YOKOTEN_EXPORT_DRAWING_V17__=1;
+function t(v){return String(v==null?'':v).trim()}function refList(v){var m=t(v).toUpperCase().match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g)||[],o=[],s={};m.forEach(function(x){x=x.replace(/[^A-Z0-9_]/g,'');if(x&&!s[x]){s[x]=1;o.push(x)}});return o}
+function extract(html){var a=html.indexOf('window.__YK__=');if(a<0)return{};a+=14;var b=html.indexOf(';(function(){',a);if(b<0)return{};var data;try{data=JSON.parse(html.slice(a,b))}catch(_){return{}}var g={};(data.rows||[]).forEach(function(r){Object.keys(r.cells||{}).forEach(function(k){var c=r.cells[k]||{};(c.inherited||[]).forEach(function(x){var rr=refList(x.refdes||'');if(!rr.length)rr=refList([x.critical,x.title].filter(Boolean).join(' '));if(!rr.length)return;var fam=t(c.product||r.product||x.family),key=fam.toUpperCase();if(!fam)return;var z=g[key]||(g[key]={family:fam,sku:c.sku||r.sku||'',sourceSku:x.sourceSku||'',aliases:[],refs:[],seen:{}});if(x.family&&z.aliases.indexOf(x.family)<0)z.aliases.push(x.family);rr.forEach(function(ref){if(!z.seen[ref]){z.seen[ref]=1;z.refs.push(ref)}})})})});return g}
+async function enrich(html){var groups=extract(html),keys=Object.keys(groups),cache={};for(var i=0;i<keys.length;i++){var z=groups[keys[i]];try{cache[keys[i]]=await window.SMTinelYokotenReferenceDrawingV17.build(z.family,z.refs,{sku:z.sku,sourceSku:z.sourceSku,aliases:z.aliases})}catch(err){cache[keys[i]]={error:t(err&&err.message||err),cards:[],unfound:z.refs}}}var js='<script id="smtinel-yokoten-map-cache-v17">window.__YK_BOARDMAPS_BY_FAMILY__='+JSON.stringify(cache).replace(/<\//g,'<\\/')+';window.__YK_BOARDMAPS_BY_FAMILY_V17__=window.__YK_BOARDMAPS_BY_FAMILY__;<\\/script>';return html.replace('</body>',js+'\n</body>')}
+function download(html){var blob=new Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Manufacturing_Qualification_Yokoten_'+new Date().toISOString().slice(0,10)+'.html',a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1200)}
+window.SMTinelDownloadYokotenHtml=function(){(async function(){try{var html=window.SMTinelBuildYokotenExportHtml();html=await enrich(html);download(html)}catch(err){console.error('[SMTinel Yokoten V17 export]',err);alert('No se pudo generar el HTML Yokoten con mapas de referencia: '+t(err&&err.message||err))}})();return true};
+})();
+</script>
+
