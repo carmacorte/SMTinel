@@ -77110,8 +77110,8 @@ async function renderLoaded(loaded,refs){
   var cards=[];
   for(var pageNo=1;pageNo<=Math.min(2,pdf.numPages||1);pageNo++){
     var list=pageHits[pageNo]||[];if(!list.length)continue;var page=await pdf.getPage(pageNo),base=page.getViewport({scale:1});
-    var os=Math.max(.7,Math.min(1.8,900/base.width)),ov=page.getViewport({scale:os}),overview=document.createElement('canvas');overview.width=Math.floor(ov.width);overview.height=Math.floor(ov.height);var oc=overview.getContext('2d');oc.fillStyle='#fff';oc.fillRect(0,0,overview.width,overview.height);await page.render({canvasContext:oc,viewport:ov}).promise;list.forEach(function(h,i){try{mark(oc,box(ov,h.item),h.ref,i)}catch(_){}});
-    var ds=Math.max(2.15,Math.min(4.0,2100/base.width)),dv=page.getViewport({scale:ds}),full=document.createElement('canvas');full.width=Math.floor(dv.width);full.height=Math.floor(dv.height);var fc=full.getContext('2d');fc.fillStyle='#fff';fc.fillRect(0,0,full.width,full.height);await page.render({canvasContext:fc,viewport:dv}).promise;
+    var os=Math.max(.65,Math.min(1.55,760/base.width)),ov=page.getViewport({scale:os}),overview=document.createElement('canvas');overview.width=Math.floor(ov.width);overview.height=Math.floor(ov.height);var oc=overview.getContext('2d');oc.fillStyle='#fff';oc.fillRect(0,0,overview.width,overview.height);await page.render({canvasContext:oc,viewport:ov}).promise;list.forEach(function(h,i){try{mark(oc,box(ov,h.item),h.ref,i)}catch(_){}});
+    var ds=Math.max(1.75,Math.min(3.2,1600/base.width)),dv=page.getViewport({scale:ds}),full=document.createElement('canvas');full.width=Math.floor(dv.width);full.height=Math.floor(dv.height);var fc=full.getContext('2d');fc.fillStyle='#fff';fc.fillRect(0,0,full.width,full.height);await page.render({canvasContext:fc,viewport:dv}).promise;
     var refSet={},sel=[];list.forEach(function(h){if(refSet[h.ref])return;refSet[h.ref]=1;try{sel.push({ref:h.ref,box:box(dv,h.item)})}catch(_){}});
     var detail='';if(sel.length){var minX=Math.min.apply(null,sel.map(function(x){return x.box.x})),minY=Math.min.apply(null,sel.map(function(x){return x.box.y})),maxX=Math.max.apply(null,sel.map(function(x){return x.box.x+x.box.w})),maxY=Math.max.apply(null,sel.map(function(x){return x.box.y+x.box.h})),cw=Math.max(1,maxX-minX),ch=Math.max(1,maxY-minY),px=Math.max(130,cw*.30),py=Math.max(110,ch*.70),cropW=Math.max(900,cw+px*2),cropH=Math.max(460,ch+py*2),ratio=2.15;if(cropW/cropH<ratio)cropW=cropH*ratio;else cropH=cropW/ratio;cropW=Math.min(full.width,Math.round(cropW));cropH=Math.min(full.height,Math.round(cropH));var cx=(minX+maxX)/2,cy=(minY+maxY)/2,sx=clamp(Math.round(cx-cropW/2),0,Math.max(0,full.width-cropW)),sy=clamp(Math.round(cy-cropH/2),0,Math.max(0,full.height-cropH)),crop=document.createElement('canvas');crop.width=cropW;crop.height=cropH;var cc=crop.getContext('2d');cc.fillStyle='#fff';cc.fillRect(0,0,cropW,cropH);cc.drawImage(full,sx,sy,cropW,cropH,0,0,cropW,cropH);sel.forEach(function(x,i){var b=x.box;mark(cc,{x:b.x-sx,y:b.y-sy,w:b.w,h:b.h},x.ref,i)});detail=crop.toDataURL('image/png')}
     cards.push({sideLabel:pageNo===1?'TOP side':'BOTTOM side',refs:Object.keys(refSet),dataUrl:overview.toDataURL('image/png'),detailDataUrl:detail,detailRefs:sel.map(function(x){return x.ref})});
@@ -77121,10 +77121,10 @@ async function renderLoaded(loaded,refs){
 async function build(family,refs,meta){
   meta=meta||{};refs=uniq((refs||[]).map(normRef).filter(validRef));if(!refs.length)return{error:'No hay RefDes válidos en la lección aprendida.',cards:[],unfound:[]};
   var cacheKey=[norm(family),refs.slice().sort().join(','),text(meta.sku),text(meta.sourceSku)].join('|');if(renderCache[cacheKey])return renderCache[cacheKey];
-  renderCache[cacheKey]=(async function(){var urls=urlsFor(family,meta),errors=[],best=null;for(var i=0;i<urls.length;i++){try{var loaded=await openUrl(urls[i]),payload=await renderLoaded(loaded,refs);payload.resolvedAs=decodeURIComponent(urls[i].split('/').pop());payload.tried=urls.slice(0,i+1);if(payload.foundCount>0)return payload;if(!best)best=payload}catch(err){errors.push(decodeURIComponent(urls[i].split('/').pop())+': '+text(err&&err.message||err))}}if(best){best.error='El dibujo abrió, pero no se localizaron los RefDes solicitados.';best.tried=urls;return best}return{error:'No se encontró un dibujo compatible para '+text(family)+'.',cards:[],unfound:refs,tried:urls,details:errors}})();
+  renderCache[cacheKey]=(async function(){var urls=urlsFor(family,meta),errors=[],best=null;for(var i=0;i<urls.length;i++){try{var loaded=await openUrl(urls[i]),payload=await renderLoaded(loaded,refs);payload.resolvedAs=decodeURIComponent(urls[i].split('/').pop());payload.tried=urls.slice(0,i+1);if(payload.foundCount>0)return payload;if(!best)best=payload}catch(err){errors.push(decodeURIComponent(urls[i].split('/').pop())+': '+text(err&&err.message||err))}}if(best){best.error='El dibujo abrió, pero no se localizaron los RefDes solicitados.';best.tried=urls;return best}return{error:'No hay un PDF de dibujo disponible para '+text(family)+' en docs/datasheets. SMTinel intentó '+urls.map(function(u){try{return decodeURIComponent(u.split('/').pop())}catch(_){return u}}).join(', ')+'.',cards:[],unfound:refs,tried:urls,details:errors}})();
   try{return await renderCache[cacheKey]}catch(err){delete renderCache[cacheKey];throw err}
 }
-window.SMTinelYokotenReferenceDrawingV17={build:build,urlsFor:urlsFor,validRef:validRef,version:'17.0'};
+window.SMTinelYokotenReferenceDrawingV17={build:build,urlsFor:urlsFor,validRef:validRef,version:'17.1-v19.5'};
 })();
 </script>
 
@@ -77204,145 +77204,44 @@ if(!install()){var n=0,id=setInterval(function(){n++;if(install()||n>80)clearInt
 })();
 </script>
 
-<script id="smtinel-yokoten-export-runtime-v19-4">
+<script id="smtinel-yokoten-export-runtime-v19-5">
 (function(){
 'use strict';
-if(window.__SMTINEL_YOKOTEN_EXPORT_V194__)return;
-window.__SMTINEL_YOKOTEN_EXPORT_V194__='YOKOTEN-EXPORT-V19.4';
-
+if(window.__SMTINEL_YOKOTEN_EXPORT_V195__)return;
+window.__SMTINEL_YOKOTEN_EXPORT_V195__='YOKOTEN-EXPORT-V19.5';
 function text(v){return String(v==null?'':v).trim()}
 function esc(v){return text(v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function refs(v){var m=text(v).toUpperCase().match(/\b(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?\b/g)||[],o=[],s={};m.forEach(function(x){x=x.replace(/[^A-Z0-9_]/g,'');if(x&&!s[x]){s[x]=1;o.push(x)}});return o}
-function uniq(a){var o=[],s={};(a||[]).forEach(function(v){v=text(v);if(v&&!s[v]){s[v]=1;o.push(v)}});return o}
-function delay(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
 function withTimeout(p,ms,label){return Promise.race([p,new Promise(function(_,reject){setTimeout(function(){reject(new Error((label||'Operación')+' excedió '+Math.round(ms/1000)+' s'))},ms)})])}
-
 var toastNode=null,keepButtonTimer=null;
-function toast(message,kind){
-  try{
-    if(!toastNode){toastNode=document.createElement('div');toastNode.id='smtinelYokotenExportToastV194';toastNode.style.cssText='position:fixed;right:18px;bottom:84px;z-index:2147483647;max-width:min(440px,calc(100vw - 36px));padding:11px 14px;border-radius:12px;background:#0d2740;color:#fff;box-shadow:0 14px 40px rgba(0,0,0,.28);font:700 12px/1.4 Segoe UI,Arial,sans-serif;border:1px solid rgba(255,255,255,.14)';document.body.appendChild(toastNode)}
-    toastNode.style.background=kind==='error'?'#8f1f2c':kind==='done'?'#1f5c46':'#0d2740';
-    toastNode.innerHTML=esc(message);
-  }catch(_){}
-}
+function toast(message,kind){try{if(!toastNode){toastNode=document.createElement('div');toastNode.id='smtinelYokotenExportToastV195';toastNode.style.cssText='position:fixed;right:18px;bottom:84px;z-index:2147483647;max-width:min(500px,calc(100vw - 36px));padding:11px 14px;border-radius:12px;background:#0d2740;color:#fff;box-shadow:0 14px 40px rgba(0,0,0,.28);font:700 12px/1.4 Segoe UI,Arial,sans-serif;border:1px solid rgba(255,255,255,.14)';document.body.appendChild(toastNode)}toastNode.style.background=kind==='error'?'#8f1f2c':kind==='done'?'#1f5c46':'#0d2740';toastNode.innerHTML=esc(message)}catch(_){}}
 function toastClose(ms){setTimeout(function(){try{if(toastNode){toastNode.remove();toastNode=null}}catch(_){}},ms||1800)}
 function exportButton(){return document.getElementById('downloadEmail')}
-function buttonBusy(label){
-  var b=exportButton();
-  if(keepButtonTimer)clearInterval(keepButtonTimer);
-  function apply(){var x=exportButton();if(x){x.disabled=true;x.textContent=label||'Generando Yokoten…'}}
-  apply();keepButtonTimer=setInterval(apply,300);
-  return b;
-}
+function buttonBusy(label){if(keepButtonTimer)clearInterval(keepButtonTimer);function apply(){var x=exportButton();if(x){x.disabled=true;x.textContent=label||'Generando Yokoten…'}}apply();keepButtonTimer=setInterval(apply,300)}
 function buttonDone(){if(keepButtonTimer){clearInterval(keepButtonTimer);keepButtonTimer=null}var b=exportButton();if(b){b.disabled=false;b.textContent='Exportar Yokoten HTML'}}
-
-function validateBaseHtml(html){
-  if(typeof html!=='string'||html.length<1024)throw new Error('El renderer Yokoten devolvió un HTML vacío o incompleto.');
-  if(html.indexOf('window.__YK__=')<0)throw new Error('El export no contiene el payload Yokoten (__YK__).');
-  if(!/<\/html>\s*$/i.test(html))throw new Error('El HTML Yokoten quedó truncado antes de </html>.');
-  return html;
+function normalizeExportHtml(html){
+  /* V14 legacy wrapper emitted one escaped closing script tag. Repair only that exact boundary. */
+  return String(html||'').replace(/<\\\/script><script id=["']smtinel-yokoten-export-evidence-runtime-v17-1["']>/i,function(){return '</scr'+'ipt><scr'+'ipt id="smtinel-yokoten-export-evidence-runtime-v17-1">'});
 }
-function dataFromHtml(html){
-  var a=html.indexOf('window.__YK__=');if(a<0)return null;a+=14;
-  var markers=[';(function(){',';\n(function(){',';'+('</scr'+'ipt>')];var b=-1;
-  for(var i=0;i<markers.length;i++){var p=html.indexOf(markers[i],a);if(p>=0&&(b<0||p<b))b=p}
-  if(b<0){var p2=html.indexOf('</scr'+'ipt>',a);if(p2>0)b=p2}
-  if(b<0)return null;
-  try{return JSON.parse(html.slice(a,b))}catch(err){try{console.warn('[SMTinel Yokoten V19.4] no se pudo leer __YK__',err)}catch(_){}return null}
+function validateBaseHtml(html){if(typeof html!=='string'||html.length<1024)throw new Error('El renderer Yokoten devolvió un HTML vacío o incompleto.');if(html.indexOf('window.__YK__=')<0)throw new Error('El export no contiene el payload Yokoten (__YK__).');if(!/<\/html>\s*$/i.test(html))throw new Error('El HTML Yokoten quedó truncado antes de </html>.');return html}
+function dataFromHtml(html){var a=html.indexOf('window.__YK__=');if(a<0)return null;a+=14;var markers=[';(function(){',';\n(function(){',';'+('</scr'+'ipt>')],b=-1;for(var i=0;i<markers.length;i++){var p=html.indexOf(markers[i],a);if(p>=0&&(b<0||p<b))b=p}if(b<0){var p2=html.indexOf('</scr'+'ipt>',a);if(p2>0)b=p2}if(b<0)return null;try{return JSON.parse(html.slice(a,b))}catch(err){console.warn('[SMTinel Yokoten V19.5] no se pudo leer __YK__',err);return null}}
+function groupsFromHtml(html){var data=dataFromHtml(html),g={};if(!data)return g;(data.rows||[]).forEach(function(row){Object.keys(row.cells||{}).forEach(function(k){var c=row.cells[k]||{};(c.inherited||[]).forEach(function(x){var rr=refs(x&&x.refdes||'');if(!rr.length)return;var family=text(c.product||row.product||x.family),key=family.toUpperCase();if(!family)return;var z=g[key]||(g[key]={family:family,sku:text(c.sku||row.sku),sourceSku:text(x.sourceSku),aliases:[],refs:[],seen:{}});if(x.family&&z.aliases.indexOf(text(x.family))<0)z.aliases.push(text(x.family));rr.forEach(function(r){if(!z.seen[r]){z.seen[r]=1;z.refs.push(r)}})})})});return g}
+function spanishFinalizerTag(){
+  var body="(function(){'use strict';if(window.__YK_ES_FINAL_V195__)return;window.__YK_ES_FINAL_V195__=1;var M={\"Manufacturing Qualification & Yokoten Matrix\":\"Matriz de Calificación de Manufactura y Yokoten\",\"Export Selected Tracker CSV\":\"Exportar Tracker Seleccionado CSV\",\"WO HISTORY · COMMON DB\":\"HISTORIAL WO · COMMON DB\",\"FILTERED ISSUE TRACKER · HANDOFF + TEST + REPAIR + YOKOTEN\":\"TRACKER DE ISSUES · TRASPASO + PRUEBAS + REPARACIÓN + YOKOTEN\",\"ISSUE PROVENANCE\":\"PROCEDENCIA DEL ISSUE\",\"INHERITED YOKOTEN / CRITICAL CHARACTERISTICS\":\"YOKOTEN HEREDADO / CARACTERÍSTICAS CRÍTICAS\",\"Severity\":\"Severidad\",\"Source\":\"Fuente\",\"Issue\":\"Problema\",\"Context\":\"Contexto\",\"Impact\":\"Impacto\",\"Owner\":\"Responsable\",\"Action\":\"Acción\",\"Due\":\"Fecha compromiso\",\"Status\":\"Estatus\",\"Finding\":\"Hallazgo\",\"Family\":\"Familia\",\"Source PN\":\"PN origen\",\"Component PN\":\"PN componente\",\"Match\":\"Coincidencia\",\"Migration Gate\":\"Gate de migración\",\"Line\":\"Línea\",\"Rev\":\"Rev\",\"Qty\":\"Cantidad\",\"First\":\"Primera\",\"Last\":\"Última\",\"Runs\":\"Corridas\",\"Build Qty\":\"Cantidad construida\",\"Current WIP\":\"WIP actual\",\"Test FPY\":\"FPY de prueba\",\"Repair SN\":\"SN reparados\",\"History Only\":\"Solo historial\",\"Direct SKU\":\"SKU directo\",\"Product Family\":\"Familia de producto\",\"Critical\":\"Crítica\",\"High\":\"Alta\",\"Medium\":\"Media\",\"Monitor\":\"Monitoreo\",\"Open\":\"Abierto\",\"Closed\":\"Cerrado\",\"Monitoring\":\"Monitoreo\",\"Test Performance\":\"Desempeño de pruebas\",\"Repair Record\":\"Registro de reparación\",\"Qualification\":\"Calificación\",\"Handoff\":\"Traspaso\",\"Test\":\"Pruebas\",\"Repair\":\"Reparación\"};function tr(n){if(!n||!n.nodeValue)return;var t=n.nodeValue.trim();if(M[t])n.nodeValue=n.nodeValue.replace(t,M[t])}function fix(){document.documentElement.lang='es';document.title='SMTinel · Matriz de Calificación de Manufactura y Yokoten';var h=document.querySelector('.brand-copy h1');if(h)h.textContent='Matriz de Calificación de Manufactura y Yokoten';var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var p=n.parentElement;if(!p||/SCRIPT|STYLE|TEXTAREA/.test(p.tagName))return NodeFilter.FILTER_REJECT;return n.nodeValue&&n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}}),a=[],n;while(n=w.nextNode())a.push(n);a.forEach(tr)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();new MutationObserver(function(){clearTimeout(window.__yk_es_t);window.__yk_es_t=setTimeout(fix,60)}).observe(document.documentElement,{childList:true,subtree:true})})();";
+  return '<scr'+'ipt id="smtinel-yokoten-es-finalizer-v19-5">'+body+'</scr'+'ipt>';
 }
-function groupsFromHtml(html){
-  var data=dataFromHtml(html),g={};if(!data)return g;
-  (data.rows||[]).forEach(function(row){
-    Object.keys(row.cells||{}).forEach(function(k){
-      var c=row.cells[k]||{};
-      (c.inherited||[]).forEach(function(x){
-        /* Regla V19.4: el mapa solo nace de RefDes explícito del Excel/repositorio. */
-        var rr=refs(x&&x.refdes||'');if(!rr.length)return;
-        var family=text(c.product||row.product||x.family),key=family.toUpperCase();if(!family)return;
-        var z=g[key]||(g[key]={family:family,sku:text(c.sku||row.sku),sourceSku:text(x.sourceSku),aliases:[],refs:[],seen:{}});
-        if(x.family&&z.aliases.indexOf(text(x.family))<0)z.aliases.push(text(x.family));
-        rr.forEach(function(r){if(!z.seen[r]){z.seen[r]=1;z.refs.push(r)}});
-      });
-    });
-  });
-  return g;
+function injectMapCache(html,cache,meta){cache=cache||{};meta=meta||{};var payload=JSON.stringify(cache).replace(/<\//g,'<\\/'),info=JSON.stringify(meta).replace(/<\//g,'<\\/');var tag='<scr'+'ipt id="smtinel-yokoten-map-cache-v19-5">window.__YK_BOARDMAPS_BY_FAMILY__='+payload+';window.__YK_BOARDMAPS_BY_FAMILY_V17__=window.__YK_BOARDMAPS_BY_FAMILY__;window.__YK_EXPORT_MAP_META_V195__='+info+';</scr'+'ipt>';html=html.replace(/<script id=["']smtinel-yokoten-map-cache-v(?:17|19-4)["'][\s\S]*?<\/script>\s*/ig,'');html=html.replace('</body>',tag+'\n'+spanishFinalizerTag()+'\n</body>');return html}
+function downloadHtml(html){var blob=new Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Manufacturing_Qualification_Yokoten_'+new Date().toISOString().slice(0,10)+'.html',u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';a.style.position='fixed';a.style.left='-9999px';document.body.appendChild(a);a.click();window.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:blob.size,name:name,method:'download',build:'V19.5'};setTimeout(function(){try{a.remove()}catch(_){}try{URL.revokeObjectURL(u)}catch(_){}},120000);return window.__SMTINEL_LAST_YOKOTEN_EXPORT__}
+async function ensureKnowledge(){var k=window.SMTINEL_YOKOTEN_KNOWLEDGE;if(k&&k.loaded)return k;if(typeof window.SMTinelReloadYokotenKnowledge!=='function')throw new Error('El loader del Excel Yokoten no está disponible.');toast('Cargando Knowledge DB Yokoten desde el repositorio…');k=await withTimeout(Promise.resolve(window.SMTinelReloadYokotenKnowledge()),25000,'Carga de Knowledge DB');if(!k||!k.loaded){var st=window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS||{};throw new Error(st.message||'La Knowledge DB no quedó disponible.')}return k}
+async function buildMapsLimited(groups){
+  var keys=Object.keys(groups||{}),cache={},errors={},done=0,total=keys.length,idx=0,engine=window.SMTinelYokotenReferenceDrawingV17;
+  if(!total)return{cache:cache,errors:errors,total:0,done:0};
+  if(!engine||typeof engine.build!=='function')return{cache:cache,errors:{engine:'Motor de dibujo no disponible'},total:total,done:0};
+  async function worker(){while(true){var my=idx++;if(my>=keys.length)return;var key=keys[my],z=groups[key];try{var result=await withTimeout(engine.build(z.family,z.refs,{sku:z.sku,sourceSku:z.sourceSku,aliases:z.aliases}),35000,'Dibujo '+z.family);cache[key]=result;if(result&&result.error)errors[key]=result.error}catch(err){errors[key]=text(err&&err.message||err);cache[key]={error:errors[key],cards:[],unfound:z.refs||[]}}finally{done++;toast('Preparando mapas de referencias '+done+'/'+total+' · '+z.family)}}}
+  var workers=[];for(var n=0;n<Math.min(2,total);n++)workers.push(worker());await Promise.all(workers);return{cache:cache,errors:errors,total:total,done:done};
 }
-function injectMapCache(html,cache,meta){
-  cache=cache||{};meta=meta||{};
-  var payload=JSON.stringify(cache).replace(/<\//g,'<\\/');
-  var info=JSON.stringify(meta).replace(/<\//g,'<\\/');
-  var tag='<scr'+'ipt id="smtinel-yokoten-map-cache-v19-4">window.__YK_BOARDMAPS_BY_FAMILY__='+payload+';window.__YK_BOARDMAPS_BY_FAMILY_V17__=window.__YK_BOARDMAPS_BY_FAMILY__;window.__YK_EXPORT_MAP_META_V194__='+info+';</scr'+'ipt>';
-  var old=/<script id=["']smtinel-yokoten-map-cache-v17["'][\s\S]*?<\/script>\s*/i;
-  if(old.test(html))html=html.replace(old,'');
-  return html.replace('</body>',tag+'\n</body>');
-}
-function downloadHtml(html){
-  var blob=new Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Manufacturing_Qualification_Yokoten_'+new Date().toISOString().slice(0,10)+'.html';
-  var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';a.style.position='fixed';a.style.left='-9999px';a.style.top='0';document.body.appendChild(a);
-  a.click();
-  window.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:blob.size,name:name,method:'download',build:'V19.4'};
-  setTimeout(function(){try{a.remove()}catch(_){}try{URL.revokeObjectURL(u)}catch(_){}},120000);
-  return window.__SMTINEL_LAST_YOKOTEN_EXPORT__;
-}
-async function ensureKnowledge(){
-  var k=window.SMTINEL_YOKOTEN_KNOWLEDGE;
-  if(k&&k.loaded)return k;
-  if(typeof window.SMTinelReloadYokotenKnowledge!=='function')throw new Error('El loader del Excel Yokoten no está disponible.');
-  toast('Cargando SMTinel_Yokoten_Knowledge_DB.xlsx desde el repositorio…');
-  k=await withTimeout(Promise.resolve(window.SMTinelReloadYokotenKnowledge()),18000,'Carga de Knowledge DB');
-  if(!k||!k.loaded){var st=window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS||{};throw new Error(st.message||'La Knowledge DB no quedó disponible.');}
-  return k;
-}
-async function buildMapsParallel(groups){
-  var keys=Object.keys(groups||{}),cache={},errors={},done=0,total=keys.length;
-  var engine=window.SMTinelYokotenReferenceDrawingV17;
-  if(!total)return{cache:cache,errors:errors,total:0,done:0,timedOut:false};
-  if(!engine||typeof engine.build!=='function')return{cache:cache,errors:{engine:'Motor de dibujo no disponible'},total:total,done:0,timedOut:false};
-  var tasks=keys.map(function(key){var z=groups[key];return (async function(){
-    try{
-      var result=await withTimeout(engine.build(z.family,z.refs,{sku:z.sku,sourceSku:z.sourceSku,aliases:z.aliases}),14000,'Dibujo '+z.family);
-      cache[key]=result;
-    }catch(err){errors[key]=text(err&&err.message||err);cache[key]={error:errors[key],cards:[],unfound:z.refs||[]}}
-    finally{done++;toast('Preparando mapas Yokoten '+done+'/'+total+' · '+z.family);}
-  })()});
-  var timedOut=false;
-  await Promise.race([Promise.allSettled(tasks),delay(18000).then(function(){timedOut=true})]);
-  return{cache:cache,errors:errors,total:total,done:done,timedOut:timedOut};
-}
-
-window.SMTinelDownloadYokotenHtml=function(){
-  if(window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V194__){toast('El Yokoten ya se está generando.');return true}
-  window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V194__=1;
-  buttonBusy('Generando Yokoten…');
-  (async function(){
-    try{
-      await ensureKnowledge();
-      toast('Construyendo HTML Yokoten…');
-      var build=window.SMTinelBuildYokotenExportHtml;if(typeof build!=='function')throw new Error('El renderer Yokoten no está disponible.');
-      var html=validateBaseHtml(String(build()||''));
-      var groups=groupsFromHtml(html),keys=Object.keys(groups);
-      var maps={cache:{},errors:{},total:0,done:0,timedOut:false};
-      if(keys.length){toast('Preparando mapas de referencias 0/'+keys.length+'…');maps=await buildMapsParallel(groups)}
-      html=injectMapCache(html,maps.cache,{build:'V19.4',requested:maps.total,completed:maps.done,timedOut:maps.timedOut,errors:maps.errors});
-      validateBaseHtml(html);
-      var meta=downloadHtml(html);
-      var mapCount=Object.keys(maps.cache||{}).filter(function(k){var p=maps.cache[k]||{};return Number(p.foundCount||0)>0}).length;
-      toast('Yokoten exportado · '+Math.round(meta.bytes/1024).toLocaleString()+' KB'+(maps.total?' · mapas '+mapCount+'/'+maps.total:''), 'done');
-      toastClose(2600);
-    }catch(err){
-      try{console.error('[SMTinel Yokoten Export V19.4]',err)}catch(_){}
-      toast('No se pudo exportar Yokoten: '+text(err&&err.message||err),'error');
-      try{alert('No se pudo exportar Yokoten. '+text(err&&err.message||err))}catch(_){}
-      toastClose(5200);
-    }finally{
-      window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V194__=0;
-      buttonDone();
-    }
-  })();
-  return true;
-};
-
-try{console.info('[SMTinel] Yokoten export runtime V19.4 instalado')}catch(_){}
+window.SMTinelDownloadYokotenHtml=function(){if(window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V195__){toast('El Yokoten ya se está generando.');return true}window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V195__=1;buttonBusy('Generando Yokoten…');(async function(){try{await ensureKnowledge();toast('Construyendo HTML Yokoten…');var build=window.SMTinelBuildYokotenExportHtml;if(typeof build!=='function')throw new Error('El renderer Yokoten no está disponible.');var html=normalizeExportHtml(String(build()||''));html=validateBaseHtml(html);var groups=groupsFromHtml(html),keys=Object.keys(groups),maps={cache:{},errors:{},total:0,done:0};if(keys.length){toast('Preparando mapas de referencias 0/'+keys.length+'…');maps=await buildMapsLimited(groups)}html=injectMapCache(html,maps.cache,{build:'V19.5',requested:maps.total,completed:maps.done,errors:maps.errors});html=normalizeExportHtml(html);validateBaseHtml(html);var meta=downloadHtml(html),mapCount=Object.keys(maps.cache||{}).filter(function(k){return Number((maps.cache[k]||{}).foundCount||0)>0}).length;toast('Yokoten exportado · '+Math.round(meta.bytes/1024).toLocaleString()+' KB'+(maps.total?' · mapas '+mapCount+'/'+maps.total:''),'done');toastClose(3200)}catch(err){console.error('[SMTinel Yokoten Export V19.5]',err);toast('No se pudo exportar Yokoten: '+text(err&&err.message||err),'error');try{alert('No se pudo exportar Yokoten. '+text(err&&err.message||err))}catch(_){}toastClose(5200)}finally{window.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V195__=0;buttonDone()}})();return true};
+try{console.info('[SMTinel] Yokoten export runtime V19.5 instalado')}catch(_){ }
 })();
 </script>
 
