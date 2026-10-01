@@ -76126,25 +76126,28 @@ try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.1
 })();
 </script>
 
-<script id="smtinel-yokoten-github-knowledge-v192">
+<script id="smtinel-yokoten-github-knowledge-v193">
 (function(){
 'use strict';
-if(window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V192__)return;window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V192__=1;
+if(window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V193__)return;
+window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V193__=1;
+window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD='YOKOTEN-REPO-LOADER-V19.3';
 var FILE='SMTinel_Yokoten_Knowledge_DB.xlsx';
+/* GitHub RAW is first on purpose. Some static hosts return index.html with HTTP 200 for a missing XLSX. */
 var SOURCES=[
-  {type:'binary',url:'./'+FILE},
-  {type:'binary',url:'https://raw.githubusercontent.com/carmacorte/SMTinel/main/'+FILE},
-  {type:'binary',url:'https://cdn.jsdelivr.net/gh/carmacorte/SMTinel@main/'+FILE},
-  {type:'github-api',url:'https://api.github.com/repos/carmacorte/SMTinel/contents/'+FILE+'?ref=main'}
+  {type:'binary',label:'GitHub RAW',url:'https://raw.githubusercontent.com/carmacorte/SMTinel/main/'+FILE},
+  {type:'binary',label:'jsDelivr',url:'https://cdn.jsdelivr.net/gh/carmacorte/SMTinel@main/'+FILE},
+  {type:'github-api',label:'GitHub API',url:'https://api.github.com/repos/carmacorte/SMTinel/contents/'+FILE+'?ref=main'},
+  {type:'binary',label:'SMTinel same-origin',url:'./'+FILE}
 ];
 window.SMTINEL_YOKOTEN_KNOWLEDGE=window.SMTINEL_YOKOTEN_KNOWLEDGE||{qualifications:[],findings:[],actions:[],critical:[],xref:[],loaded:false,source:'',loadedAt:''};
-window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'init',message:'Cargando '+FILE+' desde el repositorio...'};
+window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'init',message:'Cargando '+FILE+' desde el repositorio...',build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
 function t(v){return String(v==null?'':v).trim()}
 function up(v){return t(v).toUpperCase()}
 function yes(v){var x=up(v);return !x||x==='Y'||x==='YES'||x==='TRUE'||x==='1'||x==='ACTIVE'||x==='OPEN'||x==='SI'||x==='SÍ'}
 function rowObj(h,r){var o={};h.forEach(function(x,i){o[t(x)]=r[i]==null?'':r[i]});return o}
 function val(o,n){for(var i=0;i<n.length;i++)if(o[n[i]]!=null&&t(o[n[i]]))return t(o[n[i]]);return''}
-function rows(ws){var out=[],h=[];ws.eachRow({includeEmpty:false},function(row,n){var v=row.values.slice(1);if(n===1){h=v.map(t);return}if(v.some(function(x){return t(x)}))out.push(rowObj(h,v))});return out}
+function rows(ws){var out=[],h=[];ws.eachRow({includeEmpty:false},function(row,n){var v=(row.values||[]).slice(1);if(n===1){h=v.map(t);return}if(v.some(function(x){return t(x)}))out.push(rowObj(h,v))});return out}
 function normalize(wb){
   function sh(n){var w=wb.getWorksheet(n);return w?rows(w):[]}
   var q=sh('Qualification').filter(function(r){return yes(val(r,['Active']))}).map(function(r){var family=val(r,['Product Family','Product','Family']);return{id:val(r,['Record ID']),family:family,product:family,sku:val(r,['Part Number']),rev:val(r,['Rev']),side:val(r,['Side']),line:val(r,['Line']),status:val(r,['Status'])||'History Only',ppProgram:val(r,['P&P Program']),aoiLibrary:val(r,['AOI Library']),lastQualification:val(r,['Last Qualification']),owner:val(r,['Owner']),fai:val(r,['FAI Link']),sop:val(r,['SOP Link']),notes:val(r,['Notes']),source:'Repository Excel'}});
@@ -76155,36 +76158,48 @@ function normalize(wb){
   return{qualifications:q,findings:f,actions:a,critical:c,xref:xr,loaded:true,loadedAt:new Date().toISOString()}
 }
 function b64ToBuffer(b64){var bin=atob(String(b64||'').replace(/\s+/g,'')),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer}
+function isZipBuffer(buf){try{var u=new Uint8Array(buf);return u.length>4&&u[0]===0x50&&u[1]===0x4b&&(u[2]===0x03||u[2]===0x05||u[2]===0x07)}catch(_){return false}}
 async function fetchSource(src){
-  var url=src.url+(src.url.indexOf('?')>=0?'&':'?')+'_='+Date.now();
-  var opt={cache:'no-store',mode:'cors'};
+  var url=src.url+(src.url.indexOf('?')>=0?'&':'?')+'_='+Date.now(),opt={cache:'no-store',mode:'cors'};
   if(src.type==='github-api')opt.headers={'Accept':'application/vnd.github+json'};
   var r=await fetch(url,opt);if(!r.ok)throw new Error('HTTP '+r.status+' '+r.statusText);
-  if(src.type==='github-api'){var j=await r.json();if(!j||!j.content)throw new Error('GitHub API response without file content');return{buf:b64ToBuffer(j.content),url:src.url,via:'github-api'}}
-  var buf=await r.arrayBuffer();if(!buf||buf.byteLength<100)throw new Error('Empty workbook response');return{buf:buf,url:src.url,via:'binary'}
+  var buf;
+  if(src.type==='github-api'){
+    var j=await r.json();if(!j||!j.content)throw new Error('GitHub API response without file content');buf=b64ToBuffer(j.content);
+  }else buf=await r.arrayBuffer();
+  if(!buf||buf.byteLength<100)throw new Error('Respuesta vacía');
+  if(!isZipBuffer(buf))throw new Error('La respuesta no es un XLSX válido (firma ZIP PK ausente). El host probablemente devolvió HTML en lugar del Excel.');
+  return{buf:buf,url:src.url,label:src.label||src.url}
 }
-async function getBuffer(){var errs=[];for(var i=0;i<SOURCES.length;i++){var src=SOURCES[i];try{window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Intentando '+src.url};return await fetchSource(src)}catch(e){errs.push(src.url+' -> '+t(e&&e.message||e))}}throw new Error('No fue posible descargar el Excel. '+errs.join(' | '))}
 function colIndex(ref){var m=/^([A-Z]+)/i.exec(ref||'');if(!m)return 0;var s=m[1].toUpperCase(),n=0;for(var i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-64);return n-1}
-function xmlDoc(txt){var d=new DOMParser().parseFromString(txt,'application/xml');if(d.getElementsByTagName('parsererror').length)throw new Error('Invalid XLSX XML');return d}
-function nodeText(n){var a=n?n.getElementsByTagName('t'):[],s='';for(var i=0;i<a.length;i++)s+=a[i].textContent||'';return s}
+function xmlDoc(txt){var d=new DOMParser().parseFromString(txt,'application/xml');if(d.getElementsByTagName('parsererror').length)throw new Error('XML inválido dentro del XLSX');return d}
+function byLocal(root,name){var all=root.getElementsByTagName('*'),o=[];for(var i=0;i<all.length;i++)if((all[i].localName||all[i].nodeName)===name)o.push(all[i]);return o}
+function firstLocal(root,name){var a=byLocal(root,name);return a.length?a[0]:null}
+function nodeText(n){if(!n)return'';var a=byLocal(n,'t'),s='';for(var i=0;i<a.length;i++)s+=a[i].textContent||'';return s}
+function cleanPath(p){var parts=String(p||'').replace(/^\//,'').split('/'),out=[];parts.forEach(function(x){if(!x||x==='.')return;if(x==='..')out.pop();else out.push(x)});return out.join('/')}
 async function workbookFromZip(buf){
-  if(!window.JSZip){if(typeof window.ensureZipTools==='function')await window.ensureZipTools();}
-  if(!window.JSZip)throw new Error('JSZip unavailable');
-  var z=await JSZip.loadAsync(buf),ss=[];
-  if(z.file('xl/sharedStrings.xml')){var sd=xmlDoc(await z.file('xl/sharedStrings.xml').async('string')),sis=sd.getElementsByTagName('si');for(var i=0;i<sis.length;i++)ss.push(nodeText(sis[i]))}
-  var wd=xmlDoc(await z.file('xl/workbook.xml').async('string'));
-  var rd=xmlDoc(await z.file('xl/_rels/workbook.xml.rels').async('string'));
-  var rels={},rr=rd.getElementsByTagName('Relationship');for(var i=0;i<rr.length;i++)rels[rr[i].getAttribute('Id')]=rr[i].getAttribute('Target');
-  var sheets={},sn=wd.getElementsByTagName('sheet');
-  for(var si=0;si<sn.length;si++){
-    var el=sn[si],name=el.getAttribute('name'),rid=el.getAttribute('r:id')||el.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id'),target=rels[rid];if(!target)continue;
-    var path=target.indexOf('/')===0?target.slice(1):('xl/'+target.replace(/^\.\//,''));var f=z.file(path);if(!f)continue;
-    var d=xmlDoc(await f.async('string')),rs=d.getElementsByTagName('row'),table=[];
-    for(var ri=0;ri<rs.length;ri++){
-      var cells=rs[ri].getElementsByTagName('c'),arr=[];
+  if(!window.JSZip&&typeof window.ensureZipTools==='function')await window.ensureZipTools();
+  if(!window.JSZip)throw new Error('JSZip no está disponible');
+  var z=await window.JSZip.loadAsync(buf),wbFile=z.file('xl/workbook.xml'),relFile=z.file('xl/_rels/workbook.xml.rels');
+  if(!wbFile||!relFile)throw new Error('El XLSX no contiene xl/workbook.xml o sus relaciones');
+  var ss=[];
+  var ssFile=z.file('xl/sharedStrings.xml');
+  if(ssFile){var sd=xmlDoc(await ssFile.async('string')),sis=byLocal(sd,'si');for(var i=0;i<sis.length;i++)ss.push(nodeText(sis[i]))}
+  var wd=xmlDoc(await wbFile.async('string')),rd=xmlDoc(await relFile.async('string'));
+  var rels={},rr=byLocal(rd,'Relationship');
+  for(var ri=0;ri<rr.length;ri++)rels[rr[ri].getAttribute('Id')]=rr[ri].getAttribute('Target');
+  var sheets={},sheetEls=byLocal(wd,'sheet');
+  for(var si=0;si<sheetEls.length;si++){
+    var el=sheetEls[si],name=el.getAttribute('name')||'',rid=el.getAttribute('r:id')||el.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id'),target=rels[rid];
+    if(!name||!target)continue;
+    var path=/^\/?xl\//i.test(target)?cleanPath(target):cleanPath('xl/'+target),f=z.file(path);
+    if(!f)throw new Error('No se encontró la hoja '+name+' en '+path);
+    var d=xmlDoc(await f.async('string')),rs=byLocal(d,'row'),table=[];
+    for(var rix=0;rix<rs.length;rix++){
+      var cells=byLocal(rs[rix],'c'),arr=[];
       for(var ci=0;ci<cells.length;ci++){
-        var c=cells[ci],idx=colIndex(c.getAttribute('r')||''),typ=c.getAttribute('t')||'',v='',vn=c.getElementsByTagName('v')[0];
-        if(typ==='inlineStr')v=nodeText(c);else if(vn)v=vn.textContent||'';
+        var cell=cells[ci],idx=colIndex(cell.getAttribute('r')||''),typ=cell.getAttribute('t')||'',v='',vn=firstLocal(cell,'v');
+        if(typ==='inlineStr')v=nodeText(cell);else if(vn)v=vn.textContent||'';
         if(typ==='s')v=ss[Number(v)]==null?'':ss[Number(v)];else if(typ==='b')v=v==='1'?'TRUE':'FALSE';
         arr[idx]=v;
       }
@@ -76192,31 +76207,43 @@ async function workbookFromZip(buf){
     }
     sheets[name]=table;
   }
-  return{getWorksheet:function(name){var table=sheets[name];if(!table)return null;return{eachRow:function(opts,cb){for(var i=0;i<table.length;i++)cb({values:[null].concat(table[i])},i+1)}}}};
-}
-async function parseWorkbook(buf){
-  var errors=[];
-  try{if(window.ExcelJS){var wb=new ExcelJS.Workbook();await wb.xlsx.load(buf);return{wb:wb,parser:'ExcelJS'}}}catch(e){errors.push('ExcelJS: '+t(e&&e.message||e))}
-  try{var wb2=await workbookFromZip(buf);return{wb:wb2,parser:'JSZip XLSX'}}catch(e2){errors.push('JSZip XLSX: '+t(e2&&e2.message||e2))}
-  try{if(typeof window.ensureExcelTools==='function')await window.ensureExcelTools();if(window.ExcelJS){var wb3=new ExcelJS.Workbook();await wb3.xlsx.load(buf);return{wb:wb3,parser:'ExcelJS lazy'}}}catch(e3){errors.push('ExcelJS lazy: '+t(e3&&e3.message||e3))}
-  throw new Error('El archivo se descargo, pero no pudo leerse. '+errors.join(' | '))
-}
-async function load(){
-  try{
-    window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Cargando '+FILE+'...'};
-    var g=await getBuffer();
-    window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'parse',message:'Excel localizado; leyendo contenido...',source:g.url};
-    var p=await parseWorkbook(g.buf),k=normalize(p.wb);k.source=g.url;k.parser=p.parser;
-    window.SMTINEL_YOKOTEN_KNOWLEDGE=k;
-    window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'ready',stage:'ready',message:'Base Yokoten cargada desde el repositorio',source:g.url,parser:p.parser,counts:{qualifications:k.qualifications.length,findings:k.findings.length,actions:k.actions.length,critical:k.critical.length,xref:k.xref.length}};
-    document.dispatchEvent(new CustomEvent('smtinel:yokoten-knowledge-ready',{detail:window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS}));return k
-  }catch(e){
-    window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'error',stage:'error',message:t(e&&e.message)||'Knowledge workbook failed to load'};
-    try{console.error('[SMTinel Yokoten Knowledge V19.2]',e)}catch(_){};return window.SMTINEL_YOKOTEN_KNOWLEDGE
+  var expected=['Qualification','Findings','Actions','Critical Characteristics','Component Cross Reference'],missing=expected.filter(function(n){return !sheets[n]});
+  if(missing.length)throw new Error('Faltan hojas requeridas: '+missing.join(', '));
+  return{
+    sheetNames:Object.keys(sheets),
+    getWorksheet:function(name){
+      var table=sheets[name];
+      if(!table){var q=t(name).toLowerCase(),key=Object.keys(sheets).filter(function(k){return t(k).toLowerCase()===q})[0];if(key)table=sheets[key]}
+      if(!table)return null;
+      return{name:name,eachRow:function(opts,cb){for(var i=0;i<table.length;i++)cb({values:[null].concat(table[i])},i+1)}}
+    }
   }
 }
+async function parseDirect(buf){return{wb:await workbookFromZip(buf),parser:'JSZip/OpenXML directo'}}
+async function load(){
+  var errors=[];
+  window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Cargando '+FILE+'...',build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
+  for(var i=0;i<SOURCES.length;i++){
+    var src=SOURCES[i];
+    try{
+      window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Intentando '+src.label+'...',source:src.url,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
+      var g=await fetchSource(src);
+      window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'parse',message:'Excel localizado; leyendo OpenXML...',source:g.url,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
+      var p=await parseDirect(g.buf),k=normalize(p.wb);k.source=g.url;k.parser=p.parser;k.loaderBuild=window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD;k.sheetNames=p.wb.sheetNames||[];
+      window.SMTINEL_YOKOTEN_KNOWLEDGE=k;
+      window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'ready',stage:'ready',message:'Base Yokoten cargada desde '+g.label,source:g.url,parser:p.parser,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD,counts:{qualifications:k.qualifications.length,findings:k.findings.length,actions:k.actions.length,critical:k.critical.length,xref:k.xref.length},sheets:k.sheetNames};
+      try{console.info('[SMTinel Yokoten V19.3] listo',window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS)}catch(_){}
+      document.dispatchEvent(new CustomEvent('smtinel:yokoten-knowledge-ready',{detail:window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS}));
+      return k;
+    }catch(e){errors.push((src.label||src.url)+': '+t(e&&e.message||e));try{console.warn('[SMTinel Yokoten V19.3] '+(src.label||src.url),e)}catch(_){}}
+  }
+  var message='No se pudo cargar '+FILE+'. '+errors.join(' | ');
+  window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'error',stage:'error',message:message,errors:errors,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
+  try{console.error('[SMTinel Yokoten V19.3]',message)}catch(_){}
+  return window.SMTINEL_YOKOTEN_KNOWLEDGE;
+}
 window.SMTinelReloadYokotenKnowledge=load;
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(load,250)});else setTimeout(load,250);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(load,200)});else setTimeout(load,200);
 })();
 </script>
 
@@ -77158,20 +77185,20 @@ var wrapped=function(){var h=String(prev()||'');if(!h)return h;if(h.indexOf('smt
 wrapped.__finalV19=true;wrapped.__base=prev;window.SMTinelBuildYokotenExportHtml=wrapped;
 })();
 </script>
-<script id="smtinel-yokoten-repository-export-gate-v19-2">
+<script id="smtinel-yokoten-repository-export-gate-v19-3">
 (function(){
 'use strict';
-if(window.__SMTINEL_YOKOTEN_REPOSITORY_GATE_V192__)return;window.__SMTINEL_YOKOTEN_REPOSITORY_GATE_V192__=1;
+if(window.__SMTINEL_YOKOTEN_REPOSITORY_GATE_V193__)return;window.__SMTINEL_YOKOTEN_REPOSITORY_GATE_V193__=1;
 function msg(v){return String(v==null?'':v).trim()}
 function install(){
-  var prev=window.SMTinelDownloadYokotenHtml;if(typeof prev!=='function')return false;if(prev.__repoGateV192)return true;
+  var prev=window.SMTinelDownloadYokotenHtml;if(typeof prev!=='function')return false;if(prev.__repoGateV193)return true;
   var wrapped=function(){(async function(){try{
     var k=window.SMTINEL_YOKOTEN_KNOWLEDGE;
     if((!k||!k.loaded)&&typeof window.SMTinelReloadYokotenKnowledge==='function')k=await window.SMTinelReloadYokotenKnowledge();
-    if(!k||!k.loaded){var st=window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS||{};throw new Error(st.message||'La base Yokoten del repositorio no esta disponible.');}
+    if(!k||!k.loaded){var st=window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS||{};throw new Error(st.message||'La base Yokoten del repositorio no está disponible.');}
     return prev();
-  }catch(err){console.error('[SMTinel Yokoten Repository Gate V19.2]',err);alert('No se genero el Yokoten. '+msg(err&&err.message||err)+'\n\nEl archivo del repositorio existe; este mensaje describe la etapa de carga o lectura que fallo.');}})();return true};
-  wrapped.__repoGateV192=true;wrapped.__base=prev;window.SMTinelDownloadYokotenHtml=wrapped;return true
+  }catch(err){console.error('[SMTinel Yokoten Repository Gate V19.3]',err);alert('No se generó el Yokoten. '+msg(err&&err.message||err));}})();return true};
+  wrapped.__repoGateV193=true;wrapped.__base=prev;window.SMTinelDownloadYokotenHtml=wrapped;return true
 }
 if(!install()){var n=0,id=setInterval(function(){n++;if(install()||n>80)clearInterval(id)},100)}
 })();
