@@ -1,176 +1,112 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="SMTinel Manufacturing Intelligence Command Center" />
-  <title>SMTinel · Command Center</title>
-  <link rel="stylesheet" href="assets/ux-foundation.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4f6f8">
+<title>SMTinel · Manufacturing Quality Intelligence</title>
+<style>
+:root{--ink:#111827;--muted:#667085;--line:#e6e9ee;--bg:#f4f6f8;--card:#fff;--red:#ba1f2d;--red2:#e24a55;--green:#1f7a52;--amber:#b7791f;--nav:#0d1723}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+a{text-decoration:none;color:inherit}button,input{font:inherit}
+.shell{min-height:100vh;display:grid;grid-template-columns:236px 1fr}
+.sidebar{position:sticky;top:0;height:100vh;background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 20px}.brand img{width:46px;height:46px;object-fit:contain}.brand strong{font-size:24px;letter-spacing:.04em}.brand small{display:block;color:#78808c;font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.nav-title{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98a1ad;padding:18px 12px 8px}.nav a{display:flex;align-items:center;gap:11px;padding:12px;border-radius:10px;font-size:14px;margin:2px 0}.nav a.active{background:#fff0f1;color:#9f1825;font-weight:800;border-left:3px solid var(--red)}.nav a:hover{background:#f6f7f9}.ico{width:22px;text-align:center;font-weight:800}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding:16px 10px;color:#667085;font-size:11px;line-height:1.5}.ok{color:var(--green);font-weight:800}
+.main{min-width:0}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 24px;position:sticky;top:0;z-index:20}.search{flex:1;max-width:650px;margin:auto;position:relative}.search input{width:100%;border:1px solid #dfe3e8;border-radius:10px;padding:12px 16px 12px 40px;background:#fbfcfd;color:#667085}.search:before{content:"⌕";position:absolute;left:15px;top:9px;font-size:22px;color:#7c8590}.topmeta{display:flex;align-items:center;gap:14px;font-size:12px;color:#475467}.avatar{width:34px;height:34px;border-radius:50%;background:#1b2430;color:#fff;display:grid;place-items:center;font-weight:800}
+.content{padding:22px 24px 96px;max-width:1500px;margin:auto}.welcome{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}.welcome h1{font-size:28px;margin:0 0 5px}.welcome p{margin:0;color:var(--muted);font-size:14px}.eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98a1ad;font-weight:900}
+.actions{display:flex;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:9px;font-weight:800;font-size:13px;border:1px solid var(--line);background:#fff}.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr);gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.03)}.card-head{display:flex;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}.card-head h2,.card-head h3{margin:0;font-size:16px}.card-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.workflow{padding:18px}.steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.step{position:relative;border:1px solid var(--line);border-radius:12px;padding:14px 10px;background:#fcfcfd;min-height:96px}.step b{display:block;font-size:12px;margin:9px 0 4px}.step small{font-size:10px;color:var(--muted);line-height:1.35;display:block}.num{width:24px;height:24px;border-radius:50%;border:1px solid #cfd5dc;display:grid;place-items:center;font-size:11px;font-weight:900;background:#fff}.step.key{background:#fff3f4;border-color:#f2c7cc}.step.key .num{background:var(--red);border-color:var(--red);color:#fff}.step:last-child{background:#f1faf5;border-color:#cce7d8}.step:last-child .num{background:var(--green);border-color:var(--green);color:#fff}
+.module-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}.module{padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;min-height:112px}.module .tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#98a1ad;font-weight:900}.module h3{font-size:14px;margin:10px 0 5px}.module p{font-size:11px;line-height:1.4;color:var(--muted);margin:0}.module.primary{border-color:#efc5ca;background:#fff9f9}
+.summary{padding:16px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fbfcfd}.metric small{display:block;color:#98a1ad;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}.metric strong{display:block;font-size:20px;margin-top:6px}.metric span{font-size:10px;color:var(--muted)}
+.note{padding:14px 18px;background:#fff8e8;border:1px solid #f1ddac;border-radius:12px;margin-top:12px;font-size:11px;line-height:1.5;color:#6f541b}.note b{color:#5d450e}
+.arch{padding:16px}.arch-row{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;align-items:center;gap:8px}.arch-box{border:1px solid var(--line);border-radius:11px;padding:13px;background:#fbfcfd;text-align:center}.arch-box b{display:block;font-size:12px}.arch-box span{display:block;font-size:10px;color:var(--muted);margin-top:5px}.arrow{text-align:center;color:#98a1ad;font-weight:900}
+.bottom-nav{display:none}
+@media(max-width:1100px){.steps{grid-template-columns:repeat(4,1fr)}.module-strip{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:760px){.shell{display:block}.sidebar{display:none}.topbar{height:62px;padding:0 14px}.search{max-width:none}.topmeta{display:none}.content{padding:16px 14px 104px}.welcome{display:block}.welcome h1{font-size:22px}.welcome p{font-size:12px}.actions{margin-top:12px}.btn{flex:1}.steps{grid-template-columns:repeat(2,1fr)}.module-strip{grid-template-columns:1fr 1fr}.grid{display:block}.grid>.card{margin-bottom:12px}.summary-grid{grid-template-columns:1fr 1fr}.arch-row{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.bottom-nav{position:fixed;z-index:40;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(5,1fr);background:#111820;border-radius:22px;padding:8px 4px;box-shadow:0 12px 28px rgba(0,0,0,.24)}.bottom-nav a{color:#d5dbe2;font-size:9px;text-align:center;padding:7px 2px}.bottom-nav b{display:block;font-size:16px;margin-bottom:2px}.bottom-nav a.active{color:#71c99d}}
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="Navegación principal">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">S</div>
-        <div class="brand-copy">
-          <strong>SMTinel</strong>
-          <span>Trace · Monitor · Protect</span>
-        </div>
-      </div>
-
-      <nav>
-        <div class="nav-group">
-          <div class="nav-label">Workspace</div>
-          <a class="nav-link active" href="home-v2.html" aria-current="page"><span class="nav-icon">⌂</span>Inicio</a>
-          <a class="nav-link" href="demo.html"><span class="nav-icon">◉</span>Monitorear</a>
-          <a class="nav-link" href="portable.html"><span class="nav-icon">⌕</span>Investigar</a>
-          <a class="nav-link" href="modules/scheduling-optimizer.html"><span class="nav-icon">✓</span>Resolver</a>
-        </div>
-
-        <div class="nav-group" style="margin-top:22px">
-          <div class="nav-label">Sistema</div>
-          <a class="nav-link" href="docs/"><span class="nav-icon">▤</span>Conocimiento</a>
-          <a class="nav-link" href="demo/index.html"><span class="nav-icon">◇</span>Datos</a>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        Local-first manufacturing intelligence.<br />
-        Los datos permanecen bajo control del usuario.
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div class="page-title">
-          <h1>Command Center</h1>
-          <p>Situación operativa, riesgos y accesos de investigación.</p>
-        </div>
-        <div class="top-actions">
-          <button class="btn btn-ghost mobile-menu" type="button" aria-label="Abrir menú">☰</button>
-          <button class="btn btn-ghost" type="button">Ayuda</button>
-          <a class="btn btn-primary" href="portable.html" style="display:inline-flex;align-items:center;text-decoration:none">Nueva investigación</a>
-        </div>
-      </header>
-
-      <div class="content">
-        <section class="context-bar" aria-label="Contexto global del análisis">
-          <div class="context-item">
-            <label for="period">Periodo</label>
-            <select id="period"><option>Últimas 13 semanas</option><option>Semana actual</option><option>Últimas 24 horas</option></select>
-          </div>
-          <div class="context-item">
-            <label for="bu">Business Unit</label>
-            <select id="bu"><option>Todas las BU</option><option>CRBU</option><option>NGFWBU</option><option>FIELDWORKS</option></select>
-          </div>
-          <div class="context-item">
-            <label for="line">Línea</label>
-            <select id="line"><option>Todas las líneas</option><option>L12</option><option>L13</option><option>L14</option><option>L16</option><option>L17</option><option>L18</option></select>
-          </div>
-          <div class="context-item">
-            <label for="side">Lado</label>
-            <select id="side"><option>Top + Bottom</option><option>Top</option><option>Bottom</option></select>
-          </div>
-          <div class="context-item">
-            <label for="counting">Unidad de conteo</label>
-            <select id="counting"><option>Serial único · First Pass</option><option>Eventos</option><option>Retests</option></select>
-          </div>
-          <div class="data-status" title="Estado de la fuente de datos"><span class="status-dot"></span>Datos disponibles</div>
-        </section>
-
-        <div class="section-head">
-          <div>
-            <h2>Situación operativa</h2>
-            <p>Indicadores de entrada para priorizar la revisión.</p>
-          </div>
-          <a class="section-link" href="demo.html">Abrir vista ejecutiva →</a>
-        </div>
-
-        <section class="kpi-grid" aria-label="Indicadores principales">
-          <article class="card kpi">
-            <div class="kpi-label">Riesgos activos <span class="badge badge-critical">Crítico</span></div>
-            <div class="kpi-value">4</div>
-            <div class="kpi-meta">2 requieren contención inmediata.</div>
-          </article>
-          <article class="card kpi">
-            <div class="kpi-label">WOs impactadas <span class="badge badge-warning">Revisar</span></div>
-            <div class="kpi-value">12</div>
-            <div class="kpi-meta">3 con más de un modo de falla.</div>
-          </article>
-          <article class="card kpi">
-            <div class="kpi-label">Seriales afectados <span class="badge badge-info">Únicos</span></div>
-            <div class="kpi-value">87</div>
-            <div class="kpi-meta">Excluye retests y duplicados.</div>
-          </article>
-          <article class="card kpi">
-            <div class="kpi-label">Acciones abiertas <span class="badge badge-success">Seguimiento</span></div>
-            <div class="kpi-value">9</div>
-            <div class="kpi-meta">5 vencen durante esta semana.</div>
-          </article>
-        </section>
-
-        <div class="section-head">
-          <div>
-            <h2>¿Qué necesitas hacer?</h2>
-            <p>Accesos organizados por tarea, no por nombres internos de módulos.</p>
-          </div>
-        </div>
-
-        <section class="workspace-grid">
-          <div class="card">
-            <div class="panel-head">
-              <h3>Flujos principales</h3>
-              <p>Empieza desde la pregunta operativa.</p>
-            </div>
-            <div class="action-grid">
-              <a class="action-card" href="portable.html">
-                <strong>Investigar un serial</strong>
-                <p>Consulta genealogía, estaciones, reparaciones, retests y eventos asociados.</p>
-                <span>Abrir Serial Genealogy →</span>
-              </a>
-              <a class="action-card" href="demo.html">
-                <strong>Analizar yield</strong>
-                <p>Revisa tendencia, first pass, estaciones críticas y contribución por modo.</p>
-                <span>Abrir Yield Flow →</span>
-              </a>
-              <a class="action-card" href="demo/index.html">
-                <strong>Evaluar impacto</strong>
-                <p>Identifica WOs, seriales y RefDes relacionados con un defecto seleccionado.</p>
-                <span>Abrir Board Impact →</span>
-              </a>
-              <a class="action-card" href="modules/scheduling-optimizer.html">
-                <strong>Planear acciones</strong>
-                <p>Organiza prioridades, secuencia operativa y seguimiento de ejecución.</p>
-                <span>Abrir Planning Workspace →</span>
-              </a>
-            </div>
-          </div>
-
-          <aside class="card">
-            <div class="panel-head">
-              <h3>Atención requerida</h3>
-              <p>Casos priorizados por severidad y alcance.</p>
-            </div>
-            <div class="issue-list">
-              <article class="issue">
-                <div class="issue-top"><strong>Open solder · L18</strong><span class="badge badge-critical">P0</span></div>
-                <p>17 seriales únicos, 2 WOs y repetición en una misma referencia.</p>
-              </article>
-              <article class="issue">
-                <div class="issue-top"><strong>AOI false-call drift</strong><span class="badge badge-warning">P1</span></div>
-                <p>Aumento sostenido en las últimas tres corridas del modelo seleccionado.</p>
-              </article>
-              <article class="issue">
-                <div class="issue-top"><strong>Datos incompletos</strong><span class="badge badge-info">Datos</span></div>
-                <p>Repair DB termina antes que Common DB. Algunas conclusiones pueden quedar parciales.</p>
-              </article>
-            </div>
-          </aside>
-        </section>
-
-        <p class="footer-note">Los indicadores mostrados en esta primera versión son datos de demostración. La siguiente integración debe enlazarlos con las fuentes reales y mostrar fecha, cobertura y reglas de exclusión.</p>
-      </div>
-    </main>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand"><img src="/smtinel-shield-transparent.png" alt=""><div><strong>SMTinel</strong><small>Trace · Monitor · Protect</small></div></div>
+  <div class="nav">
+    <a class="active" href="/home-v2.html"><span class="ico">⌂</span>Dashboard</a>
+    <div class="nav-title">Flujo actual</div>
+    <a href="/index.html#vector"><span class="ico">✕</span>VECTOR</a>
+    <a href="/index.html#yield-flow"><span class="ico">↗</span>Yield Flow</a>
+    <a href="/index.html#bonepile"><span class="ico">▣</span>Bonepile Visual Tracker</a>
+    <a href="/index.html#board-impact"><span class="ico">◎</span>Board Impact</a>
+    <a href="/index.html#intel-log"><span class="ico">≡</span>Intel Log</a>
   </div>
+  <div class="side-foot"><span class="ok">● Sistema disponible</span><br>La interfaz muestra solo capacidades ya existentes.</div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="search"><input aria-label="Buscar en SMTinel" placeholder="Buscar en SMTinel..."></div>
+    <div class="topmeta"><span>Ayuda</span><div class="avatar">SM</div><span><b>Administrador</b><br>SMTinel</span></div>
+  </header>
+  <div class="content">
+    <section class="welcome">
+      <div><div class="eyebrow">Manufacturing Quality Intelligence</div><h1>Bienvenido a SMTinel</h1><p>Trazabilidad, contexto y memoria operativa para convertir problemas en controles reutilizables.</p></div>
+      <div class="actions"><a class="btn" href="/index.html#load-data">Cargar datos</a><a class="btn primary" href="/index.html">Entrar a SMTinel</a></div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head"><div><h2>VECTOR · Flujo Red X en lenguaje operativo</h2><p>Misma lógica Shainin, presentada como una secuencia fácil de ejecutar.</p></div><span class="eyebrow">7 pasos</span></div>
+        <div class="workflow">
+          <div class="steps">
+            <div class="step"><span class="num">1</span><b>Problema</b><small>Qué está fallando y cuál es la condición de interés.</small></div>
+            <div class="step"><span class="num">2</span><b>Agrupar</b><small>Separar por línea, turno, WO, PN, fecha o grupo disponible.</small></div>
+            <div class="step"><span class="num">3</span><b>Comparar</b><small>Ver qué cambia entre unidades buenas y malas.</small></div>
+            <div class="step key"><span class="num">4</span><b>Causa</b><small>Identificar la condición dominante soportada por evidencia.</small></div>
+            <div class="step"><span class="num">5</span><b>Comprobar</b><small>Corregir la condición y verificar si la falla desaparece.</small></div>
+            <div class="step"><span class="num">6</span><b>Controlar</b><small>Dejar el control permanente y verificar su aplicación.</small></div>
+            <div class="step"><span class="num">7</span><b>Compartir</b><small>Registrar lo aprendido para evitar repetir el problema.</small></div>
+          </div>
+          <div class="module-strip">
+            <a class="module primary" href="/index.html#vector"><span class="tag">01 · Control</span><h3>VECTOR</h3><p>Problemas prioritarios, evidencia, cierre y flujo Red X.</p></a>
+            <a class="module" href="/index.html#yield-flow"><span class="tag">02 · Trazabilidad</span><h3>Yield Flow</h3><p>WO, SN, estaciones, avance y desempeño del proceso.</p></a>
+            <a class="module" href="/index.html#bonepile"><span class="tag">03 · Recuperación</span><h3>Bonepile Visual Tracker</h3><p>WIP, aging, ubicación y recuperación de unidades.</p></a>
+            <a class="module" href="/index.html#board-impact"><span class="tag">04 · Producto</span><h3>Board Impact</h3><p>RefDes, ubicación, impacto y evidencia por board.</p></a>
+            <a class="module" href="/index.html#intel-log"><span class="tag">05 · Memoria</span><h3>Intel Log</h3><p>Registro operativo y contexto para investigaciones.</p></a>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <section class="card">
+          <div class="card-head"><div><h3>Estado del sistema</h3><p>Sin números de demostración.</p></div></div>
+          <div class="summary"><div class="summary-grid">
+            <div class="metric"><small>Datos</small><strong>N/D</strong><span>Hasta cargar fuente</span></div>
+            <div class="metric"><small>Work Orders</small><strong>N/D</strong><span>Dataset requerido</span></div>
+            <div class="metric"><small>Yield</small><strong>N/D</strong><span>Sin inferencia</span></div>
+            <div class="metric"><small>Riesgo</small><strong>N/D</strong><span>Sin datos cargados</span></div>
+          </div>
+          <div class="note"><b>Regla de esta revisión:</b> si SMTinel no tiene una fuente real, muestra N/D. La interfaz no rellena el dashboard con cifras decorativas.</div></div>
+        </section>
+        <section class="card" style="margin-top:14px">
+          <div class="card-head"><div><h3>Arquitectura visible</h3><p>La Home organiza, los módulos ejecutan.</p></div></div>
+          <div class="arch"><div class="arch-row">
+            <div class="arch-box"><b>Detectar</b><span>Yield Flow · Intel Log</span></div><div class="arrow">→</div>
+            <div class="arch-box"><b>Entender</b><span>VECTOR · Board Impact</span></div><div class="arrow">→</div>
+            <div class="arch-box"><b>Actuar</b><span>Bonepile · cierre · compartir</span></div>
+          </div></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+</div>
+<nav class="bottom-nav">
+<a class="active" href="/home-v2.html"><b>⌂</b>Inicio</a>
+<a href="/index.html#vector"><b>✕</b>VECTOR</a>
+<a href="/index.html#yield-flow"><b>↗</b>Yield</a>
+<a href="/index.html#board-impact"><b>◎</b>Board</a>
+<a href="/index.html#bonepile"><b>▣</b>Bonepile</a>
+</nav>
 </body>
 </html>
