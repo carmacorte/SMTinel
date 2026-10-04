@@ -1,20 +1,112 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SMTinel · Trace Monitor Protect</title>
-  <style>
-    :root{--ink:#091322;--navy:#0b3154;--green:#14906d;--red:#f71452;--muted:#5f6f80;--card:rgba(255,255,255,.84)}
-    *{box-sizing:border-box} body{margin:0;min-height:100vh;font-family:Inter,Segoe UI,system-ui,sans-serif;color:var(--ink);background:radial-gradient(circle at 78% 18%,rgba(20,144,109,.12),transparent 24rem),linear-gradient(180deg,#fbfdff,#edf7fb);overflow-x:hidden}.page{width:min(1120px,calc(100% - 28px));margin:auto;padding:24px 0 116px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:clamp(28px,6vw,70px)}.brand{display:flex;align-items:center;gap:12px}.shield{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#eafff5,#eaf3fb);box-shadow:0 18px 48px rgba(11,49,84,.12);font-size:32px}.word{font-weight:1000;font-size:clamp(38px,7vw,68px);letter-spacing:-.07em}.word span:first-child{color:var(--green)}.tag{font-weight:900;letter-spacing:.34em;text-transform:uppercase;color:#243a50;font-size:13px}.menu{display:none;border:0;border-radius:50%;width:56px;height:56px;background:#fff;box-shadow:0 18px 42px rgba(11,49,84,.12);font-size:28px;color:var(--navy)}.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:clamp(18px,5vw,64px);align-items:center}.eyebrow{display:flex;align-items:center;gap:14px;color:#4f5c6a;font-size:13px;letter-spacing:.34em;text-transform:uppercase;font-weight:950;margin-bottom:18px}.dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 0 8px rgba(20,144,109,.1)}h1{margin:0;max-width:690px;font-weight:1000;font-size:clamp(54px,9vw,112px);line-height:.92;letter-spacing:-.075em}.grad{background:linear-gradient(90deg,var(--green),#187fa4);background-clip:text;-webkit-background-clip:text;color:transparent}.lead{max-width:520px;color:#526273;font-size:clamp(18px,2.2vw,24px);line-height:1.35;margin:22px 0 0}.proofs{display:grid;gap:12px;max-width:440px;margin:28px 0}.proof{display:grid;grid-template-columns:50px 1fr;gap:14px;align-items:center;border-left:2px solid rgba(20,144,109,.22);padding:8px 0 8px 14px}.ico{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--green);border:1px solid rgba(20,144,109,.18);box-shadow:0 12px 28px rgba(11,49,84,.08)}.proof strong{display:block;font-size:15px}.proof span{color:#5b6a78;font-size:14px}.actions{display:grid;gap:14px;max-width:710px}.btn{min-height:72px;border-radius:999px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;text-decoration:none;font-weight:950;font-size:18px;box-shadow:0 24px 56px rgba(11,49,84,.13)}.primary{background:linear-gradient(135deg,#ff1d59,#e90043);color:#fff}.secondary{background:#fff;color:#101827;border:1px solid rgba(11,49,84,.08)}.pill{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18)}.secondary .pill{color:var(--green);background:rgba(20,144,109,.1)}.visual{position:relative;min-height:600px;display:grid;place-items:center}.mesh{position:absolute;right:-30px;top:20px;width:300px;height:320px;opacity:.22;background-image:linear-gradient(30deg,rgba(11,49,84,.18) 12%,transparent 12.5%,transparent 87%,rgba(11,49,84,.18) 87.5%),linear-gradient(150deg,rgba(11,49,84,.18) 12%,transparent 12.5%,transparent 87%,rgba(11,49,84,.18) 87.5%);background-size:42px 72px}.core{position:relative;z-index:3;width:min(390px,76vw);aspect-ratio:.78/1;border-radius:42% 42% 48% 48%/28% 28% 60% 60%;display:grid;place-items:center;background:linear-gradient(145deg,#294556,#091827 65%,#153d35);border:2px solid rgba(255,255,255,.5);box-shadow:0 38px 90px rgba(11,49,84,.28),inset 0 0 0 10px rgba(255,255,255,.08);transform:translateY(36px);overflow:hidden}.core:before{content:"";position:absolute;inset:16% 11% 10%;border-radius:24px 24px 44% 44%;background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.28) 23px 25px,transparent 26px 40px),repeating-linear-gradient(0deg,transparent 0 18px,rgba(66,200,141,.42) 19px 21px,transparent 22px 34px);opacity:.55;mask-image:radial-gradient(circle,#000 0 56%,transparent 72%)}.core:after{content:"🛡";position:relative;font-size:82px;filter:drop-shadow(0 10px 22px rgba(0,0,0,.35))}.raven{position:absolute;z-index:4;width:min(235px,41vw);aspect-ratio:.74/1;bottom:150px;filter:drop-shadow(0 24px 26px rgba(11,49,84,.26))}.left{left:2%;transform:rotate(-4deg)}.right{right:-2%;transform:scaleX(-1) rotate(-3deg)}.body,.head,.wing{position:absolute;background:linear-gradient(145deg,#1b2635,#020713 72%)}.body{inset:20% 16% 0;border-radius:48% 48% 42% 42%;background:radial-gradient(circle at 42% 12%,rgba(255,255,255,.18),transparent 16%),repeating-linear-gradient(110deg,rgba(255,255,255,.07) 0 4px,transparent 4px 13px),linear-gradient(145deg,#1b2635,#020713 70%)}.wing{width:58%;height:62%;left:10%;bottom:8%;border-radius:70% 20% 60% 38%;transform:rotate(12deg)}.head{width:44%;height:26%;left:26%;top:4%;border-radius:50% 50% 42% 42%}.head:before{content:"";position:absolute;width:62%;height:30%;left:-50%;top:38%;clip-path:polygon(0 50%,100% 8%,86% 58%,100% 92%);background:#050814}.eye{position:absolute;width:10px;height:10px;border-radius:50%;right:20%;top:40%;background:#42c88d;box-shadow:0 0 16px #42c88d}.right .eye{background:#ff315f;box-shadow:0 0 16px #ff315f}.podium{position:absolute;bottom:18px;width:min(500px,90%);aspect-ratio:1/.24;border-radius:50%;background:conic-gradient(from 90deg,rgba(255,21,84,.34),rgba(21,147,110,.42),rgba(20,125,154,.22),rgba(255,21,84,.34));box-shadow:0 30px 70px rgba(11,49,84,.16)}.kpis{display:grid;grid-template-columns:repeat(5,1fr);margin-top:44px;border-radius:28px;overflow:hidden;background:rgba(255,255,255,.78);border:1px solid rgba(11,49,84,.08);box-shadow:0 30px 90px rgba(11,49,84,.13);backdrop-filter:blur(18px)}.kpi{text-align:center;padding:18px 10px;min-height:120px;border-right:1px solid rgba(11,49,84,.08);display:grid;place-items:center}.kpi:last-child{border-right:0}.kpi small{color:#566678;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.kpi strong{display:block;color:var(--green);font-size:clamp(16px,2vw,22px)}.nav{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;width:min(1040px,calc(100% - 28px));min-height:78px;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;align-items:center;padding:10px 18px;border-radius:34px;background:linear-gradient(180deg,#123a60,#082c4d);box-shadow:0 22px 54px rgba(8,44,77,.34)}.nav a{color:#fff;text-decoration:none;display:grid;place-items:center;gap:4px;font-size:12px;font-weight:800}.nav .active{color:#4bd28e}.nav svg{width:24px;height:24px}@media(max-width:900px){.tag{display:none}.menu{display:grid;place-items:center}.hero{grid-template-columns:1fr}.visual{min-height:430px;margin-top:-18px}.core{width:min(290px,62vw);transform:translate(38px,34px)}.raven{width:min(205px,44vw);bottom:104px}.left{left:36%}.right{right:-2%}.kpis{grid-template-columns:repeat(5,minmax(118px,1fr));overflow-x:auto}.kpi{min-width:118px}}@media(max-width:620px){.page{width:min(100% - 26px,460px);padding-top:18px}.shield{width:52px;height:52px}.word{font-size:46px}.eyebrow{font-size:12px;letter-spacing:.3em}h1{font-size:clamp(50px,14vw,72px)}.lead{font-size:18px;max-width:330px}.visual{min-height:380px}.core{width:214px;transform:translate(44px,42px)}.core:after{font-size:58px}.raven{width:168px;bottom:92px}.right{right:-16px}.btn{min-height:74px;font-size:20px}.nav{min-height:72px;border-radius:28px;padding:8px 10px}.nav a{font-size:11px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4f6f8">
+<title>SMTinel · Manufacturing Quality Intelligence</title>
+<style>
+:root{--ink:#111827;--muted:#667085;--line:#e6e9ee;--bg:#f4f6f8;--card:#fff;--red:#ba1f2d;--red2:#e24a55;--green:#1f7a52;--amber:#b7791f;--nav:#0d1723}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+a{text-decoration:none;color:inherit}button,input{font:inherit}
+.shell{min-height:100vh;display:grid;grid-template-columns:236px 1fr}
+.sidebar{position:sticky;top:0;height:100vh;background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 20px}.brand img{width:46px;height:46px;object-fit:contain}.brand strong{font-size:24px;letter-spacing:.04em}.brand small{display:block;color:#78808c;font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.nav-title{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98a1ad;padding:18px 12px 8px}.nav a{display:flex;align-items:center;gap:11px;padding:12px;border-radius:10px;font-size:14px;margin:2px 0}.nav a.active{background:#fff0f1;color:#9f1825;font-weight:800;border-left:3px solid var(--red)}.nav a:hover{background:#f6f7f9}.ico{width:22px;text-align:center;font-weight:800}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding:16px 10px;color:#667085;font-size:11px;line-height:1.5}.ok{color:var(--green);font-weight:800}
+.main{min-width:0}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 24px;position:sticky;top:0;z-index:20}.search{flex:1;max-width:650px;margin:auto;position:relative}.search input{width:100%;border:1px solid #dfe3e8;border-radius:10px;padding:12px 16px 12px 40px;background:#fbfcfd;color:#667085}.search:before{content:"⌕";position:absolute;left:15px;top:9px;font-size:22px;color:#7c8590}.topmeta{display:flex;align-items:center;gap:14px;font-size:12px;color:#475467}.avatar{width:34px;height:34px;border-radius:50%;background:#1b2430;color:#fff;display:grid;place-items:center;font-weight:800}
+.content{padding:22px 24px 96px;max-width:1500px;margin:auto}.welcome{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}.welcome h1{font-size:28px;margin:0 0 5px}.welcome p{margin:0;color:var(--muted);font-size:14px}.eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98a1ad;font-weight:900}
+.actions{display:flex;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:9px;font-weight:800;font-size:13px;border:1px solid var(--line);background:#fff}.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr);gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.03)}.card-head{display:flex;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}.card-head h2,.card-head h3{margin:0;font-size:16px}.card-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.workflow{padding:18px}.steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.step{position:relative;border:1px solid var(--line);border-radius:12px;padding:14px 10px;background:#fcfcfd;min-height:96px}.step b{display:block;font-size:12px;margin:9px 0 4px}.step small{font-size:10px;color:var(--muted);line-height:1.35;display:block}.num{width:24px;height:24px;border-radius:50%;border:1px solid #cfd5dc;display:grid;place-items:center;font-size:11px;font-weight:900;background:#fff}.step.key{background:#fff3f4;border-color:#f2c7cc}.step.key .num{background:var(--red);border-color:var(--red);color:#fff}.step:last-child{background:#f1faf5;border-color:#cce7d8}.step:last-child .num{background:var(--green);border-color:var(--green);color:#fff}
+.module-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}.module{padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;min-height:112px}.module .tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#98a1ad;font-weight:900}.module h3{font-size:14px;margin:10px 0 5px}.module p{font-size:11px;line-height:1.4;color:var(--muted);margin:0}.module.primary{border-color:#efc5ca;background:#fff9f9}
+.summary{padding:16px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fbfcfd}.metric small{display:block;color:#98a1ad;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}.metric strong{display:block;font-size:20px;margin-top:6px}.metric span{font-size:10px;color:var(--muted)}
+.note{padding:14px 18px;background:#fff8e8;border:1px solid #f1ddac;border-radius:12px;margin-top:12px;font-size:11px;line-height:1.5;color:#6f541b}.note b{color:#5d450e}
+.arch{padding:16px}.arch-row{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;align-items:center;gap:8px}.arch-box{border:1px solid var(--line);border-radius:11px;padding:13px;background:#fbfcfd;text-align:center}.arch-box b{display:block;font-size:12px}.arch-box span{display:block;font-size:10px;color:var(--muted);margin-top:5px}.arrow{text-align:center;color:#98a1ad;font-weight:900}
+.bottom-nav{display:none}
+@media(max-width:1100px){.steps{grid-template-columns:repeat(4,1fr)}.module-strip{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:760px){.shell{display:block}.sidebar{display:none}.topbar{height:62px;padding:0 14px}.search{max-width:none}.topmeta{display:none}.content{padding:16px 14px 104px}.welcome{display:block}.welcome h1{font-size:22px}.welcome p{font-size:12px}.actions{margin-top:12px}.btn{flex:1}.steps{grid-template-columns:repeat(2,1fr)}.module-strip{grid-template-columns:1fr 1fr}.grid{display:block}.grid>.card{margin-bottom:12px}.summary-grid{grid-template-columns:1fr 1fr}.arch-row{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.bottom-nav{position:fixed;z-index:40;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(5,1fr);background:#111820;border-radius:22px;padding:8px 4px;box-shadow:0 12px 28px rgba(0,0,0,.24)}.bottom-nav a{color:#d5dbe2;font-size:9px;text-align:center;padding:7px 2px}.bottom-nav b{display:block;font-size:16px;margin-bottom:2px}.bottom-nav a.active{color:#71c99d}}
+</style>
 </head>
 <body>
-  <main class="page">
-    <header class="top"><div class="brand"><div class="shield">🛡</div><div class="word"><span>SMT</span><span>inel</span></div></div><div class="tag">Trace · Monitor · Protect</div><button class="menu" type="button">☰</button></header>
-    <section class="hero"><div><div class="eyebrow"><span class="dot"></span>Operational Intelligence</div><h1>Operational noise — silenced.<br><span class="grad">Clarity — activated.</span></h1><p class="lead">Transform data into decisions with the power of intelligence, context, and memory.</p><div class="proofs"><div class="proof"><div class="ico">⌁</div><div><strong>Real-time visibility</strong><span>See what's happening now</span></div></div><div class="proof"><div class="ico">▣</div><div><strong>Historical memory</strong><span>Learn from everything</span></div></div><div class="proof"><div class="ico">⌂</div><div><strong>Protect your yield</strong><span>Prevent, don't just react</span></div></div></div><div class="actions"><a class="btn primary" href="./index.html#command-center"><span class="pill">↗</span><span>Enter SMTinel</span><span class="pill">›</span></a><a class="btn secondary" href="./index.html#load-data"><span class="pill">▤</span><span>Load Data</span><span>›</span></a><a class="btn secondary" href="./portable.html"><span class="pill">↓</span><span>Download Portable</span><span>›</span></a></div></div><div class="visual"><div class="mesh"></div><div class="raven left"><div class="wing"></div><div class="body"></div><div class="head"><span class="eye"></span></div></div><div class="core"></div><div class="raven right"><div class="wing"></div><div class="body"></div><div class="head"><span class="eye"></span></div></div><div class="podium"></div></div></section>
-    <section class="kpis"><div class="kpi"><small>Yield Flow</small><strong>96.72%</strong></div><div class="kpi"><small>Board Impact</small><strong>128,542</strong></div><div class="kpi"><small>Trend Visualization</small><strong>Weekly</strong></div><div class="kpi"><small>RCCA Evidence</small><strong>1,482</strong></div><div class="kpi"><small>Protection</small><strong>Active</strong></div></section>
-  </main>
-  <nav class="nav"><a class="active" href="./home-v2.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8Z"/></svg>Home</a><a href="./index.html#rcca">RCCA</a><a href="./index.html#storyline">Storyline</a><a href="./index.html#yield-flow">Yield Flow</a><a href="./index.html#board-impact">Board Impact</a><a href="./index.html#more">More</a></nav>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand"><img src="/smtinel-shield-transparent.png" alt=""><div><strong>SMTinel</strong><small>Trace · Monitor · Protect</small></div></div>
+  <div class="nav">
+    <a class="active" href="/home-v2.html"><span class="ico">⌂</span>Dashboard</a>
+    <div class="nav-title">Flujo actual</div>
+    <a href="/index.html#vector"><span class="ico">✕</span>VECTOR</a>
+    <a href="/index.html#yield-flow"><span class="ico">↗</span>Yield Flow</a>
+    <a href="/index.html#bonepile"><span class="ico">▣</span>Bonepile Visual Tracker</a>
+    <a href="/index.html#board-impact"><span class="ico">◎</span>Board Impact</a>
+    <a href="/index.html#intel-log"><span class="ico">≡</span>Intel Log</a>
+  </div>
+  <div class="side-foot"><span class="ok">● Sistema disponible</span><br>La interfaz muestra solo capacidades ya existentes.</div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="search"><input aria-label="Buscar en SMTinel" placeholder="Buscar en SMTinel..."></div>
+    <div class="topmeta"><span>Ayuda</span><div class="avatar">SM</div><span><b>Administrador</b><br>SMTinel</span></div>
+  </header>
+  <div class="content">
+    <section class="welcome">
+      <div><div class="eyebrow">Manufacturing Quality Intelligence</div><h1>Bienvenido a SMTinel</h1><p>Trazabilidad, contexto y memoria operativa para convertir problemas en controles reutilizables.</p></div>
+      <div class="actions"><a class="btn" href="/index.html#load-data">Cargar datos</a><a class="btn primary" href="/index.html">Entrar a SMTinel</a></div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head"><div><h2>VECTOR · Flujo Red X en lenguaje operativo</h2><p>Misma lógica Shainin, presentada como una secuencia fácil de ejecutar.</p></div><span class="eyebrow">7 pasos</span></div>
+        <div class="workflow">
+          <div class="steps">
+            <div class="step"><span class="num">1</span><b>Problema</b><small>Qué está fallando y cuál es la condición de interés.</small></div>
+            <div class="step"><span class="num">2</span><b>Agrupar</b><small>Separar por línea, turno, WO, PN, fecha o grupo disponible.</small></div>
+            <div class="step"><span class="num">3</span><b>Comparar</b><small>Ver qué cambia entre unidades buenas y malas.</small></div>
+            <div class="step key"><span class="num">4</span><b>Causa</b><small>Identificar la condición dominante soportada por evidencia.</small></div>
+            <div class="step"><span class="num">5</span><b>Comprobar</b><small>Corregir la condición y verificar si la falla desaparece.</small></div>
+            <div class="step"><span class="num">6</span><b>Controlar</b><small>Dejar el control permanente y verificar su aplicación.</small></div>
+            <div class="step"><span class="num">7</span><b>Compartir</b><small>Registrar lo aprendido para evitar repetir el problema.</small></div>
+          </div>
+          <div class="module-strip">
+            <a class="module primary" href="/index.html#vector"><span class="tag">01 · Control</span><h3>VECTOR</h3><p>Problemas prioritarios, evidencia, cierre y flujo Red X.</p></a>
+            <a class="module" href="/index.html#yield-flow"><span class="tag">02 · Trazabilidad</span><h3>Yield Flow</h3><p>WO, SN, estaciones, avance y desempeño del proceso.</p></a>
+            <a class="module" href="/index.html#bonepile"><span class="tag">03 · Recuperación</span><h3>Bonepile Visual Tracker</h3><p>WIP, aging, ubicación y recuperación de unidades.</p></a>
+            <a class="module" href="/index.html#board-impact"><span class="tag">04 · Producto</span><h3>Board Impact</h3><p>RefDes, ubicación, impacto y evidencia por board.</p></a>
+            <a class="module" href="/index.html#intel-log"><span class="tag">05 · Memoria</span><h3>Intel Log</h3><p>Registro operativo y contexto para investigaciones.</p></a>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <section class="card">
+          <div class="card-head"><div><h3>Estado del sistema</h3><p>Sin números de demostración.</p></div></div>
+          <div class="summary"><div class="summary-grid">
+            <div class="metric"><small>Datos</small><strong>N/D</strong><span>Hasta cargar fuente</span></div>
+            <div class="metric"><small>Work Orders</small><strong>N/D</strong><span>Dataset requerido</span></div>
+            <div class="metric"><small>Yield</small><strong>N/D</strong><span>Sin inferencia</span></div>
+            <div class="metric"><small>Riesgo</small><strong>N/D</strong><span>Sin datos cargados</span></div>
+          </div>
+          <div class="note"><b>Regla de esta revisión:</b> si SMTinel no tiene una fuente real, muestra N/D. La interfaz no rellena el dashboard con cifras decorativas.</div></div>
+        </section>
+        <section class="card" style="margin-top:14px">
+          <div class="card-head"><div><h3>Arquitectura visible</h3><p>La Home organiza, los módulos ejecutan.</p></div></div>
+          <div class="arch"><div class="arch-row">
+            <div class="arch-box"><b>Detectar</b><span>Yield Flow · Intel Log</span></div><div class="arrow">→</div>
+            <div class="arch-box"><b>Entender</b><span>VECTOR · Board Impact</span></div><div class="arrow">→</div>
+            <div class="arch-box"><b>Actuar</b><span>Bonepile · cierre · compartir</span></div>
+          </div></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+</div>
+<nav class="bottom-nav">
+<a class="active" href="/home-v2.html"><b>⌂</b>Inicio</a>
+<a href="/index.html#vector"><b>✕</b>VECTOR</a>
+<a href="/index.html#yield-flow"><b>↗</b>Yield</a>
+<a href="/index.html#board-impact"><b>◎</b>Board</a>
+<a href="/index.html#bonepile"><b>▣</b>Bonepile</a>
+</nav>
 </body>
 </html>
