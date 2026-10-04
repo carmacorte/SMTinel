@@ -76132,7 +76132,7 @@ try{document.body&&document.body.setAttribute('data-smtinel-yokoten-route','13.1
 'use strict';
 if(window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V193__)return;
 window.__SMTINEL_YOKOTEN_GITHUB_KNOWLEDGE_V193__=1;
-window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD='YOKOTEN-REPO-LOADER-V19.3';
+window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD='YOKOTEN-REPO-LOADER-V19.4-IOS-XML';
 var FILE='SMTinel_Yokoten_Knowledge_DB.xlsx';
 /* GitHub RAW is first on purpose. Some static hosts return index.html with HTTP 200 for a missing XLSX. */
 var SOURCES=[
@@ -76173,7 +76173,7 @@ async function fetchSource(src){
   return{buf:buf,url:src.url,label:src.label||src.url}
 }
 function colIndex(ref){var m=/^([A-Z]+)/i.exec(ref||'');if(!m)return 0;var s=m[1].toUpperCase(),n=0;for(var i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-64);return n-1}
-function xmlDoc(txt){var d=new DOMParser().parseFromString(txt,'application/xml');if(d.getElementsByTagName('parsererror').length)throw new Error('XML inválido dentro del XLSX');return d}
+function xmlDoc(txt,label){var s=String(txt==null?'':txt);s=s.replace(/^\uFEFF/,'').replace(/^[\x00-\x08\x0B\x0C\x0E-\x1F]+/,'');var d=new DOMParser().parseFromString(s,'application/xml'),pe=d.getElementsByTagName('parsererror');if(pe.length){var msg=String(pe[0].textContent||'').replace(/\s+/g,' ').trim();throw new Error('XML inválido dentro del XLSX'+(label?' ['+label+']':'')+(msg?': '+msg.slice(0,180):''))}return d}
 function byLocal(root,name){var all=root.getElementsByTagName('*'),o=[];for(var i=0;i<all.length;i++)if((all[i].localName||all[i].nodeName)===name)o.push(all[i]);return o}
 function firstLocal(root,name){var a=byLocal(root,name);return a.length?a[0]:null}
 function nodeText(n){if(!n)return'';var a=byLocal(n,'t'),s='';for(var i=0;i<a.length;i++)s+=a[i].textContent||'';return s}
@@ -76185,8 +76185,8 @@ async function workbookFromZip(buf){
   if(!wbFile||!relFile)throw new Error('El XLSX no contiene xl/workbook.xml o sus relaciones');
   var ss=[];
   var ssFile=z.file('xl/sharedStrings.xml');
-  if(ssFile){var sd=xmlDoc(await ssFile.async('string')),sis=byLocal(sd,'si');for(var i=0;i<sis.length;i++)ss.push(nodeText(sis[i]))}
-  var wd=xmlDoc(await wbFile.async('string')),rd=xmlDoc(await relFile.async('string'));
+  if(ssFile){var sd=xmlDoc(await ssFile.async('string'),'xl/sharedStrings.xml'),sis=byLocal(sd,'si');for(var i=0;i<sis.length;i++)ss.push(nodeText(sis[i]))}
+  var wd=xmlDoc(await wbFile.async('string'),'xl/workbook.xml'),rd=xmlDoc(await relFile.async('string'),'xl/_rels/workbook.xml.rels');
   var rels={},rr=byLocal(rd,'Relationship');
   for(var ri=0;ri<rr.length;ri++)rels[rr[ri].getAttribute('Id')]=rr[ri].getAttribute('Target');
   var sheets={},sheetEls=byLocal(wd,'sheet');
@@ -76195,7 +76195,7 @@ async function workbookFromZip(buf){
     if(!name||!target)continue;
     var path=/^\/?xl\//i.test(target)?cleanPath(target):cleanPath('xl/'+target),f=z.file(path);
     if(!f)throw new Error('No se encontró la hoja '+name+' en '+path);
-    var d=xmlDoc(await f.async('string')),rs=byLocal(d,'row'),table=[];
+    var d=xmlDoc(await f.async('string'),path),rs=byLocal(d,'row'),table=[];
     for(var rix=0;rix<rs.length;rix++){
       var cells=byLocal(rs[rix],'c'),arr=[];
       for(var ci=0;ci<cells.length;ci++){
@@ -76221,6 +76221,8 @@ async function workbookFromZip(buf){
   }
 }
 async function parseDirect(buf){return{wb:await workbookFromZip(buf),parser:'JSZip/OpenXML directo'}}
+async function parseExcelJs(buf){if(typeof window.ensureExcelTools==='function')await window.ensureExcelTools();if(!window.ExcelJS)throw new Error('ExcelJS no está disponible');var wb=new window.ExcelJS.Workbook();await wb.xlsx.load(buf);return{wb:wb,parser:'ExcelJS fallback'}}
+async function parseWorkbook(buf){try{return await parseDirect(buf)}catch(directErr){try{return await parseExcelJs(buf)}catch(excelErr){throw new Error('OpenXML: '+t(directErr&&directErr.message||directErr)+' | ExcelJS: '+t(excelErr&&excelErr.message||excelErr))}}}
 async function load(){
   var errors=[];
   window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Cargando '+FILE+'...',build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
@@ -76230,7 +76232,7 @@ async function load(){
       window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'fetch',message:'Intentando '+src.label+'...',source:src.url,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
       var g=await fetchSource(src);
       window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'loading',stage:'parse',message:'Excel localizado; leyendo OpenXML...',source:g.url,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD};
-      var p=await parseDirect(g.buf),k=normalize(p.wb);k.source=g.url;k.parser=p.parser;k.loaderBuild=window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD;k.sheetNames=p.wb.sheetNames||[];
+      var p=await parseWorkbook(g.buf),k=normalize(p.wb);k.source=g.url;k.parser=p.parser;k.loaderBuild=window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD;k.sheetNames=p.wb.sheetNames||[];
       window.SMTINEL_YOKOTEN_KNOWLEDGE=k;
       window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS={state:'ready',stage:'ready',message:'Base Yokoten cargada desde '+g.label,source:g.url,parser:p.parser,build:window.SMTINEL_YOKOTEN_REPO_LOADER_BUILD,counts:{qualifications:k.qualifications.length,findings:k.findings.length,actions:k.actions.length,critical:k.critical.length,xref:k.xref.length},sheets:k.sheetNames};
       try{console.info('[SMTinel Yokoten V19.3] listo',window.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS)}catch(_){}
@@ -77360,3 +77362,14 @@ wrapped.__operationalV197=true;wrapped.__base=prev;window.SMTinelBuildYokotenExp
 })();
 </script>
 
+
+<script id="smtinel-yokoten-run-history-export-v19-7">
+(function(){
+'use strict';
+var prev=window.SMTinelBuildYokotenExportHtml;if(typeof prev!=='function'||prev.__runHistoryV197)return;
+var css="/* V19.7 WO restore: historial útil para piso. */\n.cell{flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;min-height:88px!important;gap:5px!important}\n.celltop{justify-content:center!important;width:100%!important;flex:0 0 auto!important}\n.yk197-runinfo{display:grid;gap:3px;width:100%;margin-top:1px;padding-top:5px;border-top:1px solid #e4ebe6;color:#33483b;text-align:left}\n.yk197-runline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;align-items:center;font-size:7.8px;line-height:1.25}\n.yk197-runline b{font-size:8px;color:#173d2b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.yk197-runline span{font-size:7.5px;color:#596b60;white-space:nowrap}\n.yk197-runmore{font-size:7.5px;font-weight:900;color:#315e87}\n#detail .yk16-modules>.card.yk197-run-card.yk197-run-card{display:block!important}\n.yk197-run-card{border:1px solid #cbd9cf!important;border-radius:12px!important;background:#fff!important;overflow:hidden!important}\n.yk197-run-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:#f2f6f3;border-bottom:1px solid #d7e1da}\n.yk197-run-head b{font-size:11px;color:#20452f}.yk197-run-head span{font-size:8.5px;color:#607168;font-weight:850}\n.yk197-run-wrap{overflow:auto;padding:8px 10px 10px}\n.yk197-run-table{width:100%;border-collapse:collapse;font-size:9px}\n.yk197-run-table th,.yk197-run-table td{padding:7px 8px;border:1px solid #dde5df;text-align:left;white-space:nowrap}\n.yk197-run-table th{background:#f4f7f5;color:#51655a;font-size:7.5px;letter-spacing:.04em;text-transform:uppercase}\n.yk197-run-table td:first-child{font-weight:900;color:#173d2b}.yk197-run-empty{padding:10px;color:#69766e;font-size:10px;font-weight:800}\n@media(max-width:700px){.matrix thead th,.cell{min-width:132px!important}.yk197-runline{grid-template-columns:1fr}.yk197-runline span{white-space:normal}.yk197-run-head{align-items:flex-start;flex-direction:column}}";
+var runtime="(function(){\n'use strict';\nif(window.__SMTINEL_YOKOTEN_RUN_HISTORY_V197__)return;\nwindow.__SMTINEL_YOKOTEN_RUN_HISTORY_V197__=1;\nfunction t(v){return String(v==null?'':v).replace(/\\s+/g,' ').trim()}\nfunction e(v){return t(v).replace(/[&<>\"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]})}\nfunction n(v){var x=Number(v);return isFinite(x)?x.toLocaleString('es-MX'):t(v)}\nfunction fecha(v){var s=t(v);if(!/^\\d{4}-\\d{2}-\\d{2}/.test(s))return s||'N/D';var a=s.slice(0,10).split('-');return a[2]+'/'+a[1]+'/'+a[0].slice(2)}\nfunction rango(a,b){a=t(a);b=t(b);if(!a&&!b)return'N/D';if(!b||a===b)return fecha(a||b);return fecha(a)+' → '+fecha(b)}\nfunction cellByKey(k){var S=window.__YK__||{},rows=S.rows||[];for(var i=0;i<rows.length;i++){var cs=rows[i].cells||{};for(var ln in cs)if(cs[ln]&&cs[ln].key===k)return cs[ln]}return null}\nfunction selected(){var b=document.querySelector('.cell.sel[data-k]');return b?cellByKey(b.getAttribute('data-k')):null}\nfunction facts(c){var g={},order=[];(c&&c.facts||[]).forEach(function(f){var wo=t(f.wo);if(!wo)return;var x=g[wo];if(!x){x=g[wo]={wo:wo,qty:Number(f.qty)||0,first:t(f.first),last:t(f.last)};order.push(wo)}else{x.qty=Math.max(x.qty,Number(f.qty)||0);if(f.first&&(!x.first||f.first<x.first))x.first=t(f.first);if(f.last&&(!x.last||f.last>x.last))x.last=t(f.last)}});(c&&c.wos||[]).forEach(function(wo){wo=t(wo);if(!wo||g[wo])return;g[wo]={wo:wo,qty:0,first:t(c.first),last:t(c.last)};order.push(wo)});var out=order.map(function(k){return g[k]});if(out.length===1&&out[0].qty===0&&Number(c&&c.qty)>0)out[0].qty=Number(c.qty);return out}\nfunction hasRun(c){return !!(c&&(Number(c.runs||0)>0||(c.wos||[]).length||(c.facts||[]).length)&&!c.exposure)}\nfunction cellHtml(c){var a=facts(c);if(!a.length)return'';var max=3,rows=a.slice(0,max).map(function(x){return'<div class=\"yk197-runline\"><b>WO '+e(x.wo)+'</b><span>'+(x.qty?n(x.qty)+' pzas · ':'')+e(rango(x.first,x.last))+'</span></div>'}).join('');if(a.length>max)rows+='<div class=\"yk197-runmore\">+'+(a.length-max)+' WO más. Abrir para ver todos.</div>';return'<div class=\"yk197-runinfo\">'+rows+'</div>'}\nfunction patchMatrix(){document.querySelectorAll('.cell[data-k]').forEach(function(b){var c=cellByKey(b.getAttribute('data-k'));if(!c)return;var run=hasRun(c),alerta=!!(c.inherited&&c.inherited.length),chip=b.querySelector('.chip'),runs=Number(c.runs||0);if(chip){if(run)chip.textContent=(alerta?'ALERTA · ':'')+runs+' '+(runs===1?'CORRIDA':'CORRIDAS');else if(alerta)chip.textContent='ALERTA · SIN CORRIDA';else chip.textContent='SIN CORRIDA'}var old=b.querySelector('.yk197-runinfo');if(old)old.remove();if(run)b.insertAdjacentHTML('beforeend',cellHtml(c))})}\nfunction runCard(c){var d=document.getElementById('detail');if(!d||!d.classList.contains('open'))return;var lay=d.querySelector('.yk16-modules');if(!lay)return;var a=facts(c),token=t(c.key)+'|'+a.map(function(x){return x.wo+':'+x.qty+':'+x.first+':'+x.last}).join('|'),old=lay.querySelector('.yk197-run-card');if(old&&old.getAttribute('data-run-token')===token)return;if(old)old.remove();var card=document.createElement('div');card.className='card yk197-run-card';card.setAttribute('data-run-token',token);if(a.length){var total=Number(c.qty||0);var rows=a.map(function(x){return'<tr><td>WO '+e(x.wo)+'</td><td>'+(x.qty?n(x.qty)+' pzas':'N/D')+'</td><td>'+e(rango(x.first,x.last))+'</td></tr>'}).join('');card.innerHTML='<div class=\"yk197-run-head\"><b>Historial de fabricación</b><span>'+a.length+' WO · '+n(total)+' pzas</span></div><div class=\"yk197-run-wrap\"><table class=\"yk197-run-table\"><thead><tr><th>Work Order</th><th>Cantidad</th><th>Fecha</th></tr></thead><tbody>'+rows+'</tbody></table></div>'}else card.innerHTML='<div class=\"yk197-run-head\"><b>Historial de fabricación</b><span>Sin corrida</span></div><div class=\"yk197-run-empty\">No hay corridas registradas para este producto en esta línea.</div>';var op=lay.querySelector('.yk197-operational-card'),ev=lay.querySelector('.yk16-evidence-card');if(op)lay.insertBefore(card,op);else if(ev)lay.insertBefore(card,ev);else lay.insertBefore(card,lay.firstChild)}\nfunction hero(c){var d=document.getElementById('detail');if(!d)return;var p=d.querySelector('.hero p');if(!p)return;var a=facts(c),run=hasRun(c);if(!run){p.textContent='Sin corridas registradas en esta línea · Yokoten aplicable';return}p.textContent=Number(c.runs||0)+' '+(Number(c.runs||0)===1?'corrida':'corridas')+' · '+a.length+' WO · '+n(c.qty||0)+' pzas · '+rango(c.first,c.last)}\nfunction sync(){patchMatrix();var c=selected();if(c){runCard(c);hero(c)}}\nvar z=0;function schedule(){clearTimeout(z);z=setTimeout(sync,85)}\nif(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){sync();setTimeout(sync,300)},{once:true});else{sync();setTimeout(sync,300)}\nnew MutationObserver(function(m){for(var i=0;i<m.length;i++){if(m[i].addedNodes&&m[i].addedNodes.length){schedule();break}}}).observe(document.documentElement,{childList:true,subtree:true});\ndocument.addEventListener('click',schedule,true);document.addEventListener('change',schedule,true);document.addEventListener('input',schedule,true);setInterval(sync,900);\n})();";
+var wrapped=function(){var h=String(prev()||'');if(!h)return h;if(h.indexOf('smtinel-yokoten-run-history-style-v19-7')<0)h=h.replace('</head>','<style id="smtinel-yokoten-run-history-style-v19-7">'+css+'</style>\n</head>');if(h.indexOf('smtinel-yokoten-run-history-runtime-v19-7')<0){var close='</scr'+'ipt>';var sc='<scr'+'ipt id="smtinel-yokoten-run-history-runtime-v19-7">'+runtime+close;if(/<\/body>/i.test(h))h=h.replace(/<\/body>/i,sc+'\n</body>');else h+=sc}return h};
+wrapped.__runHistoryV197=true;wrapped.__base=prev;window.SMTinelBuildYokotenExportHtml=wrapped;
+})();
+</script>
