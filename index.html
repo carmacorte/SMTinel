@@ -16724,7 +16724,7 @@ function App() {
     var sbArr = _useState(window.innerWidth > 900);
     var sidebarOpen = sbArr[0];
     var setSidebarOpen = sbArr[1];
-    var langArr = _useState("en");
+    var langArr = _useState("es");
     var lang = langArr[0];
     var setLang = langArr[1];
     var yieldWeekStationArr = _useState("AOI");
@@ -30465,7 +30465,7 @@ body:has(#recovery-section) .main-content.expanded{
         return (React.createElement("div", { id: "yieldflow-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } },
             React.createElement("div", { style: { background: "linear-gradient(135deg,#3B2A2D 0%,#7F1820 56%,#B4232D 100%)", borderRadius: 18, padding: isMobile() ? "16px 14px" : "18px 20px", color: "#fff", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "minmax(0,1fr) auto", alignItems: "center", gap: isMobile() ? 10 : 14, overflow: "hidden" } },
                 React.createElement("div", { style: { minWidth: 0, width: "100%" } },
-                    React.createElement("div", { style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow: Process Output and SMT Progress to Stockin/FT")),
+                    React.createElement("div", { style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow · Avance y desempeño SMT")),
                 React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobile() ? "flex-start" : "flex-end", width: isMobile() ? "100%" : "auto" } },
                     React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)" } },
                         yieldFlowModel.kpi.orders,
@@ -34109,19 +34109,19 @@ body:has(#recovery-section) .main-content.expanded{
             h("div", { style: { background: "linear-gradient(135deg,#FFFFFF,#F4F5F3)", border: "1px solid #D9DEDA", borderRadius: 22, padding: isMobile() ? "16px 16px" : "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" } },
                 h("div", { style: { minWidth: 0, flex: 1 } },
                     h("div", { style: { fontSize: 10, fontWeight: 900, color: "#4F6F4C", textTransform: "uppercase", letterSpacing: ".12em" } }, "Yield Flow > Board Impact"),
-                    h("div", { style: { fontSize: isMobile() ? 26 : 30, fontWeight: 900, color: "#141818", marginTop: 6, lineHeight: 1.05 } }, "Board Impact View"),
+                    h("div", { style: { fontSize: isMobile() ? 26 : 30, fontWeight: 900, color: "#141818", marginTop: 6, lineHeight: 1.05 } }, "Board Impact · Impacto por referencia"),
                     h("div", { style: { fontSize: 12.5, color: "#5F6264", marginTop: 8, lineHeight: 1.45, maxWidth: 820 } }, "Context: ", String(ctx.wo || "WO scope"), " · ", String(ctx.mode || "Failure mode"), activeBoardSideFilters.length ? " · Side filters: " + activeBoardSideFilters.join("/") : "", activeBoardSnFilters.length ? " · SN filters: " + activeBoardSnFilters.length : "", activeBoardPartFilters.length ? " · PN filters: " + activeBoardPartFilters.length : "", activeBoardRefFilters.length ? " · Ref filters: " + activeBoardRefFilters.length : "", " · Active Ref: ", selectedRef)),
                 h("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
-                    h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #CBD2CD", background: "#fff", color: "#33472D", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Back to Yield Flow"),
-                    h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #C7D4CA", background: "#141818", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
-                    h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #D9B758", background: "linear-gradient(135deg,#F6EDDB,#FFFFFF)", color: "#8C6514", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
+                    h("button", { type: "button", onClick: function () { setActiveModule("yieldflow"); setTimeout(function () { scrollToSection("yieldflow-section"); }, 60); }, style: { border: "1px solid #E2D7D8", background: "#fff", color: "#7F1820", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "← Volver a Yield Flow"),
+                    false && h("button", { type: "button", onClick: function () { exportBoardImpactQualityAlertPpt({ ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, boardPdfState: boardPdfState, ccItems: ccItems }); }, style: { border: "1px solid #C7D4CA", background: "#141818", color: "#fff", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Quality Alert PPT"),
+                    false && h("button", { type: "button", onClick: function () { exportBoardImpactModelTrendPpt({ ctx: ctx, modeOptions: modeOptions, refStats: refStats, rows: rows, activeMode: activeMode, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, filters: yieldFilters }); }, style: { border: "1px solid #D9B758", background: "linear-gradient(135deg,#F6EDDB,#FFFFFF)", color: "#8C6514", borderRadius: 999, padding: "10px 14px", fontSize: 12, fontWeight: 900, cursor: "pointer" } }, "Export Model Trend PPT"),
                     traceOpsBoardCcBadgeElement(h, ccItems))),
 
-            h("section", { key: "board-impact-export-center", id: "board-impact-export-center", className: "traceops-board-export-center", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "14px" : "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
+            false && h("section", { key: "board-impact-export-center", id: "board-impact-export-center", className: "traceops-board-export-center", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "14px" : "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
                 h("div", { style: { minWidth: 220 } },
                     h("div", { style: { fontSize: 15, fontWeight: 950, color: "#141818" } }, "Board Impact Export Center"),
                     h("div", { style: { fontSize: 11, color: "#5F6264", marginTop: 4 } }, "Export filtered by the active Yield Flow scope. Paretos included."))),
-            h("section", { key: "smtinel-board-export-toolbar-v96", id: "smtinel-board-export-toolbar-v96", "data-smtinel-board-export-toolbar": "v96", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "12px" : "12px 14px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(240px,1fr))", gap: 10, boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
+            false && h("section", { key: "smtinel-board-export-toolbar-v96", id: "smtinel-board-export-toolbar-v96", "data-smtinel-board-export-toolbar": "v96", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "12px" : "12px 14px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(240px,1fr))", gap: 10, boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
 	                h("button", { id: "board-export-issue-v96", key: "board-export-issue-v96", "data-board-export-issue": "1", "data-board-export-v96": "issue", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #C7D4CA", background: "#E9EFEA", color: "#33472D", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker"),
 	                h("button", { id: "board-export-action-v96", key: "board-export-action-v96", "data-board-export-action": "1", "data-board-export-v96": "action", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #D9B758", background: "#F6EDDB", color: "#8C6514", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker")),
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } }, componentMetricReady ? [
@@ -38672,7 +38672,7 @@ body:has(#recovery-section) .main-content.expanded{
                 React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Scheduling Optimizer"),
                 React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "SMT production sequencing and cost impact"),
                 React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Standalone module to simulate SMT sequences with SPT, EDD, CR, WSPT, family grouping, and model-level economic impact from Station_on_line_report / SKU Cost.")),
-            React.createElement("iframe", { title: "SMTinel Scheduling Optimizer", src: "modules/scheduling-optimizer.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#050505" } })
+            React.createElement("iframe", { title: "SMTinel Scheduling Optimizer", src: "modules/scheduling-optimizer.html", style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#F7F5F4" } })
         );
     }
 
@@ -39703,21 +39703,21 @@ function traceOpsBonepileBuildPayload() {
 </head>
 <body>
 <div class="wrap">
-  <div class="head"><div><h1>Bonepile Visual Tracker</h1><p>Current WIP by line, product, station and aging. Reports now live in Export Center.</p></div><div class="actions"><button class="btn good" id="baseline">Capture Shift Start</button><button class="btn" id="refresh">Refresh</button></div></div>
+  <div class="head"><div><h1>Bonepile · Inventario y Aging</h1><p>WIP actual por línea, producto, estación y aging. Los reportes viven en Export Center.</p></div><div class="actions"><button class="btn good" id="baseline">Capturar inicio de turno</button><button class="btn" id="refresh">Actualizar</button></div></div>
   <div class="kpis" id="kpis"></div>
-  <div class="recon" id="recon"><span>Waiting for Yield Flow data...</span></div>
-  <section class="rack-panel"><div class="rack-panel-head"><div><b>Rack Inventory View</b><span>Producto y cantidad por línea dentro del scope actual</span></div><small id="rackSummary">Sin datos</small></div><div class="rack-grid" id="rackview"></div></section>
+  <div class="recon" id="recon"><span>Esperando datos de Yield Flow...</span></div>
+  <section class="rack-panel"><div class="rack-panel-head"><div><b>Inventario visual por rack</b><span>Producto y cantidad por línea dentro del scope actual</span></div><small id="rackSummary">Sin datos</small></div><div class="rack-grid" id="rackview"></div></section>
   <div class="layout" id="layout"></div>
   <div class="tools">
-    <input id="q" placeholder="Search SN, WO or SKU">
-    <select id="scope"><option value="FULL">Full loaded SFC</option><option value="ACTIVE">Yield Flow active filters</option></select>
-    <select id="line"><option value="ALL">All lines</option></select>
-    <select id="station"><option value="ALL">All stations</option></select>
-    <select id="age"><option value="ALL">All aging</option><option value="age0_30">0-30D</option><option value="age31_60">31-60D</option><option value="age61_90">61-90D</option><option value="age91_365">91-365D</option><option value="ageOver365">&gt;1Y</option></select>
-    <select id="repair"><option value="ALL">Clean + Repair</option><option value="YES">Repair</option><option value="NO">Clean</option></select>
-    <button class="btn" id="export">Export TSV</button>
+    <input id="q" placeholder="Buscar SN, WO o SKU">
+    <select id="scope"><option value="FULL">SFC cargado completo</option><option value="ACTIVE">Filtros activos de Yield Flow</option></select>
+    <select id="line"><option value="ALL">Todas las líneas</option></select>
+    <select id="station"><option value="ALL">Todas las estaciones</option></select>
+    <select id="age"><option value="ALL">Todo el aging</option><option value="age0_30">0-30D</option><option value="age31_60">31-60D</option><option value="age61_90">61-90D</option><option value="age91_365">91-365D</option><option value="ageOver365">&gt;1Y</option></select>
+    <select id="repair"><option value="ALL">Limpio + Reparación</option><option value="YES">Reparación</option><option value="NO">Limpio</option></select>
+    <button class="btn" id="export">Exportar TSV</button>
   </div>
-  <div class="tablebox"><table><thead><tr><th>SN</th><th>WO</th><th>SKU</th><th>Line</th><th>Current station</th><th>Location</th><th>Aging bucket</th><th>Repair</th><th class="num">Unit cost</th><th class="num">Cost</th><th>Build start</th></tr></thead><tbody id="tbody"><tr><td colspan="12" class="empty">Waiting for Yield Flow data...</td></tr></tbody></table></div>
+  <div class="tablebox"><table><thead><tr><th>SN</th><th>WO</th><th>SKU</th><th>Línea</th><th>Estación actual</th><th>Ubicación</th><th>Rango de aging</th><th>Reparación</th><th class="num">Costo unitario</th><th class="num">Costo</th><th>Inicio de build</th></tr></thead><tbody id="tbody"><tr><td colspan="12" class="empty">Esperando datos de Yield Flow...</td></tr></tbody></table></div>
 </div>
 <div class="modal" id="emailModal">
   <div class="dialog export-dialog">
@@ -39725,75 +39725,75 @@ function traceOpsBonepileBuildPayload() {
       <div>
         <button class="export-back" id="exportBack" type="button">&#8592; Export Center</button>
         <b id="reportModalTitle">Export Center</b>
-        <div class="sub" id="reportModalSub">Choose a report first. Configuration and export actions stay beside the preview.</div>
+        <div class="sub" id="reportModalSub">Selecciona un reporte. La configuración y las acciones de exportación permanecen junto a la vista previa.</div>
       </div>
-      <button class="btn" id="closeEmail">Close</button>
+      <button class="btn" id="closeEmail">Cerrar</button>
     </div>
     <div class="dialog-body export-dialog-body">
       <section class="export-landing" id="exportLanding">
         <div class="export-landing-hero">
           <div class="export-landing-kicker">SMTinel Export Center</div>
-          <h2>Build the report or control view you need</h2>
-          <p>Start from the report or control module instead of scrolling through one long builder. Reports keep their filters beside the live preview; Yokoten opens the product-by-line qualification matrix.</p>
+          <h2>Genera el reporte que necesitas</h2>
+          <p>Selecciona el reporte requerido. Cada salida conserva sus filtros junto a la vista previa; Yokoten abre la matriz de calificación por producto y línea.</p>
         </div>
         <div class="export-type-grid">
           <button type="button" class="export-type-card" data-report-type="SHIFT">
             <span class="export-type-icon">01</span>
-            <b>Shift Handoff</b>
-            <p>End-of-shift execution, movement, repair exposure and management handoff from the captured baseline.</p>
-            <span class="export-type-meta"><span>Current shift</span><span>HTML</span><span>No model selector</span></span>
+            <b>Entrega de turno</b>
+            <p>Ejecución de cierre de turno, movimiento, exposición a reparación y entrega administrativa desde el baseline capturado.</p>
+            <span class="export-type-meta"><span>Turno actual</span><span>HTML</span><span>Sin selector de modelo</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="WEEKLY">
             <span class="export-type-icon">02</span>
-            <b>Weekly Execution Review</b>
-            <p>Fiscal-week review with Quality Focus or Executive Focus, work-order priority and current execution exposure.</p>
-            <span class="export-type-meta"><span>Fiscal week</span><span>Quality / Executive</span><span>HTML</span></span>
+            <b>Reporte semanal de ejecución</b>
+            <p>Revisión por semana fiscal con enfoque de calidad o ejecutivo, prioridad de WO y exposición de ejecución.</p>
+            <span class="export-type-meta"><span>Semana fiscal</span><span>Calidad / Ejecutivo</span><span>HTML</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="DBN">
             <span class="export-type-icon">03</span>
-            <b>DBN Follow-up</b>
-            <p>Model and work-order follow-up with build progress, unit route validation, terminal evidence and DBN export package.</p>
-            <span class="export-type-meta"><span>Model + WO</span><span>HTML</span><span>Excel</span></span>
+            <b>Seguimiento DBN</b>
+            <p>Seguimiento por modelo y Work Order con avance de build, validación de ruta, evidencia terminal y paquete DBN.</p>
+            <span class="export-type-meta"><span>Modelo + WO</span><span>HTML</span><span>Excel</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="TEST">
             <span class="export-type-icon">04</span>
-            <b>Test Performance Report</b>
-            <p>Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.</p>
-            <span class="export-type-meta"><span>Date / shift</span><span>FPY + retest</span><span>HTML + CSV</span></span>
+            <b>Desempeño de pruebas</b>
+            <p>Desempeño diario o semanal de pruebas eléctricas y funcionales desde Cesium, separando primer intento y retest.</p>
+            <span class="export-type-meta"><span>Fecha / turno</span><span>FPY + retest</span><span>HTML + CSV</span></span>
           </button>
           <button type="button" class="export-type-card export-type-card-yokoten" data-report-type="YOKOTEN" data-yokoten-open="1">
             <span class="export-type-icon">05</span>
-            <b>Manufacturing Qualification &amp; Yokoten Matrix</b>
-            <p>Product + revision by line. Common DB builds the run/WO/quantity history; selecting a cell opens the linked Handoff, Test Performance, Repair and Yokoten tracker.</p>
-            <span class="export-type-meta"><span>Common DB</span><span>Product + Rev x Line</span><span>Handoff + Test + Repair</span></span>
+            <b>Matriz Yokoten y calificación de manufactura</b>
+            <p>Producto + revisión por línea. Common DB construye historial de corrida, WO y cantidad; cada celda abre la evidencia relacionada.</p>
+            <span class="export-type-meta"><span>Common DB</span><span>Producto + Rev × Línea</span><span>Turno + Pruebas + Reparación</span></span>
           </button>
         </div>
-        <div class="export-landing-foot"><b style="color:#E8E8E6">Current data scope is preserved.</b> Choosing a report does not reset Bonepile filters, loaded SFC data, Repair Records, fiscal periods or the captured shift baseline.</div>
+        <div class="export-landing-foot"><b>El alcance de datos se conserva.</b> Elegir un reporte no reinicia filtros de Bonepile, SFC cargado, Repair Records, periodos fiscales ni el baseline de turno.</div>
       </section>
 
       <section class="report-builder" id="reportBuilder" style="display:none">
         <aside class="report-builder-sidebar">
           <div class="report-config">
             <div class="config-grid">
-              <label class="field">Report type
+              <label class="field">Tipo de reporte
                 <select id="reportType">
-                  <option value="WEEKLY" selected>Weekly Execution Review</option>
-                  <option value="SHIFT">Shift Handoff</option>
-                  <option value="DBN">DBN Follow-up</option>
-                  <option value="TEST">Test Performance Report</option>
-                  <option value="YOKOTEN">Manufacturing Qualification &amp; Yokoten Matrix</option>
+                  <option value="WEEKLY" selected>Reporte semanal de ejecución</option>
+                  <option value="SHIFT">Entrega de turno</option>
+                  <option value="DBN">Seguimiento DBN</option>
+                  <option value="TEST">Desempeño de pruebas</option>
+                  <option value="YOKOTEN">Matriz Yokoten y calificación de manufactura</option>
                 </select>
               </label>
               <div class="period-controls" id="periodControls">
-                <label class="field">Fiscal week<select id="reportFiscalWeek"></select></label>
-                <label class="field">Date range<input id="reportDateRange" readonly></label>
+                <label class="field">Semana fiscal<select id="reportFiscalWeek"></select></label>
+                <label class="field">Rango de fechas<input id="reportDateRange" readonly></label>
               </div>
             </div>
             <div id="roleSelectorWrap">
-              <div class="role-title">Available report focus</div>
+              <div class="role-title">Enfoque del reporte</div>
               <div class="role-grid">
-                <button class="role-card active" data-focus="QUALITY"><span class="role-icon" style="background:rgba(199,62,84,.10);color:#C73E54">&#128737;</span><b>Quality Focus</b><span>Failures, containment and support priority</span></button>
-                <button class="role-card" data-focus="EXECUTIVE"><span class="role-icon" style="background:rgba(107,142,90,.10);color:#6B8E5A">&#128084;</span><b>Executive Focus</b><span>Exposure, risk and required decisions</span></button>
+                <button class="role-card active" data-focus="QUALITY"><span class="role-icon" style="background:rgba(199,62,84,.10);color:#C73E54">&#128737;</span><b>Enfoque de calidad</b><span>Fallas, contención y prioridad de soporte</span></button>
+                <button class="role-card" data-focus="EXECUTIVE"><span class="role-icon" style="background:rgba(107,142,90,.10);color:#6B8E5A">&#128084;</span><b>Enfoque ejecutivo</b><span>Exposición, riesgo y decisiones requeridas</span></button>
               </div>
             </div>
             <div id="executiveQualityControls" style="display:none!important;margin-top:12px">
@@ -41980,9 +41980,9 @@ ${'</scr'+'ipt>'}
                 React.createElement("div", null,
                     React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase", opacity: .78 } }, "SMTinel · Reportes"),
                     React.createElement("div", { style: { fontSize: isMobile() ? 22 : 28, fontWeight: 900, lineHeight: 1.05, marginTop: 5 } }, "Export Center"),
-                    React.createElement("div", { style: { fontSize: 11, lineHeight: 1.5, opacity: .82, marginTop: 7, maxWidth: 760 } }, "Shift Handoff, Weekly Execution, DBN, Test Performance y Yokoten en un módulo independiente. Los datos cargados y el scope actual se conservan."))),
+                    React.createElement("div", { style: { fontSize: 11, lineHeight: 1.5, opacity: .82, marginTop: 7, maxWidth: 760 } }, "Entrega de turno, ejecución semanal, DBN, desempeño de pruebas y Yokoten en un módulo independiente. Los datos cargados y el alcance actual se conservan."))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #E6DADD", borderRadius: 18, overflow: "hidden", boxShadow: "0 8px 26px rgba(68,34,40,.05)" } },
-                React.createElement("iframe", { id: "smtinel-exportcenter-frame", title: "SMTinel Export Center", srcDoc: SMTINEL_BONEPILE_SRCDOC, onLoad: function(e){ var frame=e&&e.currentTarget; setTimeout(function(){ try { var doc=frame&&frame.contentDocument; if(doc){var wrap=doc.querySelector('.wrap');if(wrap)wrap.style.display='none';var close=doc.getElementById('closeEmail');if(close)close.style.display='none';} traceOpsBonepilePostToFrame(frame&&frame.contentWindow,{type:'smtinel:bonepile:parent-ready'}); if(frame&&frame.contentWindow&&typeof frame.contentWindow.SMTinelOpenExportCenter==='function') frame.contentWindow.SMTinelOpenExportCenter(); }catch(_){} },220); }, style: { width: "100%", minHeight: isMobile() ? "980px" : "1180px", border: 0, display: "block", background: "#0A0A0A" } })))
+                React.createElement("iframe", { id: "smtinel-exportcenter-frame", title: "SMTinel Export Center", srcDoc: SMTINEL_BONEPILE_SRCDOC, onLoad: function(e){ var frame=e&&e.currentTarget; setTimeout(function(){ try { var doc=frame&&frame.contentDocument; if(doc){var wrap=doc.querySelector('.wrap');if(wrap)wrap.style.display='none';var close=doc.getElementById('closeEmail');if(close)close.style.display='none';} traceOpsBonepilePostToFrame(frame&&frame.contentWindow,{type:'smtinel:bonepile:parent-ready'}); if(frame&&frame.contentWindow&&typeof frame.contentWindow.SMTinelOpenExportCenter==='function') frame.contentWindow.SMTinelOpenExportCenter(); }catch(_){} },220); }, style: { width: "100%", minHeight: isMobile() ? "980px" : "1180px", border: 0, display: "block", background: "#F7F5F4" } })))
     }
 
     function renderVectorSection() {
@@ -42141,8 +42141,8 @@ ${'</scr'+'ipt>'}
         return React.createElement("section", { id: "bonepile-section", className: "trace-card", style: { padding: 0, overflow: "hidden", borderRadius: 22, background: "#F7F5F2" } },
             React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid #D9E6F7", background: "linear-gradient(135deg,#EAF2FF,#FFFFFF)" } },
                 React.createElement("div", { style: { fontSize: 10, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#2F6FB3" } }, "Bonepile Visual Tracker"),
-                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "Interactive WIP and bonepile location map"),
-                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Uses the exact Yield Flow station breakdown population and splits SMTLOADING, AOI2 and AOI4 by production line.")),
+                React.createElement("h2", { style: { margin: "4px 0 0", fontSize: 26, color: "#102A43", letterSpacing: "-.04em" } }, "Inventario visual de WIP y Bonepile"),
+                React.createElement("p", { style: { margin: "7px 0 0", color: "#5F766C", lineHeight: 1.45, maxWidth: 920 } }, "Usa la población real de Yield Flow y separa SMTLOADING, AOI2 y AOI4 por línea de producción.")),
             React.createElement("iframe", { title: "SMTinel Bonepile Visual Tracker", srcDoc: SMTINEL_BONEPILE_SRCDOC, onLoad: function(e) { var frame = e && e.currentTarget; setTimeout(function() { try { traceOpsBonepilePostToFrame(frame && frame.contentWindow, { type: 'smtinel:bonepile:parent-ready' }); } catch (_) {} }, 120); }, style: { width: "100%", minHeight: "1180px", border: 0, display: "block", background: "#050505" } })
         );
     }
@@ -42321,28 +42321,100 @@ ${'</scr'+'ipt>'}
 
     var moduleNavItems = [
         {
-            key: "yieldflow",
-            label: "Yield Flow",
-            shortLabel: "Trazabilidad por WO, SN, estación y avance de manufactura",
-            count: yieldFlowModel.kpi.orders,
-            anchorId: "yieldflow-section",
-            tone: { bg: "#FFF7F8", border: "#E6C7CB", color: "#7F1820" }
+            key: "vector",
+            label: "VECTOR",
+            shortLabel: "SQDCM → issue → cause → traceability → DIVE → Yokoten",
+            count: "LIVE",
+            anchorId: "vector-section",
+            tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
         },
         {
-            key: "boardimpact",
-            label: "Board Impact",
-            shortLabel: "Impacto por RefDes y localización física en board",
-            count: boardImpactContext && boardImpactContext.refs ? boardImpactContext.refs.length : 0,
-            anchorId: "boardimpact-section",
-            tone: { bg: "#FFF7F8", border: "#E6C7CB", color: "#7F1820" }
+            key: "sentinelux",
+            label: "Command Center",
+            shortLabel: "Manufacturing operating center: process, signal, impact and decision",
+            count: "CC",
+            anchorId: "sentinel-ux-section",
+            tone: { bg: "#EEF5FF", border: "#CFE0FB", color: "#1F3A5F" }
+        },
+        {
+            key: "rcca",
+            label: "RCCA",
+            shortLabel: "Root cause memory and corrective action history",
+            count: rccaList.length,
+            anchorId: "rcca-section",
+            tone: { bg: "#F5F0FE", border: "#DBCDF8", color: "#6B2DA8" }
+        },
+        {
+            key: "storyline",
+            label: "Storyline",
+            shortLabel: "Weekly build timeline intelligence, manufacturing narrative and station yield signals",
+            count: (yieldFlowModel && yieldFlowModel.kpi && yieldFlowModel.kpi.risk) ? yieldFlowModel.kpi.risk : "ST",
+            anchorId: "storyline-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
+        },
+        {
+            key: "8d",
+            label: "8D Generator",
+            shortLabel: "D1-D8 drafting, evidence readiness, validation and Yokoten",
+            count: eightdList.length,
+            anchorId: "eightd-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
+        },
+        {
+            key: "yieldflow",
+            label: "Yield Flow",
+            shortLabel: "",
+            count: yieldFlowModel.kpi.orders,
+            anchorId: "yieldflow-section",
+            tone: { bg: "#EAF2FF", border: "#C7DBF7", color: "#1F3A5F" }
         },
         {
             key: "bonepile",
             label: "Bonepile Visual Tracker",
-            shortLabel: "WIP, aging, rack, producto y recuperación por línea",
+            shortLabel: "Interactive WIP map by line, station, aging and repair",
             count: "WIP",
             anchorId: "bonepile-section",
-            tone: { bg: "#FFF9F3", border: "#E7D2B6", color: "#8A5A18" }
+            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
+        },
+        {
+            key: "scheduling",
+            label: "Scheduling",
+            shortLabel: "SMT sequence, capacity, setup, tardiness, and economic impact by model",
+            count: "SCH",
+            anchorId: "scheduling-section",
+            tone: { bg: "#FFF7E8", border: "#F5D08A", color: "#9A6A16" }
+        },
+        {
+            key: "planagent",
+            label: "Plan Agent",
+            shortLabel: "Early production risk detection from SMT plan vs Yield Flow and Board Impact",
+            count: planAgentFindings.length || planAgentRows.length || "PA",
+            anchorId: "planagent-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
+        },
+        {
+            key: "yieldweek",
+            label: "Yield by Week",
+            shortLabel: "Weekly yield chart by station, calculated only on demand",
+            count: "YBW",
+            anchorId: "yieldweek-section",
+            tone: { bg: "#EAF7EF", border: "#C8EAD3", color: "#1A7A3C" }
+        },
+        {
+            key: "recovery",
+            label: "Recovery Intelligence",
+            shortLabel: "Seguimiento aging/bonepile por SN, re-entry y salida real",
+            count: yieldFlowModel.kpi.risk,
+            anchorId: "recovery-section",
+            tone: { bg: "#FFF7E8", border: "#F5E4A0", color: "#9A6A16" }
+        },
+        {
+            key: "boardimpact",
+            label: "Board Impact",
+            shortLabel: "Mapa visual de referencias usando PDF de tablilla",
+            count: boardImpactContext && boardImpactContext.refs ? boardImpactContext.refs.length : 0,
+            anchorId: "boardimpact-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
         },
         {
             key: "exportcenter",
@@ -42350,7 +42422,39 @@ ${'</scr'+'ipt>'}
             shortLabel: "Reportes de turno, ejecución, DBN, Test Performance y Yokoten",
             count: "EXP",
             anchorId: "exportcenter-section",
-            tone: { bg: "#FFF1F2", border: "#E1B5BB", color: "#7F1820" }
+            tone: { bg: "#FFF4F5", border: "#E8BCC2", color: "#8D1F2B" }
+        },
+        {
+            key: "criticalchars",
+            label: "Características Críticas",
+            shortLabel: "Formulario CC de producto: restricciones, validaciones y reglas críticas",
+            count: traceOpsReadCriticalCharacteristics().length,
+            anchorId: "criticalchars-section",
+            tone: { bg: "#FEF9E8", border: "#F5E4A0", color: "#8A5A00" }
+        },
+        {
+            key: "criticalmodel",
+            label: "CMA / Critical Model Analysis",
+            shortLabel: "CMA / Critical Model Analysis: yield loss, defect frequency, unit impact e IQR/outliers",
+            count: criticalModelGroupCount,
+            anchorId: "criticalmodel-section",
+            tone: { bg: "#FFF7F5", border: "#F1B5AE", color: "#A43B2E" }
+        },
+        {
+            key: "issueimpact",
+            label: "Issue Impact Analyzer",
+            shortLabel: "Analiza seriales afectados por ventana de tiempo: estación, proceso, falla y recovery",
+            count: "ITA",
+            anchorId: "issueimpact-section",
+            tone: { bg: "#EEF5FF", border: "#C9DAF5", color: "#1F3A5F" }
+        },
+        {
+            key: "intellog",
+            label: "Intel Log",
+            shortLabel: "Machine history, part replacement and recurrence tracking",
+            count: maintenanceRecords.length,
+            anchorId: "maintenance-section",
+            tone: { bg: "#EEF6FF", border: "#D8E6FB", color: "#145A28" }
         }
     ];
     moduleNavItems = moduleNavItems.filter(function (item) { return !SMTINEL_RETIRED_MODULE_KEYS[item.key]; });
@@ -42560,14 +42664,14 @@ ${'</scr'+'ipt>'}
             React.createElement("div", { className: "saas-topbar-actions" },
                 React.createElement("div", { className: "saas-header-pill", title: t("langLabel"), style: { gap: 6, padding: "6px 8px" } },
                     React.createElement("span", { className: "hide-mobile", style: { fontSize: 10, fontWeight: 700, color: "#6A6560", marginRight: 2 } }, t("langLabel")),
-                    React.createElement("button", { type: "button", onClick: function () { setLang("en"); }, style: { border: "none", background: "#1F3A5F", color: "#fff", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "default" } }, "EN")),
-                React.createElement("div", { className: "saas-header-pill", title: authUser ? cloudStatus : "Abrir login Supabase", onClick: function () { if (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) { setSidebarOpen(true); setAuthMode("signin"); } }, style: { cursor: (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) ? "pointer" : "default" } },
+                    React.createElement("button", { type: "button", onClick: function () { setLang(lang === "es" ? "en" : "es"); }, style: { border: "1px solid #E1D6D8", background: "#fff", color: "#4A3A3D", borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer" } }, lang === "es" ? "ES" : "EN")),
+                false && React.createElement("div", { className: "saas-header-pill", title: authUser ? cloudStatus : "Abrir login Supabase", onClick: function () { if (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) { setSidebarOpen(true); setAuthMode("signin"); } }, style: { cursor: (!authUser && window.SMTinelCloud && window.SMTinelCloud.isConfigured()) ? "pointer" : "default" } },
                     React.createElement("span", { style: { display: "inline-block", width: 8, height: 8, borderRadius: 99, background: authUser ? "#2F6FB3" : (window.SMTinelCloud && window.SMTinelCloud.isConfigured() ? "#2F6FB3" : "#B87820") } }),
                     React.createElement("span", { className: "hide-mobile" }, authUser ? t("cloudRcca") : (window.SMTinelCloud && window.SMTinelCloud.isConfigured() ? "Entrar Supabase" : t("localRcca")))),
                 React.createElement("div", { className: "saas-header-pill", title: realtimeUi.label },
                     React.createElement("span", { style: { display: "inline-block", width: 8, height: 8, borderRadius: 99, background: realtimeUi.color } }),
-                    React.createElement("span", { className: "hide-mobile" }, realtimeUi.label)),
-                state === "done" && React.createElement("button", { className: "saas-header-btn", onClick: function () { reset(); if (isMobile())
+                    React.createElement("span", null, "Local")),
+                false && state === "done" && React.createElement("button", { className: "saas-header-btn", onClick: function () { reset(); if (isMobile())
                         setSidebarOpen(false); } },
                     React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5" },
                         React.createElement("path", { d: "M12 5v14M5 12h14" })),
@@ -77699,127 +77803,62 @@ html body .saas-header-btn:not(.primary),html body .saas-header-pill{background:
 #board-impact-export-center{display:none!important}
 </style>
 
-<!-- SMTinel V20.1 · Red X polish + mobile density + Spanish Export Center -->
-<style id="smtinel-v201-redx-polish">
-:root{
-  --rx:#B4232D;--rx-dark:#7F1820;--rx-soft:#FFF1F2;--rx-line:#E7D1D4;
-  --rx-charcoal:#252A30;--rx-muted:#6E747C;--rx-bg:#F7F5F4;--rx-card:#FFFFFF;
-  --rx-good:#2F7D4A;--rx-warn:#A76A1D;--rx-info:#315E87;
-}
-/* Global light shell: same SMTinel, cleaner Shainin Red X hierarchy. */
-html.smtinel-theme-light body{background:linear-gradient(180deg,#F9F8F7 0%,#F5F2F1 100%)!important;color:var(--rx-charcoal)!important}
-html.smtinel-theme-light body .saas-topbar{background:rgba(255,255,255,.97)!important;border-bottom:1px solid #E9E1E2!important;box-shadow:0 4px 18px rgba(63,44,48,.045)!important}
-html.smtinel-theme-light body .saas-topbar button,
-html.smtinel-theme-light body .saas-topbar .saas-header-btn,
-html.smtinel-theme-light body .saas-topbar .saas-header-pill{background:#fff!important;color:#343A40!important;border-color:#E6DEDF!important;box-shadow:none!important}
-html.smtinel-theme-light body .saas-topbar .saas-header-btn.primary{background:linear-gradient(135deg,var(--rx-dark),var(--rx))!important;color:#fff!important;border-color:transparent!important;box-shadow:0 7px 18px rgba(180,35,45,.14)!important}
-html.smtinel-theme-light body .smtinel-topbar-status-v201{display:inline-flex!important;align-items:center!important;gap:6px!important;padding:5px 8px!important;border:1px solid #E7DCDD!important;border-radius:999px!important;background:#FBF9F9!important;color:#756B6D!important;font-size:9px!important;font-weight:850!important;white-space:nowrap!important}
-html.smtinel-theme-light body .smtinel-topbar-status-v201:before{content:"";width:6px;height:6px;border-radius:50%;background:#9E9E9E}
-html.smtinel-theme-light body .smtinel-topbar-status-v201.local:before{background:var(--rx-good)}
-
-/* Yield Flow hero: Red X, not legacy olive. */
-html.smtinel-theme-light body #yieldflow-section>div:first-child{
-  background:radial-gradient(circle at 85% 18%,rgba(255,255,255,.12),transparent 28%),linear-gradient(135deg,#2A2022 0%,#6F1820 50%,#B4232D 100%)!important;
-  border-color:#8F2731!important;box-shadow:0 16px 38px rgba(127,24,32,.16)!important;color:#fff!important;
-}
-html.smtinel-theme-light body #yieldflow-section>div:first-child *{color:#fff!important;-webkit-text-fill-color:#fff!important}
-html.smtinel-theme-light body #yieldflow-section>div:first-child span{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.20)!important}
-/* Clean Yield remains a status anchor but no longer turns the whole page olive. */
-html.smtinel-theme-light body #yieldflow-section [data-smt-light-clean-yield="1"],
-html.smtinel-theme-light body #yieldflow-section .smtinel-light-dark-anchor-v17{
-  background:linear-gradient(135deg,#201B1C 0%,#342729 58%,#4B3034 100%)!important;
-  border-color:#5B3A3F!important;box-shadow:0 12px 26px rgba(51,35,39,.12)!important;
-}
-
-/* Compact mobile status strip generated by runtime below. */
-.smt-yf-mobile-summary-v201{display:none}
-@media(max-width:700px){
-  html body #yieldflow-section{gap:10px!important}
-  html body #yieldflow-section>div:first-child{padding:12px 12px!important;border-radius:15px!important;gap:7px!important}
-  html body #yieldflow-section>div:first-child>div:first-child>div:first-child{font-size:17px!important;line-height:1.12!important;letter-spacing:-.02em!important}
-  .smt-yf-mobile-summary-v201{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#E8DFE0;border:1px solid #E4DADB;border-radius:14px;overflow:hidden;position:relative;z-index:2}
-  .smt-yf-mobile-summary-v201>div{background:#fff;padding:9px 7px;min-width:0}
-  .smt-yf-mobile-summary-v201 small{display:block;color:#81777A;font-size:7px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .smt-yf-mobile-summary-v201 b{display:block;margin-top:4px;color:#252A30;font-size:16px;line-height:1;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .smt-yf-mobile-summary-v201 .risk b{color:var(--rx)}
-  .smt-yf-mobile-summary-v201 .good b{color:var(--rx-good)}
-  #yieldflow-section .smt-yf-original-summary-v201{max-height:260px!important;overflow:hidden!important}
-  #yieldflow-section .smt-yf-original-summary-v201 [data-smt-light-clean-yield="1"]{min-height:0!important}
-}
-@media(max-width:440px){.smt-yf-mobile-summary-v201{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-/* Bonepile rack: stronger physical-rack read, same source data. */
-html body #bonepile-section iframe{background:#F7F5F4!important}
-.smtinel-bottom-nav .smtinel-tab.active{background:#FFF1F2!important;color:var(--rx-dark)!important}
-.smtinel-bottom-nav .smtinel-tab.active::after{background:var(--rx)!important}
-
-/* Export Center shell. Actual iframe receives a matching style from JS. */
-#exportcenter-section{background:transparent!important}
-#exportcenter-section>div:first-child{border:1px solid #E7DCDD!important;background:#fff!important;box-shadow:0 8px 22px rgba(55,39,42,.045)!important}
-#smtinel-exportcenter-frame{background:#F7F5F4!important;border-radius:18px!important}
-
-/* Reduce default / raw control feel. */
-html body button,html body select,html body input{font-family:inherit}
-html body .saas-header-btn,html body .saas-header-pill{border-radius:12px!important}
-@media(max-width:700px){html body .saas-header-btn,html body .saas-header-pill{border-radius:999px!important}}
+<style id="smtinel-v21-final-ui">
+:root{--rx:#B4232D;--rx-dark:#7F1820;--rx-soft:#FFF1F2;--char:#25282D;--mut:#6B737B;--bone:#F7F5F4;--line:#E7DDDE;--ok:#2F7D4A;--att:#A56B1F;--tech:#315E87}
+.saas-topbar{background:#fff!important;border-bottom:1px solid var(--line)!important;box-shadow:0 5px 18px rgba(44,34,36,.04)!important}
+.saas-topbar-actions{gap:7px!important}.saas-header-pill,.saas-header-btn{border-color:#E5DCDD!important;background:#fff!important;color:#403A3B!important;box-shadow:none!important}.saas-header-btn.primary{background:linear-gradient(135deg,var(--rx-dark),var(--rx))!important;border-color:var(--rx)!important;color:#fff!important}
+#yieldflow-section>div:first-child,[id*="yieldflow"] .trace-hero{color:#fff!important}
+#yieldflow-section>div:first-child *{color:#fff!important}
+#board-impact-export-center,#smtinel-board-export-toolbar-v96,[data-smtinel-board-native-export]{display:none!important}
+#bonepile-section,#exportcenter-section{background:var(--bone)!important}
+#bonepile-section iframe,#exportcenter-section iframe{background:var(--bone)!important}
+@media(max-width:700px){.saas-topbar-actions{gap:5px!important}.saas-header-pill,.saas-header-btn{min-height:38px!important;padding:6px 10px!important}.saas-header-pill .hide-mobile{display:none!important}#yieldflow-section .trace-kpi-hero,#yieldflow-section .yield-kpi-hero{min-height:auto!important}}
 </style>
-<script id="smtinel-v201-redx-polish-runtime">
+
+<script id="smtinel-v21-final-runtime">
 (function(){
 'use strict';
-if(window.__SMTINEL_V201_RED_X_POLISH__)return;window.__SMTINEL_V201_RED_X_POLISH__=1;
-var TXT={
-  'Weekly Execution Review':'Reporte semanal de ejecución',
-  'DBN Follow-up':'Seguimiento DBN',
-  'Test Performance Report':'Desempeño de pruebas',
-  'Shift Handoff':'Entrega de turno',
-  'Manufacturing Qualification & Yokoten Matrix':'Matriz Yokoten y calificación de manufactura',
-  'Build the report or control view you need':'Selecciona el reporte que necesitas',
-  'Choose a report first. Configuration and export actions stay beside the preview.':'Selecciona un reporte. La configuración y las acciones de exportación permanecen junto a la vista previa.',
-  'Current data scope is preserved.':'El alcance de datos actual se conserva.',
-  'Report type':'Tipo de reporte',
-  'Close':'Cerrar',
-  'Back':'Regresar'
+var exact={
+ 'Import':'Importar','STATUS':'ESTADO','Status':'Estado','Import ZIP':'Cargar ZIP','Clean Yield':'Rendimiento limpio','CLEAN YIELD':'RENDIMIENTO LIMPIO',
+ 'OJT TOUCH':'TOQUE DE REPARACIÓN','repair record touch':'unidades con registro de reparación','RISK UNITS':'UNIDADES EN RIESGO',
+ 'Clean scope with no units at risk':'Alcance limpio sin unidades en riesgo','KPI SUPPORT MATRIX':'MATRIZ DE SOPORTE KPI','CLEAN UNITS':'UNIDADES LIMPIAS',
+ 'no risk':'sin riesgo','lead time':'tiempo de recorrido','REINTEGRATION':'REINTEGRACIÓN','Analysis Period':'Periodo de análisis',
+ 'Yield Flow executive filters':'Filtros de Yield Flow','Reset filters':'Restablecer filtros','Combined Board Impact Filters':'Filtros de Board Impact',
+ 'SIDE':'LADO','SERIAL NUMBER':'NÚMERO DE SERIE','PART NUMBER':'NÚMERO DE PARTE','Failure Mode':'Modo de falla','Current station':'Estación actual',
+ 'Location':'Ubicación','Repair':'Reparación','Build start':'Inicio de build','Capture Shift Start':'Capturar inicio de turno','Refresh':'Actualizar',
+ 'Rack Inventory View':'Inventario visual por rack','No rack inventory is available for the current scope.':'No hay inventario de rack disponible para el alcance actual.',
+ 'IN-SCOPE WIP':'WIP EN ALCANCE','WIP VALUE':'VALOR WIP','REPAIR VALUE':'VALOR REPARACIÓN',
+ 'Current WIP by line, product, station and aging. Reports now live in Export Center.':'WIP actual por línea, producto, estación y aging. Los reportes viven en Export Center.',
+ 'Choose a report first. Configuration and export actions stay beside the preview.':'Selecciona un reporte. La configuración y las acciones de exportación permanecen junto a la vista previa.',
+ 'Dark':'Tema','Light':'Tema'
 };
-var LONG=[
-  ['Start from the report or control module instead of scrolling through one long builder. Reports keep their filters beside the live preview; Yokoten opens the product-by-line qualification matrix.','Elige el reporte directamente. Cada reporte conserva sus filtros junto a la vista previa y Yokoten abre la matriz Producto × Línea.'],
-  ['End-of-shift execution, movement, repair exposure and management handoff from the captured baseline.','Cierre de turno con avance, movimiento, exposición de reparación y entrega a la siguiente operación.'],
-  ['Fiscal-week review with Quality Focus or Executive Focus, work-order priority and current execution exposure.','Revisión por semana fiscal con enfoque de calidad o ejecutivo, prioridad de WO y exposición de ejecución.'],
-  ['Model and work-order follow-up with build progress, unit route validation, terminal evidence and DBN export package.','Seguimiento por modelo y Work Order con avance de build, ruta de unidades, evidencia terminal y paquete DBN.'],
-  ['Daily / weekly electrical and functional test performance from all Cesium activity, including fresh first attempts and retest carry-in.','Desempeño diario o semanal de pruebas eléctricas y funcionales desde Cesium, separando primer intento y retest.'],
-  ['Product + revision by line. Common DB builds the run/WO/quantity history; selecting a cell opens the linked Handoff, Test Performance, Repair and Yokoten tracker.','Producto + revisión por línea. Common DB construye historial de corrida, WO y cantidad; cada celda abre la evidencia relacionada.'],
-  ['Choosing a report does not reset Bonepile filters, loaded SFC data, Repair Records, fiscal periods or the captured shift baseline.','Cambiar de reporte no borra filtros de Bonepile, datos SFC, Repair Records, periodos fiscales ni el baseline del turno.']
-];
-function norm(s){return String(s==null?'':s).replace(/\s+/g,' ').trim()}
-function exactLeaf(root,from,to){if(!root)return;var all=root.querySelectorAll('div,span,b,strong,p,small,label,button,option,h1,h2,h3,h4');for(var i=0;i<all.length;i++){var el=all[i];if(el.children&&el.children.length&&el.tagName!=='BUTTON'&&el.tagName!=='OPTION')continue;var t=norm(el.textContent);if(t===from)el.textContent=to;}}
-function translateRoot(root){if(!root)return;Object.keys(TXT).forEach(function(k){exactLeaf(root,k,TXT[k])});var w=root.ownerDocument&&root.ownerDocument.createTreeWalker?root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_TEXT):null;if(w){var node;while((node=w.nextNode())){var v=node.nodeValue||'';for(var i=0;i<LONG.length;i++){if(v.indexOf(LONG[i][0])>=0){node.nodeValue=v.replace(LONG[i][0],LONG[i][1]);break}}}}}
-function topbar(){var bar=document.querySelector('.saas-topbar');if(!bar)return;var nodes=[].slice.call(bar.querySelectorAll('button,.saas-header-btn,.saas-header-pill,span,div'));
-  nodes.forEach(function(el){var t=norm(el.textContent);if(!t)return;
-    if((t==='Production'||t==='New'||t==='Local RCCA'||t==='RCCA local')&&(!el.children||el.children.length===0)){el.style.setProperty('display','none','important');}
-    if(t==='Language'&&(!el.children||el.children.length===0))el.style.setProperty('display','none','important');
-    if((t==='Load ZIP'||t==='Load ZIP now'||t==='Load operational data')&&(!el.children||el.children.length===0))el.textContent='Cargar datos';
-    if(t==='Dark'&&(!el.children||el.children.length===0))el.textContent='Tema';
-    if((t==='Local mode'||t==='Modo local')&&(!el.children||el.children.length===0)){el.textContent='Local';el.classList.add('smtinel-topbar-status-v201','local');}
-  });
+var forbidden=[/Export Quality Alert PPT/i,/Export Model Trend PPT/i,/Export Issue Tracker/i,/Export Action Tracker/i];
+function translate(root){
+  if(!root||!root.querySelectorAll)return;
+  var els=[root].concat([].slice.call(root.querySelectorAll('button,span,b,strong,small,label,h1,h2,h3,h4,p,th,td,option,div')));
+  els.forEach(function(el){if(!el||(el.children&&el.children.length))return;var t=(el.textContent||'').trim();if(exact[t])el.textContent=exact[t];});
 }
-function findLeaf(root,re){var all=root?root.querySelectorAll('div,span,b,strong,small'):[];for(var i=0;i<all.length;i++){var x=all[i];if((!x.children||!x.children.length)&&re.test(norm(x.textContent)))return x;}return null}
-function valueNear(label,re){if(!label)return'N/D';var p=label.parentElement;for(var i=0;i<4&&p;i++,p=p.parentElement){var t=norm(p.textContent),m=t.match(re);if(m)return m[1]||m[0];}return'N/D'}
-function patchYield(){var root=document.getElementById('yieldflow-section');if(!root)return;
-  var hero=root.firstElementChild;if(hero){var title=findLeaf(hero,/^Yield Flow:/i);if(title)title.textContent='Yield Flow · Avance y desempeño SMT';}
-  exactLeaf(root,'Import','Datos de entrada');exactLeaf(root,'STATUS','ESTADO');exactLeaf(root,'Analysis Period','Periodo de análisis');exactLeaf(root,'Yield Flow executive filters','Filtros de Yield Flow');
-  var clean=findLeaf(root,/^CLEAN YIELD$/i)||findLeaf(root,/^Clean Yield$/i),wo=findLeaf(root,/^WORK ORDERS$/i)||findLeaf(root,/^Work Orders$/i),ojt=findLeaf(root,/^OJT TOUCH$/i)||findLeaf(root,/^OJT Touch$/i),risk=findLeaf(root,/^RISK UNITS$/i)||findLeaf(root,/^Risk Units$/i);
-  if(clean)clean.textContent='RENDIMIENTO LIMPIO';if(wo)wo.textContent='WORK ORDERS';if(ojt)ojt.textContent='UNIDADES CON REPARACIÓN';if(risk)risk.textContent='UNIDADES EN RIESGO';
-  var old=document.getElementById('smt-yf-mobile-summary-v201');
-  var cv=valueNear(clean,/(\d+(?:\.\d+)?%)/),wv=valueNear(wo,/(\d[\d,]*)/),ov=valueNear(ojt,/(\d+(?:\.\d+)?%)/),rv=valueNear(risk,/(\d[\d,]*)\s*$/);
-  var sig=[cv,wv,ov,rv].join('|');if(!old){old=document.createElement('div');old.id='smt-yf-mobile-summary-v201';old.className='smt-yf-mobile-summary-v201';if(hero&&hero.nextSibling)root.insertBefore(old,hero.nextSibling);else root.insertBefore(old,root.firstChild&&root.firstChild.nextSibling);}if(old.getAttribute('data-sig')!==sig){old.setAttribute('data-sig',sig);old.innerHTML='<div class="good"><small>Yield limpio</small><b>'+cv+'</b></div><div><small>WO</small><b>'+wv+'</b></div><div><small>Repair touch</small><b>'+ov+'</b></div><div class="risk"><small>Riesgo</small><b>'+rv+'</b></div>';}
-  if(clean){var p=clean.parentElement;for(var j=0;j<6&&p;j++,p=p.parentElement){var tx=norm(p.textContent);if(/WORK ORDERS/i.test(tx)&&/RISK UNITS|UNIDADES EN RIESGO/i.test(tx)){p.classList.add('smt-yf-original-summary-v201');break}}}
+function cleanBoard(root){
+  root=root||document;
+  ['board-impact-export-center','smtinel-board-export-toolbar-v96'].forEach(function(id){var n=root.getElementById&&root.getElementById(id);if(n)n.style.display='none';});
+  [].slice.call(root.querySelectorAll?root.querySelectorAll('button,a'):[]).forEach(function(b){var t=(b.textContent||'').trim();if(forbidden.some(function(re){return re.test(t);}))b.style.display='none';});
 }
-function exportCss(){return ':root{--rx:#B4232D;--rxd:#7F1820;--rxsoft:#FFF1F2;--ink:#252A30;--mut:#6E747C;--line:#E7DCDD;--bg:#F7F5F4}html,body{background:var(--bg)!important;color:var(--ink)!important}.dialog.export-dialog{background:var(--bg)!important;color:var(--ink)!important;border:0!important;box-shadow:none!important}.export-dialog .dialog-head{background:#fff!important;border-color:var(--line)!important}.export-dialog .dialog-head b{color:var(--ink)!important}.export-dialog .dialog-head .sub{color:var(--mut)!important}.export-dialog .dialog-body,.export-dialog-body,.export-landing{background:var(--bg)!important;color:var(--ink)!important}.export-landing{padding:22px 18px 90px!important}.export-landing-hero{margin-bottom:18px!important}.export-landing-kicker{color:var(--rx)!important}.export-landing-hero h2{color:var(--ink)!important;font-size:clamp(25px,3.5vw,38px)!important}.export-landing-hero p{color:var(--mut)!important}.export-type-grid{gap:11px!important}.export-type-card{min-height:165px!important;padding:16px!important;background:#fff!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:0 7px 18px rgba(48,35,38,.045)!important}.export-type-card:hover{background:#FFF9F9!important;border-color:#DDBDC1!important;transform:translateY(-1px)!important}.export-type-icon{width:34px!important;height:34px!important;margin-bottom:18px!important;border-radius:10px!important;background:var(--rxsoft)!important;border:1px solid #E9C5C9!important;color:var(--rxd)!important;font-size:13px!important}.export-type-card b{color:var(--ink)!important;font-size:15px!important}.export-type-card p{color:var(--mut)!important}.export-type-meta span{background:#FAF7F7!important;color:#746B6D!important;border-color:#E8DFE0!important}.export-landing-foot{background:#fff!important;color:var(--mut)!important;border-color:var(--line)!important}.export-landing-foot b{color:var(--rxd)!important}.report-builder{background:var(--bg)!important}.report-builder-sidebar{background:#fff!important;border-color:var(--line)!important}.report-builder-sidebar .report-config,.report-builder-sidebar .role-card,.report-builder-sidebar .scope-hint,.export-action-panel{background:#fff!important;color:var(--ink)!important;border-color:var(--line)!important}.report-builder-sidebar .field input,.report-builder-sidebar .field select,.report-builder-sidebar .subject,.report-builder-sidebar .notes{background:#fff!important;color:var(--ink)!important;border-color:#DCD2D4!important}.report-preview-pane{background:#F1EDEC!important}.report-preview-head{background:#fff!important;border-color:var(--line)!important}.report-preview-head b{color:var(--ink)!important}.report-preview-head span{color:var(--mut)!important}.report-preview-pane .email-preview{background:#fff!important}.export-action-title{color:var(--ink)!important}.export-action-grid .btn,.export-dialog .btn{background:#fff!important;color:var(--ink)!important;border-color:#DED3D5!important}.export-action-grid .btn.primary,#downloadEmail{background:linear-gradient(135deg,var(--rxd),var(--rx))!important;color:#fff!important;border-color:transparent!important}.export-action-grid #downloadDbnExcel,.export-action-grid #downloadExecutivePptx{background:#FFF7F8!important;color:var(--rxd)!important;border-color:#E7C5C9!important}@media(max-width:900px){.export-type-card{min-height:145px!important}.report-builder{grid-template-columns:1fr!important}.report-builder-sidebar{border-right:0!important;border-bottom:1px solid var(--line)!important}.report-preview-pane{min-height:560px!important}}';}
-function patchExport(){var fr=document.getElementById('smtinel-exportcenter-frame');if(!fr)return;var doc;try{doc=fr.contentDocument;}catch(_){return}if(!doc||!doc.head||!doc.body)return;if(!doc.getElementById('smtinel-export-v201')){var st=doc.createElement('style');st.id='smtinel-export-v201';st.textContent=exportCss();doc.head.appendChild(st);}translateRoot(doc.body);var title=doc.getElementById('reportModalTitle');if(title)title.textContent='Export Center';var sub=doc.getElementById('reportModalSub');if(sub)sub.textContent='Reportes de turno, ejecución, DBN, pruebas y Yokoten';}
-function patchBonepile(){var fr=document.getElementById('smtinel-bonepile-frame');if(!fr)return;var doc;try{doc=fr.contentDocument;}catch(_){return}if(!doc||!doc.body)return;exactLeaf(doc.body,'Bonepile Visual Tracker','Bonepile · Inventario y Aging');exactLeaf(doc.body,'Rack Inventory View','Inventario visual por rack');exactLeaf(doc.body,'Capture Shift Start','Capturar inicio de turno');exactLeaf(doc.body,'Refresh','Actualizar');}
-function run(){topbar();patchYield();patchExport();patchBonepile();}
-var t=0;function queue(){clearTimeout(t);t=setTimeout(run,80)}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){run();setTimeout(run,300);setTimeout(run,900)},{once:true});else{run();setTimeout(run,300);setTimeout(run,900)}
-new MutationObserver(queue).observe(document.documentElement,{childList:true,subtree:true});
-document.addEventListener('load',function(e){if(e.target&&e.target.tagName==='IFRAME')setTimeout(run,120)},true);
+function refineIframe(frame){
+  try{
+    var d=frame.contentDocument;if(!d)return;translate(d);
+    var st=d.getElementById('smtinel-v21-iframe-style');
+    if(!st){st=d.createElement('style');st.id='smtinel-v21-iframe-style';st.textContent='.modal{background:#F7F5F4!important;padding:0!important}.dialog.export-dialog{width:100%!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;background:#F7F5F4!important;box-shadow:none!important}.export-dialog .dialog-head{background:#fff!important;border-color:#E7DCDD!important}.export-dialog .dialog-body{background:#F7F5F4!important}.report-builder-sidebar{background:#F7F5F4!important}.report-preview-pane{background:#F1EEED!important}.report-preview-head{background:#fff!important}.report-preview-pane .email-preview{background:#fff!important}.head{background:#fff!important}.rack-panel{border-color:#E6DADD!important}.rack-panel-head{background:#FFF8F8!important}.rack-panel-head b{color:#7F1820!important}.btn.good{background:#EEF7F1!important;color:#2F7D4A!important;border-color:#CFE6D7!important}';d.head.appendChild(st);}
+    translate(d);
+    if(!d.__smtv21Observer){d.__smtv21Observer=new MutationObserver(function(){translate(d);});d.__smtv21Observer.observe(d.body,{childList:true,subtree:true,characterData:true});}
+  }catch(_){ }
+}
+function apply(){
+  translate(document);cleanBoard(document);
+  [].slice.call(document.querySelectorAll('iframe')).forEach(function(f){if(!f.__smtv21){f.__smtv21=1;f.addEventListener('load',function(){setTimeout(function(){refineIframe(f);},80);});}refineIframe(f);});
+}
+var pending=false;var mo=new MutationObserver(function(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;apply();});});
+if(document.documentElement)mo.observe(document.documentElement,{childList:true,subtree:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
+setTimeout(apply,300);setTimeout(apply,1200);
 })();
 </script>
