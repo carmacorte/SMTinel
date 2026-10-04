@@ -3659,6 +3659,58 @@ body.traceops-premium-shell .saas-topbar-subtitle,.saas-topbar-subtitle{color:#8
 @media(max-width:780px){.smt-dash-welcome{align-items:flex-start;flex-direction:column}.smt-dash-status{justify-content:flex-start}.smt-dash-search{min-width:0;width:100%}.smt-kpis{grid-template-columns:1fr 1fr}.smt-bottom-grid{grid-template-columns:1fr}.smt-modules{grid-template-columns:1fr 1fr}.smt-dash-welcome h1{font-size:22px}}
 @media(max-width:520px){.smt-kpis,.smt-modules{grid-template-columns:1fr}.smt-card-head{padding:12px}.smt-board-preview{min-height:270px}}
 </style>
+<style id="smtinel-enterprise-global-light-v19-8">
+/* V19.8 · Enterprise skin for existing visible modules only. */
+html.smtinel-theme-light,html.smtinel-theme-light body{
+  --ent-bg:#F5F6F7;--ent-card:#FFFFFF;--ent-line:#E3E7E9;--ent-line2:#EEF0F2;
+  --ent-text:#171C20;--ent-muted:#747E85;--ent-red:#9D1C2D;--ent-green:#56765E;
+  background:var(--ent-bg)!important;color:var(--ent-text)!important;color-scheme:light!important;
+}
+html.smtinel-theme-light body .main-content,
+html.smtinel-theme-light body #module-workspace{background:var(--ent-bg)!important;color:var(--ent-text)!important}
+html.smtinel-theme-light body #module-workspace{border-color:var(--ent-line)!important;box-shadow:0 8px 24px rgba(31,40,48,.035)!important}
+html.smtinel-theme-light body #module-workspace>div:first-child{background:#FFFFFF!important;border-color:var(--ent-line2)!important}
+
+/* Yield Flow */
+html.smtinel-theme-light body #yieldflow-section{background:transparent!important;color:var(--ent-text)!important;gap:12px!important}
+html.smtinel-theme-light body #yieldflow-section>div:first-child{
+  background:#FFFFFF!important;background-image:none!important;color:var(--ent-text)!important;
+  border:1px solid var(--ent-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(31,40,48,.03)!important;
+  padding:15px 17px!important;
+}
+html.smtinel-theme-light body #yieldflow-section>div:first-child :is(div,span,b,strong,p,small){color:var(--ent-text)!important;-webkit-text-fill-color:var(--ent-text)!important;text-shadow:none!important}
+html.smtinel-theme-light body #yieldflow-section>div:first-child span[style*="border-radius"]{background:#F7F8F9!important;border:1px solid #E1E5E7!important;color:#5F686F!important;-webkit-text-fill-color:#5F686F!important}
+html.smtinel-theme-light body #yieldflow-section section{background:#FFFFFF!important;border-color:var(--ent-line)!important;border-radius:14px!important;box-shadow:0 4px 14px rgba(31,40,48,.02)!important}
+html.smtinel-theme-light body #yieldflow-section input,
+html.smtinel-theme-light body #yieldflow-section select,
+html.smtinel-theme-light body #yieldflow-section button{border-radius:9px!important;box-shadow:none!important}
+html.smtinel-theme-light body #yieldflow-section th{background:#F7F8F9!important;color:#535D64!important;border-color:var(--ent-line)!important}
+html.smtinel-theme-light body #yieldflow-section td{background:#fff!important;color:#222A30!important;border-color:#EDF0F2!important}
+
+/* Board Impact */
+html.smtinel-theme-light body #boardimpact-section{background:#FFFFFF!important;background-image:none!important;color:var(--ent-text)!important;border:1px solid var(--ent-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(31,40,48,.03)!important}
+html.smtinel-theme-light body #boardimpact-section::before,html.smtinel-theme-light body #boardimpact-section::after{display:none!important;opacity:0!important}
+html.smtinel-theme-light body #boardimpact-section :is(input,select,button){border-radius:9px!important;box-shadow:none!important}
+
+/* Bonepile shell. Existing theme bridge restyles iframe content. */
+html.smtinel-theme-light body #bonepile-section{background:#FFFFFF!important;border:1px solid var(--ent-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(31,40,48,.03)!important}
+html.smtinel-theme-light body #bonepile-section>div:first-child{background:#FFFFFF!important;background-image:none!important;border-bottom:1px solid var(--ent-line2)!important}
+html.smtinel-theme-light body #bonepile-section iframe{background:var(--ent-bg)!important}
+
+/* Intel Log */
+html.smtinel-theme-light body #maintenance-section{background:#FFFFFF!important;border:1px solid var(--ent-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(31,40,48,.03)!important}
+html.smtinel-theme-light body #maintenance-section :is(input,select,button){border-radius:9px!important;box-shadow:none!important}
+
+@media(max-width:760px){
+  html.smtinel-theme-light body #module-workspace{border-radius:14px!important}
+  html.smtinel-theme-light body #module-workspace>div:first-child{padding:14px!important}
+  html.smtinel-theme-light body #yieldflow-section>div:first-child{padding:13px!important}
+  html.smtinel-theme-light body .smt-dash-welcome{align-items:flex-start;flex-direction:column}
+  html.smtinel-theme-light body .smt-dash-status{width:100%;justify-content:flex-start}
+  html.smtinel-theme-light body .smt-dash-search{min-width:0;width:100%}
+}
+</style>
+
 
 <!-- SMTinel V13.14.11 - Daily Email Export -->
 <style id="smtinel-daily-email-export-style-v13-14-11">
@@ -16834,7 +16886,7 @@ function App() {
         return (dict[langKey] && dict[langKey][key]) || (dict.en && dict.en[key]) || key;
     }
     var MAINT_KEY = "traceops_maintenance_log_v1";
-    var activeModuleArr = _useState("yieldflow");
+    var activeModuleArr = _useState("dashboard");
     var activeModule = activeModuleArr[0];
     var _setActiveModuleRaw = activeModuleArr[1];
     var vectorSelectedIssueArr = _useState("");
@@ -16845,7 +16897,7 @@ function App() {
     var setVectorRefreshTick = vectorRefreshArr[1];
     var SMTINEL_RETIRED_MODULE_KEYS = { sentinelux: true, criticalmodel: true, storyline: true, rcca: true, issueimpact: true, scheduling: true, yieldweek: true, planagent: true, recovery: true, criticalchars: true, "8d": true };
     function setActiveModule(key) {
-        var next = String(key || "yieldflow");
+        var next = String(key || "dashboard");
         if (SMTINEL_RETIRED_MODULE_KEYS[next]) next = "yieldflow";
         _setActiveModuleRaw(next);
     }
@@ -42287,7 +42339,7 @@ ${'</scr'+'ipt>'}
         }
     ];
     moduleNavItems = moduleNavItems.filter(function (item) { return !SMTINEL_RETIRED_MODULE_KEYS[item.key]; });
-    var activeModuleMeta = moduleNavItems.find(function (item) { return item.key === activeModule; }) || moduleNavItems[0];
+    var activeModuleMeta = activeModule === "dashboard" ? { key:"dashboard", label:"Dashboard", shortLabel:"Resumen operativo · matriz Producto × Línea · accesos a los módulos actuales", count:"HOME", tone:{bg:"#F7F8F9",border:"#E1E5E7",color:"#30383E"} } : (moduleNavItems.find(function (item) { return item.key === activeModule; }) || moduleNavItems[0]);
     React.useEffect(function () {
         var cls = "smtinel-command-center-focus";
         try {
@@ -42431,9 +42483,8 @@ ${'</scr'+'ipt>'}
             React.createElement("div", { className: "sidebar-section", style: { flex: 1 } },
                 React.createElement("div", { className: "sidebar-section-title" }, "Navegación"),
                 React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 3 } },
-                    React.createElement("button", { className: "sidebar-btn" + (state === "idle" ? " active" : ""), onClick: function () { if (state !== "idle")
-                            reset(); if (isMobile())
-                            setSidebarOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); } },
+                    React.createElement("button", { className: "sidebar-btn" + (activeModule === "dashboard" ? " active" : ""), onClick: function () { setActiveModule("dashboard"); if (isMobile())
+                            setSidebarOpen(false); setTimeout(function(){var el=document.getElementById("module-workspace");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},30); } },
                         React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
                             React.createElement("path", { d: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" }),
                             React.createElement("polyline", { points: "9 22 9 12 15 12 15 22" })),
@@ -42688,7 +42739,7 @@ ${'</scr'+'ipt>'}
                         rccaDetail.event_ids && rccaDetail.event_ids.length > 0 && (React.createElement("div", null,
                             React.createElement("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", color: "#2F6FB3", marginBottom: 5 } }, "Linked Events"),
                             React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, rccaDetail.event_ids.map(function (id) { return React.createElement("span", { key: id, style: { fontSize: 11, fontFamily: "monospace", background: "#EAF2FF", color: "#2F6FB3", borderRadius: 6, padding: "3px 9px", fontWeight: 600 } }, id); })))))))),
-            state === "idle" && renderSMTinelEnterpriseHome(),
+            false && state === "idle" && renderSMTinelEnterpriseHome(),
             React.createElement("div", { className: "ops-hero" },
                 React.createElement("div", { className: "ops-hero-bg", style: {
                         backgroundImage: 'linear-gradient(90deg, rgba(5,12,18,.88) 0%, rgba(5,12,18,.58) 42%, rgba(5,12,18,.22) 100%), radial-gradient(circle at 72% 44%, rgba(74,144,226,.22), transparent 48%), url("' + TRACEOPS_NIGHT_OPS_HERO + '")'
@@ -44039,8 +44090,8 @@ ${'</scr'+'ipt>'}
                             React.createElement("span", { style: { fontSize: 10, color: "#5F766C" } },
                                 moduleNavItems.length,
                                 " active modules"),
-                            React.createElement("button", { type: "button", onClick: function () { setState("idle"); if (isMobile())
-                                    setSidebarOpen(false); setTimeout(function () { window.scrollTo({ top: 0, behavior: "smooth" }); }, 10); }, style: { border: "1px solid #D9E6F7", background: "#fff", color: "#1F3A5F", borderRadius: 999, padding: "6px 12px", fontSize: 10, fontWeight: 800, cursor: "pointer" } }, "← Back to home"))),
+                            React.createElement("button", { type: "button", onClick: function () { setActiveModule("dashboard"); if (isMobile())
+                                    setSidebarOpen(false); setTimeout(function () { var el=document.getElementById("module-workspace"); if(el) el.scrollIntoView({ behavior: "smooth", block:"start" }); }, 10); }, style: { border: "1px solid #E1E5E7", background: "#fff", color: "#30383E", borderRadius: 999, padding: "6px 12px", fontSize: 10, fontWeight: 800, cursor: "pointer" } }, "← Dashboard"))),
                     React.createElement("div", { style: { padding: "14px 16px 0" } },
                         React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(" + moduleNavItems.length + ",minmax(0,1fr))", gap: 10 } }, moduleNavItems.map(function (item) {
                             var active = activeModule === item.key;
@@ -44265,6 +44316,7 @@ ${'</scr'+'ipt>'}
                                             React.createElement("div", { style: { fontSize: 11.5, color: "#6E4038", lineHeight: 1.55, marginTop: 6 } }, "No habilitar aprobacion final si falta D6, evidencia de implementacion, owner responsable o monitoreo de recurrencia. Si aparece recurrencia post-cierre, el caso debe reabrirse o vincular una nueva NC.")))))),
                         false && activeModule === "eventrecon" && renderEventReconstructionSection(),
                         false && activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
+                        activeModule === "dashboard" && renderSMTinelEnterpriseHome(),
                         activeModule === "vector" && renderVectorSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
                         activeModule === "bonepile" && renderBonepileSection(),
@@ -44278,7 +44330,7 @@ ${'</scr'+'ipt>'}
                         activeModule === "intellog" && renderMaintenanceSection(),
                         false && activeModule === "rcca" && renderRccaLandingSection(),
                         false && activeModule === "8d" && renderEightdAnalyzerSection(),
-                activeModule !== "storyline" && activeModule !== "vector" && activeModule !== "yieldflow" && activeModule !== "testperf" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "rcca" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
+                activeModule !== "dashboard" && activeModule !== "storyline" && activeModule !== "vector" && activeModule !== "yieldflow" && activeModule !== "testperf" && activeModule !== "bonepile" && activeModule !== "scheduling" && activeModule !== "planagent" && activeModule !== "yieldweek" && activeModule !== "recovery" && activeModule !== "criticalchars" && activeModule !== "criticalmodel" && activeModule !== "boardimpact" && activeModule !== "rcca" && activeModule !== "8d" && React.createElement("div", { className: "tcard" },
                     React.createElement("div", { className: "tcard-hdr" },
                         React.createElement("h3", null,
                             "Log de eventos (",
@@ -71937,11 +71989,11 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
   var VERSION='SMTinel V13.16.40 - Test Run Filters / Product FPY - 2026-09-17';
-  var STORAGE_KEY='smtinel-theme';
+  var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
   var FRAME_STYLE_ID='smtinel-dual-theme-frame-v10';
-  var currentTheme='dark';
+  var currentTheme='light';
 
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
@@ -72070,7 +72122,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
 
   function boot(){
     var saved=storageGet();
-    applyTheme(saved==='light'?'light':'dark',false);
+    applyTheme(saved==='dark'?'dark':'light',false);
     mountButton();refreshButton();
     try{
       var queued=false;
