@@ -3657,7 +3657,7 @@ body.traceops-premium-shell .saas-topbar-subtitle,.saas-topbar-subtitle{color:#8
 .smt-sequence{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.smt-sequence span{display:inline-flex;align-items:center;gap:5px;font-size:8px;color:#8a9399}.smt-sequence span:not(:last-child)::after{content:'›';color:#bcc2c6;font-size:12px;margin-left:3px}
 
 .smt-visual-panel .smt-card-head{border-bottom:1px solid var(--ui-line2)}
-.smt-visual-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px}
+.smt-visual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px}
 .smt-visual-card{display:flex;flex-direction:column;gap:0;border:1px solid var(--ui-line);border-radius:16px;background:#fff;overflow:hidden;cursor:pointer;text-align:left;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;box-shadow:0 6px 18px rgba(20,32,51,.03)}
 .smt-visual-card:hover{transform:translateY(-2px);border-color:#C9D6E6;box-shadow:0 14px 28px rgba(20,32,51,.08)}
 .smt-visual-thumb{aspect-ratio:16/9;background:linear-gradient(180deg,#F7FAFF,#EEF3F8);border-bottom:1px solid #E7EDF5;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -3672,7 +3672,7 @@ body.traceops-premium-shell .saas-topbar-subtitle,.saas-topbar-subtitle{color:#8
 
 
 @media(max-width:1220px){.smt-kpis{grid-template-columns:repeat(3,1fr)}.smt-main-grid{grid-template-columns:1fr}.smt-bottom-grid{grid-template-columns:1fr 1fr}.smt-modules{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:780px){.smt-dash-welcome{align-items:flex-start;flex-direction:column}.smt-dash-status{justify-content:flex-start}.smt-dash-search{min-width:0;width:100%}.smt-kpis{grid-template-columns:1fr 1fr}.smt-bottom-grid{grid-template-columns:1fr}.smt-modules{grid-template-columns:1fr 1fr}.smt-dash-welcome h1{font-size:22px}}
+@media(max-width:780px){.smt-dash-welcome{align-items:flex-start;flex-direction:column}.smt-dash-status{justify-content:flex-start}.smt-dash-search{min-width:0;width:100%}.smt-kpis{grid-template-columns:1fr 1fr}.smt-bottom-grid{grid-template-columns:1fr}.smt-modules{grid-template-columns:1fr 1fr}.smt-dash-welcome h1{font-size:22px}.smt-visual-grid{grid-template-columns:1fr;padding:12px;gap:12px}.smt-visual-thumb{aspect-ratio:16/8}.smt-visual-body p{min-height:0}}
 @media(max-width:520px){.smt-kpis,.smt-modules{grid-template-columns:1fr}.smt-card-head{padding:12px}.smt-board-preview{min-height:270px}}
 </style>
 <style id="smtinel-enterprise-global-light-v19-8">
@@ -42314,12 +42314,10 @@ ${'</scr'+'ipt>'}
 
 
         var visualEntries=[
-            {key:'yieldflow',label:'Yield Flow',badge:'LIVE',sub:'Flujo, WO, SN, estaciones y rendimiento operativo.',image:makeDashboardThumb('yieldflow')},
-            {key:'boardimpact',label:'Board Impact',badge:'RefDes',sub:'Ubicación de referencias, dibujo y concentración de defectos.',image:makeDashboardThumb('boardimpact')},
-            {key:'bonepile',label:'Bonepile Visual',badge:'WIP',sub:'WIP, aging y concentración visual por línea y producto.',image:makeDashboardThumb('bonepile')},
-            {key:'exportcenter',label:'Export Center',badge:'EXP',sub:'Correo diario, trackers y exportables ejecutivos.',image:makeDashboardThumb('exportcenter')},
-            {key:'vector',label:'VECTOR',badge:'TRACE',sub:'Issue → causa → trazabilidad → DIVE → Yokoten.',image:makeDashboardThumb('vector')},
-            {key:'rcca',label:'RCCA',badge:'CAPA',sub:'Memoria de causa raíz y acciones correctivas / preventivas.',image:makeDashboardThumb('rcca')}
+            {key:'yieldflow',label:'Yield Flow',badge:'FLUJO',sub:'WO, SN, estaciones, avance y desempeño del proceso.',image:makeDashboardThumb('yieldflow')},
+            {key:'boardimpact',label:'Board Impact',badge:'REFDES',sub:'Impacto por referencia y ubicación física en la board.',image:makeDashboardThumb('boardimpact')},
+            {key:'bonepile',label:'Bonepile',badge:'WIP',sub:'Inventario detenido, aging y concentración por línea/producto.',image:makeDashboardThumb('bonepile')},
+            {key:'exportcenter',label:'Export Center',badge:'REPORTES',sub:'Entrega de turno, weekly review, DBN, Test y Yokoten.',image:makeDashboardThumb('exportcenter')}
         ];
         var visualPanel=h('section',{className:'smt-card smt-visual-panel'},[
             h('div',{className:'smt-card-head'},[
@@ -42414,29 +42412,22 @@ ${'</scr'+'ipt>'}
 
         var seqCard=h('section',{className:'smt-card'},[h('div',{className:'smt-card-head'},[h('div',null,[h('h3',null,'Secuencia visible'),h('p',null,'Se conserva exactamente el orden funcional actual.')])]),h('div',{style:{padding:'16px'}},[h('div',{className:'smt-sequence'},sequence),h('p',{style:{margin:'14px 0 0',fontSize:'8.5px',lineHeight:1.5,color:'#8b949a'}},'La nueva arquitectura es visual. No se reactivaron módulos retirados ni se agregaron rutas nuevas.')])]);
 
-        return h('section',{className:'smt-dash','data-smtinel-ui':'dashboard-uiux-v2'},[
+        return h('section',{className:'smt-dash smt-dash-concept','data-smtinel-ui':'dashboard-uiux-v3'},[
             h('div',{className:'smt-dash-welcome'},[
-                h('div',null,[h('h1',null,'Bienvenido a SMTinel'),h('p',null,'Trazabilidad, monitoreo y protección con la misma lógica operativa actual.')]),
+                h('div',null,[h('h1',null,'Bienvenido a SMTinel'),h('p',null,'Dashboard conceptual. Selecciona un frente para abrir su información real.')]),
                 h('div',{className:'smt-dash-status'},[
-                    h('label',{className:'smt-dash-search'},[iconSearch(),h('input',{type:'search',placeholder:'Buscar módulo visible...',onKeyDown:function(e){if(e.key!=='Enter')return;var q=String(e.currentTarget.value||'').toLowerCase().trim();if(!q)return;var item=visible.filter(function(x){return String(x.label||'').toLowerCase().indexOf(q)>=0||String(x.key||'').toLowerCase().indexOf(q)>=0})[0];if(item)openItem(item)}})]),
-                    h('span',{className:'smt-dash-chip '+(rows.length?'live':'')},rows.length?'Dataset cargado':'Sin datos cargados'),
-                    h('span',{className:'smt-dash-chip'},'TRACE · MONITOR · PROTECT')
+                    h('span',{className:'smt-dash-chip'},'TRACE · MONITOR · PROTECT'),
+                    h('span',{className:'smt-dash-chip'},'4 módulos activos')
                 ])
             ]),
             visualPanel,
-            h('div',{className:'smt-kpis'},[
-                metric('Work Orders',wos===null?'N/D':fmt(wos),rows.length?'Yield Flow · alcance actual':'Sin datos','wo',''),
-                metric('Build Qty',units===null?'N/D':fmt(units),'Unidades del dataset cargado','qty',''),
-                metric('Yield limpio',clean===null?'N/D':pct(clean,2),'Dato disponible en Yield Flow','yield',clean!==null&&clean>=98?'good':''),
-                metric('Unidades en riesgo',risk===null?'N/D':fmt(risk),'Scope actual de Yield Flow','risk',risk!==null&&risk>0?'risk':'good'),
-                metric('RefDes',refCount?fmt(refCount):'N/D','Referencias disponibles para Board Impact','ref',''),
-                metric('Export Center','4','Correo · Action Tracker · Issue Tracker · PPTX','log','good')
-            ]),
-            h('div',{className:'smt-main-grid'},[matrixCard,boardCard]),
-            h('div',{className:'smt-bottom-grid'},[focusCard,boneCard,exportCard,seqCard]),
-            h('section',{className:'smt-card'},[
-                h('div',{className:'smt-card-head'},[h('div',null,[h('h2',null,'Módulos operativos activos'),h('p',null,'Foco actual del sistema: Yield Flow, Board Impact y Bonepile. Export Center queda como panel independiente.')])]),
-                h('div',{className:'smt-modules'},moduleCards)
+            h('section',{className:'smt-card smt-dash-concept-note'},[
+                h('div',{className:'smt-card-head'},[
+                    h('div',null,[
+                        h('h3',null,'Vista conceptual'),
+                        h('p',null,'La portada usa imágenes representativas para mantener el dashboard limpio. Los KPIs, filtros, matrices y reportes reales viven dentro de cada módulo.')
+                    ])
+                ])
             ])
         ]);
     }
