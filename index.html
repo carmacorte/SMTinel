@@ -77863,256 +77863,45 @@ setTimeout(apply,300);setTimeout(apply,1200);
 })();
 </script>
 
-<style id="smtinel-v22-definitive-cleanup">
-:root{--rx22:#B4232D;--rx22-dark:#7F1820;--rx22-soft:#FFF1F2;--rx22-ink:#20252A;--rx22-line:#E7DDDE;--rx22-bone:#F7F5F4;--rx22-ok:#2F7D4A;--rx22-att:#A56B1F;--rx22-tech:#315E87}
-/* The module itself is the workspace. Remove the extra explanatory shell. */
-#module-workspace{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;margin:0!important}
-#module-workspace>div:nth-child(1),#module-workspace>div:nth-child(2){display:none!important}
-#module-workspace>div:nth-child(3){padding:0!important}
-.smtinel-production-badge{background:transparent!important;border:0!important;box-shadow:none!important;padding:0 5px!important;color:#6B6163!important;font-weight:800!important}
-/* Red X identity is stable in both themes. Status colors remain semantic. */
-html.smtinel-theme-light body #yieldflow-section>div:first-child,
-html.smtinel-theme-light body #boardimpact-section>div:first-child{background:linear-gradient(135deg,#3B2A2D 0%,#7F1820 55%,#B4232D 100%)!important;border-color:#C7616B!important;box-shadow:0 12px 28px rgba(180,35,45,.12)!important}
-html.smtinel-theme-light body #yieldflow-section>div:first-child :is(div,span,b,strong,p,small),
-html.smtinel-theme-light body #boardimpact-section>div:first-child :is(div,span,b,strong,p,small){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:none!important}
-html.smtinel-theme-light body #yieldflow-section>div:first-child span[style*="border-radius"]{background:rgba(255,255,255,.94)!important;color:#3D292C!important;-webkit-text-fill-color:#3D292C!important;border-color:rgba(255,255,255,.85)!important}
-html.smtinel-theme-light body #boardimpact-section>div:first-child button{background:#fff!important;color:#7F1820!important;-webkit-text-fill-color:#7F1820!important;border-color:#E6BEC3!important}
-/* Bonepile and Export Center use neutral surfaces, not inherited green skins. */
-html.smtinel-theme-light body #bonepile-section>div:first-child{background:#fff!important;border-bottom-color:var(--rx22-line)!important}
-html.smtinel-theme-light body #bonepile-section>div:first-child>div:first-child{color:var(--rx22)!important}
-html.smtinel-theme-light body #exportcenter-section{background:var(--rx22-bone)!important}
-/* Header is one utility row, not a museum of status pills. */
-.saas-topbar-actions{align-items:center!important}
-.saas-topbar-actions>.saas-header-pill,.saas-topbar-actions>.saas-header-btn,#smtinel-theme-toggle{box-shadow:none!important}
-@media(max-width:700px){
-  .saas-topbar{min-height:54px!important;padding-top:6px!important;padding-bottom:6px!important}
-  .saas-topbar-actions{gap:5px!important;overflow-x:auto!important;scrollbar-width:none!important}
-  .saas-topbar-actions::-webkit-scrollbar{display:none!important}
-  .saas-topbar-actions>.saas-header-pill,.saas-topbar-actions>.saas-header-btn,#smtinel-theme-toggle{height:34px!important;min-height:34px!important;padding:4px 8px!important;font-size:9.5px!important;white-space:nowrap!important}
-  #yieldflow-section>section:nth-of-type(2)>div:first-child{min-height:0!important}
-  #yieldflow-section>section:nth-of-type(2)>div:first-child>div:first-child{min-width:0!important}
-  #yieldflow-section>section:nth-of-type(3)>div:nth-child(2){grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  #yieldflow-section>section:nth-of-type(3)>div:nth-child(2)>div{min-height:84px!important;padding:11px 10px!important}
-}
-</style>
-<script id="smtinel-v22-definitive-cleanup-runtime">
-(function(){
-'use strict';
-if(window.__SMTINEL_V22_CLEANUP__)return;window.__SMTINEL_V22_CLEANUP__=1;
-var exact={
- 'Production':'Producción','Local':'Datos locales','Load ZIP':'Cargar datos','Cargar ZIP':'Cargar datos','Cargar ZIP ahora':'Cargar datos','Cargar datos operativos':'Cargar datos',
- 'Dark':'Tema','Light':'Tema','Import ZIP':'Cargar ZIP','Importar':'Importar','STATUS':'ESTADO','Import Status':'Estado de importación','Imported Data':'Datos cargados','Current cycle':'Ciclo actual',
- 'Step 1/2: load the current Common DB ZIP. Then load the current SFC + Cesium ZIP. Previous iterations are never retained.':'Paso 1/2: carga el ZIP actual de Common DB. Después carga el ZIP actual de SFC + Cesium. No se conservan iteraciones anteriores.',
- 'WORK ORDERS':'ÓRDENES DE TRABAJO','Work Orders':'Órdenes de trabajo','WO scope':'alcance WO','OJT TOUCH':'TOQUE DE REPARACIÓN','OJT Touch':'Toque de reparación','repair record touch':'unidades con registro de reparación',
- 'RISK UNITS':'UNIDADES EN RIESGO','Risk Units':'Unidades en riesgo','Clean scope with no units at risk':'Alcance limpio sin unidades en riesgo','Visible rework and OJT touch':'Retrabajo visible y registro de reparación',
- 'KPI SUPPORT MATRIX':'RESUMEN DE INDICADORES','KPI support matrix':'Resumen de indicadores','Scope SFC / WO':'Alcance SFC / WO','CLEAN UNITS':'UNIDADES LIMPIAS','Clean Units':'Unidades limpias','no risk':'sin riesgo','lead time':'tiempo de recorrido','REINTEGRATION':'REINTEGRACIÓN','Reintegration':'Reintegración','Analysis Period':'Periodo de análisis','All weeks':'Todas las semanas',
- 'Visual Reference Map Using the Board PDF':'Mapa de referencia visual sobre PDF de board','IMPACTED WOS':'WO IMPACTADAS','Impacted WOs':'WO impactadas','AFFECTED SERIALS':'SERIALES AFECTADOS','Affected Serials':'Seriales afectados','FR VS MFG':'FR VS FABRICADAS','FR VS BUILT':'FR VS BUILD','UNIQUE REFS':'REFDES ÚNICOS','Unique Refs':'RefDes únicos','CRITICALITY':'CRITICIDAD','Criticality':'Criticidad','scope filtered':'alcance filtrado','TOP side':'Lado TOP',
- 'Combined Board Impact Filters':'Filtros de Board Impact','Multi-select by Side, SN, part number, and RefDes. Side automatically populates PN and RefDes for the selected side.':'Selecciona por lado, SN, número de parte y RefDes. El lado actualiza automáticamente PN y RefDes disponibles.','SIDE':'LADO','SERIAL NUMBER':'NÚMERO DE SERIE','PART NUMBER':'NÚMERO DE PARTE','Failure Mode Trends':'Tendencias por modo de falla','Failure Mode Heatmap':'Mapa de calor por modo de falla','There are not enough Cisco weeks with valid RefDes data to chart trends.':'No hay suficientes semanas Cisco con RefDes válidos para graficar tendencias.','Detected references':'Referencias detectadas','Reference Detail':'Detalle de referencia','Located':'Localizada','Pending':'Pendiente',
- 'Interactive WIP map by line, station, aging and repair':'Mapa interactivo de WIP por línea, estación, aging y reparación','IN-SCOPE WIP':'WIP EN ALCANCE','WIP VALUE':'VALOR WIP','REPAIR VALUE':'VALOR REPARACIÓN','SN reconciliation:':'Conciliación SN:','Scope:':'Alcance:','SMT LINE 12':'LÍNEA SMT 12','SMT LINE 13':'LÍNEA SMT 13','SMT LINE 14':'LÍNEA SMT 14','SMT LINE 15':'LÍNEA SMT 15','SMT LINE 16':'LÍNEA SMT 16','SMT LINE 17':'LÍNEA SMT 17','SMT LINE 18':'LÍNEA SMT 18','serials':'seriales',
- 'Weekly Execution Review':'Reporte semanal de ejecución','Choose a report first. Configuration and export actions stay beside the preview.':'Selecciona un reporte. La configuración y las acciones de exportación permanecen junto a la vista previa.','Fiscal week':'Semana fiscal','Quality / Executive':'Calidad / Ejecutivo','Date / shift':'Fecha / turno','Model + WO':'Modelo + WO'
-};
-function norm(s){return String(s||'').replace(/\s+/g,' ').trim();}
-function leafTranslate(root){
-  if(!root||!root.querySelectorAll)return;
-  var nodes=[root].concat([].slice.call(root.querySelectorAll('button,span,b,strong,small,label,h1,h2,h3,h4,p,th,td,option,div')));
-  nodes.forEach(function(el){if(!el||!el.childNodes||el.childNodes.length!==1||el.childNodes[0].nodeType!==3)return;var t=norm(el.textContent);if(exact[t])el.textContent=exact[t];});
-}
-function hideCompactCardByHeading(root,labels){
-  var els=[].slice.call(root.querySelectorAll('div,section,label,h2,h3,h4'));
-  els.forEach(function(el){var t=norm(el.textContent);if(labels.indexOf(t)<0)return;var a=el;for(var i=0;i<5&&a;i++,a=a.parentElement){try{var r=a.getBoundingClientRect();if(a.querySelector&&a.querySelector('select')&&r.height>60&&r.height<340){a.style.display='none';break;}}catch(_){}}});
-}
-function cleanTopbar(){
-  var prod=document.querySelector('.smtinel-production-badge');if(prod)prod.textContent='Producción';
-  var actions=document.querySelector('.saas-topbar-actions');if(!actions)return;
-  [].slice.call(actions.children).forEach(function(el){var t=norm(el.textContent);if(!t&&!el.id&&!(el.getAttribute&&el.getAttribute('aria-label')))el.style.display='none';});
-  var theme=document.getElementById('smtinel-theme-toggle');if(theme){var lab=theme.querySelector('.smt-theme-toggle-label');if(lab)lab.textContent='Tema';theme.title='Cambiar tema';theme.setAttribute('aria-label','Cambiar tema');}
-}
-function cleanMain(){
-  leafTranslate(document);cleanTopbar();hideCompactCardByHeading(document,['Filter by Person','Filtro por persona','Select a person','Selecciona una persona']);
-  var mw=document.getElementById('module-workspace');if(mw){var cs=mw.children;if(cs[0])cs[0].style.display='none';if(cs[1])cs[1].style.display='none';if(cs[2])cs[2].style.padding='0';}
-}
-function hideReportResidualHeader(d){
-  [].slice.call(d.querySelectorAll('div,header,h1,h2,h3,h4')).forEach(function(el){var t=norm(el.textContent);if(t!=='Weekly Execution Review'&&t!=='Reporte semanal de ejecución')return;var a=el.closest('.dialog-head,.report-preview-head,.head,header');if(!a){a=el.parentElement;if(a&&norm(a.textContent).length>500)a=el;}if(a&&a!==d.body)a.style.display='none';});
-}
-function styleFrame(d){
-  var st=d.getElementById('smtinel-v22-frame-style');if(st)return;
-  st=d.createElement('style');st.id='smtinel-v22-frame-style';st.textContent='body{--rx:#B4232D;--rxDark:#7F1820}.dialog.export-dialog{border:0!important;box-shadow:none!important}.dialog-head,.report-preview-head{border-color:#E7DDDE!important}.rack-panel-head{background:#FFF7F8!important;border-color:#E7DDDE!important}.rack-panel-head b{color:#7F1820!important}.btn.good{background:#EEF7F1!important;color:#2F7D4A!important;border-color:#CFE6D7!important}';d.head.appendChild(st);
-}
-function cleanFrame(frame){try{var d=frame.contentDocument;if(!d||!d.body)return;styleFrame(d);leafTranslate(d);hideReportResidualHeader(d);if(!d.__smtV22Obs){d.__smtV22Obs=new MutationObserver(function(){leafTranslate(d);hideReportResidualHeader(d);});d.__smtV22Obs.observe(d.body,{childList:true,subtree:true,characterData:true});}}catch(_){}}
-function apply(){cleanMain();[].slice.call(document.querySelectorAll('iframe')).forEach(function(f){if(!f.__smtV22){f.__smtV22=1;f.addEventListener('load',function(){setTimeout(function(){cleanFrame(f);},60);});}cleanFrame(f);});}
-var q=false;var mo=new MutationObserver(function(){if(q)return;q=true;requestAnimationFrame(function(){q=false;apply();});});
-mo.observe(document.documentElement,{childList:true,subtree:true});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
-[250,700,1500,3000].forEach(function(ms){setTimeout(apply,ms);});
-})();
-</script>
-
-<style id="smtinel-v23-traceability-cleanup">
-/* Remove legacy WhatsApp / TraceOps widgets now deprecated from the flow */
+<style id="smtinel-v24-safe-cleanup">
 html body .smt-ictx,
+html body [data-smt-ictx="true"],
 html body #traceops-live-dock,
-html body #results-section{
-  display:none !important;
-}
-
-/* Flatten module layout so information feels continuous instead of boxed into separate cards */
-html body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section){
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-html body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(
-  .tcard,.pf-card,.cmp,.foot,.up,.prog,.api-bar,.saas-hero-card,
-  .picker-box,.lb-box,.ic-wrap,.krow,.pf-stat,.pitem,.traceops-bullet,
-  .toq-card,.toq-focus-card,.toq-header,.toq-kpi-card,.sentinel-card,
-  .traceops-material-panel,.traceops-material-kpi,.traceops-material-bar,.traceops-material-driver,
-  .traceops-closure-card,.smt-exec-card,.smt-exec-8d,.smt-exec-panel,.smt-exec-alert,.smt-exec-trend,
-  .smt-storyline-head,.smt-storyline-ribbon,.smt-storyline-timeline,.smt-storyline-panel,.smt-storyline-build,
-  .traceops-yf-import-card,.traceops-yf-home-loader-panel,.smtinel-import-loader-card,
-  .smt-v137-card,.smt-v135-card,.smt-v137-suite,.smt-ri-intel-card,
-  .traceops-kpi-card,.traceops-panel,.traceops-engineering-card,.traceops-calendar,.traceops-calendar-month,
-  .traceops-alert-item,.ops-hero,.hdr
-){
-  background:transparent !important;
-  box-shadow:none !important;
-  border:0 !important;
-  border-radius:0 !important;
-}
-
-html body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(
-  .tcard,.pf-card,.cmp,.foot,.up,.prog,.api-bar,.saas-hero-card,
-  .picker-box,.lb-box,.ic-wrap,.krow,.pf-stat,.pitem,.traceops-bullet,
-  .toq-card,.toq-focus-card,.toq-header,.toq-kpi-card,.sentinel-card,
-  .traceops-material-panel,.traceops-material-kpi,.traceops-material-bar,.traceops-material-driver,
-  .traceops-closure-card,.smt-exec-card,.smt-exec-8d,.smt-exec-panel,.smt-exec-alert,.smt-exec-trend,
-  .smt-storyline-head,.smt-storyline-ribbon,.smt-storyline-timeline,.smt-storyline-panel,.smt-storyline-build,
-  .traceops-yf-import-card,.traceops-yf-home-loader-panel,.smtinel-import-loader-card,
-  .smt-v137-card,.smt-v135-card,.smt-v137-suite,.smt-ri-intel-card,
-  .traceops-kpi-card,.traceops-panel,.traceops-engineering-card,.traceops-calendar,.traceops-calendar-month,
-  .traceops-alert-item,.ops-hero,.hdr
-){
-  margin-left:0 !important;
-  margin-right:0 !important;
-}
-
-html.smtinel-theme-light body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(
-  .tcard,.pf-card,.cmp,.foot,.up,.prog,.api-bar,.saas-hero-card,
-  .picker-box,.lb-box,.ic-wrap,.krow,.pf-stat,.pitem,.traceops-bullet,
-  .toq-card,.toq-focus-card,.toq-header,.toq-kpi-card,.sentinel-card,
-  .traceops-material-panel,.traceops-material-kpi,.traceops-material-bar,.traceops-material-driver,
-  .traceops-closure-card,.smt-exec-card,.smt-exec-8d,.smt-exec-panel,.smt-exec-alert,.smt-exec-trend,
-  .smt-storyline-head,.smt-storyline-ribbon,.smt-storyline-timeline,.smt-storyline-panel,.smt-storyline-build,
-  .traceops-yf-import-card,.traceops-yf-home-loader-panel,.smtinel-import-loader-card,
-  .smt-v137-card,.smt-v135-card,.smt-v137-suite,.smt-ri-intel-card,
-  .traceops-kpi-card,.traceops-panel,.traceops-engineering-card,.traceops-calendar,.traceops-calendar-month,
-  .traceops-alert-item,.ops-hero,.hdr
-){
-  border-bottom:1px solid rgba(16,42,67,.10) !important;
-}
-
-html:not(.smtinel-theme-light) body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(
-  .tcard,.pf-card,.cmp,.foot,.up,.prog,.api-bar,.saas-hero-card,
-  .picker-box,.lb-box,.ic-wrap,.krow,.pf-stat,.pitem,.traceops-bullet,
-  .toq-card,.toq-focus-card,.toq-header,.toq-kpi-card,.sentinel-card,
-  .traceops-material-panel,.traceops-material-kpi,.traceops-material-bar,.traceops-material-driver,
-  .traceops-closure-card,.smt-exec-card,.smt-exec-8d,.smt-exec-panel,.smt-exec-alert,.smt-exec-trend,
-  .smt-storyline-head,.smt-storyline-ribbon,.smt-storyline-timeline,.smt-storyline-panel,.smt-storyline-build,
-  .traceops-yf-import-card,.traceops-yf-home-loader-panel,.smtinel-import-loader-card,
-  .smt-v137-card,.smt-v135-card,.smt-v137-suite,.smt-ri-intel-card,
-  .traceops-kpi-card,.traceops-panel,.traceops-engineering-card,.traceops-calendar,.traceops-calendar-month,
-  .traceops-alert-item,.ops-hero,.hdr
-){
-  border-bottom:1px solid rgba(255,255,255,.09) !important;
-}
-
-html body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(
-  .tcard-hdr,.pf-hdr,.traceops-panel-head,.traceops-calendar-head,.traceops-calendar-month-head,
-  .filter-bar,.ic-tabs,.ic-card-head,.picker-head,.lb-hdr,.toq-card-head,.toq-focus-head,
-  .sentinel-card-head,.traceops-material-head,.smt-storyline-panel-head,.smt-storyline-kpi,
-  .smt-v137-head,.traceops-live-head,.hdr
-){
-  background:transparent !important;
-  border:0 !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  padding-left:0 !important;
-  padding-right:0 !important;
-}
-
-html body :is(#yieldflow-section,#boardimpact-section,#bonepile-section,#exportcenter-section,#report-section,#sentinel-ux-section)
-:is(.toq-card-body,.toq-focus-body,.traceops-panel-body){
-  padding-left:0 !important;
-  padding-right:0 !important;
-}
+html body .traceops-live-dock{display:none!important;visibility:hidden!important;}
+html body #results-section{display:block!important;visibility:visible!important;opacity:1!important;background:transparent!important;}
+html body #results-section > *:not(#module-workspace){display:none!important;}
+html body #module-workspace{display:block!important;visibility:visible!important;opacity:1!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important;min-height:480px!important;margin:0!important;}
+html body #module-workspace > div:first-child,
+html body #module-workspace > div:nth-child(2){display:none!important;}
+html body #module-workspace > div:nth-child(3){display:block!important;visibility:visible!important;opacity:1!important;padding:0!important;}
+html body .smtinel-bottom-nav{background:rgba(8,8,9,.86)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 14px 34px rgba(0,0,0,.24)!important;backdrop-filter:blur(16px) saturate(125%)!important;-webkit-backdrop-filter:blur(16px) saturate(125%)!important;}
+html.smtinel-theme-light body .saas-topbar{background:rgba(248,249,247,.82)!important;border-bottom:1px solid rgba(31,40,48,.10)!important;backdrop-filter:blur(14px) saturate(120%)!important;-webkit-backdrop-filter:blur(14px) saturate(120%)!important;}
+html:not(.smtinel-theme-light) body .saas-topbar{background:rgba(8,8,9,.82)!important;border-bottom:1px solid rgba(255,255,255,.10)!important;backdrop-filter:blur(14px) saturate(120%)!important;-webkit-backdrop-filter:blur(14px) saturate(120%)!important;}
+html.smtinel-theme-light body .main-content{background:#F4F6F3!important;}
+html:not(.smtinel-theme-light) body .main-content{background:#0A0A0A!important;}
+@media(max-width:900px){html body #module-workspace{min-height:calc(100svh - 160px)!important;padding-bottom:96px!important;}}
 </style>
-<script id="smtinel-v23-traceability-cleanup-js">
+<script id="smtinel-v24-safe-cleanup-runtime">
 (function(){
-  if(window.__SMTINEL_V23_TRACEABILITY_CLEANUP__) return;
-  window.__SMTINEL_V23_TRACEABILITY_CLEANUP__ = true;
-
-  var KILL_TEXTS = [
-    'Cesium ICT Export',
-    'Generate IBM Notes style ICT Yield report',
-    'TraceOps Live Source',
-    'ZIP Upload / Live WhatsApp MCP',
-    'Live WhatsApp MCP',
-    'Sesion operativa',
-    'Sesion Operativa',
-    'Contexto actual del analisis',
-    'SMTinel Executive Quality Dashboard',
-    'SMTinel Status',
-    'Evidence / Trace Coverage',
-    'Key Focus Areas',
-    'Filter by Person',
-    'Filtro por persona'
-  ].map(function(s){ return String(s).toLowerCase(); });
-
-  function norm(s){ return String(s || '').replace(/\s+/g,' ').trim().toLowerCase(); }
-  function killLegacyBySelector(){
-    ['.smt-ictx','#traceops-live-dock','#results-section'].forEach(function(sel){
-      document.querySelectorAll(sel).forEach(function(el){ el.style.display='none'; });
-    });
+  if(window.__SMTINEL_V24_SAFE_CLEANUP__) return;
+  window.__SMTINEL_V24_SAFE_CLEANUP__=1;
+  var allowed=['yieldflow','boardimpact','bonepile','exportcenter'];
+  function reveal(){
+    var rs=document.getElementById('results-section');
+    if(rs){rs.style.setProperty('display','block','important');rs.style.setProperty('visibility','visible','important');rs.style.setProperty('opacity','1','important');}
+    var mw=document.getElementById('module-workspace');
+    if(mw){mw.style.setProperty('display','block','important');mw.style.setProperty('visibility','visible','important');mw.style.setProperty('opacity','1','important');if(mw.children[0])mw.children[0].style.setProperty('display','none','important');if(mw.children[1])mw.children[1].style.setProperty('display','none','important');if(mw.children[2])mw.children[2].style.setProperty('display','block','important');}
   }
-  function findKillContainer(el){
-    var node = el;
-    for(var i=0; node && node !== document.body && i<8; i++, node=node.parentElement){
-      if(!node.tagName) continue;
-      var tag = node.tagName.toLowerCase();
-      if(tag === 'section' || tag === 'article') return node;
-      var cls = node.className || '';
-      if(typeof cls === 'string' && /(card|panel|dock|context|toq|traceops|exec|hero|hdr|wrap|suite)/i.test(cls)) return node;
-    }
-    return el;
-  }
-  function killLegacyByText(){
-    var nodes = document.querySelectorAll('h1,h2,h3,h4,h5,header,section,div,span,p,button');
-    nodes.forEach(function(el){
-      var text = norm(el.textContent);
-      if(!text) return;
-      for(var i=0;i<KILL_TEXTS.length;i++){
-        if(text === KILL_TEXTS[i]){
-          var box = findKillContainer(el);
-          if(box) box.style.display='none';
-          break;
-        }
-      }
-    });
-  }
-  function apply(){ killLegacyBySelector(); killLegacyByText(); }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
-  var queued = false;
-  var mo = new MutationObserver(function(){
-    if(queued) return;
-    queued = true;
-    requestAnimationFrame(function(){ queued = false; apply(); });
-  });
-  mo.observe(document.documentElement,{childList:true,subtree:true});
-  [250, 800, 1600, 3200].forEach(function(ms){ setTimeout(apply, ms); });
+  document.addEventListener('click',function(ev){
+    var b=ev.target&&ev.target.closest?ev.target.closest('[data-smtinel-module]'):null;
+    if(!b)return;
+    var key=b.getAttribute('data-smtinel-module');
+    if(allowed.indexOf(key)<0)return;
+    try{if(typeof window.SMTinelOpenModule==='function')window.SMTinelOpenModule(key);}catch(_){}
+    setTimeout(reveal,20);setTimeout(reveal,120);
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',reveal);else reveal();
+  var mo=new MutationObserver(function(){reveal();});mo.observe(document.documentElement,{childList:true,subtree:true});
+  [250,700,1600].forEach(function(ms){setTimeout(reveal,ms);});
 })();
 </script>
