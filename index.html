@@ -39026,7 +39026,7 @@ function traceOpsBonepileBuildPayload() {
                         sn: sn, wo: wo, sku: sku, version: version || 'N/D', family: family, line: line,
                         station: station, rawStation: baseRow.rawStation || '', isDebug: !!baseRow.isDebug,
                         stationSource: baseRow.stationSource || 'SFC', currentEvent: baseRow.currentEvent || '', testArea: baseRow.testArea || '',
-                        repair: baseRow.repair, cost: unitCost,
+                        repair: baseRow.repair, ageBucket: baseRow.ageBucket || 'age0_30', cost: unitCost,
                         costSource: costInfo.source || 'missing',
                         buildStart: baseRow.buildStart || '', week: baseRow.week || '', bu: baseRow.bu || ''
                     });
@@ -39086,6 +39086,7 @@ function traceOpsBonepileBuildPayload() {
                     rawStation: rawStation,
                     stationSource: 'SFC', currentEvent: rawStation, testArea: '',
                     repair: hasRepair,
+                    ageBucket: String(sfc.ageBucket || 'age0_30'),
                     cost: unitCost,
                     costSource: costInfo.source || 'missing',
                     buildStart: String(sfc.buildStartDate || sfc.startSmt || ''),
@@ -39231,6 +39232,43 @@ function traceOpsBonepileBuildPayload() {
             Array.prototype.forEach.call(frames, function(frame) {
                 try { traceOpsBonepilePostToFrame(frame.contentWindow, { type: 'smtinel:bonepile:parent-ready' }); } catch (_) {}
             });
+        });
+    }
+
+    /* Bonepile -> Export Center scope bridge. Keeps reports independent visually, but not context-blind. */
+    if (!window.__SMTINEL_BONEPILE_SCOPE_BRIDGE_V1__) {
+        window.__SMTINEL_BONEPILE_SCOPE_BRIDGE_V1__ = true;
+        window.SMTINEL_BONEPILE_FILTER_STATE = window.SMTINEL_BONEPILE_FILTER_STATE || null;
+        function smtinelBonepileFallbackScope() {
+            var f = window.TRACEOPS_YIELD_ACTIVE_FILTERS || {};
+            return {
+                scope: Object.keys(f).length ? 'ACTIVE' : 'FULL',
+                q: String(f.search || f.q || ''),
+                line: String(f.line || 'ALL'),
+                station: String(f.station || 'ALL'),
+                age: 'ALL',
+                repair: 'ALL',
+                layoutLine: ''
+            };
+        }
+        window.SMTinelSendBonepileScope = function(target) {
+            var state = window.SMTINEL_BONEPILE_FILTER_STATE || smtinelBonepileFallbackScope();
+            try { if (target) target.postMessage({ type: 'smtinel:bonepile:apply-state', state: state }, '*'); } catch (_) {}
+        };
+        window.addEventListener('message', function(event) {
+            var data = event && event.data;
+            if (!data) return;
+            if (data.type === 'smtinel:bonepile:scope-state') {
+                window.SMTINEL_BONEPILE_FILTER_STATE = data.state || smtinelBonepileFallbackScope();
+                var exportFrame = document.getElementById('smtinel-exportcenter-frame');
+                try { if (exportFrame && exportFrame.contentWindow && exportFrame.contentWindow !== event.source) window.SMTinelSendBonepileScope(exportFrame.contentWindow); } catch (_) {}
+            } else if (data.type === 'smtinel:bonepile:state-request') {
+                window.SMTinelSendBonepileScope(event && event.source);
+            }
+        });
+        window.addEventListener('smtinel:yieldflow-breakdown-ready', function() {
+            var exportFrame = document.getElementById('smtinel-exportcenter-frame');
+            try { if (exportFrame && exportFrame.contentWindow) window.SMTinelSendBonepileScope(exportFrame.contentWindow); } catch (_) {}
         });
     }
 
@@ -39602,6 +39640,15 @@ function traceOpsBonepileBuildPayload() {
 <style>
 :root{--navy:#2B3036;--blue:#B4232D;--line:#E7D9DB;--bg:#F6F4F3;--card:#FFFFFF;--muted:#6C747D;--good:#2F7D4A;--warn:#B87820;--bad:#B4232D;--redx:#B4232D;--redx-dark:#7F1820;--redx-soft:#FFF1F2}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--navy)}.wrap{padding:18px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.head h1{margin:0;font-size:24px}.head p{margin:6px 0 0;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}button,select,input,textarea{font:inherit}.btn{border:1px solid var(--line);background:var(--card);color:var(--navy);border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.good{background:#eaf7ef;color:#0f6b3f;border-color:#bfe7d1}.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}.kpi small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}.kpi strong{display:block;font-size:24px;margin-top:5px}.kpi.money{background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.22)}.kpi.money strong{color:var(--warn)}.recon{display:flex;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px;color:var(--muted);font-size:12px;min-height:38px;align-items:center}.recon b{color:var(--navy)}.ok{color:var(--good)!important}.warn{color:var(--warn)!important}.bad{color:var(--bad)!important}.layout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.line{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px}.line h3{margin:0 0 10px;font-size:15px}.stations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.station{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;cursor:pointer;text-align:left;min-width:0}.station.active{outline:2px solid rgba(180,35,45,.16);border-color:var(--redx);background:var(--redx-soft)}.station b{display:block;font-size:19px;margin:3px 0}.station span{display:block;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}.station em{display:block;font-style:normal;font-size:11px;font-weight:900;color:var(--warn);margin-top:4px;overflow:hidden;text-overflow:ellipsis}.tools{display:grid;grid-template-columns:1.7fr repeat(5,1fr) auto;gap:8px;background:var(--card);border:1px solid var(--line);padding:12px;border-radius:16px;margin-bottom:12px}.tools input,.tools select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}.tablebox{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:520px}table{border-collapse:collapse;width:100%;font-size:12px}th{position:sticky;top:0;background:#181818;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #242424;white-space:nowrap}.num{text-align:right}.moneytxt{color:var(--warn);font-weight:800}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-weight:800;font-size:10px}.repair{background:rgba(199,62,84,.10);color:var(--bad)}.clean{background:rgba(61,214,140,.09);color:var(--good)}.empty{padding:30px;text-align:center;color:var(--muted)}.modal{position:fixed;inset:0;background:rgba(8,24,40,.58);display:none;align-items:center;justify-content:center;padding:24px;z-index:99}.modal.open{display:flex}.dialog{width:min(1160px,96vw);max-height:92vh;background:#fff;border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.3)}.dialog-head,.dialog-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}.dialog-foot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end;flex-wrap:wrap}.dialog-body{padding:16px;overflow:auto;background:#f5f7fa}.subject{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}.notes{width:100%;min-height:76px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}.email-preview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}.email-preview h2{margin:0 0 4px}.email-preview h3{margin:18px 0 8px}.email-preview table{font-size:11px}.email-preview th{position:static}.email-preview td{white-space:normal;vertical-align:top}.sub{font-size:11px;color:var(--muted);margin:4px 0 12px}.report-config{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}.config-grid{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(360px,1.8fr);gap:12px;align-items:end}.period-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--navy);font-weight:700;text-transform:none;letter-spacing:0}.role-title{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin:13px 0 8px}.role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.role-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px;text-align:left;cursor:pointer;min-height:84px;color:var(--navy)}.role-card.active{font-weight:900}.role-card .role-icon{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:9px;font-size:17px;margin-bottom:7px}.role-card b{display:block;font-size:11px;line-height:1.25}.role-card span:last-child{display:block;color:var(--muted);font-size:9px;line-height:1.3;margin-top:3px}.scope-hint{margin-top:10px;padding:9px 11px;border-left:4px solid var(--blue);background:#181818;color:#526a82;font-size:11px;line-height:1.4}.report-input-label{display:block;font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px}.rack-panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 8px 24px rgba(48,35,38,.04)}.rack-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.rack-panel-head b{display:block;font-size:14px;color:var(--navy)}.rack-panel-head span{display:block;margin-top:3px;font-size:10px;color:var(--muted)}.rack-panel-head small{font-size:10px;color:var(--redx-dark);font-weight:900;background:var(--redx-soft);border:1px solid #EDC8CD;border-radius:999px;padding:5px 8px}.rack-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.rack{border:1px solid #E9D9DB;border-radius:16px;background:linear-gradient(180deg,#fff,#FFFAFA);overflow:hidden}.rack-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #F0E3E5;background:#FFF7F8}.rack-head b{font-size:12px;color:var(--redx-dark)}.rack-head span{font-size:10px;font-weight:900;color:#626A73}.shelves{display:grid;gap:8px;padding:10px}.shelf{border:1px solid #EEE6E7;border-radius:12px;padding:9px 10px;background:#fff;cursor:pointer;text-align:left}.shelf:hover{border-color:#DDB9BE;background:#FFF8F8}.shelf-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.shelf-top strong{font-size:11px;color:#2B3036;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shelf-top em{font-style:normal;font-size:10px;font-weight:900;color:var(--redx-dark);white-space:nowrap}.shelf-bar{height:6px;border-radius:999px;background:#F1ECEC;overflow:hidden;margin:7px 0 5px}.shelf-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#7F1820,#B4232D,#D86A75)}.shelf small{display:block;color:#777F87;font-size:9px}.shelf.warn{background:#FFF9F0;border-color:#ECD9B9}.shelf.warn .shelf-bar i{background:linear-gradient(90deg,#9B6419,#D8A04A)}.shelf.good{background:#F6FBF7;border-color:#D7E9DC}.shelf.good .shelf-bar i{background:linear-gradient(90deg,#2F7D4A,#67A979)}@media(max-width:1050px){.rack-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.rack-grid{grid-template-columns:1fr}}@media(max-width:1050px){.layout{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.layout,.kpis,.tools,.config-grid,.period-controls,.role-grid{grid-template-columns:1fr}.stations{grid-template-columns:1fr}.wrap{padding:10px}.head{display:block}.actions{margin-top:10px;justify-content:flex-start}}
 
+/* Legacy Export Center icon language, restored from the original SMTinel index */
+.export-type-icon{display:grid!important;place-items:center!important;width:46px!important;height:46px!important;border-radius:14px!important;font-size:23px!important;font-weight:800!important;margin-bottom:22px!important;background:#fff!important}
+.export-type-card[data-report-type="SHIFT"] .export-type-icon{color:#2F9A67!important;border-color:#BFE7D1!important;background:#F0FBF5!important}
+.export-type-card[data-report-type="WEEKLY"] .export-type-icon{color:#7F1820!important;border-color:#E7BEC4!important;background:#FFF3F4!important}
+.export-type-card[data-report-type="DBN"] .export-type-icon{color:#B87820!important;border-color:#ECD39F!important;background:#FFF8EA!important}
+.export-type-card[data-report-type="TEST"] .export-type-icon{color:#356FA8!important;border-color:#C7DBF7!important;background:#F1F7FD!important}
+.export-type-card[data-yokoten-open="1"] .export-type-icon{color:#B4232D!important;border-color:#E7BEC4!important;background:#FFF1F2!important}
+.export-landing-foot #exportScopeBridge{display:inline;font-weight:800;color:#7F1820}
+
 /* === SMTinel Export Center Landing v1 === */
 .modal{background:rgba(0,0,0,.72);padding:16px}
 .dialog.export-dialog{width:min(1480px,98vw);height:min(930px,96vh);max-height:96vh;background:#0A0A0A;border:1px solid #242424;border-radius:22px;box-shadow:0 30px 90px rgba(0,0,0,.52);color:#E8E8E6}
@@ -39738,37 +39785,37 @@ function traceOpsBonepileBuildPayload() {
         </div>
         <div class="export-type-grid">
           <button type="button" class="export-type-card" data-report-type="SHIFT">
-            <span class="export-type-icon">01</span>
+            <span class="export-type-icon" aria-hidden="true">&#8644;</span>
             <b>Entrega de turno</b>
             <p>Ejecución de cierre de turno, movimiento, exposición a reparación y entrega administrativa desde el baseline capturado.</p>
             <span class="export-type-meta"><span>Turno actual</span><span>HTML</span><span>Sin selector de modelo</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="WEEKLY">
-            <span class="export-type-icon">02</span>
+            <span class="export-type-icon" aria-hidden="true">&#9638;</span>
             <b>Reporte semanal de ejecución</b>
             <p>Revisión por semana fiscal con enfoque de calidad o ejecutivo, prioridad de WO y exposición de ejecución.</p>
             <span class="export-type-meta"><span>Semana fiscal</span><span>Calidad / Ejecutivo</span><span>HTML</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="DBN">
-            <span class="export-type-icon">03</span>
+            <span class="export-type-icon" aria-hidden="true">&#10003;</span>
             <b>Seguimiento DBN</b>
             <p>Seguimiento por modelo y Work Order con avance de build, validación de ruta, evidencia terminal y paquete DBN.</p>
             <span class="export-type-meta"><span>Modelo + WO</span><span>HTML</span><span>Excel</span></span>
           </button>
           <button type="button" class="export-type-card" data-report-type="TEST">
-            <span class="export-type-icon">04</span>
+            <span class="export-type-icon" aria-hidden="true">&#9651;</span>
             <b>Desempeño de pruebas</b>
             <p>Desempeño diario o semanal de pruebas eléctricas y funcionales desde Cesium, separando primer intento y retest.</p>
             <span class="export-type-meta"><span>Fecha / turno</span><span>FPY + retest</span><span>HTML + CSV</span></span>
           </button>
           <button type="button" class="export-type-card export-type-card-yokoten" data-report-type="YOKOTEN" data-yokoten-open="1">
-            <span class="export-type-icon">05</span>
+            <span class="export-type-icon" aria-hidden="true">&#8862;</span>
             <b>Matriz Yokoten y calificación de manufactura</b>
             <p>Producto + revisión por línea. Common DB construye historial de corrida, WO y cantidad; cada celda abre la evidencia relacionada.</p>
             <span class="export-type-meta"><span>Common DB</span><span>Producto + Rev × Línea</span><span>Turno + Pruebas + Reparación</span></span>
           </button>
         </div>
-        <div class="export-landing-foot"><b>El alcance de datos se conserva.</b> Elegir un reporte no reinicia filtros de Bonepile, SFC cargado, Repair Records, periodos fiscales ni el baseline de turno.</div>
+        <div class="export-landing-foot"><b>Alcance heredado de Bonepile.</b> <span id="exportScopeBridge">Esperando el alcance activo...</span><br>Los reportes conservan SFC cargado, Repair Records, filtros operativos, periodos fiscales y baseline de turno.</div>
       </section>
 
       <section class="report-builder" id="reportBuilder" style="display:none">
@@ -39898,9 +39945,15 @@ function money(v){var n=Number(v||0);if(!isFinite(n))n=0;return '$'+n.toLocaleSt
 function sumCost(list){return(list||[]).reduce(function(a,r){return a+Number(r&&r.cost||0)},0)}
 function requestData(){requestCounter+=1;var id='bp-'+Date.now()+'-'+requestCounter;document.getElementById('recon').innerHTML='<span>Refreshing from Yield Flow...</span>';try{window.parent.postMessage({type:'smtinel:bonepile:request',requestId:id},'*')}catch(e){showError(String(e&&e.message||e))}var requestedAt=Date.now();setTimeout(function(){if(lastResponse<requestedAt)document.getElementById('recon').innerHTML='<span class="warn"><b>No response yet.</b> Load/process Yield Flow and press Refresh.</span>'},2700)}
 function showError(message){document.getElementById('recon').innerHTML='<span class="bad"><b>Bonepile data error:</b> '+esc(message)+'</span>'}
+function isExportCenterFrame(){try{return !!(window.frameElement&&window.frameElement.id==='smtinel-exportcenter-frame')}catch(_){return false}}
+function bonepileScopeState(){var get=function(id,fallback){var el=document.getElementById(id);return el?String(el.value==null?fallback:el.value):fallback};return{scope:get('scope',scopeMode||'FULL'),q:get('q',''),line:get('line','ALL'),station:get('station','ALL'),age:get('age','ALL'),repair:get('repair','ALL'),layoutLine:String(selectedLayoutLine||''),updatedAt:new Date().toISOString()}}
+function updateExportScopeBridge(){var el=document.getElementById('exportScopeBridge');if(!el)return;var st=bonepileScopeState(),parts=[];parts.push(st.scope==='ACTIVE'?'Yield Flow activo':'SFC completo');if(st.line&&st.line!=='ALL')parts.push('Linea '+st.line);if(st.station&&st.station!=='ALL')parts.push(st.station);if(st.age&&st.age!=='ALL')parts.push('Aging '+st.age.replace(/^age/i,''));if(st.repair&&st.repair!=='ALL')parts.push(st.repair==='YES'?'Solo reparacion':'Sin reparacion');if(st.q)parts.push('Busqueda: '+st.q);el.textContent=parts.join(' · ')||'Alcance completo'}
+function broadcastBonepileScope(){if(isExportCenterFrame())return;try{window.parent.postMessage({type:'smtinel:bonepile:scope-state',state:bonepileScopeState()},'*')}catch(_){}}
+function applyExternalBonepileScope(st){st=st||{};var scope=document.getElementById('scope'),target=String(st.scope||'FULL').toUpperCase()==='ACTIVE'?'ACTIVE':'FULL';if(scope&&scope.value!==target){scope.value=target;loadScope(target)}var set=function(id,val){var el=document.getElementById(id);if(!el||val==null)return;if(el.tagName==='SELECT'){var ok=[].slice.call(el.options||[]).some(function(o){return String(o.value)===String(val)});el.value=ok?String(val):'ALL'}else el.value=String(val)};set('q',st.q||'');set('line',st.line||'ALL');set('station',st.station||'ALL');set('age',st.age||'ALL');set('repair',st.repair||'ALL');selectedLayoutLine=String(st.layoutLine||'');apply();updateExportScopeBridge()}
+function requestBonepileScopeState(){try{window.parent.postMessage({type:'smtinel:bonepile:state-request'},'*')}catch(_){}}
 function resolvePayloadStation(row,field){row=row||{};var station=canonicalSfcStation(row[field||'station']);var raw=String(row.rawStation||row.currentEvent||row.testArea||'').trim();if((station==='UNMAPPED/REVIEW'||station==='UNMAPPED / REVIEW'||station==='UNMAPPED'||!station)&&/\*+$/.test(raw)){var debugBase=canonicalSfcStation(raw);if(debugBase&&debugBase!=='N/D'&&debugBase!=='UNKNOWN')station=debugBase}return station||'UNMAPPED / REVIEW'}
 function loadScope(mode){scopeMode=mode==='ACTIVE'?'ACTIVE':'FULL';scopeState=(payloadState.scopes&&payloadState.scopes[scopeMode])||payloadState||{};rows=(Array.isArray(scopeState.rows)?scopeState.rows:[]).map(function(r){return Object.assign({},r,{station:resolvePayloadStation(r,'station'),isDebug:!!(r&&r.isDebug)||/\*+$/.test(String(r&&r.rawStation||''))})});snapshotRows=(Array.isArray(scopeState.snapshotRows)?scopeState.snapshotRows:[]).map(function(r){return Object.assign({},r,{station:resolvePayloadStation(r,'station'),isDebug:!!(r&&r.isDebug)||/\*+$/.test(String(r&&r.rawStation||''))})});repairRows=(Array.isArray(scopeState.repairRows)?scopeState.repairRows:[]).map(function(r){var current=resolvePayloadStation(Object.assign({},r,{station:r&&r.currentStation}),'station');return Object.assign({},r,{currentStation:current})});stationTotals=scopeState.totals||{SMTLOADING:0,AOI2:0,AOI4:0};planByWo=scopeState.planByWo||payloadState.planByWo||{};exposureByWo=scopeState.exposureByWo||payloadState.exposureByWo||{};fallbackPlanByWo=scopeState.fallbackPlanByWo||payloadState.fallbackPlanByWo||{};runStartByWo=scopeState.runStartByWo||payloadState.runStartByWo||{};applyPayloadStationSequence(scopeState.stationSequence||payloadState.stationSequence||[],scopeState.stationSequenceSource||payloadState.stationSequenceSource||'');cesiumContractLoad(scopeState);source=scopeState.source||payloadState.source||'';selected='';selectedLayoutLine='';options();apply();updateBaselineButton();try{if(document.getElementById('reportType')&&reportType()==='EXEC_QUALITY'){eqPopulateControls();setDefaultReportSubject();dbnRenderPreviewNow('date-change')}}catch(_){}}
-function apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){var lineOk=selectedLayoutLine?layoutLineForRow(r)===selectedLayoutLine:(ln==='ALL'||r.line===ln);return(!q||(r.sn+' '+r.wo+' '+r.sku+' '+r.family).toUpperCase().indexOf(q)>=0)&&lineOk&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderRack();renderLayout();renderRecon()}
+function apply(){var q=document.getElementById('q').value.trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;filtered=rows.filter(function(r){var lineOk=selectedLayoutLine?layoutLineForRow(r)===selectedLayoutLine:(ln==='ALL'||r.line===ln);return(!q||(r.sn+' '+r.wo+' '+r.sku+' '+r.family).toUpperCase().indexOf(q)>=0)&&lineOk&&(st==='ALL'||r.station===st)&&(ag==='ALL'||r.ageBucket===ag)&&(rp==='ALL'||(rp==='YES')===r.repair)});renderTable();renderKpis();renderRack();renderLayout();renderRecon();updateExportScopeBridge();broadcastBonepileScope()}
 function count(st,ln){return rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}).length}
 function stationCost(st,ln){return sumCost(rows.filter(function(r){return r.station===st&&(!ln||r.line===ln)}))}
 function layoutCount(st,ln){return rows.filter(function(r){return r.station===st&&layoutLineForRow(r)===ln}).length}
@@ -39925,7 +39978,7 @@ function baselineKey(){return'smtinel:bonepile:shift-baseline:'+scopeMode}
 function getBaseline(){try{return JSON.parse(localStorage.getItem(baselineKey())||'null')}catch(_){return null}}
 function updateBaselineButton(){var b=getBaseline(),el=document.getElementById('baseline');el.textContent=b&&b.capturedAt?'Shift Start: '+new Date(b.capturedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'Capture Shift Start'}
 function captureBaseline(){var minimal=snapshotRows.map(function(r){return{sn:r.sn,station:r.station,line:r.line,family:r.family,sku:r.sku,wo:r.wo}}),value={capturedAt:new Date().toISOString(),scope:scopeMode,rows:minimal};try{localStorage.setItem(baselineKey(),JSON.stringify(value));updateBaselineButton();document.getElementById('recon').innerHTML='<span class="ok"><b>Shift baseline captured:</b> '+minimal.length.toLocaleString()+' serials at '+new Date(value.capturedAt).toLocaleString()+'</span>'}catch(e){showError('Unable to save shift baseline: '+String(e&&e.message||e))}}
-function currentSnapshot(){var ln=document.getElementById('line').value;return snapshotRows.filter(function(r){var sn=String(r&&r.sn||'').trim().toUpperCase();if(sn.indexOf('__TRACEOPS')===0)return false;return ln==='ALL'||r.line===ln})}
+function currentSnapshot(){var q=(document.getElementById('q').value||'').trim().toUpperCase(),ln=document.getElementById('line').value,st=document.getElementById('station').value,ag=document.getElementById('age').value,rp=document.getElementById('repair').value;return snapshotRows.filter(function(r){var sn=String(r&&r.sn||'').trim().toUpperCase();if(sn.indexOf('__TRACEOPS')===0)return false;var lineOk=selectedLayoutLine?layoutLineForRow(r)===selectedLayoutLine:(ln==='ALL'||r.line===ln);var hay=(String(r.sn||'')+' '+String(r.wo||'')+' '+String(r.sku||'')+' '+String(r.family||'')).toUpperCase();var stationOk=st==='ALL'||String(r.station||'')===st;var ageOk=ag==='ALL'||String(r.ageBucket||'')===ag;var repairOk=rp==='ALL'||(rp==='YES')===!!r.repair;return(!q||hay.indexOf(q)>=0)&&lineOk&&stationOk&&ageOk&&repairOk})}
 function reportDateKey(value){if(value==null||value==='')return'';var st=String(value).trim(),m=st.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})/);if(m){var year=Number(m[3]);if(year<100)year+=2000;return String(year).padStart(4,'0')+'-'+String(Number(m[1])).padStart(2,'0')+'-'+String(Number(m[2])).padStart(2,'0')}try{if(typeof traceOpsYieldDateKey==='function'){var key=traceOpsYieldDateKey(value);if(key)return key}}catch(_){}var d=new Date(st);if(!isNaN(d.getTime()))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');return''}
 function reportWeekKey(value){return String(value||'').trim().toUpperCase().replace(/\s+/g,' ')}
 function reportRowFiscalMatch(row,period){if(!period)return true;row=row||{};var selected=reportWeekKey(period.label),rowWeek=reportWeekKey(row.week||row.fiscalWeek||row.ciscoWeek||row.WFCSY||'');if(rowWeek&&rowWeek===selected)return true;var key=reportDateKey(row.buildStart||row.buildStartDate||row.startSmt||row.date||row.eventTime||'');return!!key&&key>=period.start&&key<=period.end}
@@ -40671,6 +40724,7 @@ function bindExportLanding(){
 }
 openEmail=function(){
   window.__SMTINEL_HIERARCHY_ENABLED=true;
+  try{requestData();requestBonepileScopeState()}catch(_){}
   var modal=document.getElementById('emailModal'),preview=document.getElementById('emailPreview');
   if(modal)modal.classList.add('open');
   try{initReportBuilder();bindExportLanding();showExportLanding()}
@@ -41610,7 +41664,7 @@ downloadEmail=function(){var title=document.getElementById('emailSubject').value
 
 })();
 
-window.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data')receive(data.payload);else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready')requestData()});
+window.addEventListener('message',function(event){var data=event&&event.data;if(!data)return;if(data.type==='smtinel:bonepile:data'){receive(data.payload);if(isExportCenterFrame())requestBonepileScopeState()}else if(data.type==='smtinel:bonepile:error')showError(data.message||'Unknown error');else if(data.type==='smtinel:bonepile:parent-ready'){requestData();if(isExportCenterFrame())requestBonepileScopeState()}else if(data.type==='smtinel:bonepile:apply-state'){applyExternalBonepileScope(data.state||{})}});
 ['q','line','station','age','repair'].forEach(function(id){document.getElementById(id).addEventListener(id==='q'?'input':'change',function(){selected='';selectedLayoutLine='';apply()})});document.getElementById('scope').onchange=function(){selected='';selectedLayoutLine='';loadScope(this.value)};document.getElementById('refresh').onclick=requestData;document.getElementById('export').onclick=exportTsv;document.getElementById('baseline').onclick=captureBaseline;var shiftEmailBtn=document.getElementById('shiftEmail');if(shiftEmailBtn)shiftEmailBtn.onclick=openEmail;document.getElementById('closeEmail').onclick=closeEmail;document.getElementById('shiftNotes').oninput=refreshEmail;document.getElementById('copySubject').onclick=function(){copyText(document.getElementById('emailSubject').value)};document.getElementById('copyPlain').onclick=function(){copyText(document.getElementById('emailPreview').innerText)};document.getElementById('copyHtml').onclick=copyHtml;document.getElementById('downloadExecutivePptx').onclick=downloadExecutivePptx;document.getElementById('downloadEmail').onclick=downloadEmail;
 
 
@@ -41982,7 +42036,7 @@ ${'</scr'+'ipt>'}
                     React.createElement("div", { style: { fontSize: isMobile() ? 22 : 28, fontWeight: 900, lineHeight: 1.05, marginTop: 5 } }, "Export Center"),
                     React.createElement("div", { style: { fontSize: 11, lineHeight: 1.5, opacity: .82, marginTop: 7, maxWidth: 760 } }, "Entrega de turno, ejecución semanal, DBN, desempeño de pruebas y Yokoten en un módulo independiente. Los datos cargados y el alcance actual se conservan."))),
             React.createElement("section", { style: { background: "#fff", border: "1px solid #E6DADD", borderRadius: 18, overflow: "hidden", boxShadow: "0 8px 26px rgba(68,34,40,.05)" } },
-                React.createElement("iframe", { id: "smtinel-exportcenter-frame", title: "SMTinel Export Center", srcDoc: SMTINEL_BONEPILE_SRCDOC, onLoad: function(e){ var frame=e&&e.currentTarget; setTimeout(function(){ try { var doc=frame&&frame.contentDocument; if(doc){var wrap=doc.querySelector('.wrap');if(wrap)wrap.style.display='none';var close=doc.getElementById('closeEmail');if(close)close.style.display='none';} traceOpsBonepilePostToFrame(frame&&frame.contentWindow,{type:'smtinel:bonepile:parent-ready'}); if(frame&&frame.contentWindow&&typeof frame.contentWindow.SMTinelOpenExportCenter==='function') frame.contentWindow.SMTinelOpenExportCenter(); }catch(_){} },220); }, style: { width: "100%", minHeight: isMobile() ? "980px" : "1180px", border: 0, display: "block", background: "#F7F5F4" } })))
+                React.createElement("iframe", { id: "smtinel-exportcenter-frame", title: "SMTinel Export Center", srcDoc: SMTINEL_BONEPILE_SRCDOC, onLoad: function(e){ var frame=e&&e.currentTarget; setTimeout(function(){ try { var doc=frame&&frame.contentDocument; if(doc){var wrap=doc.querySelector('.wrap');if(wrap)wrap.style.display='none';var close=doc.getElementById('closeEmail');if(close)close.style.display='none';} traceOpsBonepilePostToFrame(frame&&frame.contentWindow,{type:'smtinel:bonepile:parent-ready'}); try{if(typeof window.SMTinelSendBonepileScope==='function')window.SMTinelSendBonepileScope(frame&&frame.contentWindow)}catch(_){} if(frame&&frame.contentWindow&&typeof frame.contentWindow.SMTinelOpenExportCenter==='function') frame.contentWindow.SMTinelOpenExportCenter(); }catch(_){} },220); }, style: { width: "100%", minHeight: isMobile() ? "980px" : "1180px", border: 0, display: "block", background: "#F7F5F4" } })))
     }
 
     function renderVectorSection() {
