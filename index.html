@@ -1,4 +1,4 @@
-<!-- SMTinel V20 · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
+<!-- SMTinel V20.2 · Cross-Product Component Trend / Shainin Red X · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
 <!-- SMTinel V13.18.40 - Exact Handoff SMTinel emblem in export + preview -->
 <!-- SMTinel VECTOR V1.0 - Closed-loop operational control module: SQDCM > Execution > Cause > Traceability > DIVE > Yokoten -->
 <!-- SMTinel V13.16.62 - Strict BU authority: reject Cesium Attributes/JSON from BU selector -->
@@ -4131,7 +4131,12 @@ html.smtinel-theme-light body #maintenance-section :is(input,select,button){bord
     return {subject:subject,html:html,plain:plain,date:date};
   }
   function download(report){
-    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"></head><body>'+report.html+'</body></html>';
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"><style id="smtinel-hyndman-bottom-nav-v202">
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+html body .smtinel-bottom-nav .smtinel-tab{min-width:0!important;padding-left:2px!important;padding-right:2px!important;}
+html body .smtinel-bottom-nav .smtinel-tab span:last-child{font-size:8px!important;letter-spacing:-.02em!important;}}
+</style></head><body>'+report.html+'</body></html>';
     var blob=new Blob([doc],{type:'text/html;charset=utf-8'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -20160,11 +20165,11 @@ html.smtinel-trueblack-premium .smtinel-rcca-land-kpi,html.smtinel-trueblack-pre
 .saas-header-btn.primary{background:linear-gradient(135deg,var(--smt-redx-dark),var(--smt-redx))!important;border-color:var(--smt-redx)!important;color:#fff!important;}
 .sidebar-btn.active{background:rgba(180,35,45,.16)!important;color:#FFDDE1!important;border-color:rgba(216,106,117,.30)!important;}
 .sidebar-btn.active svg{color:#FFDDE1!important;}
-html body .smtinel-bottom-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
 html body .smtinel-bottom-nav .smtinel-tab.active{color:#FFD8DD!important;}
 html body .smtinel-bottom-nav .smtinel-tab.active::after{background:var(--smt-redx)!important;}
 #board-impact-export-center{display:none!important;}
-@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(4,1fr)!important;}}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,1fr)!important;}}
 </style>
 
 </head>
@@ -33636,6 +33641,131 @@ body:has(#recovery-section) .main-content.expanded{
         ]);
     }
 
+    /* SMTinel V20.1 - Cross-Product Component Trend.
+       Read-only projection of the same SFC/Cesium + Common DB + BOM-enriched
+       Repair rows already assembled by Board Impact. No additional import. */
+    function traceOpsBoardCrossProductPanel(h, sourceRows, currentRef) {
+        var groups = {}, weekMap = {};
+        function clean(v){return String(v == null ? '' : v).trim();}
+        function snOf(r){return clean(r.sn || r.SN || r.serial || r.serialNumber);}
+        function weekOf(r){return clean(traceOpsBoardRowWeek(r));}
+        function modeOf(r){return clean(traceOpsBoardFailureModeLabel(r) || r.failureMode || r.mode || r.symptom);}
+        function pnOf(r){return clean(r.componentCode || r.componentPn || r.partNumber || r.componentPN);}
+        function productOf(r){return clean(r.repairSku || r.rawRepairSku || r.sourceSku || r.SkuNo || r.sku || r.SKU || r.skuno || r.moduleno || r.model || r.ModelName || r.family);}
+        (sourceRows || []).forEach(function(r,ix){
+            if (!r) return;
+            var pn=pnOf(r), mode=modeOf(r), wk=weekOf(r), sn=snOf(r);
+            if (!pn || /^N\/?D$|^UNKNOWN$/i.test(pn) || !mode || !wk || wk==='N/D' || !sn) return;
+            var k=pn+'\u241f'+mode, g=groups[k];
+            if(!g) g=groups[k]={pn:pn,mode:mode,description:clean(r.componentDescription),type:clean(r.componentType),refs:{},products:{},wos:{},weeks:{},serials:{},count:0};
+            var id=(clean(r.wo)||'')+'|'+sn, eventKey=id+'|'+wk;
+            if(g.serials[eventKey])return;
+            g.serials[eventKey]=1;g.count++;
+            g.weeks[wk]=(g.weeks[wk]||0)+1;
+            var ref=clean(r.refdes || r.refDes || r.ref || r.location);
+            if(ref)g.refs[ref]=1;
+            var product=productOf(r);if(product)g.products[product]=1;
+            var wo=clean(r.wo || r.workorderno || r.workOrder);if(wo)g.wos[wo]=1;
+            if(!g.description)g.description=clean(r.componentDescription);
+            if(!g.type)g.type=clean(r.componentType);
+            weekMap[wk]=1;
+        });
+        var weeks=Object.keys(weekMap).sort(function(a,b){return traceOpsYieldWeekSortValue(a)-traceOpsYieldWeekSortValue(b)||a.localeCompare(b);});
+        var items=Object.keys(groups).map(function(k){
+            var g=groups[k], counts=weeks.map(function(w){return g.weeks[w]||0;}), occupied=counts.filter(function(v){return v>0;}), n=occupied.length;
+            // ADI is a proxy based on *loaded* fiscal weeks, not a demand forecast.
+            g.adi=n ? weeks.length/n : null;
+            var mean=n?occupied.reduce(function(a,b){return a+b;},0)/n:0;
+            var variance=n>1?occupied.reduce(function(a,v){return a+(v-mean)*(v-mean);},0)/n:0;
+            g.cv2=n>1&&mean>0?variance/(mean*mean):null;
+            g.weekCounts=counts;g.activeWeeks=n;
+            g.productsList=Object.keys(g.products);g.refsList=Object.keys(g.refs);g.woCount=Object.keys(g.wos).length;
+            return g;
+        }).sort(function(a,b){return b.count-a.count;}).slice(0,60);
+        function el(tag,props,children){return h(tag,props,children);}
+        var dark='#101012', subdued='#a4a5ad', red='#ee3e51', border='#333039';
+        if(!items.length) return el('section',{id:'smtinel-cross-product-v201',style:{border:'1px solid '+border,borderRadius:18,background:dark,color:'#f5f5f7',padding:18}},[
+            el('div',{key:'title',style:{fontSize:17,fontWeight:900,color:'#fff'}},'Cross-Product Component Trend · Red X'),
+            el('p',{key:'empty',style:{fontSize:12,color:subdued,marginTop:9}},'Sin registros suficientes con CPN, modo de falla, SN y semana. Importa Common DB + SFC/Cesium y BOM en Yield Flow; no se muestran datos de ejemplo.')
+        ]);
+        var display=items.filter(function(g){return g.cv2!=null&&g.adi!=null;}).slice(0,25);
+        var selected=items.find(function(g){return g.refsList.indexOf(currentRef)>=0;})||items[0];
+        var W=760,H=350,L=57,R=22,T=28,B=50,PW=W-L-R,PH=H-T-B;
+        var maxX=Math.max(2,Math.min(12,Math.ceil(Math.max.apply(null,display.map(function(g){return g.adi;}).concat([2]))+0.4)));
+        var maxY=Math.max(.6,Math.min(5,Math.ceil(Math.max.apply(null,display.map(function(g){return g.cv2;}).concat([.6]))*2)/2));
+        function x(v){return L+Math.min(1,Math.max(0,(v-1)/(maxX-1)))*PW;}
+        function y(v){return T+PH-Math.min(1,Math.max(0,v/maxY))*PH;}
+        function color(g){return g.adi<=1.32?(g.cv2>=.49?red:'#36a48b'):(g.cv2>=.49?'#e5a448':'#63a7e8');}
+        var svg=[];
+        svg.push(el('rect',{key:'bg',x:L,y:T,width:PW,height:PH,fill:'#171a20'}));
+        svg.push(el('rect',{key:'zone1',x:L,y:T,width:x(1.32)-L,height:y(.49)-T,fill:'rgba(238,62,81,.14)'}));
+        svg.push(el('rect',{key:'zone2',x:L,y:y(.49),width:x(1.32)-L,height:T+PH-y(.49),fill:'rgba(54,164,139,.12)'}));
+        svg.push(el('rect',{key:'zone3',x:x(1.32),y:T,width:L+PW-x(1.32),height:y(.49)-T,fill:'rgba(229,164,72,.08)'}));
+        svg.push(el('rect',{key:'zone4',x:x(1.32),y:y(.49),width:L+PW-x(1.32),height:T+PH-y(.49),fill:'rgba(99,167,232,.08)'}));
+        for(var j=0;j<=4;j++){var yy=T+PH*j/4;svg.push(el('line',{key:'gy'+j,x1:L,y1:yy,x2:L+PW,y2:yy,stroke:'#323640'}));svg.push(el('text',{key:'ty'+j,x:L-8,y:yy+4,textAnchor:'end',fill:subdued,fontSize:11},(maxY*(1-j/4)).toFixed(2)));}
+        for(var k=1;k<=Math.ceil(maxX);k++){var xx=x(k);svg.push(el('line',{key:'gx'+k,x1:xx,y1:T,x2:xx,y2:T+PH,stroke:'#292d37'}));svg.push(el('text',{key:'tx'+k,x:xx,y:H-26,textAnchor:'middle',fill:subdued,fontSize:11},String(k)));}
+        svg.push(el('line',{key:'adi',x1:x(1.32),x2:x(1.32),y1:T,y2:T+PH,stroke:'#ee3e51',strokeDasharray:'6 5',opacity:.85}));
+        svg.push(el('line',{key:'cv',x1:L,x2:L+PW,y1:y(.49),y2:y(.49),stroke:'#ee3e51',strokeDasharray:'6 5',opacity:.85}));
+        svg.push(el('text',{key:'xl',x:W/2,y:H-5,fill:'#e3e3e7',fontSize:12,textAnchor:'middle'},'ADI · Semanas cargadas / semanas con falla'));
+        svg.push(el('text',{key:'yl',x:15,y:H/2,fill:'#e3e3e7',fontSize:12,textAnchor:'middle',transform:'rotate(-90 15 '+H/2+')'},'CV² · Variabilidad del conteo por semana activa'));
+        display.forEach(function(g,i){var cx=x(g.adi),cy=y(g.cv2),focus=g===selected,r=5+Math.min(12,Math.sqrt(g.count)*1.7);svg.push(el('circle',{key:'p'+i,cx:cx,cy:cy,r:r,fill:color(g),stroke:focus?'#ffffff':'#20232b',strokeWidth:focus?3:1.5,opacity:.93},el('title',null,g.pn+' | '+g.mode+' | '+g.count+' SN-eventos | '+g.productsList.length+' productos')));});
+        var picture=traceOpsGetBomIconPath(selected.description,selected.type);
+        return el('section',{id:'smtinel-cross-product-v201',style:{border:'1px solid '+border,borderRadius:18,background:dark,color:'#f5f5f7',padding:16,display:'grid',gap:12}},[
+            el('div',{key:'head',style:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10}},[
+                el('div',{key:'h'},[el('div',{key:'ttl',style:{fontSize:19,fontWeight:950,color:'#fff'}},'Cross-Product Component Trend'),el('div',{key:'sub',style:{fontSize:10.5,color:subdued,marginTop:4}},'Shainin Red X · Common DB + SFC/Cesium + Repair + BOM · Sólo registros cargados')]),
+                el('span',{key:'scope',style:{fontSize:10,border:'1px solid #a53643',borderRadius:999,padding:'6px 10px',color:'#ff8994'}},'Alcance actual de Yield Flow')
+            ]),
+            el('div',{key:'layout',style:{display:'grid',gridTemplateColumns:isMobile()?'minmax(0,1fr)':'minmax(0,1.7fr) minmax(255px,.8fr)',gap:12}},[
+                el('div',{key:'plot',style:{minWidth:0,overflowX:'auto',background:'#14161b',border:'1px solid '+border,borderRadius:12,padding:8}},[
+                    el('svg',{key:'svg',viewBox:'0 0 '+W+' '+H,style:{width:'100%',minWidth:isMobile()?590:0,display:'block'}},svg),
+                    el('div',{key:'note',style:{color:subdued,fontSize:10,lineHeight:1.5,padding:'5px 10px'}},'Guías ADI 1.32 y CV² 0.49: referencia descriptiva, no frontera Red X validada. Los ejes son aproximaciones sobre semanas con datos disponibles.')
+                ]),
+                el('aside',{key:'detail',style:{border:'1px solid #642b34',background:'#1c171b',borderRadius:12,padding:14,display:'grid',alignContent:'start',gap:9}},[
+                    el('div',{key:'main',style:{display:'flex',gap:12,alignItems:'center'}},[
+                        el('span',{key:'pic',style:{display:'inline-flex',width:64,height:64,alignItems:'center',justifyContent:'center',border:'1px solid #6c343d',borderRadius:11,background:'#fff'}},el('img',{src:picture,alt:'Ilustración por categoría BOM',style:{width:51,height:51,objectFit:'contain'}})),
+                        el('div',{key:'id',style:{minWidth:0}},[el('div',{key:'pn',style:{fontSize:14,fontWeight:900,color:'#fff',overflowWrap:'anywhere'}},selected.pn),el('div',{key:'mode',style:{fontSize:12,color:'#ff697b',fontWeight:800,marginTop:4}},selected.mode)])
+                    ]),
+                    el('div',{key:'desc',style:{color:subdued,fontSize:10}},selected.description||selected.type||'Descripción BOM no disponible'),
+                    [['SN-eventos',selected.count],['Productos identificados',selected.productsList.length||'N/D'],['WO afectadas',selected.woCount||'N/D'],['Semanas con falla',selected.activeWeeks],['ADI (proxy)',selected.adi==null?'N/D':selected.adi.toFixed(2)],['CV² semanal',selected.cv2==null?'N/D':selected.cv2.toFixed(3)],['RefDes',selected.refsList.slice(0,8).join(', ')||'N/D']].map(function(row,i){return el('div',{key:'m'+i,style:{display:'flex',justifyContent:'space-between',gap:10,borderBottom:'1px solid #383038',paddingBottom:6,fontSize:11}},[el('span',{key:'a',style:{color:subdued}},row[0]),el('b',{key:'b',style:{color:'#f5f5f7',textAlign:'right'}},String(row[1]))]);}),
+                    el('div',{key:'products',style:{color:subdued,fontSize:10,lineHeight:1.5}},'Productos: '+(selected.productsList.slice(0,10).join(' · ')||'No identificados')),
+                    el('div',{key:'limit',style:{color:'#ff9ca2',fontSize:10,lineHeight:1.5}},'FR por producto y causalidad transversal: sólo calculables al verificar denominadores y trazabilidad de material. No se infiere causa raíz.')
+                ])
+            ]),
+            el('div',{key:'bottom',style:{display:'grid',gap:5}},[
+                el('div',{key:'listtitle',style:{color:'#fff',fontSize:12,fontWeight:900}},'Componentes y modos en el alcance · '+items.length),
+                el('div',{key:'list',style:{display:'flex',flexWrap:'wrap',gap:6}},items.slice(0,12).map(function(g,i){return el('button',{key:'g'+i,type:'button',title:g.pn+' · '+g.mode,style:{padding:'6px 9px',border:'1px solid '+(g===selected?'#ee3e51':'#454049'),background:g===selected?'#54232c':'#222126',borderRadius:9,color:'#fff',fontSize:10,cursor:'pointer'},onClick:function(){if(g.refsList.length)setBoardSelectedRef(g.refsList[0]);}},g.pn+' · '+g.mode+' ('+g.count+')');}))
+            ])
+        ]);
+    }
+
+    /* Independent Hyndman Red X module: same already-parsed scope, no duplicate parsers. */
+    function renderHyndmanRedXSection() {
+        var h=React.createElement;
+        var opts=traceOpsBoardBuildModeOptions(yieldFlowModel);
+        var rows=[], seen={};
+        (Array.isArray(opts)?opts:[]).forEach(function(opt){
+            (Array.isArray(opt&&opt.serials)?opt.serials:[]).forEach(function(r){
+                if(!r)return;
+                var sn=String(r.sn||r.SN||r.serial||r.serialNumber||'');
+                var wo=String(r.wo||r.workorderno||r.workOrder||'');
+                var ref=String(r.refdes||r.refDes||r.ref||r.location||'');
+                var mode=String(traceOpsBoardFailureModeLabel(r)||r.failureMode||r.mode||'');
+                var key=[sn,wo,ref,mode].join('|');
+                if(seen[key])return;
+                seen[key]=1;rows.push(r);
+            });
+        });
+        var enriched=traceOpsBoardExpandRowsWithRepairScope(boardImpactContext||{},rows);
+        return h('section',{id:'hyndman-redx-module',style:{display:'grid',gap:14,paddingBottom:30}},[
+            h('header',{key:'hero',style:{background:'linear-gradient(125deg,#09090b,#241014 65%,#711b27)',border:'1px solid #642832',borderRadius:18,padding:'19px 20px',color:'#fff'}},[
+                h('div',{key:'eyebrow',style:{fontSize:10,color:'#ff6674',fontWeight:900,letterSpacing:2}},'SMTINEL · SHAININ RED X · QUALITY INTELLIGENCE'),
+                h('h2',{key:'title',style:{margin:'8px 0',fontSize:isMobile()?23:32,color:'#fff'}},'Hyndman Red X'),
+                h('p',{key:'sub',style:{fontSize:12,color:'#e1cbd0',lineHeight:1.55}},'Firma de falla transversal por componente · ADI / CV² · recurrencia y variabilidad por semana fiscal')
+            ]),
+            h('div',{key:'panel'},traceOpsBoardCrossProductPanel(h,enriched,''))
+        ]);
+    }
+
     function renderBoardImpactSection() {
         var ctx = boardImpactContext || {};
         var modeOptions = traceOpsBoardBuildModeOptions(yieldFlowModel);
@@ -34161,6 +34291,7 @@ body:has(#recovery-section) .main-content.expanded{
             false && h("section", { key: "smtinel-board-export-toolbar-v96", id: "smtinel-board-export-toolbar-v96", "data-smtinel-board-export-toolbar": "v96", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "12px" : "12px 14px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(240px,1fr))", gap: 10, boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
 	                h("button", { id: "board-export-issue-v96", key: "board-export-issue-v96", "data-board-export-issue": "1", "data-board-export-v96": "issue", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #C7D4CA", background: "#E9EFEA", color: "#33472D", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker"),
 	                h("button", { id: "board-export-action-v96", key: "board-export-action-v96", "data-board-export-action": "1", "data-board-export-v96": "action", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #D9B758", background: "#F6EDDB", color: "#8C6514", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker")),
+            /* Hyndman Red X moved to its independent module V20.2. */
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } }, componentMetricReady ? [
                 kpi("Impacted WOs", componentWoList.length, selectedRef + " · all modes", "blue"),
                 kpi("Failed SN", componentFailedSn, selectedComponentPnLabel, "amber"),
@@ -44573,6 +44704,7 @@ ${'</scr'+'ipt>'}
                         false && activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
                         activeModule === "boardimpact" && renderBoardImpactSection(),
+                        activeModule === "hyndman" && renderHyndmanRedXSection(),
                         activeModule === "bonepile" && renderBonepileSection(),
                         activeModule === "exportcenter" && renderExportCenterSection(),
                 false && React.createElement("div", { className: "tcard" },
@@ -47915,11 +48047,12 @@ html body .smtinel-command-center .smtinel-cc-canvas{
   var modules=[
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
     {key:"boardimpact",label:"Board Impact",icon:icons.board,aliases:["Board Impact"]},
+    {key:"hyndman",label:"Hyndman Red X",icon:icons.signal,aliases:["Hyndman Red X"]},
     {key:"bonepile",label:"Bonepile",icon:icons.bonepile,aliases:["Bonepile Visual Tracker","Bonepile","WIP Map","Layout Inventory"]},
     {key:"exportcenter",label:"Export Center",icon:icons.exportcenter,aliases:["Export Center"]}
   ];
   var retiredModuleKeys={};
-  var mobileKeys=["yieldflow","boardimpact","bonepile","exportcenter"];
+  var mobileKeys=["yieldflow","boardimpact","hyndman","bonepile","exportcenter"];
   function norm(s){return String(s||"").toLowerCase().replace(/\s+/g," ").trim();}
   function byKey(k){return modules.filter(function(m){return m.key===k;})[0]||modules[0];}
   function findExistingButton(mod){
@@ -75009,9 +75142,9 @@ html body video[data-smtinel-video]{display:none!important}
 
 
 <style id="smtinel-focused-nav-cleanup-v1">
-html body .smtinel-bottom-nav{grid-template-columns:repeat(4,minmax(110px,1fr))!important;width:min(760px,calc(100vw - 28px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;justify-content:center!important;}
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(95px,1fr))!important;width:min(800px,calc(100vw - 28px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;justify-content:center!important;}
 html body .smtinel-more-tab,html body .smtinel-more-sheet,html body .smtinel-more-scrim,html body .smtinel-dp-launcher,html body [aria-label*="Desktop Portable"],html body button[title*="Desktop Portable"]{display:none!important;}
-@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(4,1fr)!important;width:calc(100vw - 12px)!important;}}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,1fr)!important;width:calc(100vw - 12px)!important;}}
 </style>
 <script id="smtinel-focused-ui-runtime-v1">
 (function(){
@@ -78029,7 +78162,7 @@ html:not(.smtinel-theme-light) body .main-content{background:#0A0A0A!important;}
 (function(){
   if(window.__SMTINEL_V24_SAFE_CLEANUP__) return;
   window.__SMTINEL_V24_SAFE_CLEANUP__=1;
-  var allowed=['yieldflow','boardimpact','bonepile','exportcenter'];
+  var allowed=['yieldflow','boardimpact','hyndman','bonepile','exportcenter'];
   function reveal(){
     var rs=document.getElementById('results-section');
     if(rs){rs.style.setProperty('display','block','important');rs.style.setProperty('visibility','visible','important');rs.style.setProperty('opacity','1','important');}
