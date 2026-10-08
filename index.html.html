@@ -1,4 +1,4 @@
-<!-- SMTinel V20.1 · Cross-Product Component Trend / Shainin Red X · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
+<!-- SMTinel V20.2 · Cross-Product Component Trend / Shainin Red X · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
 <!-- SMTinel V13.18.40 - Exact Handoff SMTinel emblem in export + preview -->
 <!-- SMTinel VECTOR V1.0 - Closed-loop operational control module: SQDCM > Execution > Cause > Traceability > DIVE > Yokoten -->
 <!-- SMTinel V13.16.62 - Strict BU authority: reject Cesium Attributes/JSON from BU selector -->
@@ -4131,7 +4131,12 @@ html.smtinel-theme-light body #maintenance-section :is(input,select,button){bord
     return {subject:subject,html:html,plain:plain,date:date};
   }
   function download(report){
-    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"></head><body>'+report.html+'</body></html>';
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"><style id="smtinel-hyndman-bottom-nav-v202">
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+html body .smtinel-bottom-nav .smtinel-tab{min-width:0!important;padding-left:2px!important;padding-right:2px!important;}
+html body .smtinel-bottom-nav .smtinel-tab span:last-child{font-size:8px!important;letter-spacing:-.02em!important;}}
+</style></head><body>'+report.html+'</body></html>';
     var blob=new Blob([doc],{type:'text/html;charset=utf-8'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -20160,11 +20165,11 @@ html.smtinel-trueblack-premium .smtinel-rcca-land-kpi,html.smtinel-trueblack-pre
 .saas-header-btn.primary{background:linear-gradient(135deg,var(--smt-redx-dark),var(--smt-redx))!important;border-color:var(--smt-redx)!important;color:#fff!important;}
 .sidebar-btn.active{background:rgba(180,35,45,.16)!important;color:#FFDDE1!important;border-color:rgba(216,106,117,.30)!important;}
 .sidebar-btn.active svg{color:#FFDDE1!important;}
-html body .smtinel-bottom-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
 html body .smtinel-bottom-nav .smtinel-tab.active{color:#FFD8DD!important;}
 html body .smtinel-bottom-nav .smtinel-tab.active::after{background:var(--smt-redx)!important;}
 #board-impact-export-center{display:none!important;}
-@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(4,1fr)!important;}}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,1fr)!important;}}
 </style>
 
 </head>
@@ -33733,6 +33738,34 @@ body:has(#recovery-section) .main-content.expanded{
         ]);
     }
 
+    /* Independent Hyndman Red X module: same already-parsed scope, no duplicate parsers. */
+    function renderHyndmanRedXSection() {
+        var h=React.createElement;
+        var opts=traceOpsBoardBuildModeOptions(yieldFlowModel);
+        var rows=[], seen={};
+        (Array.isArray(opts)?opts:[]).forEach(function(opt){
+            (Array.isArray(opt&&opt.serials)?opt.serials:[]).forEach(function(r){
+                if(!r)return;
+                var sn=String(r.sn||r.SN||r.serial||r.serialNumber||'');
+                var wo=String(r.wo||r.workorderno||r.workOrder||'');
+                var ref=String(r.refdes||r.refDes||r.ref||r.location||'');
+                var mode=String(traceOpsBoardFailureModeLabel(r)||r.failureMode||r.mode||'');
+                var key=[sn,wo,ref,mode].join('|');
+                if(seen[key])return;
+                seen[key]=1;rows.push(r);
+            });
+        });
+        var enriched=traceOpsBoardExpandRowsWithRepairScope(boardImpactContext||{},rows);
+        return h('section',{id:'hyndman-redx-module',style:{display:'grid',gap:14,paddingBottom:30}},[
+            h('header',{key:'hero',style:{background:'linear-gradient(125deg,#09090b,#241014 65%,#711b27)',border:'1px solid #642832',borderRadius:18,padding:'19px 20px',color:'#fff'}},[
+                h('div',{key:'eyebrow',style:{fontSize:10,color:'#ff6674',fontWeight:900,letterSpacing:2}},'SMTINEL · SHAININ RED X · QUALITY INTELLIGENCE'),
+                h('h2',{key:'title',style:{margin:'8px 0',fontSize:isMobile()?23:32,color:'#fff'}},'Hyndman Red X'),
+                h('p',{key:'sub',style:{fontSize:12,color:'#e1cbd0',lineHeight:1.55}},'Firma de falla transversal por componente · ADI / CV² · recurrencia y variabilidad por semana fiscal')
+            ]),
+            h('div',{key:'panel'},traceOpsBoardCrossProductPanel(h,enriched,''))
+        ]);
+    }
+
     function renderBoardImpactSection() {
         var ctx = boardImpactContext || {};
         var modeOptions = traceOpsBoardBuildModeOptions(yieldFlowModel);
@@ -34258,7 +34291,7 @@ body:has(#recovery-section) .main-content.expanded{
             false && h("section", { key: "smtinel-board-export-toolbar-v96", id: "smtinel-board-export-toolbar-v96", "data-smtinel-board-export-toolbar": "v96", style: { background: "#FFFFFF", border: "1px solid #D9DEDA", borderRadius: 18, padding: isMobile() ? "12px" : "12px 14px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(2,minmax(240px,1fr))", gap: 10, boxShadow: "0 6px 18px rgba(20,32,51,.045)" } },
 	                h("button", { id: "board-export-issue-v96", key: "board-export-issue-v96", "data-board-export-issue": "1", "data-board-export-v96": "issue", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: false, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #C7D4CA", background: "#E9EFEA", color: "#33472D", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Issue Tracker"),
 	                h("button", { id: "board-export-action-v96", key: "board-export-action-v96", "data-board-export-action": "1", "data-board-export-v96": "action", "data-smtinel-board-native-export": "react-v96", type: "button", onClick: function () { exportBoardImpactExcelWorkbook({ actionExport: true, ctx: ctx, selectedRef: selectedRef, selectedStat: selectedStat, selectedSeverity: selectedSeverity, snList: snList, modeOptions: modeOptions, refStats: refStats, masterRows: boardConsolidatedRowsBeforeModeFilter, rows: rows, uniqueRefs: uniqueRefs, affectedWos: affectedWos, affectedSerials: affectedSerials, totalManufacturedUnits: totalManufacturedUnits, totalBuiltUnits: totalBuiltUnits, boardFailureRateManufactured: boardFailureRateManufactured, boardFailureRateBuilt: boardFailureRateBuilt, boardSide: boardSide, yieldFlowKpi: (yieldFlowModel && yieldFlowModel.kpi) || {}, yieldFlowScope: yieldFilters || {} }); }, style: { width: "100%", minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #D9B758", background: "#F6EDDB", color: "#8C6514", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 950, cursor: "pointer", whiteSpace: "nowrap" } }, "Export Action Tracker")),
-            traceOpsBoardCrossProductPanel(h, boardConsolidatedRowsBeforeModeFilter, selectedRef),
+            /* Hyndman Red X moved to its independent module V20.2. */
             h("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr 1fr" : "repeat(6,minmax(0,1fr))", gap: 12 } }, componentMetricReady ? [
                 kpi("Impacted WOs", componentWoList.length, selectedRef + " · all modes", "blue"),
                 kpi("Failed SN", componentFailedSn, selectedComponentPnLabel, "amber"),
@@ -44671,6 +44704,7 @@ ${'</scr'+'ipt>'}
                         false && activeModule === "issueimpact" && renderIssueTimeImpactAnalyzerSection(),
                         activeModule === "yieldflow" && renderYieldFlowSection(),
                         activeModule === "boardimpact" && renderBoardImpactSection(),
+                        activeModule === "hyndman" && renderHyndmanRedXSection(),
                         activeModule === "bonepile" && renderBonepileSection(),
                         activeModule === "exportcenter" && renderExportCenterSection(),
                 false && React.createElement("div", { className: "tcard" },
@@ -48013,11 +48047,12 @@ html body .smtinel-command-center .smtinel-cc-canvas{
   var modules=[
     {key:"yieldflow",label:"Yield Flow",icon:icons.yield,aliases:["Yield Flow"]},
     {key:"boardimpact",label:"Board Impact",icon:icons.board,aliases:["Board Impact"]},
+    {key:"hyndman",label:"Hyndman Red X",icon:icons.signal,aliases:["Hyndman Red X"]},
     {key:"bonepile",label:"Bonepile",icon:icons.bonepile,aliases:["Bonepile Visual Tracker","Bonepile","WIP Map","Layout Inventory"]},
     {key:"exportcenter",label:"Export Center",icon:icons.exportcenter,aliases:["Export Center"]}
   ];
   var retiredModuleKeys={};
-  var mobileKeys=["yieldflow","boardimpact","bonepile","exportcenter"];
+  var mobileKeys=["yieldflow","boardimpact","hyndman","bonepile","exportcenter"];
   function norm(s){return String(s||"").toLowerCase().replace(/\s+/g," ").trim();}
   function byKey(k){return modules.filter(function(m){return m.key===k;})[0]||modules[0];}
   function findExistingButton(mod){
@@ -75107,9 +75142,9 @@ html body video[data-smtinel-video]{display:none!important}
 
 
 <style id="smtinel-focused-nav-cleanup-v1">
-html body .smtinel-bottom-nav{grid-template-columns:repeat(4,minmax(110px,1fr))!important;width:min(760px,calc(100vw - 28px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;justify-content:center!important;}
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(95px,1fr))!important;width:min(800px,calc(100vw - 28px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;justify-content:center!important;}
 html body .smtinel-more-tab,html body .smtinel-more-sheet,html body .smtinel-more-scrim,html body .smtinel-dp-launcher,html body [aria-label*="Desktop Portable"],html body button[title*="Desktop Portable"]{display:none!important;}
-@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(4,1fr)!important;width:calc(100vw - 12px)!important;}}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,1fr)!important;width:calc(100vw - 12px)!important;}}
 </style>
 <script id="smtinel-focused-ui-runtime-v1">
 (function(){
@@ -78127,7 +78162,7 @@ html:not(.smtinel-theme-light) body .main-content{background:#0A0A0A!important;}
 (function(){
   if(window.__SMTINEL_V24_SAFE_CLEANUP__) return;
   window.__SMTINEL_V24_SAFE_CLEANUP__=1;
-  var allowed=['yieldflow','boardimpact','bonepile','exportcenter'];
+  var allowed=['yieldflow','boardimpact','hyndman','bonepile','exportcenter'];
   function reveal(){
     var rs=document.getElementById('results-section');
     if(rs){rs.style.setProperty('display','block','important');rs.style.setProperty('visibility','visible','important');rs.style.setProperty('opacity','1','important');}
