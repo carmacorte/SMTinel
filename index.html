@@ -1,4 +1,4 @@
-<!-- SMTinel V20.7: export generator script termination fixed. Stable main app from V20.6. -->
+<!-- SMTinel V20.8: export generator script termination fixed. Stable main app from V20.6. -->
 <!-- Server deploy: replace the public /index.html with this complete file; retaining the V20.5 /index.html will reproduce error at line 78597. -->
 <!-- SMTinel V20.2 · Cross-Product Component Trend / Shainin Red X · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
 <!-- SMTinel V13.18.40 - Exact Handoff SMTinel emblem in export + preview -->
@@ -15,7 +15,7 @@
 <!-- SMTinel V81.13: BU authority fix - LANCER / 73-20176-* resolves to CRBU from DB_Model; stale FIELDWORKS fallback corrected. -->
 
 
-<html lang="es" data-smtinel-release="V20.7" data-smtinel-script-fix="hy-export-safe-closure">
+<html lang="es" data-smtinel-release="V20.8" data-smtinel-script-fix="hy-export-safe-closure">
 <head>
 
 <!-- SMTinel Test Performance single-chart authority V2.0.6 -->
@@ -33651,7 +33651,13 @@ body:has(#recovery-section) .main-content.expanded{
         var groups = {}, weekMap = {};
         function clean(v){return String(v == null ? '' : v).trim();}
         function snOf(r){return clean(r.sn || r.SN || r.serial || r.serialNumber);}
-        function weekOf(r){return clean(traceOpsBoardRowWeek(r));}
+        // Hyndman must not depend on traceOpsBoardRowWeek(): that helper is private to
+        // renderBoardImpactSection and throws ReferenceError as soon as rows exist.
+        function weekOf(r){
+            var v=r && (r.week || r.ciscoWeek || r.fiscalWeek || r['Cisco Week'] || r['Fiscal Week'] || r.WFCSY);
+            var w=clean(v);
+            return (w && w !== 'No Week' && w !== 'N/D' && w !== 'NA') ? w : '';
+        }
         function modeOf(r){return clean(traceOpsBoardFailureModeLabel(r) || r.failureMode || r.mode || r.symptom);}
         function pnOf(r){return clean(r.componentCode || r.componentPn || r.partNumber || r.componentPN);}
         function productOf(r){return clean(r.repairSku || r.rawRepairSku || r.sourceSku || r.SkuNo || r.sku || r.SKU || r.skuno || r.moduleno || r.model || r.ModelName || r.family);}
@@ -33741,31 +33747,99 @@ body:has(#recovery-section) .main-content.expanded{
         ]);
     }
 
-    /* Independent Hyndman Red X module: same already-parsed scope, no duplicate parsers. */
-    function renderHyndmanRedXSection() {
-        var h=React.createElement;
-        var opts=traceOpsBoardBuildModeOptions(yieldFlowModel);
-        var rows=[], seen={};
+    /* Hyndman V20.8: collect only currently loaded, traceable repairs via the
+       existing indexed SN bridge, rather than scanning every Repair_Record row
+       against every WO during a React render (O(repairs x work orders)). */
+    function traceOpsHyndmanScopedRows() {
+        var model=yieldFlowModel;
+        var repairs=TRACEOPS_YIELD_REPAIRS_BY_SN || {};
+        var memo=window.__SMTINEL_HYNDMAN_CACHE_V208__;
+        if(memo && memo.model===model && memo.repairs===repairs) return memo;
+        var opts=traceOpsBoardBuildModeOptions(model);
+        var rows=[],seen=Object.create(null),seenSeed=Object.create(null);
+        var seedCount=0, linkedRows=0, unlinked=0;
+        function tx(v){return String(v==null?'':v).trim();}
+        function validPn(v){return v && !/^(N\/?D|N\/?A|NA|NONE|NULL|UNKNOWN|UNDEFINED|NOT SPECIFIED)$/i.test(v);}
+        function val(r,keys){if(!r)return '';for(var i=0;i<keys.length;i++){var v=tx(r[keys[i]]);if(v)return v;}return '';}
+        function record(raw,seed,modeFallback) {
+            raw=raw||{}; seed=seed||{};
+            var sn=val(seed,['sn','SN','serial','serialNumber'])||val(raw,['sn','SN','serial','serialNumber']);
+            var wo=val(raw,['wo','workorderno','workOrder','woNumber'])||val(seed,['wo','workorderno','workOrder','woNumber']);
+            var wk=val(seed,['week','ciscoWeek','fiscalWeek','Cisco Week','Fiscal Week','WFCSY'])||val(raw,['week','ciscoWeek','fiscalWeek','Cisco Week','Fiscal Week','WFCSY']);
+            var ref=val(raw,['refdes','refDes','ref','location','failLocation'])||val(seed,['refdes','refDes','ref','location']);
+            var pn=val(raw,['componentCode','componentPn','componentPN','partNumber']);
+            if(!validPn(pn)) {
+                // A BOM fallback is safe only if the reference resolves to one CPN
+                // in the loaded BOM; ambiguous parts must never be merged.
+                var bom=null;
+                if(ref && typeof traceOpsYieldBomDetailForRef==='function'){
+                    try {bom=traceOpsYieldBomDetailForRef(ref);}catch(_){}
+                }
+                if(bom && (!Array.isArray(bom.alternatives)||bom.alternatives.length===1)){
+                    pn=tx(bom.number||bom.componentPn||bom.partNumber);
+                    if(!raw.componentDescription && bom.componentDescription) raw=Object.assign({},raw,{componentDescription:bom.componentDescription,componentType:bom.componentType||''});
+                }
+            }
+            var mode=traceOpsBoardFailureModeLabel(raw);
+            if((!mode || mode==='N/D') && raw===seed)mode=tx(modeFallback);
+            if(!validPn(pn)||!sn||!wk||/^N\/?D$|^No Week$/i.test(wk)||!mode||mode==='N/D'||/^RETEST$/i.test(mode)) return;
+            var key=[sn,wo,pn,mode,ref,wk].join('\u241f');
+            if(seen[key])return;
+            seen[key]=1;
+            rows.push({sn:sn,wo:wo,sku:val(seed,['sku','SKU','skuno','SkuNo'])||val(raw,['repairSku','rawRepairSku','sourceSku','SkuNo','sku']),
+                family:val(seed,['family','model','productFamily'])||val(raw,['repairFamily','model','family']),
+                refdes:ref,week:wk,componentCode:pn,failureMode:mode,
+                componentDescription:val(raw,['componentDescription'])||val(seed,['componentDescription']),
+                componentType:val(raw,['componentType'])||val(seed,['componentType'])});
+        }
         (Array.isArray(opts)?opts:[]).forEach(function(opt){
             (Array.isArray(opt&&opt.serials)?opt.serials:[]).forEach(function(r){
                 if(!r)return;
-                var sn=String(r.sn||r.SN||r.serial||r.serialNumber||'');
-                var wo=String(r.wo||r.workorderno||r.workOrder||'');
-                var ref=String(r.refdes||r.refDes||r.ref||r.location||'');
-                var mode=String(traceOpsBoardFailureModeLabel(r)||r.failureMode||r.mode||'');
-                var key=[sn,wo,ref,mode].join('|');
-                if(seen[key])return;
-                seen[key]=1;rows.push(r);
+                var sn=val(r,['sn','SN','serial','serialNumber']);
+                var wo=val(r,['wo','workorderno','workOrder']);
+                var k=sn+'|'+wo+'|'+tx(opt.mode);
+                if(seenSeed[k])return;
+                seenSeed[k]=1;seedCount++;
+                // Existing SFC/Cesium/Repair SN index, no new parser and no global WO sweep.
+                var id=(typeof traceOpsYieldCleanSn==='function'?traceOpsYieldCleanSn(sn):sn)||sn;
+                var linked=repairs[id]||repairs[String(id).toUpperCase()]||[];
+                if(Array.isArray(linked)&&linked.length){
+                    // Prefer detailed component evidence from Repair over its SFC summary.
+                    linked.forEach(function(rep){linkedRows++;record(rep,r,'');});
+                } else unlinked++;
+                record(r,r,opt.mode);
             });
         });
-        var enriched=traceOpsBoardExpandRowsWithRepairScope(boardImpactContext||{},rows);
+        memo={model:model,repairs:repairs,rows:rows,seedCount:seedCount,linkedRows:linkedRows,unlinked:unlinked};
+        window.__SMTINEL_HYNDMAN_CACHE_V208__=memo;
+        return memo;
+    }
+
+    function renderHyndmanRedXSection() {
+        var h=React.createElement;
+        var content;
+        try {
+            var scoped=traceOpsHyndmanScopedRows();
+            content=traceOpsBoardCrossProductPanel(h,scoped.rows,'');
+            if(scoped.seedCount && !scoped.rows.length) {
+                content=h('div',{style:{display:'grid',gap:12}},[
+                    content,
+                    h('p',{key:'data',style:{color:'#d5a0aa',fontSize:12,lineHeight:1.55,padding:'10px 14px',border:'1px solid #71323d',borderRadius:12}},
+                    'Se cargaron '+scoped.seedCount+' SN en Yield Flow, pero no hay coincidencias verificables de CPN + modo de falla + semana fiscal. Verifica Repair Record, BOM y Cisco Calendar. Production FPY por sí solo no contiene esa correlación.')
+                ]);
+            }
+        } catch(err) {
+            try{console.error('[SMTinel Hyndman V20.8]',err);}catch(_){}
+            content=h('div',{role:'alert',style:{background:'#26161a',color:'#ffc4c9',border:'1px solid #af4351',padding:16,borderRadius:12,lineHeight:1.6}},
+                'Error controlado al preparar Hyndman. Yield Flow, Board Impact y los datos importados siguen disponibles. Detalle: '+String(err&&err.message||err));
+        }
         return h('section',{id:'hyndman-redx-module',style:{display:'grid',gap:14,paddingBottom:30}},[
             h('header',{key:'hero',style:{background:'linear-gradient(125deg,#09090b,#241014 65%,#711b27)',border:'1px solid #642832',borderRadius:18,padding:'19px 20px',color:'#fff'}},[
                 h('div',{key:'eyebrow',style:{fontSize:10,color:'#ff6674',fontWeight:900,letterSpacing:2}},'SMTINEL · SHAININ RED X · QUALITY INTELLIGENCE'),
                 h('h2',{key:'title',style:{margin:'8px 0',fontSize:isMobile()?23:32,color:'#fff'}},'Hyndman Red X'),
                 h('p',{key:'sub',style:{fontSize:12,color:'#e1cbd0',lineHeight:1.55}},'Firma de falla transversal por componente · ADI / CV² · recurrencia y variabilidad por semana fiscal')
             ]),
-            h('div',{key:'panel'},traceOpsBoardCrossProductPanel(h,enriched,''))
+            h('div',{key:'panel'},content)
         ]);
     }
 
@@ -52698,7 +52772,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -54206,8 +54280,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
-    window.SMTINEL_BUILD_BADGE='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+    window.SMTINEL_BUILD_VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
+    window.SMTINEL_BUILD_BADGE='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -54227,7 +54301,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -54532,8 +54606,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   }
 
   function updateBadge(){
@@ -54679,7 +54753,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -54852,7 +54926,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55117,7 +55191,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var badge = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -55143,7 +55217,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -55167,7 +55241,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var badgeText = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55341,7 +55415,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var badgeText = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -55364,7 +55438,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var badge = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -55383,7 +55457,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  var versionText = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55424,7 +55498,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var label = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -55461,7 +55535,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var badge = 'SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -55840,7 +55914,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -55950,7 +56024,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -57437,7 +57511,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var label='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -63631,7 +63705,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -66048,7 +66122,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  window.SMTINEL_BUILD_VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -66278,7 +66352,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -66377,7 +66451,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -72512,7 +72586,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -72777,7 +72851,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -73024,7 +73098,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -73220,7 +73294,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -73463,7 +73537,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -73693,7 +73767,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.7 | Hyndman Export + Safari Syntax Fix | 2026-10-07';
+  var VERSION='SMTinel V20.8 | Hyndman Loaded-Data Fix | 2026-10-07';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
