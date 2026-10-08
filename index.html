@@ -15,7 +15,7 @@
 <!-- SMTinel V81.13: BU authority fix - LANCER / 73-20176-* resolves to CRBU from DB_Model; stale FIELDWORKS fallback corrected. -->
 
 
-<html lang="es" data-smtinel-release="V20.9" data-smtinel-script-fix="hy-export-safe-closure">
+<html lang="es" data-smtinel-release="V20.10" data-smtinel-script-fix="hy-export-safe-closure">
 <head>
 
 <!-- SMTinel Test Performance single-chart authority V2.0.6 -->
@@ -33734,8 +33734,17 @@ body:has(#recovery-section) .main-content.expanded{
         svg.push(el('text',{key:'xl',x:W/2,y:H-5,fill:'#e3e3e7',fontSize:12,textAnchor:'middle'},'ADI · Semanas cargadas / semanas con falla'));
         svg.push(el('text',{key:'yl',x:15,y:H/2,fill:'#e3e3e7',fontSize:12,textAnchor:'middle',transform:'rotate(-90 15 '+H/2+')'},'CV² · Variabilidad del conteo por semana activa'));
         display.forEach(function(g,i){var cx=x(g.adi),cy=y(g.cv2),focus=g===selected,r=5+Math.min(12,Math.sqrt(g.count)*1.7);svg.push(el('circle',{key:'p'+i,cx:cx,cy:cy,r:r,fill:color(g),stroke:focus?'#ffffff':'#20232b',strokeWidth:focus?3:1.5,opacity:.93,style:{cursor:'pointer'},onClick:function(){setHyndmanSelectedKey(g.key);}},el('title',null,g.pn+' | '+g.mode+' | '+g.count+' SN-eventos | '+g.productsList.length+' productos')));});
+        // V20.10: sparse history is an informative state, not an empty chart.
+        // Heatmap cells are actual unique-SN counts in the loaded weekly scope.
+        var sparseWeeks=weeks.slice(-6);
+        var sparseStart=Math.max(0,weeks.length-sparseWeeks.length);
+        var sparseRows=items.slice().sort(function(a,b){return b.productsList.length-a.productsList.length||b.count-a.count||a.pn.localeCompare(b.pn);}).slice(0,12);
+        if(sparseRows.indexOf(selected)<0 && sparseRows.length)sparseRows[sparseRows.length-1]=selected;
+        var matrixTemplate='minmax(148px,1.8fr) repeat('+Math.max(1,sparseWeeks.length)+',minmax(32px,.55fr)) 33px';
+        function wkShort(w){var m=String(w).match(/W[- ]?\d+/i);return m?m[0]:String(w).slice(-7);}
         var picture=traceOpsGetBomIconPath(selected.description,selected.type);
         return el('section',{id:'smtinel-cross-product-v201',style:{border:'1px solid '+border,borderRadius:18,background:dark,color:'#f5f5f7',padding:16,display:'grid',gap:12}},[
+            el('style',{key:'hy-css',id:'smtinel-hyndman-css-v210'},"#smtinel-cross-product-v201 .hyn-detail-card{background:#1c1c23!important;color:#f6f4f6!important;border:1px solid #6b3a48!important;box-shadow:none!important;background-image:none!important}\n#smtinel-cross-product-v201 .hyn-detail-card b{color:#fff!important}\n#smtinel-cross-product-v201 .hyn-detail-card [data-hyn-label]{color:#c6bec9!important}\n#smtinel-cross-product-v201 .hyn-group-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:7px!important}\n#smtinel-cross-product-v201 button.hyn-group-chip{display:block!important;min-width:0!important;max-width:100%!important;background:#25252d!important;background-image:none!important;color:#f1eef2!important;border:1px solid #514750!important;padding:9px 10px!important;border-radius:9px!important;text-align:left!important;font-size:11px!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere!important;letter-spacing:normal!important;font-weight:720!important;box-shadow:none!important;opacity:1!important;cursor:pointer}\n#smtinel-cross-product-v201 button.hyn-group-chip[data-hyn-active=\"yes\"]{background:#532431!important;color:#fff!important;border-color:#ff657a!important;box-shadow:inset 3px 0 #ff657a!important;font-weight:850!important}\n#smtinel-cross-product-v201 button.hyn-group-chip:hover{border-color:#fa6379!important}\n#smtinel-cross-product-v201 .hyn-fallback{display:grid!important;gap:12px!important;background:#15171d!important;border:1px solid #51313c!important;padding:14px!important;border-radius:12px!important;color:#f0edf1!important}\n#smtinel-cross-product-v201 .hyn-fb-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;color:#fff!important}\n#smtinel-cross-product-v201 .hyn-fb-heading strong{font-size:15px!important;color:#fff!important}\n#smtinel-cross-product-v201 .hyn-fb-count{background:#44232d!important;border:1px solid #ab4d5f!important;border-radius:999px!important;padding:5px 9px!important;color:#ffb3bf!important;font-size:12px!important;font-weight:900!important}\n#smtinel-cross-product-v201 .hyn-matrix-scroll{overflow-x:auto!important;border:1px solid #36353f!important;border-radius:10px!important;background:#17191f!important}\n#smtinel-cross-product-v201 .hyn-matrix-row{width:100%!important;display:grid!important;align-items:center!important;gap:5px!important;padding:7px!important;min-width:330px!important;box-sizing:border-box!important;border:0!important;border-bottom:1px solid #343540!important;border-radius:0!important;background:#1b1e25!important;color:#f4f2f5!important;text-align:left!important;font-size:11px!important;line-height:1.32!important;box-shadow:none!important}\n#smtinel-cross-product-v201 button.hyn-matrix-row{cursor:pointer!important}\n#smtinel-cross-product-v201 button.hyn-matrix-row[data-hyn-selected=\"yes\"]{background:#35222c!important;box-shadow:inset 3px 0 #ff677b!important}\n#smtinel-cross-product-v201 button.hyn-matrix-row:hover{background:#342730!important}\n#smtinel-cross-product-v201 .hyn-matrix-head{background:#282630!important;color:#e8d9df!important;font-weight:850!important;font-size:10px!important}\n#smtinel-cross-product-v201 .hyn-matrix-row .hyn-ref{min-width:0!important;color:#f5f1f4!important;font-size:11px!important;font-weight:800!important;overflow-wrap:anywhere!important}\n#smtinel-cross-product-v201 .hyn-matrix-row .hyn-mode{display:block!important;margin-top:2px!important;color:#cbbfc8!important;font-size:9px!important;font-weight:650!important}\n#smtinel-cross-product-v201 .hyn-matrix-row .hyn-cell{display:grid!important;place-items:center!important;min-height:27px!important;border-radius:5px!important;background:#272a33!important;color:#9da0ad!important;font-size:11px!important;font-weight:850!important}\n#smtinel-cross-product-v201 .hyn-matrix-row .hyn-cell[data-hyn-hit=\"yes\"]{background:#9e3043!important;color:#fff!important}\n#smtinel-cross-product-v201 .hyn-matrix-row .hyn-total{color:#ffd0d8!important;text-align:right!important;font-weight:900!important}\n@media(max-width:680px){#smtinel-cross-product-v201{padding:11px!important;gap:10px!important}#smtinel-cross-product-v201 .hyn-fallback{padding:11px!important}#smtinel-cross-product-v201 .hyn-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}#smtinel-cross-product-v201 button.hyn-group-chip{padding:9px 8px!important;font-size:10.5px!important;line-height:1.45!important;min-height:51px!important}#smtinel-cross-product-v201 .hyn-detail-card{padding:14px!important}#smtinel-cross-product-v201 .hyn-detail-card [data-hyn-metric]{font-size:12px!important}#smtinel-cross-product-v201 .hyn-matrix-row{min-width:320px!important}}"),
             el('div',{key:'head',style:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10}},[
                 el('div',{key:'h'},[el('div',{key:'ttl',style:{fontSize:19,fontWeight:950,color:'#fff'}},'Cross-Product Component Trend'),el('div',{key:'sub',style:{fontSize:10.5,color:subdued,marginTop:4}},'Shainin Red X · Common DB + SFC/Cesium + Repair + BOM · Sólo registros cargados')]),
                 el('span',{key:'scope',style:{fontSize:10,border:'1px solid #a53643',borderRadius:999,padding:'6px 10px',color:'#ff8994'}},'Alcance actual de Yield Flow')
@@ -33743,15 +33752,29 @@ body:has(#recovery-section) .main-content.expanded{
             el('div',{key:'layout',style:{display:'grid',gridTemplateColumns:isMobile()?'minmax(0,1fr)':'minmax(0,1.7fr) minmax(255px,.8fr)',gap:12}},[
                 el('div',{key:'plot',style:{minWidth:0,overflowX:'auto',background:'#14161b',border:'1px solid '+border,borderRadius:12,padding:8}},[
                     display.length ? el('svg',{key:'svg',viewBox:'0 0 '+W+' '+H,style:{width:'100%',minWidth:isMobile()?570:0,display:'block'}},svg) :
-                    el('div',{key:'pending',style:{padding:'35px 18px',background:'linear-gradient(120deg,#1d171c,#141923)',border:'1px solid #59323c',borderRadius:12,display:'grid',gap:10,textAlign:'center'}},[
-                        el('div',{key:'count',style:{fontSize:30,fontWeight:900,color:'#ff6173'}},'0 / '+items.length),
-                        el('div',{key:'name',style:{fontWeight:850,color:'#fff'}},'Grupos con ADI y CV² calculables'),
-                        el('div',{key:'why',style:{fontSize:11,lineHeight:1.55,color:subdued}},'Los componentes cargados sólo tienen una semana activa o carecen de observaciones suficientes para calcular variabilidad. Las tendencias semanales y las referencias se muestran abajo, sin inventar puntos.')
+                    el('div',{key:'pending',className:'hyn-fallback'},[
+                        el('div',{key:'fb-h',className:'hyn-fb-heading'},[
+                            el('strong',{key:'t'},'Recurrencia por componente y semana'),
+                            el('span',{key:'count',className:'hyn-fb-count'},'ADI / CV\u00b2: '+summary.plottable+' / '+items.length)
+                        ]),
+                        el('div',{key:'why',style:{fontSize:11.5,lineHeight:1.5,color:'#cbbec8'}},
+                            'Los eventos del alcance todav\u00eda no permiten calcular CV\u00b2 para cada grupo. La matriz muestra los SN-eventos observados, sin asignar riesgo estad\u00edstico ni completar semanas que no est\u00e1n cargadas.'),
+                        el('div',{key:'matrix',className:'hyn-matrix-scroll'},[
+                            el('div',{key:'mhead',className:'hyn-matrix-row hyn-matrix-head',style:{gridTemplateColumns:matrixTemplate}},
+                                [el('span',{key:'title'},'CPN / modo')].concat(sparseWeeks.map(function(w,i){return el('span',{key:'w'+i,style:{textAlign:'center'}},wkShort(w));})).concat([el('span',{key:'sn'},'SN')]))
+                        ].concat(sparseRows.map(function(g,i){
+                            return el('button',{key:'matrix'+i,type:'button',className:'hyn-matrix-row',style:{gridTemplateColumns:matrixTemplate},'data-hyn-selected':g===selected?'yes':'no',onClick:function(){setHyndmanSelectedKey(g.key);}},
+                                [el('span',{key:'item',className:'hyn-ref'},[g.pn,el('span',{key:'m',className:'hyn-mode'},g.mode)])]
+                                .concat(sparseWeeks.map(function(w,wi){var n=Number(g.weekCounts[sparseStart+wi]||0);return el('span',{key:'w'+wi,className:'hyn-cell','data-hyn-hit':n?'yes':'no',title:w+' · '+n+' SN-eventos'},String(n));}))
+                                .concat([el('span',{key:'total',className:'hyn-total'},String(g.count))]));
+                        }))),
+                        el('div',{key:'caption',style:{fontSize:10.5,color:'#c7bfc8',lineHeight:1.5}},
+                            'Se muestran hasta 12 de '+items.length+' combinaciones. Las dem\u00e1s siguen disponibles abajo. Color rojo = eventos observados, no severidad ni causa ra\u00edz.')
                     ]),
                     el('div',{key:'sample',style:{padding:'7px 10px',color:'#e5bbc3',fontSize:11,fontWeight:850}},'Cobertura: '+weeks.length+' semanas · '+summary.plottable+' de '+summary.items.length+' grupos clasificables'),
                     el('div',{key:'note',style:{color:subdued,fontSize:10,lineHeight:1.5,padding:'5px 10px'}},'ADI = semanas observadas / semanas con falla; CV² = variabilidad de conteos en semanas activas. Indicadores exploratorios. Los umbrales 1.32 / 0.49 no representan una Red X estadísticamente validada.')
                 ]),
-                el('aside',{key:'detail',style:{border:'1px solid #642b34',background:'#1c171b',borderRadius:12,padding:14,display:'grid',alignContent:'start',gap:9}},[
+                el('div',{key:'detail',className:'hyn-detail-card',style:{border:'1px solid #642b34',background:'#1c171b',borderRadius:12,padding:14,display:'grid',alignContent:'start',gap:9}},[
                     el('div',{key:'main',style:{display:'flex',gap:12,alignItems:'center'}},[
                         el('span',{key:'pic',style:{display:'inline-flex',width:64,height:64,alignItems:'center',justifyContent:'center',border:'1px solid #6c343d',borderRadius:11,background:'#fff'}},el('img',{src:picture,alt:'Ilustración por categoría BOM',style:{width:51,height:51,objectFit:'contain'}})),
                         el('div',{key:'id',style:{minWidth:0}},[el('div',{key:'pn',style:{fontSize:14,fontWeight:900,color:'#fff',overflowWrap:'anywhere'}},selected.pn),el('div',{key:'mode',style:{fontSize:12,color:'#ff697b',fontWeight:800,marginTop:4}},selected.mode)])
@@ -33781,7 +33804,7 @@ body:has(#recovery-section) .main-content.expanded{
             ]),
             el('div',{key:'bottom',style:{display:'grid',gap:5}},[
                 el('div',{key:'listtitle',style:{color:'#fff',fontSize:12,fontWeight:900}},'Componentes y modos en el alcance · '+items.length),
-                el('div',{key:'list',style:{display:'flex',flexWrap:'wrap',gap:6}},items.slice(0,30).map(function(g,i){return el('button',{key:'g'+i,type:'button',title:g.pn+' · '+g.mode,style:{padding:'6px 9px',border:'1px solid '+(g===selected?'#ee3e51':'#454049'),background:g===selected?'#54232c':'#222126',borderRadius:9,color:'#fff',fontSize:10,cursor:'pointer'},onClick:function(){setHyndmanSelectedKey(g.key);}},g.pn+' · '+g.mode+' ('+g.count+')');}))
+                el('div',{key:'list',className:'hyn-group-grid',style:{display:'flex',flexWrap:'wrap',gap:6}},items.slice(0,30).map(function(g,i){return el('button',{key:'g'+i,type:'button',className:'hyn-group-chip','data-hyn-active':g===selected?'yes':'no',title:g.pn+' · '+g.mode,style:{padding:'6px 9px',border:'1px solid '+(g===selected?'#ee3e51':'#454049'),background:g===selected?'#54232c':'#222126',borderRadius:9,color:'#fff',fontSize:10,cursor:'pointer'},onClick:function(){setHyndmanSelectedKey(g.key);}},g.pn+' · '+g.mode+' ('+g.count+')');}))
             ])
         ]);
     }
@@ -33887,7 +33910,7 @@ body:has(#recovery-section) .main-content.expanded{
             content=h('div',{role:'alert',style:{background:'#26161a',color:'#ffc4c9',border:'1px solid #af4351',padding:16,borderRadius:12,lineHeight:1.6}},
                 'Error controlado al preparar Hyndman. Yield Flow, Board Impact y los datos importados siguen disponibles. Detalle: '+String(err&&err.message||err));
         }
-        return h('section',{id:'hyndman-redx-module',style:{display:'grid',gap:14,paddingBottom:30}},[
+        return h('section',{id:'hyndman-redx-module',style:{display:'grid',gap:14,paddingBottom:125}},[
             h('header',{key:'hero',style:{background:'linear-gradient(125deg,#09090b,#241014 65%,#711b27)',border:'1px solid #642832',borderRadius:18,padding:'19px 20px',color:'#fff'}},[
                 h('div',{key:'eyebrow',style:{fontSize:10,color:'#ff6674',fontWeight:900,letterSpacing:2}},'SMTINEL · SHAININ RED X · QUALITY INTELLIGENCE'),
                 h('h2',{key:'title',style:{margin:'8px 0',fontSize:isMobile()?23:32,color:'#fff'}},'Hyndman Red X'),
@@ -52826,7 +52849,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -54334,8 +54357,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
-    window.SMTINEL_BUILD_BADGE='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+    window.SMTINEL_BUILD_VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
+    window.SMTINEL_BUILD_BADGE='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -54355,7 +54378,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -54660,8 +54683,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   }
 
   function updateBadge(){
@@ -54807,7 +54830,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -54980,7 +55003,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55245,7 +55268,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var badge = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -55271,7 +55294,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -55295,7 +55318,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var badgeText = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55469,7 +55492,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var badgeText = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -55492,7 +55515,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var badge = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -55511,7 +55534,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  var versionText = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55552,7 +55575,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var label = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -55589,7 +55612,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var badge = 'SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -55968,7 +55991,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -56078,7 +56101,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -57565,7 +57588,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var label='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -63759,7 +63782,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -66176,7 +66199,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  window.SMTINEL_BUILD_VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -66406,7 +66429,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -66505,7 +66528,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -72640,7 +72663,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -72905,7 +72928,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -73152,7 +73175,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -73348,7 +73371,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -73591,7 +73614,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -73821,7 +73844,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.9 | Hyndman Trend + Export Fix | 2026-10-07';
+  var VERSION='SMTinel V20.10 | Hyndman Mobile + Recurrence Matrix | 2026-10-08';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -78593,7 +78616,7 @@ function htmlReport(payload){
 var data=JSON.stringify(payload).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 return `<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SMTinel · Hyndman Red X · Component Trend</title><style>
 :root{color-scheme:dark;--bg:#0a0c0e;--card:#16171b;--line:#49323b;--muted:#b0a5ac;--red:#f45068;--ink:#f7f2f4}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}header{background:linear-gradient(115deg,#0b0e12,#3a101a 75%,#641d2d);padding:23px clamp(14px,4vw,42px);border-bottom:2px solid var(--red)}header h1{margin:0;font-size:clamp(22px,3.2vw,30px)}header strong{color:#ff667b}header p{margin:7px 0 0;color:#e1c7cc}.wrap{max-width:1400px;margin:auto;padding:16px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat,.card{border:1px solid #3b3037;border-radius:13px;background:var(--card);padding:14px;min-width:0}.stat small{display:block;color:var(--muted);font-size:10px}.stat b{display:block;color:var(--red);font-size:clamp(18px,2.2vw,27px);margin-top:3px}.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(250px,.85fr);gap:12px}.card h2{font-size:15px;margin:0 0 10px}.muted{color:var(--muted)}.alert{background:#261921;border:1px solid #763e4b;padding:14px;border-radius:10px;line-height:1.55;color:#efbcc4}.chip{display:inline-block;padding:5px 9px;border-radius:999px;background:#4e202c;border:1px solid #803947;color:#ffd5db;font-size:11px;font-weight:700}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}.toolbar input{min-width:230px;flex:1;background:#242329;border:1px solid #59434c;border-radius:8px;color:white;padding:10px}.toolbar button{background:#371924;border:1px solid #9a4351;border-radius:8px;color:white;padding:10px 13px;font-weight:750;cursor:pointer}.graph{width:100%;height:auto;display:block;max-width:100%;background:#181a20;border-radius:8px}.tablebox{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:800px}td,th{padding:9px;border-bottom:1px solid #43343e;text-align:left}th{font-size:10px;color:#f1a1b0;white-space:nowrap}tbody tr{cursor:pointer}tbody tr:hover{background:#292027}tbody tr.selected{background:#462430}.barrow{display:flex;gap:7px;overflow-x:auto;padding:8px 3px 1px;align-items:flex-end;min-height:116px}.barcol{flex:1 0 42px;min-width:42px;max-width:75px;text-align:center;font-size:10px}.barbg{height:70px;background:#24212b;display:flex;align-items:flex-end;border-radius:4px;overflow:hidden;margin:4px 4px}.barbg i{display:block;width:100%;background:linear-gradient(#ff7184,#a42839);min-height:2px}.barcol small{display:block;font-size:9px;color:#b5aab3;white-space:nowrap}.pill{display:inline-flex;gap:7px;align-items:center;margin:3px;padding:5px 8px;border-radius:8px;border:1px solid #53434b;background:#262329;color:#eee;cursor:pointer;font-size:11px}.pill.active{border-color:#f46275;background:#572331}.metrics{display:grid;gap:8px;margin-top:10px}.metrics div{border-bottom:1px solid #47343b;padding-bottom:7px;display:flex;justify-content:space-between;gap:10px}.detailpic{width:70px;height:70px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid #666}.foot{color:#b2a4ac;font-size:11px;margin:14px 2px;line-height:1.5}.mini{display:flex;align-items:flex-end;gap:2px;height:23px}.mini i{width:6px;min-height:2px;background:#f0566c;border-radius:2px}.unknown{color:#e6b66d}.ok{color:#96cfb6}svg circle{cursor:pointer}@media(max-width:840px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:10px}.card{padding:12px}.toolbar input{min-width:160px}}@media print{header{background:#421c28!important;color:#fff!important;-webkit-print-color-adjust:exact}body{background:#fff;color:#222}.card,.stat{background:#fff;border:1px solid #ccc}.toolbar,.pill{display:none!important}.muted,.foot{color:#444}}
-</style></head><body><header><h1>SMTinel · <strong>Hyndman Red X</strong></h1><p>Cross-Product Component Intelligence · Shainin Red X · Reporte autónomo</p></header><main class="wrap"><section class="stats"><div class="stat"><small>CPN × modos</small><b id="stat-groups">0</b></div><div class="stat"><small>Grupos ADI–CV²</small><b id="stat-valid">0</b></div><div class="stat"><small>SN-eventos</small><b id="stat-events">0</b></div><div class="stat"><small>Semanas cargadas</small><b id="stat-weeks">0</b></div></section><div class="toolbar"><input type="search" id="find" placeholder="Buscar CPN, modo de falla, producto o RefDes" aria-label="Buscar grupos"><button id="print" type="button">Imprimir / PDF</button><span class="muted">Instantánea incluida en este HTML</span></div><div id="warning" class="alert" style="display:none"></div><div class="grid"><section class="card"><h2>ADI–CV² · Firma de recurrencia por componente</h2><div id="chart"></div><p class="muted" style="font-size:10px">ADI = semanas observadas / semanas con falla; CV² = variabilidad de los conteos positivos semanales. Clasificación exploratoria, no una validación Shainin Red X ni un cálculo de FR.</p></section><aside class="card"><h2>Detalle de componente</h2><div id="detail" class="muted">Selecciona una fila.</div></aside></div><section class="card" style="margin-top:12px"><h2>Recurrencia semanal · Componente seleccionado</h2><div id="weekly"></div><p id="weeksource" class="muted" style="font-size:10px"></p></section><section class="card" style="margin-top:12px"><h2>Componentes y modos de falla observados</h2><p class="muted" id="table-note">La tabla incluye grupos que aún no pueden calcular CV².</p><div class="tablebox"><table><thead><tr><th>CPN</th><th>Modo de falla</th><th>SN-eventos</th><th>Productos</th><th>WO</th><th>Semanas activas</th><th>ADI</th><th>CV²</th><th>Última semana</th><th>Mini trend</th></tr></thead><tbody id="body"></tbody></table></div></section><section class="card" style="margin-top:12px"><h2>Selección rápida</h2><div id="list"></div></section><div class="foot">Fuente: registros SFC/Cesium + Repair, enriquecidos con BOM, en el alcance de Yield Flow al exportar. Sin cifras de ejemplo. No se atribuye causa raíz. El FR del componente exige el denominador real de unidades expuestas. Las imágenes ilustrativas requieren que los iconos del sitio estén disponibles si se abre el HTML sin conexión.</div></main><script id="hy-data" type="application/json">${data}<${'/'}script><script>
+.sparse-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 10px}.sparse-head b{color:#fff;font-size:14px}.sparse-head span{color:#ffb4c0;background:#46242e;border:1px solid #9d465a;border-radius:99px;padding:4px 8px;font-weight:850}.sparse-matrix{overflow-x:auto;border:1px solid #403a44;border-radius:9px}.sparse-matrix table{min-width:390px;width:100%}.sparse-matrix th,.sparse-matrix td{padding:7px;font-size:11px}.sparse-matrix td.hit{background:#8d3144;color:#fff;text-align:center;font-weight:850}.sparse-matrix td.zero{background:#252830;color:#a4a8b2;text-align:center}.sparse-matrix td:last-child{color:#ffb4c0;font-weight:900}.sparse-matrix tr:hover{background:#392a34}.sparse-note{color:#cabec5;font-size:11px;line-height:1.5;margin-top:9px}</style></head><body><header><h1>SMTinel · <strong>Hyndman Red X</strong></h1><p>Cross-Product Component Intelligence · Shainin Red X · Reporte autónomo</p></header><main class="wrap"><section class="stats"><div class="stat"><small>CPN × modos</small><b id="stat-groups">0</b></div><div class="stat"><small>Grupos ADI–CV²</small><b id="stat-valid">0</b></div><div class="stat"><small>SN-eventos</small><b id="stat-events">0</b></div><div class="stat"><small>Semanas cargadas</small><b id="stat-weeks">0</b></div></section><div class="toolbar"><input type="search" id="find" placeholder="Buscar CPN, modo de falla, producto o RefDes" aria-label="Buscar grupos"><button id="print" type="button">Imprimir / PDF</button><span class="muted">Instantánea incluida en este HTML</span></div><div id="warning" class="alert" style="display:none"></div><div class="grid"><section class="card"><h2>ADI–CV² · Firma de recurrencia por componente</h2><div id="chart"></div><p class="muted" style="font-size:10px">ADI = semanas observadas / semanas con falla; CV² = variabilidad de los conteos positivos semanales. Clasificación exploratoria, no una validación Shainin Red X ni un cálculo de FR.</p></section><aside class="card"><h2>Detalle de componente</h2><div id="detail" class="muted">Selecciona una fila.</div></aside></div><section class="card" style="margin-top:12px"><h2>Recurrencia semanal · Componente seleccionado</h2><div id="weekly"></div><p id="weeksource" class="muted" style="font-size:10px"></p></section><section class="card" style="margin-top:12px"><h2>Componentes y modos de falla observados</h2><p class="muted" id="table-note">La tabla incluye grupos que aún no pueden calcular CV².</p><div class="tablebox"><table><thead><tr><th>CPN</th><th>Modo de falla</th><th>SN-eventos</th><th>Productos</th><th>WO</th><th>Semanas activas</th><th>ADI</th><th>CV²</th><th>Última semana</th><th>Mini trend</th></tr></thead><tbody id="body"></tbody></table></div></section><section class="card" style="margin-top:12px"><h2>Selección rápida</h2><div id="list"></div></section><div class="foot">Fuente: registros SFC/Cesium + Repair, enriquecidos con BOM, en el alcance de Yield Flow al exportar. Sin cifras de ejemplo. No se atribuye causa raíz. El FR del componente exige el denominador real de unidades expuestas. Las imágenes ilustrativas requieren que los iconos del sitio estén disponibles si se abre el HTML sin conexión.</div></main><script id="hy-data" type="application/json">${data}<${'/'}script><script>
 (function(){'use strict';
 var d=JSON.parse(document.getElementById('hy-data').textContent),groups=Array.isArray(d.groups)?d.groups:[],weeks=Array.isArray(d.weeks)?d.weeks:[],current=0;
 var byId=function(id){return document.getElementById(id)},esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
@@ -78606,7 +78629,8 @@ function smallBars(g){var a=Array.isArray(g.weekCounts)?g.weekCounts:[],max=Math
 function details(g){if(!g){byId('detail').textContent='Sin eventos clasificables';byId('weekly').innerHTML='';return}var pic=g.icon?'<img class="detailpic" src="'+esc(g.icon)+'" alt="Ilustración por tipo BOM" onerror="this.remove()">':'';byId('detail').innerHTML='<div style="display:flex;gap:12px;align-items:center"><div>'+pic+'</div><div><span class="chip">'+esc(g.pn)+'</span><h2 style="margin:8px 0">'+esc(g.mode)+'</h2><small>'+esc(g.desc||g.type||'Descripción BOM no disponible')+'</small></div></div><div class="metrics"><div><span>SN-eventos</span><b>'+Number(g.count||0)+'</b></div><div><span>Productos identificados</span><b>'+(g.models||[]).length+'</b></div><div><span>WO afectadas</span><b>'+(g.wos||[]).length+'</b></div><div><span>Semanas con falla</span><b>'+Number(g.activeWeeks||0)+'</b></div><div><span>ADI (proxy)</span><b>'+num(g.adi,2)+'</b></div><div><span>CV²</span><b class="'+(g.cv2==null?'unknown':'ok')+'">'+num(g.cv2,3)+'</b></div></div><p>RefDes: '+esc((g.refs||[]).join(', ')||'N/D')+'</p><p>Productos: '+esc((g.models||[]).join(' · ')||'N/D')+'</p><p>WO: '+esc((g.wos||[]).join(' · ')||'N/D')+'</p>'+(g.cv2==null?'<p class="alert">CV² no calculable: se requieren al menos dos semanas activas con registros válidos.</p>':'');
 var a=Array.isArray(g.weekCounts)?g.weekCounts:[],idx=Math.max(0,weeks.length-13),max=Math.max.apply(null,a.slice(idx).concat([1]));byId('weekly').innerHTML='<div class="barrow">'+weeks.slice(idx).map(function(w,i){var n=Number(a[idx+i]||0);return '<div class="barcol"><b>'+n+'</b><div class="barbg"><i style="height:'+Math.max(2,Math.round(n/max*70))+'px;background:'+(n?'linear-gradient(#ff7184,#a42839)':'#4b4550')+'"></i></div><small>'+esc(weekLabel(w))+'</small></div>'}).join('')+'</div>';
 }
-function scatter(list){var ready=list.filter(function(g){return g.adi!=null&&g.cv2!=null});if(!ready.length){byId('chart').innerHTML='<div class="alert" style="text-align:center"><b style="font-size:23px;color:#ff667b">0 / '+list.length+'</b><div>No hay grupos con historial suficiente para representar ADI–CV².</div><small>Los eventos observados sí aparecen en la recurrencia semanal y la tabla inferior.</small></div>';return}var W=760,H=330,L=53,R=20,T=22,B=45,maxX=Math.max(2,Math.ceil(Math.max.apply(null,ready.map(function(g){return Number(g.adi)||0}))*1.2)),maxY=Math.max(.65,Math.max.apply(null,ready.map(function(g){return Number(g.cv2)||0}))*1.2),px=function(x){return L+((x-1)/(maxX-1))*(W-L-R)},py=function(y){return H-B-y/maxY*(H-T-B)},s='<svg class="graph" viewBox="0 0 '+W+' '+H+'" aria-label="Gráfica ADI CV²">';for(var i=0;i<=4;i++){var y=T+(H-B-T)*i/4,x=L+(W-L-R)*i/4;s+='<path d="M'+L+' '+y+'H'+(W-R)+' M'+x+' '+T+'V'+(H-B)+'" stroke="#343740"/>'}s+='<path d="M'+px(1.32)+' '+T+'V'+(H-B)+' M'+L+' '+py(.49)+'H'+(W-R)+'" stroke="#e65267" stroke-dasharray="5 5" fill="none"/><text x="'+W/2+'" y="'+(H-8)+'" text-anchor="middle" fill="#bcaeb7">ADI · semanas / semanas activas</text><text x="14" y="'+(H/2)+'" transform="rotate(-90 14 '+(H/2)+')" fill="#bcaeb7" text-anchor="middle">CV² semanal</text>';ready.forEach(function(g){var id=groups.indexOf(g),rad=Math.min(16,5+Math.sqrt(g.count)*2);s+='<circle data-row="'+id+'" cx="'+px(g.adi)+'" cy="'+py(g.cv2)+'" r="'+rad+'" fill="'+(g===groups[current]?'#ff687d':'#c73c52')+'" stroke="#ffdbe1" stroke-width="1.5"><title>'+esc(g.pn+' · '+g.mode+' · '+g.count+' SN-eventos')+'</title></circle>'});s+='</svg>';byId('chart').innerHTML=s;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}})}
+function scatter(list){var ready=list.filter(function(g){return g.adi!=null&&g.cv2!=null});if(!ready.length){var sW=Math.max(0,weeks.length-6),seen=weeks.slice(sW),top=list.slice().sort(function(a,b){return (b.models||[]).length-(a.models||[]).length||b.count-a.count}).slice(0,12),h='<div class="sparse-head"><b>Recurrencia por CPN y semana</b><span>ADI / CV\u00b2: 0 / '+list.length+'</span></div><p class="sparse-note">Aun no hay semanas activas suficientes para calcular CV\u00b2. El mapa presenta solo SN-eventos reales, no riesgo Red X confirmado.</p><div class="sparse-matrix"><table><thead><tr><th>CPN / modo</th>'+seen.map(function(w){return '<th>'+esc(weekLabel(w))+'</th>'}).join('')+'<th>SN</th></tr></thead><tbody>';
+top.forEach(function(g){var id=groups.indexOf(g),a=g.weekCounts||[];h+='<tr data-row="'+id+'"><td><b>'+esc(g.pn)+'</b><small style="display:block;color:#c9b5c0">'+esc(g.mode)+'</small></td>'+seen.map(function(w,i){var n=Number(a[sW+i]||0);return '<td class="'+(n?'hit':'zero')+'">'+n+'</td>'}).join('')+'<td>'+Number(g.count||0)+'</td></tr>'});h+='</tbody></table></div><p class="sparse-note">Hasta 12 de '+list.length+' grupos. El resto permanece en la tabla. Las semanas con cero proceden exclusivamente del alcance cargado.</p>';byId('chart').innerHTML=h;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});return}var W=760,H=330,L=53,R=20,T=22,B=45,maxX=Math.max(2,Math.ceil(Math.max.apply(null,ready.map(function(g){return Number(g.adi)||0}))*1.2)),maxY=Math.max(.65,Math.max.apply(null,ready.map(function(g){return Number(g.cv2)||0}))*1.2),px=function(x){return L+((x-1)/(maxX-1))*(W-L-R)},py=function(y){return H-B-y/maxY*(H-T-B)},s='<svg class="graph" viewBox="0 0 '+W+' '+H+'" aria-label="Gráfica ADI CV²">';for(var i=0;i<=4;i++){var y=T+(H-B-T)*i/4,x=L+(W-L-R)*i/4;s+='<path d="M'+L+' '+y+'H'+(W-R)+' M'+x+' '+T+'V'+(H-B)+'" stroke="#343740"/>'}s+='<path d="M'+px(1.32)+' '+T+'V'+(H-B)+' M'+L+' '+py(.49)+'H'+(W-R)+'" stroke="#e65267" stroke-dasharray="5 5" fill="none"/><text x="'+W/2+'" y="'+(H-8)+'" text-anchor="middle" fill="#bcaeb7">ADI · semanas / semanas activas</text><text x="14" y="'+(H/2)+'" transform="rotate(-90 14 '+(H/2)+')" fill="#bcaeb7" text-anchor="middle">CV² semanal</text>';ready.forEach(function(g){var id=groups.indexOf(g),rad=Math.min(16,5+Math.sqrt(g.count)*2);s+='<circle data-row="'+id+'" cx="'+px(g.adi)+'" cy="'+py(g.cv2)+'" r="'+rad+'" fill="'+(g===groups[current]?'#ff687d':'#c73c52')+'" stroke="#ffdbe1" stroke-width="1.5"><title>'+esc(g.pn+' · '+g.mode+' · '+g.count+' SN-eventos')+'</title></circle>'});s+='</svg>';byId('chart').innerHTML=s;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}})}
 function select(i){current=i;var g=groups[i];details(g);render()}
 function render(){var q=byId('find').value.toLowerCase(),subset=groups.filter(function(g){return [g.pn,g.mode,g.desc,g.type,(g.models||[]).join(' '),(g.refs||[]).join(' ')].join(' ').toLowerCase().indexOf(q)>=0});byId('body').innerHTML=subset.map(function(g){var i=groups.indexOf(g);return '<tr data-row="'+i+'" class="'+(current===i?'selected':'')+'"><td>'+esc(g.pn)+'</td><td>'+esc(g.mode)+'</td><td>'+g.count+'</td><td>'+(g.models||[]).length+'</td><td>'+(g.wos||[]).length+'</td><td>'+g.activeWeeks+'</td><td>'+num(g.adi,2)+'</td><td class="'+(g.cv2==null?'unknown':'ok')+'">'+num(g.cv2,3)+'</td><td>'+esc(g.lastWeek||'N/D')+'</td><td>'+smallBars(g)+'</td></tr>'}).join('')||'<tr><td colspan="10">Sin coincidencias en el filtro actual.</td></tr>';Array.prototype.forEach.call(byId('body').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});byId('list').innerHTML=subset.slice(0,60).map(function(g){var i=groups.indexOf(g);return '<button class="pill '+(i===current?'active':'')+'" data-row="'+i+'">'+esc(g.pn)+' · '+esc(g.mode)+' ('+g.count+')</button>'}).join('');Array.prototype.forEach.call(byId('list').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});scatter(subset);byId('table-note').textContent=subset.length+' combinaciones CPN × modo de falla · '+subset.filter(function(g){return g.adi!=null&&g.cv2!=null}).length+' con clasificación calculable';}
 byId('find').addEventListener('input',render);render();if(groups.length)details(groups[0]);
