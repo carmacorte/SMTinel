@@ -4131,12 +4131,7 @@ html.smtinel-theme-light body #maintenance-section :is(input,select,button){bord
     return {subject:subject,html:html,plain:plain,date:date};
   }
   function download(report){
-    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"><style id="smtinel-hyndman-bottom-nav-v202">
-html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
-@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
-html body .smtinel-bottom-nav .smtinel-tab{min-width:0!important;padding-left:2px!important;padding-right:2px!important;}
-html body .smtinel-bottom-nav .smtinel-tab span:last-child{font-size:8px!important;letter-spacing:-.02em!important;}}
-</style></head><body>'+report.html+'</body></html>';
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(report.subject)+'</title><style>.hxh3{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px}.hxh3 th,.hxh3 td{padding:5px 7px;border:1px solid #d7e0ea;text-align:left}.hxh3 td:not(:first-child){text-align:right}</style><meta name="smtinel-yokoten-search-build" content="V12-refdes-component-search"></head><body>'+report.html+'</body></html>';
     var blob=new Blob([doc],{type:'text/html;charset=utf-8'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -20170,6 +20165,12 @@ html body .smtinel-bottom-nav .smtinel-tab.active{color:#FFD8DD!important;}
 html body .smtinel-bottom-nav .smtinel-tab.active::after{background:var(--smt-redx)!important;}
 #board-impact-export-center{display:none!important;}
 @media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,1fr)!important;}}
+</style>
+<style id="smtinel-hyndman-bottom-nav-v202">
+html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+@media(max-width:560px){html body .smtinel-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+html body .smtinel-bottom-nav .smtinel-tab{min-width:0!important;padding-left:2px!important;padding-right:2px!important;}
+html body .smtinel-bottom-nav .smtinel-tab span:last-child{font-size:8px!important;letter-spacing:-.02em!important;}}
 </style>
 
 </head>
