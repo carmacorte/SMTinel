@@ -33749,44 +33749,47 @@ body:has(#recovery-section) .main-content.expanded{
             var span=weeks.slice(-8),offset=Math.max(0,weeks.length-span.length);
             var selectedCounts=span.map(function(w,i){return Number(selected.weekCounts[offset+i]||0);});
             var totalCounts=span.map(function(w,i){return items.reduce(function(acc,g){return acc+Number(g.weekCounts[offset+i]||0);},0);});
-            var limit=Math.max.apply(null,totalCounts.concat(selectedCounts,[1]));
-            var Wc=780,Hc=270,Lc=48,Rc=20,Tc=25,Bc=46,plotW=Wc-Lc-Rc,plotH=Hc-Tc-Bc;
-            var count=Math.max(span.length,1),spacing=plotW/count,barWidth=Math.max(14,Math.min(48,spacing*.40));
-            function yc(v){return Tc+plotH-(Number(v)||0)/limit*plotH;}
-            function xc(i){return Lc+spacing*(i+.5);}
-            function weekShort(w){var m=String(w).match(/W[- ]?\d+/i);return m?m[0]:String(w).slice(-8);}
-            var shapes=[el('rect',{key:'background',x:Lc,y:Tc,width:plotW,height:plotH,rx:8,fill:'#11151d'})];
-            for(var k=0;k<=4;k++){
-                var tickY=Tc+plotH*k/4,tickValue=Math.round(limit*(1-k/4));
-                shapes.push(el('line',{key:'grid'+k,x1:Lc,y1:tickY,x2:Wc-Rc,y2:tickY,stroke:'#333542',strokeWidth:1}));
-                shapes.push(el('text',{key:'value'+k,x:Lc-9,y:tickY+4,textAnchor:'end',fill:'#b8b4bf',fontSize:12},String(tickValue)));
-            }
-            var allPoints=[];
-            span.forEach(function(w,i){
-                var x0=xc(i),n=selectedCounts[i],total=totalCounts[i],barHeight=Math.max(0,Tc+plotH-yc(n));
-                var isActive=n>0;
-                shapes.push(el('rect',{key:'bar'+i,x:x0-barWidth/2,y:yc(n),width:barWidth,height:barHeight,rx:4,fill:isActive?'#f3516b':'#4b414a',opacity:isActive?.94:.44},el('title',null,selected.pn+' · '+selected.mode+' · '+w+': '+n+' SN-eventos')));
-                shapes.push(el('text',{key:'sn'+i,x:x0,y:Math.max(Tc+10,yc(n)-8),textAnchor:'middle',fill:isActive?'#ff8d9c':'#8f8895',fontSize:12,fontWeight:800},String(n)));
-                shapes.push(el('text',{key:'week'+i,x:x0,y:Hc-15,textAnchor:'middle',fill:'#d5d0d9',fontSize:12},weekShort(w)));
-                allPoints.push(x0+','+yc(total));
-            });
-            if(allPoints.length>1) shapes.push(el('polyline',{key:'bu-line',points:allPoints.join(' '),fill:'none',stroke:'#ffc18c',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'}));
-            span.forEach(function(w,i){
-                shapes.push(el('circle',{key:'bu-point'+i,cx:xc(i),cy:yc(totalCounts[i]),r:5,fill:'#ffc18c',stroke:'#12151b',strokeWidth:1.8},el('title',null,w+': '+totalCounts[i]+' SN-eventos sumados de firmas CPN × modo')));
-            });
-            return el('div',{key:'observed',className:'hyn-observed-trend',style:{background:'#10131a',border:'1px solid #60404a',borderRadius:12,padding:'12px 10px 9px',display:'grid',gap:7,minWidth:0}},[
-                el('div',{key:'graph-title',style:{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'space-between',alignItems:'center'}},[
-                    el('b',{key:'text',style:{color:'#fff',fontSize:13}},'Gráfico de recurrencia observada'),
-                    el('small',{key:'badge',style:{color:'#ffadba',fontSize:10,fontWeight:800}},span.length+' semana(s) cargada(s)')
+            var selectedTotal=selectedCounts.reduce(function(a,b){return a+b;},0);
+            var overall=totalCounts.reduce(function(a,b){return a+b;},0);
+            var share=overall?(100*selectedTotal/overall).toFixed(1)+'%':'N/D';
+            var maxTotal=Math.max.apply(null,totalCounts.concat([1]));
+            function labelWeek(w){var m=String(w).match(/W[- ]?\d+/i);return m?m[0]:String(w).slice(-8);}
+            function metric(k,title,value,sub,color){return el('div',{key:k,style:{background:'#24212a',border:'1px solid #43323b',borderRadius:8,padding:'9px 7px',minWidth:0}},[
+                el('small',{key:'t',style:{display:'block',fontSize:9,color:'#c9c1cc',fontWeight:750}},title),
+                el('b',{key:'v',style:{display:'block',fontSize:isMobile()?21:24,color:color||'#fff',fontVariantNumeric:'tabular-nums',lineHeight:1.2,marginTop:3}},String(value)),
+                el('small',{key:'s',style:{display:'block',fontSize:9,color:'#aeb0bb',marginTop:3}},sub)
+            ]);}
+            function countCell(k,name,n,color,width){return el('div',{key:k,style:{minWidth:0}},[
+                el('div',{key:'lbl',style:{display:'grid',gap:1,alignItems:'start'}},[
+                    el('span',{key:'label',style:{color:'#c0b9c4',fontSize:9}},name),
+                    el('strong',{key:'qty',style:{color:color,fontSize:16,fontVariantNumeric:'tabular-nums'}},String(n))
                 ]),
-                el('div',{key:'chart-scroll',style:{overflowX:'auto',maxWidth:'100%'}},
-                    el('svg',{viewBox:'0 0 '+Wc+' '+Hc,role:'img','aria-label':'Tendencia semanal real de SN-eventos, componente seleccionado y suma por firmas',style:{display:'block',width:'100%',minWidth:isMobile()?510:0,maxHeight:360}},shapes)),
-                el('div',{key:'legend',style:{display:'flex',gap:12,flexWrap:'wrap',fontSize:10.5,color:'#ddd5dc'}},[
-                    el('span',{key:'selected'},[el('b',{style:{color:'#ff647c'}},'■ '),'Barras: '+selected.pn+' · '+selected.mode]),
-                    el('span',{key:'total'},[el('b',{style:{color:'#ffc18c'}},'● '),'Línea: suma de eventos CPN × modo'])
+                el('div',{key:'track',style:{height:5,background:'#35313c',borderRadius:5,overflow:'hidden',marginTop:3}},
+                    el('div',{style:{height:'100%',width:Math.max(0,Math.min(100,width))+'%',background:color,borderRadius:5}}))
+            ]);}
+            var rows=span.length?span.map(function(w,i){
+                var n=selectedCounts[i],total=totalCounts[i];
+                var rate=total?((100*n/total).toFixed(0)+'%'):'N/D';
+                return el('div',{key:'w'+i,style:{display:'grid',gridTemplateColumns:isMobile()?'51px minmax(0,1fr) minmax(0,1fr) 39px':'68px minmax(0,1fr) minmax(0,1fr) 54px',alignItems:'center',gap:isMobile()?7:13,padding:'8px 6px',background:i%2?'#1c1e26':'#181a22',borderBottom:'1px solid #373540'}},[
+                    el('b',{key:'week',style:{fontSize:10,color:'#f0e9ef',fontVariantNumeric:'tabular-nums'}},labelWeek(w)),
+                    countCell('total','Todas firmas',total,'#d6b4bd',100*total/maxTotal),
+                    countCell('selected','Este CPN',n,'#ff667e',total?100*n/total:0),
+                    el('b',{key:'share',style:{color:total?'#ffb3c1':'#8b8793',fontSize:10,textAlign:'right',fontVariantNumeric:'tabular-nums'}},rate)
+                ]);
+            }):[el('p',{key:'empty',style:{fontSize:11,color:'#c8bac2'}},'Sin semanas verificables en los ZIP cargados.')];
+            return el('div',{key:'observed',className:'hyn-observed-trend',style:{background:'#14161c',border:'1px solid #60404a',borderRadius:11,padding:10,display:'grid',gap:9,minWidth:0}},[
+                el('div',{key:'title',style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}},[
+                    el('strong',{key:'label',style:{fontSize:13,color:'#fff'}},'Volumen semanal de fallas'),
+                    el('small',{key:'coverage',style:{fontSize:10,color:'#f4b5c1'}},span.length+' semana(s) cargada(s)')
                 ]),
-                el('div',{key:'disclaimer',style:{color:'#bdb5be',fontSize:10,lineHeight:1.45}},
-                    'Visualización de eventos observados, no failure rate ni CV². Un SN puede estar incluido en varias firmas. Los ceros representan únicamente semanas cargadas.')
+                el('div',{key:'kpis',style:{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:5}},[
+                    metric('sel','Este CPN',selectedTotal,'SN-eventos','#ff667e'),
+                    metric('all','Todas firmas',overall,'Eventos clasificados','#fff'),
+                    metric('pct','Participacion',share,'Del total clasificado','#ffc9d2')
+                ]),
+                el('div',{key:'rows',style:{display:'grid',border:'1px solid #35313b',borderRadius:7,overflow:'hidden'}},rows),
+                el('p',{key:'note',style:{fontSize:10,color:'#c8bac5',lineHeight:1.45,margin:0}},
+                    'Las cantidades son SN-eventos observados por CPN y modo; el total suma firmas y puede incluir el mismo SN en varias. La barra roja indica la proporcion de eventos de esa semana, no FPY ni volumen total fabricado. Ceros solo en semanas cargadas.')
             ]);
         }
         return el('section',{id:'smtinel-cross-product-v201',style:{border:'1px solid '+border,borderRadius:18,background:dark,color:'#f5f5f7',padding:16,display:'grid',gap:12}},[
@@ -33797,7 +33800,7 @@ body:has(#recovery-section) .main-content.expanded{
             ]),
             el('div',{key:'layout',style:{display:'grid',gridTemplateColumns:isMobile()?'minmax(0,1fr)':'minmax(0,1.7fr) minmax(255px,.8fr)',gap:12}},[
                 el('div',{key:'plot',style:{minWidth:0,overflowX:'auto',background:'#14161b',border:'1px solid '+border,borderRadius:12,padding:8}},[
-                    display.length ? el('svg',{key:'svg',viewBox:'0 0 '+W+' '+H,style:{width:'100%',minWidth:isMobile()?570:0,display:'block'}},svg) :
+                    display.length ? el('div',{key:'plottable-summary',style:{display:'grid',gap:10,minWidth:0,width:'100%'}},[traceOpsHyndmanObservedGraphic(),el('div',{key:'adi-scroller',style:{width:'100%',minWidth:0,overflowX:'auto'}},el('svg',{key:'svg',viewBox:'0 0 '+W+' '+H,style:{width:'100%',minWidth:isMobile()?570:0,display:'block'}},svg))]) :
                     el('div',{key:'pending',className:'hyn-fallback'},[
                         el('div',{key:'fb-h',className:'hyn-fb-heading'},[
                             el('strong',{key:'t'},'Recurrencia por componente y semana'),
@@ -33831,23 +33834,6 @@ body:has(#recovery-section) .main-content.expanded{
                     el('div',{key:'products',style:{color:subdued,fontSize:10,lineHeight:1.5}},'Productos: '+(selected.productsList.slice(0,10).join(' · ')||'No identificados')),
                     el('div',{key:'limit',style:{color:'#ff9ca2',fontSize:10,lineHeight:1.5}},'FR por producto y causalidad transversal: sólo calculables al verificar denominadores y trazabilidad de material. No se infiere causa raíz.')
                 ])
-            ]),
-            el('div',{key:'weekly-monitor',style:{background:'#17191e',border:'1px solid #40323b',borderRadius:12,padding:12,display:'grid',gap:9}},[
-                el('div',{key:'weekly-h',style:{display:'flex',justifyContent:'space-between',gap:10,alignItems:'center',flexWrap:'wrap'}},[
-                    el('b',{key:'w-title',style:{fontSize:12,color:'#fff'}},'Recurrencia por semana · '+selected.pn+' · '+selected.mode),
-                    el('span',{key:'w-badge',style:{fontSize:10,color:'#f5a4b1'}},selected.activeWeeks+' semana(s) con falla · '+selected.count+' SN-eventos')
-                ]),
-                weeks.length ? el('div',{key:'w-grid',style:{display:'flex',gap:8,overflowX:'auto',padding:'8px 3px 4px',alignItems:'end',minHeight:110}},weeks.slice(-13).map(function(w,i){
-                    var idx=weeks.indexOf(w),n=selected.weekCounts[idx]||0;
-                    var max=Math.max.apply(null,selected.weekCounts.slice(-13).concat([1]));
-                    return el('div',{key:'bar'+i,title:w+' · '+n+' SN-eventos',style:{flex:'1 0 42px',maxWidth:86,minWidth:42,display:'grid',justifyItems:'center',gap:5}},[
-                        el('b',{key:'qty',style:{fontSize:11,color:n?'#ff6879':subdued}},String(n)),
-                        el('div',{key:'track',style:{width:'76%',height:70,display:'flex',alignItems:'end',background:'#23212a',borderRadius:4,overflow:'hidden'}},
-                            el('div',{style:{height:n?Math.max(5,n/max*70)+'px':'2px',background:n?'linear-gradient(180deg,#ff6879,#a52838)':'#44414c',width:'100%'}})),
-                        el('small',{key:'label',style:{fontSize:9,color:subdued,whiteSpace:'nowrap'}},w.match(/W[- ]?\d+/i)?w.match(/W[- ]?\d+/i)[0]:w)
-                    ]);
-                })) : el('p',{key:'no-week',style:{fontSize:11,color:subdued}},'No hay semanas fiscales verificables en el alcance.'),
-                el('div',{key:'w-source',style:{fontSize:10,color:subdued}},'Fuente del eje temporal: '+summary.loadedWeekSource+' · conteo por SN y semana, no failure rate. Los ceros sólo representan semanas cargadas.')
             ]),
             el('div',{key:'bottom',style:{display:'grid',gap:5}},[
                 el('div',{key:'listtitle',style:{color:'#fff',fontSize:12,fontWeight:900}},'Componentes y modos en el alcance · '+items.length),
@@ -52896,7 +52882,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -54404,8 +54390,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
-    window.SMTINEL_BUILD_BADGE='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+    window.SMTINEL_BUILD_VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
+    window.SMTINEL_BUILD_BADGE='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -54425,7 +54411,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -54730,8 +54716,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   }
 
   function updateBadge(){
@@ -54877,7 +54863,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55050,7 +55036,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55315,7 +55301,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var badge = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -55341,7 +55327,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -55365,7 +55351,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var badgeText = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55539,7 +55525,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var badgeText = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -55562,7 +55548,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var badge = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -55581,7 +55567,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  var versionText = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55622,7 +55608,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var label = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -55659,7 +55645,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var badge = 'SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -56038,7 +56024,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -56148,7 +56134,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -57635,7 +57621,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var label='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -63829,7 +63815,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -66246,7 +66232,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  window.SMTINEL_BUILD_VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -66476,7 +66462,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -66575,7 +66561,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -72718,7 +72704,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -72983,7 +72969,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -73230,7 +73216,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -73426,7 +73412,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -73669,7 +73655,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -73899,7 +73885,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.16 | CommonDB Yield Consolidated | 2026-10-08';
+  var VERSION='SMTinel V20.17 | Test Export + Hyndman Volume | 2026-10-08';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -75150,6 +75136,8 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
         +'<td>'+Number(x.activity||0)+'</td><td>'+dbYieldCombo(x)+'</td><td>'+Number(x.openNg||0)+'</td></tr>';}).join('')
         ||'<tr><td colspan="6">No scoped activity</td></tr>')+'</tbody></table></div></div>';
   }
+  function trendHtml(t){var rows=t.trend||[],target=t.target;return '<div class="tpr-card"><div class="tpr-card-title">13 WEEK FPY TREND</div><div class="tpr-week-chart">'+(rows.map(function(x){var w=Math.max(0,Math.min(100,Number(x.fpy||0)));return '<div class="tpr-week-row"><div><b>'+esc(x.week)+'</b><small>'+x.tested+' tested · '+x.fail+' fail</small></div><div class="tpr-week-track"><i style="width:'+w.toFixed(2)+'%"></i>'+(target!=null?'<em style="left:'+Math.max(0,Math.min(100,target)).toFixed(2)+'%"></em>':'')+'</div><strong>'+fp(x.fpy)+'</strong></div>'}).join('')||'<div class="tpr-empty-chart">No fiscal-week history is available in the loaded Cesium source.</div>')+'</div><div class="tpr-footnote">'+(t.trendComplete?'Rolling 13 fiscal weeks available.':'Partial history: '+rows.length+'/13 fiscal weeks loaded. Missing weeks are not fabricated.')+(target!=null?' Target marker: '+fp(target)+'.':' Target: N/D until a released target is entered in Export Center.')+'</div></div>'}
+  function backlogHtml(h){var bucketRows=Object.keys(h.buckets||{}).sort(function(a,b){return h.buckets[b]-h.buckets[a]}).map(function(k){return '<tr><td><b>'+esc(k)+'</b></td><td>'+h.buckets[k]+'</td></tr>'}).join('')||'<tr><td colspan="2">No open backlog</td></tr>';var rows=(h.open||[]).slice(0,150).map(function(x){return '<tr><td><code>'+esc(x.sn)+'</code></td><td>'+esc(x.model||'N/D')+'</td><td>'+esc(x.station)+'</td><td><b>'+esc(x.failure)+'</b></td><td>'+esc(new Date(x.firstFail).toLocaleString())+'</td><td><b>'+esc(x.ageDays==null?'N/D':x.ageDays+' d')+'</b></td><td>'+x.attempts+'</td><td>'+esc(x.disposition)+'</td><td>'+x.repairCount+'</td><td>'+esc(x.owner)+'</td></tr>'}).join('')||'<tr><td colspan="10">No carried open units at the selected cutoff</td></tr>';return '<div class="tpr-grid"><div class="tpr-card"><div class="tpr-card-title">OPEN BACKLOG BY DISPOSITION</div><div class="tpr-scroll"><table><thead><tr><th>Disposition</th><th>Open SN</th></tr></thead><tbody>'+bucketRows+'</tbody></table></div></div><div class="tpr-card"><div class="tpr-card-title">AGING CONTROL</div><div class="tpr-kpis" style="grid-template-columns:repeat(3,1fr);margin:0">'+metric('Open Backlog',h.open.length,'carried to cutoff',h.open.length?'risk':'good')+metric('Aging > 7d',h.aging7,'open SN',h.aging7?'warn':'good')+metric('Aging > 14d',h.aging14,'open SN',h.aging14?'risk':'good')+'</div></div></div><div class="tpr-card" style="margin-top:10px"><div class="tpr-card-title">OPEN UNIT BACKLOG · SERIAL LEVEL</div><div class="tpr-scroll"><table><thead><tr><th>SN</th><th>Product</th><th>Test Area</th><th>Failure</th><th>First Fail</th><th>Aging</th><th>Attempts</th><th>Disposition</th><th>Repair Events</th><th>Owner</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="tpr-footnote">Backlog ignores the report start date and carries unresolved first-observed FAIL events forward to the selected cutoff. A later PASS at the same Test Area closes the unit. First-attempt certainty is limited by the earliest Cesium history loaded.</div></div>'}
   function ndfHtml(h){var rows=(h.ndf||[]).slice(0,120).map(function(x){return '<tr><td><code>'+esc(x.sn)+'</code></td><td>'+esc(x.model||'N/D')+'</td><td>'+esc(x.station)+'</td><td><b>'+esc(x.failure)+'</b></td><td>'+esc(new Date(x.firstFail).toLocaleString())+'</td><td>'+x.attempts+'</td><td>'+esc(x.recovered?'Recovered':'Open')+'</td><td>'+esc(x.ageDays==null?'N/D':x.ageDays+' d')+'</td><td>'+esc(x.rootCause||'N/D')+'</td><td>'+esc(x.owner)+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.due)+'</td></tr>'}).join('')||'<tr><td colspan="12">No explicit NDF / No Defect Found classification is present in the loaded Repair or Action evidence.</td></tr>';return '<div class="tpr-card"><div class="tpr-card-title">NDF / ROOT CAUSE FOLLOW-UP</div><div class="tpr-scroll"><table><thead><tr><th>SN</th><th>Product</th><th>Test Area</th><th>Failure</th><th>First Fail</th><th>Attempts</th><th>State</th><th>Aging</th><th>RC Evidence</th><th>Owner</th><th>Action</th><th>Due</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="tpr-footnote">NDF is reported only when the loaded Repair / Action evidence explicitly says NDF, No Defect Found, No Failure Found or No Fault Found. SMTinel does not infer NDF from a later PASS.</div></div>'}
   function actionHtml(filters,m){var acts=actionRows().filter(function(a){return actionScope(a,filters,m)}).sort(function(a,b){var ao=/CLOSED/i.test(txt(a.status))?1:0,bo=/CLOSED/i.test(txt(b.status))?1:0;return ao-bo||txt(a.dueDate).localeCompare(txt(b.dueDate))}).slice(0,60);var rows=acts.map(function(a){var qty=Number(a.units||0)||((a.serials||[]).length||'N/D'),dept=txt(a.supportArea||a.owner)||'N/D',evidence=(a.meta_files&&a.meta_files.length)?(a.meta_files.length+' file(s)'):(txt(a.evidenceNotes||a.comments)?'Notes':'N/D');return '<tr><td>'+esc(dept)+'</td><td><b>'+esc(a.failureMode||a.focus||a.scope||'N/D')+'</b></td><td>'+esc(qty)+'</td><td>'+esc(a.owner||'N/D')+'</td><td>'+esc(a.action||a.actionType||'N/D')+'</td><td>'+esc(a.dueDate||'N/D')+'</td><td>'+esc(a.status||'Open')+'</td><td>'+esc(evidence)+'</td></tr>'}).join('')||'<tr><td colspan="8">No persistent Yield Flow / Test actions match the current scope.</td></tr>';return '<div class="tpr-card"><div class="tpr-card-title">CARRY-FORWARD ACTION TRACKER</div><div class="tpr-scroll"><table><thead><tr><th>Department</th><th>Finding</th><th>Qty</th><th>Owner</th><th>Action</th><th>Due Date</th><th>Status</th><th>Evidence</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="tpr-footnote">Open actions come from the persistent Yield Flow Action Tracker and remain visible when the report period changes. Cancelled actions are excluded.</div></div>'}
   function qaHtml(filters,m,h){var acts=actionRows().filter(function(a){return /\bQA\b|QUALITY|CALIDAD/i.test([a.supportArea,a.owner,a.source,a.scope,a.context].map(txt).join(' '))&&actionScope(a,filters,m)}),snSet={},qtyOnly=0;acts.forEach(function(a){var ss=a.serials||[];if(ss.length)ss.forEach(function(s){snSet[key(s)]=1});else if(Number(a.units)>0)qtyOnly+=Number(a.units)});var sns=Object.keys(snSet),affected=sns.length?sns.length:(qtyOnly||null),failMap={},openMap={};(h.allFails||[]).forEach(function(x){failMap[key(x.sn)]=x});(h.open||[]).forEach(function(x){openMap[key(x.sn)]=x});var diagnosed=0,repaired=0,passed=0,still=0;if(sns.length){sns.forEach(function(sn){var x=failMap[sn];if(x){if(x.ndf||x.repairCount||x.rootCause!=='N/D')diagnosed++;if(x.repairCount)repaired++;if(x.recovered)passed++;if(openMap[sn])still++}})}var n=function(v){return v==null?'N/D':v};var note=sns.length?'QA cohort is serial-backed from Quality/QA Action Tracker evidence.':(affected!=null?'QA affected quantity exists in Action Tracker, but no serial cohort is attached; diagnosis/recovery breakdown remains N/D.':'No explicit QA affected cohort exists in the loaded sources or persistent Action Tracker.');return '<div class="tpr-kpis">'+metric('QA Affected',n(affected),'explicit cohort')+metric('Diagnosed',sns.length?diagnosed:'N/D','serial-backed')+metric('Repaired',sns.length?repaired:'N/D','Repair Record')+metric('Retest PASS',sns.length?passed:'N/D','recovered')+metric('Still NG',sns.length?still:'N/D','open at cutoff')+'</div><div class="tpr-method">'+esc(note)+'</div>'}
@@ -78757,7 +78745,7 @@ function htmlReport(payload){
 var data=JSON.stringify(payload).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 return `<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SMTinel · Hyndman Red X · Component Trend</title><style>
 :root{color-scheme:dark;--bg:#0a0c0e;--card:#16171b;--line:#49323b;--muted:#b0a5ac;--red:#f45068;--ink:#f7f2f4}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}header{background:linear-gradient(115deg,#0b0e12,#3a101a 75%,#641d2d);padding:23px clamp(14px,4vw,42px);border-bottom:2px solid var(--red)}header h1{margin:0;font-size:clamp(22px,3.2vw,30px)}header strong{color:#ff667b}header p{margin:7px 0 0;color:#e1c7cc}.wrap{max-width:1400px;margin:auto;padding:16px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat,.card{border:1px solid #3b3037;border-radius:13px;background:var(--card);padding:14px;min-width:0}.stat small{display:block;color:var(--muted);font-size:10px}.stat b{display:block;color:var(--red);font-size:clamp(18px,2.2vw,27px);margin-top:3px}.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(250px,.85fr);gap:12px}.card h2{font-size:15px;margin:0 0 10px}.muted{color:var(--muted)}.alert{background:#261921;border:1px solid #763e4b;padding:14px;border-radius:10px;line-height:1.55;color:#efbcc4}.chip{display:inline-block;padding:5px 9px;border-radius:999px;background:#4e202c;border:1px solid #803947;color:#ffd5db;font-size:11px;font-weight:700}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}.toolbar input{min-width:230px;flex:1;background:#242329;border:1px solid #59434c;border-radius:8px;color:white;padding:10px}.toolbar button{background:#371924;border:1px solid #9a4351;border-radius:8px;color:white;padding:10px 13px;font-weight:750;cursor:pointer}.graph{width:100%;height:auto;display:block;max-width:100%;background:#181a20;border-radius:8px}.tablebox{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:800px}td,th{padding:9px;border-bottom:1px solid #43343e;text-align:left}th{font-size:10px;color:#f1a1b0;white-space:nowrap}tbody tr{cursor:pointer}tbody tr:hover{background:#292027}tbody tr.selected{background:#462430}.barrow{display:flex;gap:7px;overflow-x:auto;padding:8px 3px 1px;align-items:flex-end;min-height:116px}.barcol{flex:1 0 42px;min-width:42px;max-width:75px;text-align:center;font-size:10px}.barbg{height:70px;background:#24212b;display:flex;align-items:flex-end;border-radius:4px;overflow:hidden;margin:4px 4px}.barbg i{display:block;width:100%;background:linear-gradient(#ff7184,#a42839);min-height:2px}.barcol small{display:block;font-size:9px;color:#b5aab3;white-space:nowrap}.pill{display:inline-flex;gap:7px;align-items:center;margin:3px;padding:5px 8px;border-radius:8px;border:1px solid #53434b;background:#262329;color:#eee;cursor:pointer;font-size:11px}.pill.active{border-color:#f46275;background:#572331}.metrics{display:grid;gap:8px;margin-top:10px}.metrics div{border-bottom:1px solid #47343b;padding-bottom:7px;display:flex;justify-content:space-between;gap:10px}.detailpic{width:70px;height:70px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid #666}.foot{color:#b2a4ac;font-size:11px;margin:14px 2px;line-height:1.5}.mini{display:flex;align-items:flex-end;gap:2px;height:23px}.mini i{width:6px;min-height:2px;background:#f0566c;border-radius:2px}.unknown{color:#e6b66d}.ok{color:#96cfb6}svg circle{cursor:pointer}@media(max-width:840px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:10px}.card{padding:12px}.toolbar input{min-width:160px}}@media print{header{background:#421c28!important;color:#fff!important;-webkit-print-color-adjust:exact}body{background:#fff;color:#222}.card,.stat{background:#fff;border:1px solid #ccc}.toolbar,.pill{display:none!important}.muted,.foot{color:#444}}
-.sparse-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 10px}.sparse-head b{color:#fff;font-size:14px}.sparse-head span{color:#ffb4c0;background:#46242e;border:1px solid #9d465a;border-radius:99px;padding:4px 8px;font-weight:850}.sparse-matrix{overflow-x:auto;border:1px solid #403a44;border-radius:9px}.sparse-matrix table{min-width:390px;width:100%}.sparse-matrix th,.sparse-matrix td{padding:7px;font-size:11px}.sparse-matrix td.hit{background:#8d3144;color:#fff;text-align:center;font-weight:850}.sparse-matrix td.zero{background:#252830;color:#a4a8b2;text-align:center}.sparse-matrix td:last-child{color:#ffb4c0;font-weight:900}.sparse-matrix tr:hover{background:#392a34}.sparse-note{color:#cabec5;font-size:11px;line-height:1.5;margin-top:9px}.observed-shell{background:#10131a;border:1px solid #62424a;border-radius:12px;padding:12px 10px;margin:12px 0;overflow:auto}.observed-shell svg{width:100%;min-width:480px;display:block;max-height:370px}.obs-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;margin-top:7px;font-weight:800}</style></head><body><header><h1>SMTinel · <strong>Hyndman Red X</strong></h1><p>Cross-Product Component Intelligence · Shainin Red X · Reporte autónomo</p></header><main class="wrap"><section class="stats"><div class="stat"><small>CPN × modos</small><b id="stat-groups">0</b></div><div class="stat"><small>Grupos ADI–CV²</small><b id="stat-valid">0</b></div><div class="stat"><small>SN-eventos</small><b id="stat-events">0</b></div><div class="stat"><small>Semanas cargadas</small><b id="stat-weeks">0</b></div></section><div class="toolbar"><input type="search" id="find" placeholder="Buscar CPN, modo de falla, producto o RefDes" aria-label="Buscar grupos"><button id="print" type="button">Imprimir / PDF</button><span class="muted">Instantánea incluida en este HTML</span></div><div id="warning" class="alert" style="display:none"></div><div class="grid"><section class="card"><h2>Firma por componente · ADI–CV² / tendencia semanal</h2><div id="chart"></div><p class="muted" style="font-size:10px">ADI = semanas observadas / semanas con falla; CV² = variabilidad de los conteos positivos semanales. Sin CV² calculable se muestra el gráfico temporal real; no se sustituyen datos faltantes ni se infiere causa raíz.</p></section><aside class="card"><h2>Detalle de componente</h2><div id="detail" class="muted">Selecciona una fila.</div></aside></div><section class="card" style="margin-top:12px"><h2>Recurrencia semanal · Componente seleccionado</h2><div id="weekly"></div><p id="weeksource" class="muted" style="font-size:10px"></p></section><section class="card" style="margin-top:12px"><h2>Componentes y modos de falla observados</h2><p class="muted" id="table-note">La tabla incluye grupos que aún no pueden calcular CV².</p><div class="tablebox"><table><thead><tr><th>CPN</th><th>Modo de falla</th><th>SN-eventos</th><th>Productos</th><th>WO</th><th>Semanas activas</th><th>ADI</th><th>CV²</th><th>Última semana</th><th>Mini trend</th></tr></thead><tbody id="body"></tbody></table></div></section><section class="card" style="margin-top:12px"><h2>Selección rápida</h2><div id="list"></div></section><div class="foot">Fuente: registros SFC/Cesium + Repair, enriquecidos con BOM, en el alcance de Yield Flow al exportar. Sin cifras de ejemplo. No se atribuye causa raíz. El FR del componente exige el denominador real de unidades expuestas. Las imágenes ilustrativas requieren que los iconos del sitio estén disponibles si se abre el HTML sin conexión.</div></main><script id="hy-data" type="application/json">${data}<${'/'}script><script>
+.sparse-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 10px}.sparse-head b{color:#fff;font-size:14px}.sparse-head span{color:#ffb4c0;background:#46242e;border:1px solid #9d465a;border-radius:99px;padding:4px 8px;font-weight:850}.sparse-matrix{overflow-x:auto;border:1px solid #403a44;border-radius:9px}.sparse-matrix table{min-width:390px;width:100%}.sparse-matrix th,.sparse-matrix td{padding:7px;font-size:11px}.sparse-matrix td.hit{background:#8d3144;color:#fff;text-align:center;font-weight:850}.sparse-matrix td.zero{background:#252830;color:#a4a8b2;text-align:center}.sparse-matrix td:last-child{color:#ffb4c0;font-weight:900}.sparse-matrix tr:hover{background:#392a34}.sparse-note{color:#cabec5;font-size:11px;line-height:1.5;margin-top:9px}.observed-shell{background:#10131a;border:1px solid #62424a;border-radius:12px;padding:12px 10px;margin:12px 0;overflow:auto}.observed-shell svg{width:100%;min-width:480px;display:block;max-height:370px}.obs-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;margin-top:7px;font-weight:800}.vol-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:4px 0 9px}.vol-card{background:#27222c;border:1px solid #493540;border-radius:8px;padding:9px 7px;min-width:0}.vol-card small{display:block;font-size:10px;color:#c7bac5}.vol-card strong{display:block;font-size:25px;color:#fff;font-variant-numeric:tabular-nums}.vol-card:first-child strong{color:#ff667e}.vol-card span{font-size:10px;color:#bab0bb}.vol-data{border:1px solid #403541;border-radius:8px;overflow:hidden}.vol-row{display:grid;grid-template-columns:70px minmax(0,1fr) minmax(0,1fr) 56px;gap:12px;align-items:center;padding:9px 8px;border-bottom:1px solid #393440;background:#1e2028}.vol-row:nth-child(even){background:#191b22}.vol-row>b{font-size:11px}.vol-row .vol-metric{min-width:0;position:relative;padding-bottom:7px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}.vol-metric small{color:#c9c0cb;font-size:10px}.vol-metric strong{font-size:16px;font-variant-numeric:tabular-nums}.vol-metric .vol-red{color:#ff667e}.vol-metric i{position:absolute;bottom:0;left:0;height:5px;border-radius:5px;max-width:100%}.vol-share{text-align:right;color:#ffb6c3;font-variant-numeric:tabular-nums}@media(max-width:600px){.vol-card strong{font-size:21px}.vol-row{grid-template-columns:46px minmax(0,1fr) minmax(0,1fr) 40px;gap:6px;padding:8px 5px}.vol-row .vol-metric{display:grid;gap:0}.vol-metric small{font-size:9px}.vol-metric strong{font-size:15px}.vol-share{font-size:10px}}</style></head><body><header><h1>SMTinel · <strong>Hyndman Red X</strong></h1><p>Cross-Product Component Intelligence · Shainin Red X · Reporte autónomo</p></header><main class="wrap"><section class="stats"><div class="stat"><small>CPN × modos</small><b id="stat-groups">0</b></div><div class="stat"><small>Grupos ADI–CV²</small><b id="stat-valid">0</b></div><div class="stat"><small>SN-eventos</small><b id="stat-events">0</b></div><div class="stat"><small>Semanas cargadas</small><b id="stat-weeks">0</b></div></section><div class="toolbar"><input type="search" id="find" placeholder="Buscar CPN, modo de falla, producto o RefDes" aria-label="Buscar grupos"><button id="print" type="button">Imprimir / PDF</button><span class="muted">Instantánea incluida en este HTML</span></div><div id="warning" class="alert" style="display:none"></div><div class="grid"><section class="card"><h2>Firma por componente · ADI–CV² / tendencia semanal</h2><div id="chart"></div><p class="muted" style="font-size:10px">ADI = semanas observadas / semanas con falla; CV² = variabilidad de los conteos positivos semanales. Sin CV² calculable se muestra el gráfico temporal real; no se sustituyen datos faltantes ni se infiere causa raíz.</p></section><aside class="card"><h2>Detalle de componente</h2><div id="detail" class="muted">Selecciona una fila.</div></aside></div><section class="card" style="margin-top:12px"><h2>Recurrencia semanal · Componente seleccionado</h2><div id="weekly"></div><p id="weeksource" class="muted" style="font-size:10px"></p></section><section class="card" style="margin-top:12px"><h2>Componentes y modos de falla observados</h2><p class="muted" id="table-note">La tabla incluye grupos que aún no pueden calcular CV².</p><div class="tablebox"><table><thead><tr><th>CPN</th><th>Modo de falla</th><th>SN-eventos</th><th>Productos</th><th>WO</th><th>Semanas activas</th><th>ADI</th><th>CV²</th><th>Última semana</th><th>Mini trend</th></tr></thead><tbody id="body"></tbody></table></div></section><section class="card" style="margin-top:12px"><h2>Selección rápida</h2><div id="list"></div></section><div class="foot">Fuente: registros SFC/Cesium + Repair, enriquecidos con BOM, en el alcance de Yield Flow al exportar. Sin cifras de ejemplo. No se atribuye causa raíz. El FR del componente exige el denominador real de unidades expuestas. Las imágenes ilustrativas requieren que los iconos del sitio estén disponibles si se abre el HTML sin conexión.</div></main><script id="hy-data" type="application/json">${data}<${'/'}script><script>
 (function(){'use strict';
 var d=JSON.parse(document.getElementById('hy-data').textContent),groups=Array.isArray(d.groups)?d.groups:[],weeks=Array.isArray(d.weeks)?d.weeks:[],current=0;
 var byId=function(id){return document.getElementById(id)},esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
@@ -78774,23 +78762,22 @@ function observedSvg(list){
  var subset=weeks.slice(-8),start=Math.max(0,weeks.length-subset.length);
  if(!subset.length)return '<div class="empty">No hay semanas verificables en el alcance cargado.</div>';
  var selected=groups[current];if(list.indexOf(selected)<0)selected=list[0];
- if(!selected)return '<div class="empty">No hay firmas disponibles en esta selección.</div>';
- var observed=subset.map(function(w,i){return Number((selected.weekCounts||[])[start+i]||0)});
- var total=subset.map(function(w,i){return list.reduce(function(acc,g){return acc+Number((g.weekCounts||[])[start+i]||0)},0)});
- var max=Math.max.apply(null,observed.concat(total,[1]));
- var W=800,H=270,L=48,R=22,T=26,B=44,PW=W-L-R,PH=H-T-B,step=PW/subset.length;
- function px(i){return L+step*(i+.5)}function py(n){return T+PH-Number(n||0)/max*PH}
- var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfico de eventos por semana fiscal: componente seleccionado y eventos totales">';
- svg+='<rect x="'+L+'" y="'+T+'" width="'+PW+'" height="'+PH+'" rx="8" fill="#11151d"/>';
- for(var j=0;j<=4;j++){var y=T+j*PH/4;svg+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="#383844"/><text x="'+(L-8)+'" y="'+(y+4)+'" fill="#ddd0d9" font-size="12" text-anchor="end">'+Math.round(max*(1-j/4))+'</text>'}
- var line=[];subset.forEach(function(w,i){var x=px(i),h=T+PH-py(observed[i]),bw=Math.max(14,Math.min(48,step*.4));svg+='<rect x="'+(x-bw/2)+'" y="'+py(observed[i])+'" width="'+bw+'" height="'+h+'" rx="4" fill="'+(observed[i]?'#f3516b':'#4b414a')+'"/><text x="'+x+'" y="'+Math.max(T+10,py(observed[i])-8)+'" text-anchor="middle" fill="#ff9dac" font-size="12">'+observed[i]+'</text><text x="'+x+'" y="'+(H-15)+'" fill="#e4dce2" font-size="12" text-anchor="middle">'+esc(weekLabel(w))+'</text>';line.push(x+','+py(total[i]))});
- if(line.length>1)svg+='<polyline points="'+line.join(' ')+'" fill="none" stroke="#ffc18c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
- subset.forEach(function(w,i){svg+='<circle cx="'+px(i)+'" cy="'+py(total[i])+'" r="5" fill="#ffc18c" stroke="#15171b" stroke-width="2"><title>'+esc(w)+': '+total[i]+' SN-eventos acumulados por firma</title></circle>'});
- svg+='</svg>';
- return '<section class="observed-shell"><div class="sparse-head"><b>Gráfico de recurrencia observada</b><span>'+subset.length+' semanas</span></div>'+svg+'<div class="obs-legend"><span style="color:#ff8699">■ '+esc(selected.pn)+' · '+esc(selected.mode)+'</span><span style="color:#ffc18c">● Suma de SN-eventos por firmas visibles</span></div><p class="sparse-note">Barras: firma seleccionada. Línea: suma por CPN × modo, no SN únicos de BU. Ceros únicamente de semanas cargadas. No representa FR ni CV².</p></section>';
+ if(!selected)return '<div class="empty">Sin CPN seleccionado.</div>';
+ var a=subset.map(function(w,i){return Number((selected.weekCounts||[])[start+i]||0)});
+ var t=subset.map(function(w,i){return list.reduce(function(acc,g){return acc+Number((g.weekCounts||[])[start+i]||0)},0)});
+ var sumA=a.reduce(function(p,v){return p+v},0),sumT=t.reduce(function(p,v){return p+v},0),maxT=Math.max.apply(null,t.concat([1]));
+ var fmt=function(n){return Number(n).toLocaleString('es-MX')};
+ var card=function(k,v,s){return '<div class="vol-card"><small>'+k+'</small><strong>'+v+'</strong><span>'+s+'</span></div>'};
+ var html='<section class="observed-shell"><div class="sparse-head"><b>Volumen semanal de fallas</b><span>'+subset.length+' semanas</span></div>';
+ html+='<div class="vol-kpis">'+card('Este CPN',fmt(sumA),'SN-eventos')+card('Todas firmas',fmt(sumT),'Eventos clasificados')+card('Participacion',sumT?(100*sumA/sumT).toFixed(1)+'%':'N/D','Del total clasificado')+'</div>';
+ html+='<div class="vol-data">';
+ subset.forEach(function(w,i){var n=a[i],total=t[i],share=total?(100*n/total).toFixed(0)+'%':'N/D';
+    html+='<div class="vol-row"><b>'+esc(weekLabel(w))+'</b><div class="vol-metric"><small>Todas firmas</small><strong>'+fmt(total)+'</strong><i style="width:'+(100*total/maxT).toFixed(1)+'%;background:#d6b4bd"></i></div><div class="vol-metric"><small>Este CPN</small><strong class="vol-red">'+fmt(n)+'</strong><i style="width:'+(total?100*n/total:0).toFixed(1)+'%;background:#ff667e"></i></div><b class="vol-share">'+share+'</b></div>'; });
+ html+='</div><p class="sparse-note">SN-eventos por CPN y modo. El total suma firmas y puede contar un SN varias veces; no es volumen fabricado ni FPY. La franja roja refleja proporcion de eventos clasificados en esa semana. Ceros solo para semanas cargadas.</p></section>';
+ return html;
 }
-function scatter(list){var ready=list.filter(function(g){return g.adi!=null&&g.cv2!=null});if(!ready.length){var sW=Math.max(0,weeks.length-6),seen=weeks.slice(sW),top=list.slice().sort(function(a,b){return (b.models||[]).length-(a.models||[]).length||b.count-a.count}).slice(0,12),h='<div class="sparse-head"><b>Recurrencia por CPN y semana</b><span>ADI / CV\u00b2: 0 / '+list.length+'</span></div><p class="sparse-note">Las barras y la línea representan eventos reales de las semanas cargadas. El ADI–CV² permanece pendiente de historial suficiente; no se infiere un riesgo Red X confirmado.</p><div class="sparse-matrix"><table><thead><tr><th>CPN / modo</th>'+seen.map(function(w){return '<th>'+esc(weekLabel(w))+'</th>'}).join('')+'<th>SN</th></tr></thead><tbody>';
-h=observedSvg(list)+h;top.forEach(function(g){var id=groups.indexOf(g),a=g.weekCounts||[];h+='<tr data-row="'+id+'"><td><b>'+esc(g.pn)+'</b><small style="display:block;color:#c9b5c0">'+esc(g.mode)+'</small></td>'+seen.map(function(w,i){var n=Number(a[sW+i]||0);return '<td class="'+(n?'hit':'zero')+'">'+n+'</td>'}).join('')+'<td>'+Number(g.count||0)+'</td></tr>'});h+='</tbody></table></div><p class="sparse-note">Hasta 12 de '+list.length+' grupos. El resto permanece en la tabla. Las semanas con cero proceden exclusivamente del alcance cargado.</p>';byId('chart').innerHTML=h;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});return}var W=760,H=330,L=53,R=20,T=22,B=45,maxX=Math.max(2,Math.ceil(Math.max.apply(null,ready.map(function(g){return Number(g.adi)||0}))*1.2)),maxY=Math.max(.65,Math.max.apply(null,ready.map(function(g){return Number(g.cv2)||0}))*1.2),px=function(x){return L+((x-1)/(maxX-1))*(W-L-R)},py=function(y){return H-B-y/maxY*(H-T-B)},s='<svg class="graph" viewBox="0 0 '+W+' '+H+'" aria-label="Gráfica ADI CV²">';for(var i=0;i<=4;i++){var y=T+(H-B-T)*i/4,x=L+(W-L-R)*i/4;s+='<path d="M'+L+' '+y+'H'+(W-R)+' M'+x+' '+T+'V'+(H-B)+'" stroke="#343740"/>'}s+='<path d="M'+px(1.32)+' '+T+'V'+(H-B)+' M'+L+' '+py(.49)+'H'+(W-R)+'" stroke="#e65267" stroke-dasharray="5 5" fill="none"/><text x="'+W/2+'" y="'+(H-8)+'" text-anchor="middle" fill="#bcaeb7">ADI · semanas / semanas activas</text><text x="14" y="'+(H/2)+'" transform="rotate(-90 14 '+(H/2)+')" fill="#bcaeb7" text-anchor="middle">CV² semanal</text>';ready.forEach(function(g){var id=groups.indexOf(g),rad=Math.min(16,5+Math.sqrt(g.count)*2);s+='<circle data-row="'+id+'" cx="'+px(g.adi)+'" cy="'+py(g.cv2)+'" r="'+rad+'" fill="'+(g===groups[current]?'#ff687d':'#c73c52')+'" stroke="#ffdbe1" stroke-width="1.5"><title>'+esc(g.pn+' · '+g.mode+' · '+g.count+' SN-eventos')+'</title></circle>'});s+='</svg>';byId('chart').innerHTML=s;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}})}
+function scatter(list){var ready=list.filter(function(g){return g.adi!=null&&g.cv2!=null});if(!ready.length){var sW=Math.max(0,weeks.length-6),seen=weeks.slice(sW),top=list.slice().sort(function(a,b){return (b.models||[]).length-(a.models||[]).length||b.count-a.count}).slice(0,12),h='<div class="sparse-head"><b>Recurrencia por CPN y semana</b><span>ADI / CV\u00b2: 0 / '+list.length+'</span></div><p class="sparse-note">El volumen muestra conteos reales de SN-eventos de las semanas cargadas. El ADI–CV² permanece pendiente de historial suficiente; no se infiere un riesgo Red X confirmado.</p><div class="sparse-matrix"><table><thead><tr><th>CPN / modo</th>'+seen.map(function(w){return '<th>'+esc(weekLabel(w))+'</th>'}).join('')+'<th>SN</th></tr></thead><tbody>';
+h=observedSvg(list)+h;top.forEach(function(g){var id=groups.indexOf(g),a=g.weekCounts||[];h+='<tr data-row="'+id+'"><td><b>'+esc(g.pn)+'</b><small style="display:block;color:#c9b5c0">'+esc(g.mode)+'</small></td>'+seen.map(function(w,i){var n=Number(a[sW+i]||0);return '<td class="'+(n?'hit':'zero')+'">'+n+'</td>'}).join('')+'<td>'+Number(g.count||0)+'</td></tr>'});h+='</tbody></table></div><p class="sparse-note">Hasta 12 de '+list.length+' grupos. El resto permanece en la tabla. Las semanas con cero proceden exclusivamente del alcance cargado.</p>';byId('chart').innerHTML=h;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});return}var W=760,H=330,L=53,R=20,T=22,B=45,maxX=Math.max(2,Math.ceil(Math.max.apply(null,ready.map(function(g){return Number(g.adi)||0}))*1.2)),maxY=Math.max(.65,Math.max.apply(null,ready.map(function(g){return Number(g.cv2)||0}))*1.2),px=function(x){return L+((x-1)/(maxX-1))*(W-L-R)},py=function(y){return H-B-y/maxY*(H-T-B)},s='<svg class="graph" viewBox="0 0 '+W+' '+H+'" aria-label="Gráfica ADI CV²">';for(var i=0;i<=4;i++){var y=T+(H-B-T)*i/4,x=L+(W-L-R)*i/4;s+='<path d="M'+L+' '+y+'H'+(W-R)+' M'+x+' '+T+'V'+(H-B)+'" stroke="#343740"/>'}s+='<path d="M'+px(1.32)+' '+T+'V'+(H-B)+' M'+L+' '+py(.49)+'H'+(W-R)+'" stroke="#e65267" stroke-dasharray="5 5" fill="none"/><text x="'+W/2+'" y="'+(H-8)+'" text-anchor="middle" fill="#bcaeb7">ADI · semanas / semanas activas</text><text x="14" y="'+(H/2)+'" transform="rotate(-90 14 '+(H/2)+')" fill="#bcaeb7" text-anchor="middle">CV² semanal</text>';ready.forEach(function(g){var id=groups.indexOf(g),rad=Math.min(16,5+Math.sqrt(g.count)*2);s+='<circle data-row="'+id+'" cx="'+px(g.adi)+'" cy="'+py(g.cv2)+'" r="'+rad+'" fill="'+(g===groups[current]?'#ff687d':'#c73c52')+'" stroke="#ffdbe1" stroke-width="1.5"><title>'+esc(g.pn+' · '+g.mode+' · '+g.count+' SN-eventos')+'</title></circle>'});s+='</svg>';byId('chart').innerHTML=observedSvg(list)+s;Array.prototype.forEach.call(byId('chart').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}})}
 function select(i){current=i;var g=groups[i];details(g);render()}
 function render(){var q=byId('find').value.toLowerCase(),subset=groups.filter(function(g){return [g.pn,g.mode,g.desc,g.type,(g.models||[]).join(' '),(g.refs||[]).join(' ')].join(' ').toLowerCase().indexOf(q)>=0});byId('body').innerHTML=subset.map(function(g){var i=groups.indexOf(g);return '<tr data-row="'+i+'" class="'+(current===i?'selected':'')+'"><td>'+esc(g.pn)+'</td><td>'+esc(g.mode)+'</td><td>'+g.count+'</td><td>'+(g.models||[]).length+'</td><td>'+(g.wos||[]).length+'</td><td>'+g.activeWeeks+'</td><td>'+num(g.adi,2)+'</td><td class="'+(g.cv2==null?'unknown':'ok')+'">'+num(g.cv2,3)+'</td><td>'+esc(g.lastWeek||'N/D')+'</td><td>'+smallBars(g)+'</td></tr>'}).join('')||'<tr><td colspan="10">Sin coincidencias en el filtro actual.</td></tr>';Array.prototype.forEach.call(byId('body').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});byId('list').innerHTML=subset.slice(0,60).map(function(g){var i=groups.indexOf(g);return '<button class="pill '+(i===current?'active':'')+'" data-row="'+i+'">'+esc(g.pn)+' · '+esc(g.mode)+' ('+g.count+')</button>'}).join('');Array.prototype.forEach.call(byId('list').querySelectorAll('[data-row]'),function(el){el.onclick=function(){select(Number(el.getAttribute('data-row')))}});scatter(subset);byId('table-note').textContent=subset.length+' combinaciones CPN × modo de falla · '+subset.filter(function(g){return g.adi!=null&&g.cv2!=null}).length+' con clasificación calculable';}
 byId('find').addEventListener('input',render);render();if(groups.length)details(groups[0]);
