@@ -33738,6 +33738,34 @@ body:has(#recovery-section) .main-content.expanded{
       valid.forEach(function(z){var g=z.g,hit=String(g.key||'')===String(selectedKey||''),n=Math.max(0,Number(g.count)||0),r=Math.min(20,6+Math.sqrt(n)*2.8),cx=xx(Number(g.adi)),cy=yy(Number(g.cv2));s+='<circle class="hyx-plane-dot'+(hit?' is-selected':'')+'" data-hyx-idx="'+z.i+'" role="button" tabindex="0" aria-label="'+esc(g.pn)+' '+esc(g.mode)+' '+n+' eventos" cx="'+f(cx)+'" cy="'+f(cy)+'" r="'+f(r)+'" fill="'+(hit?'#ffe2e5':(g.productsList||g.models||[]).length>1?'#fbaa4c':'#f36a8b')+'" stroke="'+(hit?'#fff':'#302231')+'" stroke-width="'+(hit?'4':'2')+'"><title>'+esc(g.pn)+' · '+esc(g.mode)+' · '+n+' SN-eventos</title></circle>';});
       s+='<text x="'+f((L+right)/2)+'" y="'+(H-10)+'" text-anchor="middle" font-weight="750" font-size="'+(mobile?17:15)+'" fill="#f4f0f5">ADI · Semanas observadas / semanas con falla</text>';
       s+='<text transform="translate(18 '+f((T+bottom)/2)+') rotate(-90)" text-anchor="middle" font-weight="750" font-size="'+(mobile?16:14)+'" fill="#f4f0f5">CV² · Variabilidad de eventos</text>';
+
+      // V20.22: distinct non-statistical staging lane for signatures without CV2.
+      // These circles have no ADI/CV2 coordinates. Their x position is only list order.
+      var pending=all.map(function(g,i){return {g:g,i:i};}).filter(function(z){return z.g&&(z.g.adi==null||z.g.cv2==null||!isFinite(Number(z.g.adi))||!isFinite(Number(z.g.cv2)));});
+      if(pending.length){
+        var extra=121,cols=mobile?6:8,limit=cols*2,shown=pending.slice(0,limit),chosen=pending.find(function(z){return String(z.g.key||'')===String(selectedKey||'');});
+        if(chosen && !shown.some(function(z){return z.i===chosen.i;}))shown[shown.length-1]=chosen;
+        s=s.replace('viewBox="0 0 '+W+' '+H+'"','viewBox="0 0 '+W+' '+(H+extra)+'"');
+        s+='<rect x="'+L+'" y="'+(H+5)+'" width="'+PW+'" height="110" rx="9" fill="#171b24" stroke="#865369" stroke-width="1.2"/>';
+        s+='<text x="'+(L+12)+'" y="'+(H+22)+'" font-size="'+(mobile?12:13)+'" font-weight="800" fill="#ffd3df">SIN CV² · Firmas seleccionables (NO son puntos ADI–CV²)</text>';
+        shown.forEach(function(z,j){var g=z.g,hit=String(g.key||'')===String(selectedKey||''),count=Math.max(0,Number(g.count)||0),cx=L+(j%cols+.5)*PW/cols,cy=H+44+Math.floor(j/cols)*34;
+          var name=String(g.pn||'CPN').slice(0,12);
+          s+='<g data-hyx-idx="'+z.i+'" role="button" tabindex="0" style="cursor:pointer" aria-label="'+esc(g.pn+' '+g.mode+' '+count+' eventos; sin CV2')+'">';
+          s+='<title>'+esc(g.pn+' · '+g.mode+' · '+count+' SN-eventos; pendiente de CV²')+'</title>';
+          if(hit)s+='<circle cx="'+f(cx)+'" cy="'+f(cy)+'" r="17" fill="none" stroke="#ff8096" stroke-width="2.5"/>';
+          s+='<circle cx="'+f(cx)+'" cy="'+f(cy)+'" r="'+f(Math.min(13,7+Math.sqrt(count)*2))+'" fill="'+(hit?'#fc5e7c':'#55505e')+'" stroke="'+(hit?'#fff0f4':'#b0a2b0')+'" stroke-width="'+(hit?2.2:1)+'"/>';
+          s+='<text x="'+f(cx)+'" y="'+f(cy+3.3)+'" text-anchor="middle" font-size="11" font-weight="900" fill="#fff">'+count+'</text>';
+          s+='<text x="'+f(cx)+'" y="'+f(cy+23)+'" text-anchor="middle" font-size="9" font-weight="700" fill="'+(hit?'#ffc4d0':'#c9c0ce')+'">'+esc(name)+'</text></g>';
+        });
+        if(pending.length>shown.length)s+='<text x="'+(right-4)+'" y="'+(H+22)+'" font-size="10" fill="#ecc2cb" text-anchor="end">+'+(pending.length-shown.length)+'</text>';
+        if(chosen && !valid.some(function(z){return z.i===chosen.i;})){
+          var bx=right-(mobile?238:260),by=T+26,bw=mobile?224:245;
+          s+='<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="69" rx="8" fill="#111822" fill-opacity=".96" stroke="#fd7694"/>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+18)+'" font-size="11" font-weight="800" fill="#ff9aaf">FIRMA SELECCIONADA · CV² N/D</text>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+38)+'" font-size="13" font-weight="900" fill="#fff">'+esc(String(chosen.g.pn||'').slice(0,20))+'</text>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+55)+'" font-size="11" fill="#e7d4de">'+Number(chosen.g.count||0)+' SN-eventos · '+Number(chosen.g.activeWeeks||0)+' semana(s) con falla</text>';
+        }
+      }
       s+='</svg>';
       return s;
     }
@@ -33765,7 +33793,7 @@ body:has(#recovery-section) .main-content.expanded{
 #hyx-operative .hyx-plane-head strong{font-size:17px;font-weight:900;color:#fff}
 #hyx-operative .hyx-plane-count{padding:5px 9px;border:1px solid #995367;border-radius:20px;color:#ffb7c2;font-size:11px;font-weight:850}
 #hyx-operative .hyx-plane-scroll{min-width:0;overflow-x:hidden;border:1px solid #473944;border-radius:9px;background:#11131b;overscroll-behavior-x:contain}
-#hyx-operative .hyx-plane-svg{display:block;width:100%;min-width:0;height:auto;max-height:480px}
+#hyx-operative .hyx-plane-svg{display:block;width:100%;min-width:0;height:auto;max-height:570px}
 #hyx-operative .hyx-plane-dot{cursor:pointer;outline:none}
 #hyx-operative .hyx-plane-dot:focus{stroke:#fff;stroke-width:4}
 #hyx-operative .hyx-plane-caption{color:#d0c6d1;font-size:11px;line-height:1.5}
@@ -33919,14 +33947,14 @@ body:has(#recovery-section) .main-content.expanded{
                     el('strong',{key:'name'},'Firma elegida: '+selected.pn+' · '+selected.mode),
                     el('span',{key:'metric'},selected.count+' SN-eventos · '+selected.productsList.length+' producto(s)')
                 ]),
-                eligible.length===0?el('div',{key:'pending-label',className:'hyx-pending-label'},'Firmas sin posición ADI–CV² · toca una referencia para ver su detalle:'):null,
-                eligible.length===0?el('div',{key:'pending-strip',className:'hyx-pending-strip'},prioritized.slice(0,35).map(function(g,i){
+                false?el('div',{key:'pending-label',className:'hyx-pending-label'},'Firmas sin posición ADI–CV² · toca una referencia para ver su detalle:'):null,
+                false?el('div',{key:'pending-strip',className:'hyx-pending-strip'},prioritized.slice(0,35).map(function(g,i){
                     return el('button',{key:g.key||i,type:'button',className:'hyx-pending-chip','data-active':g.key===selected.key?'yes':'no',
                         onClick:function(){chooseHyndman(g,true);},title:g.pn+' · '+g.mode},[
                         el('span',{key:'pn'},g.pn),el('b',{key:'count'},String(g.count))
                     ]);
                 })):null,
-                el('div',{key:'hint',className:'hyx-plane-hint'},'Toca un punto o una firma pendiente para consultar su historial.'),
+                el('div',{key:'hint',className:'hyx-plane-hint'},'Toca un punto del hiperplano o un círculo de la franja SIN CV²; esa franja no tiene coordenadas estadísticas.'),
                 el('div',{key:'legend',className:'hyx-plane-legend'},[
                     el('span',{key:'g'},[el('i',{style:{background:'#205b4a'}},null),'Estable']),
                     el('span',{key:'b'},[el('i',{style:{background:'#244e6c'}},null),'Intermitente']),
@@ -40237,6 +40265,55 @@ function traceOpsBonepileBuildPayload() {
 .export-action-panel{background:rgba(255,255,255,.96)!important;border-color:#E7D9DB!important}.export-action-title{color:#2B3036!important}.export-action-title span{color:#8B7E81!important}.export-action-grid .btn{background:#fff!important;color:#2B3036!important;border-color:#DFD2D4!important}.export-action-grid .btn:hover{background:#FFF8F8!important;border-color:#D8AEB4!important}.export-action-grid .btn.primary{background:#FFF1F2!important;border-color:#D8AEB4!important;color:#7F1820!important}.export-action-grid #downloadEmail{background:linear-gradient(135deg,#7F1820,#B4232D)!important;color:#fff!important;border-color:#B4232D!important}.export-action-grid #downloadExecutivePptx{background:#FFF1F2!important;border-color:#E0B8BD!important;color:#7F1820!important}
 .report-preview-pane{background:#F1EEED!important}.report-preview-head{background:#fff!important;border-bottom-color:#E7D9DB!important}.report-preview-head b{color:#2B3036!important}.report-preview-head span{color:#7B7274!important}.report-preview-pane .email-preview{background:#fff!important}.export-dialog .btn{background:#fff!important;color:#2B3036!important;border-color:#DFD2D4!important}
 </style>
+<style id="smtinel-export-wide-sidebar-v2023">
+/* V20.23 - Export Center operational desktop workspace. No data transformation. */
+@media(min-width:1101px){
+  #emailModal .report-builder{grid-template-columns:minmax(540px,42%) minmax(0,1fr)!important}
+}
+@media(min-width:901px) and (max-width:1100px){
+  #emailModal .report-builder{grid-template-columns:minmax(425px,45%) minmax(0,1fr)!important}
+}
+@media(min-width:901px){
+  #emailModal .report-builder{min-width:0!important;width:100%!important;overflow:hidden!important}
+  #emailModal .report-builder-sidebar{min-width:0!important;overflow-x:hidden!important;overflow-y:auto!important;padding:18px 20px!important;box-sizing:border-box!important}
+  #emailModal .report-preview-pane{min-width:0!important;width:auto!important;overflow:hidden!important}
+  #emailModal .report-preview-pane .email-preview{min-width:0!important;overflow:auto!important}
+}
+#emailModal #testPerformanceControls .test-run-filter-grid,
+#emailModal #testPerformanceControls.time-centric-test .test-run-filter-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px 14px!important;min-width:0!important;max-width:100%!important
+}
+/* Display the complete set of operational filters, including those hidden by an older time-centric layer. */
+#emailModal #testPerformanceControls.time-centric-test .test-run-filter-grid>label,
+#emailModal #testPerformanceControls.time-centric-test .test-run-filter-grid>button{display:flex!important;flex-direction:column!important}
+#emailModal #testPerformanceControls .test-run-filter-grid>.field,
+#emailModal #testPerformanceControls .test-run-filter-grid>label,
+#emailModal #testPerformanceControls .test-run-filter-grid>button{
+  min-width:0!important;max-width:100%!important;box-sizing:border-box!important
+}
+#emailModal #testPerformanceControls .test-run-filter-grid label input,
+#emailModal #testPerformanceControls .test-run-filter-grid label select{
+  display:block;max-width:100%!important;min-width:0!important;width:100%!important;box-sizing:border-box!important;overflow:hidden;text-overflow:ellipsis
+}
+#emailModal #testPerformanceControls .test-run-search,
+#emailModal #testPerformanceControls .test-run-reset,
+#emailModal #testPerformanceControls label:has(#testPerfBu){grid-column:1/-1!important}
+#emailModal #testPerformanceControls .test-run-filter-grid .field{font-size:12px!important;line-height:1.35!important}
+#emailModal #testPerformanceControls .test-run-filter-grid select,
+#emailModal #testPerformanceControls .test-run-filter-grid input{font-size:13px!important;min-height:40px!important}
+@media(max-width:900px){
+ #emailModal .report-builder[style*="grid"]{display:block!important;overflow-y:auto!important;overflow-x:hidden!important}
+ #emailModal .report-builder-sidebar{overflow-x:hidden!important;min-width:0!important}
+ #emailModal #testPerformanceControls .test-run-filter-grid,
+ #emailModal #testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #emailModal .report-preview-pane{min-height:440px!important}
+}
+@media(max-width:620px){
+ #emailModal #testPerformanceControls .test-run-filter-grid,
+ #emailModal #testPerformanceControls.time-centric-test .test-run-filter-grid{grid-template-columns:1fr!important}
+}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -42427,8 +42504,23 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
     var nTop=failures.length,topCount=cumulative(5),coverage=failTotal?100*topCount/failTotal:null,topGain=tested?100*topCount/tested:null,topYield=fpy!=null&&topGain!=null?Math.min(100,fpy+topGain):null;
     var drivers=failures.map(function(x,i){var gain=tested?100*Number(x.affected||0)/tested:null;return '<div style="border:1px solid #e1e7e3;border-radius:10px;padding:9px;margin-top:7px;background:'+(i===0?'#fff8f8':'#fbfcfb')+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>#'+(i+1)+' '+safe(x.failure||'N/D')+'</b><b style="color:#b52f40">'+Number(x.affected||0)+' SN</b></div><div class="note" style="margin-top:4px"><b>Area:</b> '+safe(x.station||'N/D')+' · <b>Model(s):</b> '+safe(modelsOf(x).join(', '))+' · Area FR '+pct(x.failureRate)+' · Max +'+pct(gain)+'</div></div>'}).join('')||'<div class="note">No FPY failure modes in scope.</div>';
     var scenarioNs=[1,3,5].filter(function(n){return n<=nTop}),gains=scenarioNs.map(function(n){var saved=cumulative(n),gain=tested?100*saved/tested:null,next=fpy!=null&&gain!=null?Math.min(100,fpy+gain):null;return '<tr><td>Top '+n+' max</td><td>'+saved+'</td><td>+'+pct(gain)+' → <b>'+pct(next)+'</b></td></tr>'}).join('');
-    var productSnap=(m.byModel||[]).slice(0,8).map(function(x){return '<tr><td><b>'+safe(x.name)+'</b></td><td>'+Number(x.tested||0)+'</td><td>'+Number(x.fail||0)+'</td><td><b>'+pct(x.fpy)+'</b></td></tr>'}).join('')||'<tr><td colspan="4">No product activity</td></tr>';
-    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#eef2ec;font-family:Segoe UI,Arial;color:#17231a}.wrap{padding:18px}.head{background:#fff;border:1px solid #d7e0da;border-radius:18px;padding:16px 18px;display:flex;justify-content:space-between;gap:12px}.head b{font-size:22px}.head span{font-size:11px;color:#627067}.grid{display:grid;grid-template-columns:1.4fr .8fr;gap:14px;margin-top:14px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.qk{background:#fff;border:1px solid #d9e2dc;border-radius:14px;padding:12px}.qk small,.qk span{display:block;color:#647168;font-size:10px}.qk b{display:block;font-size:25px;margin:7px 0}.qk.good{background:#eff8f0}.qk.warn{background:#fff7e4}.qk.risk{background:#fdecee}.qk.info{background:#edf5fd}.box{background:#fff;border:1px solid #d9e2dc;border-radius:18px;padding:14px;margin-top:12px}.ribbon{display:inline-block;background:#cb4254;color:#fff;border-radius:10px;padding:7px 12px;font-weight:900}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e0e7e2;padding:8px;text-align:left}th{background:#35567f;color:#fff}.note{font-size:11px;color:#66736b;margin-top:12px}.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#eaf0e7;font-size:10px}@media(max-width:800px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}@media(max-width:520px){.kpis{grid-template-columns:1fr}}</style></head><body><div class="wrap"><div class="head"><div><b>Weekly Factory Health Check</b><div class="note">Fast preview · Top '+nTop+' failure drivers with area and model context.</div></div><span>'+safe([f.bu&&f.bu!=='ALL'?'BU '+f.bu:'All BU',f.week&&f.week!=='ALL'?f.week:'Loaded scope',f.area&&f.area!=='ALL'?f.area:'All Test Areas'].join(' · '))+'</span></div><div class="grid"><div><div class="kpis">'+card('CLEAN YIELD %',pct(fpy),'FPY first attempt','good')+card('TOUCH RATE %',pct(touch),'1 − FPY','warn')+card('TOP '+nTop+' IMPACT',String(topCount),pct(coverage)+' of FPY fails','risk')+card('TOTAL UNITS',String(tested),'FPY tested scope','info')+'</div><div class="box"><span class="ribbon">TOP '+nTop+' FPY OFFENDERS · THIS SCOPE</span>'+drivers+'<div class="note"><b>Combined:</b> '+topCount+' unique FPY fail SN · '+pct(coverage)+' of FPY fails · theoretical +'+pct(topGain)+' → '+pct(topYield)+'</div></div><div class="box"><b>Product FPY snapshot</b><table style="margin-top:10px"><thead><tr><th>Product</th><th>Tested</th><th>Fail</th><th>FPY</th></tr></thead><tbody>'+productSnap+'</tbody></table></div></div><div><div class="box" style="margin-top:0"><b>Cumulative Recovery Potential</b><table style="margin-top:10px"><thead><tr><th>Scenario</th><th>Unique SN</th><th>Max Clean Yield</th></tr></thead><tbody>'+gains+'</tbody></table><div class="note">Theoretical ceiling, not a recovery forecast.</div></div><div class="box"><b>Current scope</b><div style="margin-top:8px"><span class="badge">Pass '+Number(m.etePass||0)+'</span> <span class="badge">Fail '+Number(m.eteFail||0)+'</span> <span class="badge">Open NG '+Number(m.openNg||0)+'</span> <span class="badge">Retest '+Number(m.retestRuns||0)+'</span></div></div></div></div></div></body></html>';
+    function count(v){var n=Number(v);return isFinite(n)&&n>=0?n.toLocaleString('en-US'):'N/D'}
+    function cesiumCombo(x){
+      x=x||{};
+      var t=x.tested!=null?x.tested:x.eteTested,
+          p=x.pass!=null?x.pass:x.etePass,
+          f=x.fail!=null?x.fail:x.eteFail;
+      if(!(Number(t)>0))return '<span style="color:#7c8580">N/D</span>';
+      return '<span class="cy-values" aria-label="Pass '+count(p)+', Fail '+count(f)+', Tested '+count(t)+', FPY '+pct(x.fpy)+'">'
+        +'<b class="cy-pass">'+count(p)+'</b><i>/</i>'
+        +'<b class="cy-fail">'+count(f)+'</b><i>/</i>'
+        +'<b class="cy-tested">'+count(t)+'</b><i>/</i>'
+        +'<b class="cy-fpy">'+pct(x.fpy)+'</b></span>';
+    }
+    var productSnap=(m.byModel||[]).slice(0,8).map(function(x){return '<tr><td><b>'+safe(x.name)+'</b></td><td>'+cesiumCombo(x)+'</td></tr>'}).join('')||'<tr><td colspan="2">No product activity</td></tr>';
+    var stationSnap=(m.byArea||[]).filter(function(x){return Number(x&&x.tested||0)>0}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''),undefined,{numeric:true})}).map(function(x){return '<tr><td><b>'+safe(x.name||'N/D')+'</b></td><td>'+cesiumCombo(x)+'</td></tr>'}).join('')||'<tr><td colspan="2">No stations with first-attempt evidence</td></tr>';
+    var cesiumLegend='<div class="cy-legend"><b>Pass</b><i>/</i><b>Fail</b><i>/</i><b>Tested</b><i>/</i><b>FPY</b></div><div class="note">Primer intento por estación · sin promediar estaciones ni asumir ruta completa.</div>';
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#eef2ec;font-family:Segoe UI,Arial;color:#17231a}.wrap{padding:18px}.head{background:#fff;border:1px solid #d7e0da;border-radius:18px;padding:16px 18px;display:flex;justify-content:space-between;gap:12px}.head b{font-size:22px}.head span{font-size:11px;color:#627067}.grid{display:grid;grid-template-columns:1.4fr .8fr;gap:14px;margin-top:14px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.qk{background:#fff;border:1px solid #d9e2dc;border-radius:14px;padding:12px}.qk small,.qk span{display:block;color:#647168;font-size:10px}.qk b{display:block;font-size:25px;margin:7px 0}.qk.good{background:#eff8f0}.qk.warn{background:#fff7e4}.qk.risk{background:#fdecee}.qk.info{background:#edf5fd}.box{background:#fff;border:1px solid #d9e2dc;border-radius:18px;padding:14px;margin-top:12px}.ribbon{display:inline-block;background:#cb4254;color:#fff;border-radius:10px;padding:7px 12px;font-weight:900}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e0e7e2;padding:8px;text-align:left}th{background:#35567f;color:#fff}.cy-table-wrap{width:100%;overflow-x:auto}.cy-table-wrap table{min-width:390px}.cy-table-wrap th{background:#eaf0eb;color:#243e2e}.cy-values{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px}.cy-values i,.cy-legend i{font-style:normal;color:#65716a}.cy-pass,.cy-legend b:first-child{color:#268245!important}.cy-fail,.cy-legend b:nth-of-type(2){color:#b52f40!important}.cy-tested,.cy-legend b:nth-of-type(3){color:#316eb1!important}.cy-fpy,.cy-legend b:nth-of-type(4){color:#172b20!important}.cy-legend{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:5px 0 6px}.cy-legend b{font-size:12px}.note{font-size:11px;color:#66736b;margin-top:12px}.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#eaf0e7;font-size:10px}@media(max-width:800px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}@media(max-width:520px){.kpis{grid-template-columns:1fr}}</style></head><body><div class="wrap"><div class="head"><div><b>Weekly Factory Health Check</b><div class="note">Fast preview · Top '+nTop+' failure drivers with area and model context.</div></div><span>'+safe([f.bu&&f.bu!=='ALL'?'BU '+f.bu:'All BU',f.week&&f.week!=='ALL'?f.week:'Loaded scope',f.area&&f.area!=='ALL'?f.area:'All Test Areas'].join(' · '))+'</span></div><div class="grid"><div><div class="kpis">'+card('CLEAN YIELD %',pct(fpy),'FPY first attempt','good')+card('TOUCH RATE %',pct(touch),'1 − FPY','warn')+card('TOP '+nTop+' IMPACT',String(topCount),pct(coverage)+' of FPY fails','risk')+card('TOTAL UNITS',String(tested),'FPY tested scope','info')+'</div><div class="box"><span class="ribbon">TOP '+nTop+' FPY OFFENDERS · THIS SCOPE</span>'+drivers+'<div class="note"><b>Combined:</b> '+topCount+' unique FPY fail SN · '+pct(coverage)+' of FPY fails · theoretical +'+pct(topGain)+' → '+pct(topYield)+'</div></div><div class="box"><b>Yield por estación · Cesium</b>'+cesiumLegend+'<div class="cy-table-wrap"><table><thead><tr><th>Test Area</th><th>Station_FP_Yield</th></tr></thead><tbody>'+stationSnap+'</tbody></table></div></div><div class="box"><b>FPY local observado por producto</b><div class="note">No representa la ruta completa del producto.</div><div class="cy-table-wrap"><table><thead><tr><th>Producto</th><th>Pass / Fail / Tested / FPY</th></tr></thead><tbody>'+productSnap+'</tbody></table></div></div></div><div><div class="box" style="margin-top:0"><b>Cumulative Recovery Potential</b><table style="margin-top:10px"><thead><tr><th>Scenario</th><th>Unique SN</th><th>Max Clean Yield</th></tr></thead><tbody>'+gains+'</tbody></table><div class="note">Theoretical ceiling, not a recovery forecast.</div></div><div class="box"><b>Current scope</b><div style="margin-top:8px"><span class="badge">Pass '+Number(m.etePass||0)+'</span> <span class="badge">Fail '+Number(m.eteFail||0)+'</span> <span class="badge">Open NG '+Number(m.openNg||0)+'</span> <span class="badge">Retest '+Number(m.retestRuns||0)+'</span></div></div></div></div></div></body></html>';
   }
   function reportHtml(){var a=api(),f=filters();if(!f.bu)return'';if(!a)return'';var k=key();if(k===fullHtmlKey&&fullHtmlCache)return fullHtmlCache;var raw='';try{if(typeof a.reportHtmlFor==='function')raw=a.reportHtmlFor(f);else if(typeof a.reportHtml==='function')raw=a.reportHtml();}catch(err){try{console.error('[SMTinel Test Export] report generation failed',err)}catch(_){}throw err}if(!raw)return'';fullHtmlCache=decorateReport(raw);fullHtmlKey=k;return fullHtmlCache;}
   function render(reason,force){if(!isTest())return false;fillOptions(false);var preview=document.getElementById('emailPreview');if(!preview)return false;var k=key();if(!force&&k===lastTestKey&&preview.querySelector('iframe[data-test-report-preview]'))return true;var a=api();if(!a||!a.computeFor){preview.innerHTML='<div style="padding:18px;color:#E8E8E6;border:1px solid #3A3A3A;background:#111;border-radius:12px"><b>Test Performance engine is not ready.</b><br>Load the same Yield Flow source package, then reopen Export Center.</div>';return false}var html=quickPreviewHtml();preview.innerHTML='';var frame=document.createElement('iframe');frame.setAttribute('data-test-report-preview',TEST_BUILD);frame.title='Test Performance fast preview';frame.style.cssText='width:100%;height:640px;border:0;border-radius:10px;background:#fff;display:block';frame.srcdoc=html;preview.appendChild(frame);lastTestKey=k;return true}
@@ -53017,7 +53109,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -54525,8 +54617,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
-    window.SMTINEL_BUILD_BADGE='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+    window.SMTINEL_BUILD_VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
+    window.SMTINEL_BUILD_BADGE='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -54546,7 +54638,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -54851,8 +54943,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   }
 
   function updateBadge(){
@@ -54998,7 +55090,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55171,7 +55263,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55436,7 +55528,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var badge = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -55462,7 +55554,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -55486,7 +55578,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var badgeText = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55660,7 +55752,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var badgeText = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -55683,7 +55775,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var badge = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -55702,7 +55794,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  var versionText = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55743,7 +55835,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var label = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -55780,7 +55872,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var badge = 'SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -56159,7 +56251,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -56269,7 +56361,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -57756,7 +57848,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var label='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -63950,7 +64042,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -66367,7 +66459,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  window.SMTINEL_BUILD_VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -66597,7 +66689,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -66696,7 +66788,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -72839,7 +72931,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -73104,7 +73196,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -73351,7 +73443,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -73547,7 +73639,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -73790,7 +73882,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -74020,7 +74112,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+  var VERSION='SMTinel V20.23 | Test Sidebar + Cesium FPY | 2026-10-09';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -75171,7 +75263,10 @@ html body .main-content.smtinel-home-terminal-only #smtinel-command-center .sqt-
   function computeScoped(f){var a=api(),m=a&&a.computeFor?a.computeFor(f||{}):{};try{if(a&&a.enrichRepairs)m=a.enrichRepairs(m)}catch(_){}return m||{}}
   function productSnCell(list){list=uniq(list);if(!list.length)return 'N/D';var preview=list.slice(0,2).map(function(x){return '<code>'+esc(x)+'</code>';}).join('<br>');return '<div class="tpr-sn">'+preview+'<details><summary>View / copy '+list.length+' SN</summary><textarea readonly rows="'+Math.min(8,Math.max(2,list.length))+'">'+esc(list.join('\n'))+'</textarea><button type="button" data-tpr-copy>Copy SN</button></details></div>'}
   function dbYieldCombo(x){
-    var tested=Number(x&&x.tested),pass=Number(x&&x.pass),fail=Number(x&&x.fail);
+    x=x||{};
+    var tested=Number(x.tested!=null?x.tested:x.eteTested),
+        pass=Number(x.pass!=null?x.pass:x.etePass),
+        fail=Number(x.fail!=null?x.fail:x.eteFail);
     if(!isFinite(tested)||tested<=0)return '<span class="tpr-db-na" title="No first-attempt evidence in this scope">N/D</span>';
     pass=isFinite(pass)?pass:0;fail=isFinite(fail)?fail:0;
     var y=x&&x.fpy!=null&&isFinite(Number(x.fpy))?fp(Number(x.fpy)):'N/D';
@@ -76904,13 +76999,14 @@ ensure();setTimeout(ensure,0);setTimeout(ensure,250);setTimeout(ensure,1000);set
 })();
 </script>
 
+<!-- SMTinel V20.22: resilient delegated sorting for Test Performance -->
 <script id="smtinel-table-sort-v205">
 (function(){
 'use strict';
 if(window.__SMTINEL_TABLE_SORT_V205__)return;window.__SMTINEL_TABLE_SORT_V205__=1;
 var BUILD='SMTinel V13.18.21 - Sort All Report Columns';
 var CSS=".tpr-sortable-th,table thead th:not([colspan]){cursor:pointer!important;user-select:none;position:relative;padding-right:25px!important}.tpr-sortable-th:hover,table thead th:not([colspan]):hover{background:#e7eee8!important;color:#294033!important}table thead th:not([colspan])::after{content:\"⇅\";position:absolute;right:5px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:18px;height:18px;border:1px solid #bdc9c0;border-radius:999px;background:#fff;color:#607065;font-size:10px;font-weight:950;line-height:1;box-shadow:0 1px 2px rgba(20,24,24,.05)}table thead th[data-sort-dir=\"asc\"]::after{content:\"↑\";background:#e8f5e6;border-color:#86ad8a;color:#226d3d}table thead th[data-sort-dir=\"desc\"]::after{content:\"↓\";background:#fff2da;border-color:#d6ad55;color:#966400}.tpr-sortable-th[data-sort-dir=\"asc\"]{box-shadow:inset 0 -2px #6f9b76}.tpr-sortable-th[data-sort-dir=\"desc\"]{box-shadow:inset 0 -2px #b87820}.tpr-sort-arrow{display:none!important}@media(max-width:700px){table thead th:not([colspan]){padding-right:27px!important}table thead th:not([colspan])::after{width:20px;height:20px;font-size:11px;right:4px}}@media print{table thead th::after{display:none!important}}";
-var RUNTIME="(function(){'use strict';if(window.__TPR_TABLE_SORT_RUNTIME_V205__)return;window.__TPR_TABLE_SORT_RUNTIME_V205__=1;function txt(v){return String(v==null?'':v).trim()}function cellText(td){if(!td)return'';var el=td.querySelector&&td.querySelector('input,select,textarea');if(el){if(el.tagName==='SELECT'){var o=el.options&&el.selectedIndex>=0?el.options[el.selectedIndex]:null;return txt(o?o.textContent:el.value)}return txt(el.value||el.textContent)}return txt(td.textContent)}function parseDate(s){var m=s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})(?:[ T](\\d{1,2}):(\\d{2})(?::(\\d{2}))?)?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime();m=s.match(/^(\\d{1,2})-(\\d{1,2})-(\\d{4})(?:\\s+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?)?$/);if(m)return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime();m=s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{2,4})(?:\\s+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?)?$/);if(m){var y=+m[3];if(y<100)y+=2000;return new Date(y,+m[1]-1,+m[2],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime()}return NaN}function sortKey(v){var s=txt(v),u=s.toUpperCase();if(!s||u==='N/D'||u==='N/A'||u==='NA'||u==='-'||u==='—'||u==='NOT SPECIFIED')return{empty:1,type:'text',v:''};var d=parseDate(s);if(isFinite(d))return{empty:0,type:'num',v:d};var compact=s.replace(/\\s+/g,' '),num=compact.replace(/[$€£]/g,'').replace(/,/g,'').replace(/%|\\bPP\\b/ig,'').replace(/^\\+/,'');if(/^-?\\d+(?:\\.\\d+)?$/.test(num)){var n=Number(num);if(isFinite(n))return{empty:0,type:'num',v:n}}var lead=compact.match(/^(-?\\d+(?:\\.\\d+)?)\\s*(?:%|pp|units?|events?|rows?|SN)?\\b/i);if(lead&&isFinite(Number(lead[1])))return{empty:0,type:'num',v:Number(lead[1])};return{empty:0,type:'text',v:u}}function reset(table,keep){Array.prototype.forEach.call(table.querySelectorAll('thead th.tpr-sortable-th'),function(h){if(h!==keep){h.removeAttribute('data-sort-dir');h.setAttribute('aria-sort','none')}})}function compare(a,b,dir){if(a.k.empty!==b.k.empty)return a.k.empty?1:-1;var c;if(a.k.type==='num'&&b.k.type==='num')c=a.k.v-b.k.v;else c=String(a.k.v).localeCompare(String(b.k.v),undefined,{numeric:true,sensitivity:'base'});if(c===0)c=a.i-b.i;return dir==='asc'?c:-c}function sortTable(table,idx,th){var bodies=Array.prototype.slice.call(table.tBodies||[]);if(!bodies.length)return;var dir=th.getAttribute('data-sort-dir')==='asc'?'desc':'asc';reset(table,th);th.setAttribute('data-sort-dir',dir);th.setAttribute('aria-sort',dir==='asc'?'ascending':'descending');bodies.forEach(function(body){var rows=Array.prototype.slice.call(body.rows).map(function(r,i){return{r:r,i:i,k:sortKey(cellText(r.cells[idx]))}});rows.sort(function(x,y){return compare(x,y,dir)});rows.forEach(function(x){body.appendChild(x.r)})})}function enhance(table){if(!table||table.getAttribute('data-tpr-sort-v205')==='1')return;var head=table.tHead;if(!head||!head.rows||!head.rows.length)return;var row=head.rows[head.rows.length-1];if(!row||!row.cells||!row.cells.length)return;table.setAttribute('data-tpr-sort-v205','1');Array.prototype.forEach.call(row.cells,function(th){if(th.tagName!=='TH'||th.colSpan>1||!txt(th.textContent))return;var idx=th.cellIndex;th.classList.add('tpr-sortable-th');th.setAttribute('data-sort-col',idx);th.setAttribute('aria-sort','none');th.setAttribute('title','Sort ascending / descending');th.tabIndex=0;th.addEventListener('click',function(ev){if(ev.target&&ev.target.closest&&ev.target.closest('button,input,select,textarea,a,summary'))return;sortTable(table,idx,th)});th.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();sortTable(table,idx,th)}})})}function stripPF(root){Array.prototype.forEach.call((root||document).querySelectorAll('.fh-svg text,.hy-svg text'),function(n){if(/^[PF]\\s*[0-9,]+$/i.test(txt(n.textContent)))n.remove()})}function apply(){stripPF(document);Array.prototype.forEach.call(document.querySelectorAll('table'),enhance)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();var timer=null;if(window.MutationObserver){try{new MutationObserver(function(muts){var relevant=false;for(var i=0;i<muts.length;i++){if(muts[i].addedNodes&&muts[i].addedNodes.length){relevant=true;break}}if(!relevant)return;clearTimeout(timer);timer=setTimeout(apply,30)}).observe(document.documentElement,{childList:true,subtree:true})}catch(_){}}setTimeout(apply,80);setTimeout(apply,300);setTimeout(apply,900)})();";
+var RUNTIME="(function(){'use strict';\nif(window.__TPR_TABLE_SORT_RUNTIME_V2022__)return;\nwindow.__TPR_TABLE_SORT_RUNTIME_V2022__=1;\nfunction tx(x){return String(x==null?'':x).replace(/\\s+/g,' ').trim();}\nfunction keyOf(cell){\n if(!cell)return {empty:1,v:'',num:0};\n var attr=cell.getAttribute('data-sort-value');\n var s=tx(attr!=null?attr:cell.textContent),u=s.toUpperCase();\n if(!s||/^(N\\/?D|N\\/?A|NA|UNKNOWN|NOT AVAILABLE|-)$/i.test(u))return{empty:1,v:'',num:0};\n var input=cell.querySelector('input,select,textarea');\n if(input){s=tx(input.value||s);u=s.toUpperCase();}\n var date=s.match(/^(\\d{4})[-/](\\d\\d?)[-/](\\d\\d?)(?:[ T](\\d\\d?):(\\d\\d)(?::(\\d\\d))?)?$/);\n if(date)return{empty:0,v:Date.UTC(+date[1],+date[2]-1,+date[3],+(date[4]||0),+(date[5]||0),+(date[6]||0)),num:1};\n // Composite station yield cells: Pass / Fail / Tested / FPY -> last percentage.\n var parts=s.match(/-?[\\d,.]+\\s*%/g);if(parts&&parts.length){var pct=Number(parts[parts.length-1].replace(/[,%\\s]/g,''));if(isFinite(pct))return{empty:0,v:pct,num:1};}\n var n=s.replace(/[$€£,]/g,'').replace(/\\bpp\\b/ig,'').replace(/^\\+/,'').trim();\n if(/^-?\\d+(?:\\.\\d+)?$/.test(n))return{empty:0,v:Number(n),num:1};\n var leading=s.match(/^([+-]?[\\d,]+(?:\\.\\d+)?)(?:\\s*(?:pp|units|events|SN|rows)\\b|\\s*$)/i);\n if(leading)return{empty:0,v:Number(leading[1].replace(/,/g,'')),num:1};\n return {empty:0,v:u,num:0};\n}\nfunction index(th){return th.cellIndex;}\nfunction sort(table,th,col,forceDir){\n var bodies=[].slice.call(table.tBodies||[]);if(!bodies.length)return;\n var dir=forceDir||((th.getAttribute('data-sort-dir')==='asc')?'desc':'asc');\n [].forEach.call(table.querySelectorAll('thead th'),function(h){if(h!==th){h.removeAttribute('data-sort-dir');h.setAttribute('aria-sort','none');}});\n th.setAttribute('data-sort-dir',dir);th.setAttribute('aria-sort',dir==='asc'?'ascending':'descending');\n th.classList.add('tpr-sortable-th');table.setAttribute('data-tpr-sort-v2022','1');\n bodies.forEach(function(body){var rows=[].slice.call(body.rows).map(function(r,i){return {r:r,i:i,k:keyOf(r.cells[col])};});\n rows.sort(function(a,b){if(a.k.empty!==b.k.empty)return a.k.empty?1:-1;var d=0;\n if(a.k.num&&b.k.num)d=a.k.v-b.k.v;\n else d=String(a.k.v).localeCompare(String(b.k.v),undefined,{numeric:true,sensitivity:'base'});\n return d?d*(dir==='asc'?1:-1):a.i-b.i;});\n var frag=document.createDocumentFragment();rows.forEach(function(x){frag.appendChild(x.r);});body.appendChild(frag);\n });\n}\nfunction thOf(target){if(!target||!target.closest)return null;var th=target.closest('thead th');if(!th||!th.closest('table'))return null;\n if(th.colSpan>1||!tx(th.textContent))return null;\n if(target.closest('a,input,select,textarea,details,summary'))return null;\n return th;\n}\nfunction act(ev,keyboard){if(keyboard&&ev.key!=='Enter'&&ev.key!==' ')return;\n var th=thOf(ev.target);if(!th)return;\n var table=th.closest('table');if(!table||!table.tBodies.length)return;\n if(keyboard)ev.preventDefault();\n ev.stopPropagation();\n sort(table,th,index(th));\n}\ndocument.addEventListener('click',function(e){act(e,false);},true);\ndocument.addEventListener('keydown',function(e){act(e,true);},true);\nfunction enhance(){[].forEach.call(document.querySelectorAll('table thead th'),function(th){if(th.colSpan>1||!tx(th.textContent))return;th.classList.add('tpr-sortable-th');th.tabIndex=0;if(!th.hasAttribute('aria-sort'))th.setAttribute('aria-sort','none');});}\nif(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enhance,{once:true});else enhance();\n// Enhancement only, not event attachment. Delegation continues to work after rerenders.\nsetTimeout(enhance,250);\n})();";
 function tx(v){return String(v==null?'':v).trim()}
 function transform(html){try{var d=new DOMParser().parseFromString(String(html||''),'text/html');if(!d||!d.documentElement)return html;Array.prototype.forEach.call(d.querySelectorAll('.fh-svg text,.hy-svg text'),function(n){if(/^[PF]\s*[0-9,]+$/i.test(tx(n.textContent)))n.remove()});var oldStyle=d.querySelector('[id^="smtinel-table-sort-style-v20"]');if(oldStyle)oldStyle.remove();var oldRuntime=d.querySelector('[id^="smtinel-table-sort-runtime-v20"]');if(oldRuntime)oldRuntime.remove();var st=d.createElement('style');st.id='smtinel-table-sort-style-v205';st.textContent=CSS;(d.head||d.documentElement).appendChild(st);var sc=d.createElement('script');sc.id='smtinel-table-sort-runtime-v205';sc.textContent=RUNTIME;(d.body||d.documentElement).appendChild(sc);if(d.body)d.body.setAttribute('data-smtinel-sort-build','13.18.21');return '<!doctype html>\n'+d.documentElement.outerHTML}catch(err){try{console.error('[SMTinel sortable tables v205]',err)}catch(_){}return html}}
 function ensure(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function')return false;var cur=api.reportHtmlFor;if(cur.__smtinelTableSortV205)return true;var wrapped=function(filters){return transform(cur.call(api,filters||{}))};try{Object.keys(cur).forEach(function(k){wrapped[k]=cur[k]})}catch(_){}wrapped.__smtinelTableSortV205=true;wrapped.__base=cur;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION=BUILD;return true}
@@ -78887,7 +78983,7 @@ function htmlReport(payload){
 .plane-head{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-bottom:9px}
 .plane-head h2{margin:0;color:#fff;font-size:18px}
 .plane-scroll{overflow-x:hidden;border:1px solid #44333f;border-radius:8px;background:#11131b;overscroll-behavior-x:contain}
-.plane-scroll svg{display:block;width:100%;min-width:0;height:auto;max-height:480px}
+.plane-scroll svg{display:block;width:100%;min-width:0;height:auto;max-height:570px}
 .plane-scroll .hyx-plane-dot{cursor:pointer;outline:none}.plane-scroll .hyx-plane-dot:focus{stroke:#fff;stroke-width:4}
 .plane-legend{display:flex;gap:9px 14px;flex-wrap:wrap;color:#f0e5eb;font-size:11px;margin:10px 0}
 .plane-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:baseline}
@@ -78929,6 +79025,34 @@ function hyxPlaneSVG(groups, selectedKey) {
   valid.forEach(function(z){var g=z.g,hit=String(g.key||'')===String(selectedKey||''),n=Math.max(0,Number(g.count)||0),r=Math.min(20,6+Math.sqrt(n)*2.8),cx=xx(Number(g.adi)),cy=yy(Number(g.cv2));s+='<circle class="hyx-plane-dot'+(hit?' is-selected':'')+'" data-hyx-idx="'+z.i+'" role="button" tabindex="0" aria-label="'+esc(g.pn)+' '+esc(g.mode)+' '+n+' eventos" cx="'+f(cx)+'" cy="'+f(cy)+'" r="'+f(r)+'" fill="'+(hit?'#ffe2e5':(g.productsList||g.models||[]).length>1?'#fbaa4c':'#f36a8b')+'" stroke="'+(hit?'#fff':'#302231')+'" stroke-width="'+(hit?'4':'2')+'"><title>'+esc(g.pn)+' · '+esc(g.mode)+' · '+n+' SN-eventos</title></circle>';});
   s+='<text x="'+f((L+right)/2)+'" y="'+(H-10)+'" text-anchor="middle" font-weight="750" font-size="'+(mobile?17:15)+'" fill="#f4f0f5">ADI · Semanas observadas / semanas con falla</text>';
   s+='<text transform="translate(18 '+f((T+bottom)/2)+') rotate(-90)" text-anchor="middle" font-weight="750" font-size="'+(mobile?16:14)+'" fill="#f4f0f5">CV² · Variabilidad de eventos</text>';
+
+      // V20.22: distinct non-statistical staging lane for signatures without CV2.
+      // These circles have no ADI/CV2 coordinates. Their x position is only list order.
+      var pending=all.map(function(g,i){return {g:g,i:i};}).filter(function(z){return z.g&&(z.g.adi==null||z.g.cv2==null||!isFinite(Number(z.g.adi))||!isFinite(Number(z.g.cv2)));});
+      if(pending.length){
+        var extra=121,cols=mobile?6:8,limit=cols*2,shown=pending.slice(0,limit),chosen=pending.find(function(z){return String(z.g.key||'')===String(selectedKey||'');});
+        if(chosen && !shown.some(function(z){return z.i===chosen.i;}))shown[shown.length-1]=chosen;
+        s=s.replace('viewBox="0 0 '+W+' '+H+'"','viewBox="0 0 '+W+' '+(H+extra)+'"');
+        s+='<rect x="'+L+'" y="'+(H+5)+'" width="'+PW+'" height="110" rx="9" fill="#171b24" stroke="#865369" stroke-width="1.2"/>';
+        s+='<text x="'+(L+12)+'" y="'+(H+22)+'" font-size="'+(mobile?12:13)+'" font-weight="800" fill="#ffd3df">SIN CV² · Firmas seleccionables (NO son puntos ADI–CV²)</text>';
+        shown.forEach(function(z,j){var g=z.g,hit=String(g.key||'')===String(selectedKey||''),count=Math.max(0,Number(g.count)||0),cx=L+(j%cols+.5)*PW/cols,cy=H+44+Math.floor(j/cols)*34;
+          var name=String(g.pn||'CPN').slice(0,12);
+          s+='<g data-hyx-idx="'+z.i+'" role="button" tabindex="0" style="cursor:pointer" aria-label="'+esc(g.pn+' '+g.mode+' '+count+' eventos; sin CV2')+'">';
+          s+='<title>'+esc(g.pn+' · '+g.mode+' · '+count+' SN-eventos; pendiente de CV²')+'</title>';
+          if(hit)s+='<circle cx="'+f(cx)+'" cy="'+f(cy)+'" r="17" fill="none" stroke="#ff8096" stroke-width="2.5"/>';
+          s+='<circle cx="'+f(cx)+'" cy="'+f(cy)+'" r="'+f(Math.min(13,7+Math.sqrt(count)*2))+'" fill="'+(hit?'#fc5e7c':'#55505e')+'" stroke="'+(hit?'#fff0f4':'#b0a2b0')+'" stroke-width="'+(hit?2.2:1)+'"/>';
+          s+='<text x="'+f(cx)+'" y="'+f(cy+3.3)+'" text-anchor="middle" font-size="11" font-weight="900" fill="#fff">'+count+'</text>';
+          s+='<text x="'+f(cx)+'" y="'+f(cy+23)+'" text-anchor="middle" font-size="9" font-weight="700" fill="'+(hit?'#ffc4d0':'#c9c0ce')+'">'+esc(name)+'</text></g>';
+        });
+        if(pending.length>shown.length)s+='<text x="'+(right-4)+'" y="'+(H+22)+'" font-size="10" fill="#ecc2cb" text-anchor="end">+'+(pending.length-shown.length)+'</text>';
+        if(chosen && !valid.some(function(z){return z.i===chosen.i;})){
+          var bx=right-(mobile?238:260),by=T+26,bw=mobile?224:245;
+          s+='<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="69" rx="8" fill="#111822" fill-opacity=".96" stroke="#fd7694"/>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+18)+'" font-size="11" font-weight="800" fill="#ff9aaf">FIRMA SELECCIONADA · CV² N/D</text>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+38)+'" font-size="13" font-weight="900" fill="#fff">'+esc(String(chosen.g.pn||'').slice(0,20))+'</text>';
+          s+='<text x="'+(bx+10)+'" y="'+(by+55)+'" font-size="11" fill="#e7d4de">'+Number(chosen.g.count||0)+' SN-eventos · '+Number(chosen.g.activeWeeks||0)+' semana(s) con falla</text>';
+        }
+      }
   s+='</svg>';
   return s;
 }
