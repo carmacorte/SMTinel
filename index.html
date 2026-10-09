@@ -33772,6 +33772,20 @@ body:has(#recovery-section) .main-content.expanded{
 #hyx-operative .hyx-plane-legend{display:flex;gap:9px 15px;flex-wrap:wrap;font-size:11px;color:#f1e4ee}
 #hyx-operative .hyx-plane-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:baseline}
 #hyx-operative .hyx-plane-status{color:#ffb9c5;background:#2b2029;border:1px solid #6f3d4c;border-radius:7px;padding:8px 10px;font-weight:650;font-size:11px;line-height:1.5}
+#hyx-operative{container-type:inline-size}
+#hyx-operative .hyx-plane-card,#hyx-operative .hyx-panel{background:#181b22!important;color:#faf6f9!important}
+#hyx-operative .hyx-panel-title{background:transparent!important;color:#fff!important}
+#hyx-operative .hyx-plane-active{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;background:#2b202a;color:#fff;padding:9px 11px;border-left:3px solid #f4516b;border-radius:7px;font-size:12px}
+#hyx-operative .hyx-plane-active strong{font-size:12px;color:#fff}
+#hyx-operative .hyx-plane-active span{font-size:11px;color:#ffbbca;font-weight:750}
+#hyx-operative .hyx-pending-label{color:#d6bcca;font-size:11px;font-weight:780}
+#hyx-operative .hyx-pending-strip{display:flex;gap:7px;overflow-x:auto;max-width:100%;padding:2px 1px 8px;scrollbar-width:thin}
+#hyx-operative button.hyx-pending-chip{flex:0 0 auto;max-width:230px;display:inline-flex;gap:8px;align-items:center;background:#292630!important;color:#f7f1f5!important;border:1px solid #514451!important;padding:7px 10px!important;border-radius:7px!important;font-size:11px!important;font-weight:700!important;cursor:pointer;box-shadow:none!important}
+#hyx-operative button.hyx-pending-chip b{color:#ff8497;font-weight:900}
+#hyx-operative button.hyx-pending-chip[data-active="yes"]{background:#5a2b39!important;border-color:#ff7d94!important;box-shadow:inset 0 -3px #fa5f77!important}
+#hyx-operative .hyx-detail{scroll-margin-top:78px}
+@container (max-width:1050px){#hyx-operative .hyx-main{grid-template-columns:minmax(0,1fr)!important}#hyx-operative .hyx-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
 #hyx-operative .hyx-plane-hint{display:none;color:#bdafbd;font-size:10px}
 @media(max-width:720px){#hyx-operative .hyx-plane-card{padding:9px;gap:9px}#hyx-operative .hyx-plane-head strong{font-size:15px}#hyx-operative .hyx-plane-hint{display:block}#hyx-operative .hyx-plane-svg{min-width:0;max-height:none}}
 #hyx-operative .hyx-main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(250px,.85fr);gap:12px;align-items:start}
@@ -33848,9 +33862,21 @@ body:has(#recovery-section) .main-content.expanded{
         function countCard(key,title,num,caption){return el('div',{key:key,className:'hyx-stat'},[
             el('small',{key:'t'},title),el('b',{key:'n'},String(num)),el('span',{key:'s'},caption)
         ]);}
+        function chooseHyndman(g,fromList){
+            if(!g)return;
+            setHyndmanSelectedKey(g.key);
+            if(fromList){
+                try{var root=document.getElementById('hyx-operative');
+                    if(root && root.getBoundingClientRect().width<=1050){
+                        setTimeout(function(){var d=document.getElementById('hyx-selected-detail');if(d)d.scrollIntoView({behavior:'smooth',block:'start'});},60);
+                    }
+                }catch(_){}
+            }
+        }
         function rankedRow(g,i){var active=g===selected;return el('button',{
+
             key:'r'+i,className:'hyx-rank',type:'button','data-active':active?'yes':'no',
-            onClick:function(){setHyndmanSelectedKey(g.key);},title:'Ver '+g.pn+' · '+g.mode
+            onClick:function(){chooseHyndman(g,true);},title:'Ver '+g.pn+' · '+g.mode
         },[
             el('span',{key:'rank',className:'hyx-num'},String(i+1)),
             el('div',{key:'name'},[
@@ -33885,11 +33911,22 @@ body:has(#recovery-section) .main-content.expanded{
                     el('span',{key:'count',className:'hyx-plane-count'},eligible.length+' / '+items.length+' con posición calculable')
                 ]),
                 el('div',{key:'plot',className:'hyx-plane-scroll',
-                    onClick:function(e){var t=e.target;var n=t&&t.getAttribute?t.getAttribute('data-hyx-idx'):null;if(n==null)return;var g=items[Number(n)];if(g)setHyndmanSelectedKey(g.key);},
-                    onKeyDown:function(e){if(e.key!=='Enter'&&e.key!==' ')return;var n=e.target&&e.target.getAttribute?e.target.getAttribute('data-hyx-idx'):null;if(n==null)return;e.preventDefault();var g=items[Number(n)];if(g)setHyndmanSelectedKey(g.key);},
+                    onClick:function(e){var t=e.target&&e.target.closest?e.target.closest('[data-hyx-idx]'):e.target;var n=t&&t.getAttribute?t.getAttribute('data-hyx-idx'):null;if(n==null)return;var g=items[Number(n)];if(g)chooseHyndman(g,false);},
+                    onKeyDown:function(e){if(e.key!=='Enter'&&e.key!==' ')return;var t=e.target&&e.target.closest?e.target.closest('[data-hyx-idx]'):e.target;var n=t&&t.getAttribute?t.getAttribute('data-hyx-idx'):null;if(n==null)return;e.preventDefault();var g=items[Number(n)];if(g)chooseHyndman(g,false);},
                     dangerouslySetInnerHTML:{__html:hyxPlaneSVG(items,selected.key)}
                 }),
-                el('div',{key:'hint',className:'hyx-plane-hint'},'Toca un punto para consultar el componente y su historial.'),
+                el('div',{key:'active-focus',className:'hyx-plane-active',role:'status','aria-live':'polite'},[
+                    el('strong',{key:'name'},'Firma elegida: '+selected.pn+' · '+selected.mode),
+                    el('span',{key:'metric'},selected.count+' SN-eventos · '+selected.productsList.length+' producto(s)')
+                ]),
+                eligible.length===0?el('div',{key:'pending-label',className:'hyx-pending-label'},'Firmas sin posición ADI–CV² · toca una referencia para ver su detalle:'):null,
+                eligible.length===0?el('div',{key:'pending-strip',className:'hyx-pending-strip'},prioritized.slice(0,35).map(function(g,i){
+                    return el('button',{key:g.key||i,type:'button',className:'hyx-pending-chip','data-active':g.key===selected.key?'yes':'no',
+                        onClick:function(){chooseHyndman(g,true);},title:g.pn+' · '+g.mode},[
+                        el('span',{key:'pn'},g.pn),el('b',{key:'count'},String(g.count))
+                    ]);
+                })):null,
+                el('div',{key:'hint',className:'hyx-plane-hint'},'Toca un punto o una firma pendiente para consultar su historial.'),
                 el('div',{key:'legend',className:'hyx-plane-legend'},[
                     el('span',{key:'g'},[el('i',{style:{background:'#205b4a'}},null),'Estable']),
                     el('span',{key:'b'},[el('i',{style:{background:'#244e6c'}},null),'Intermitente']),
@@ -33915,7 +33952,7 @@ body:has(#recovery-section) .main-content.expanded{
                         el('div',{key:'rest'},prioritized.slice(8).map(function(g,i){return rankedRow(g,i+8);}))
                     ]):null
                 ]),
-                el('div',{key:'detail',className:'hyx-detail'},[
+                el('div',{key:'detail',id:'hyx-selected-detail',className:'hyx-detail'},[
                     el('div',{key:'tit',className:'hyx-panel-title'},'Componente seleccionado'),
                     el('div',{key:'who',className:'hyx-details-top'},[
                         el('div',{key:'icon',className:'hyx-icon'},pic?el('img',{src:pic,alt:'Ilustración del componente según BOM'}):el('span',{className:'hyx-icon-fallback'},'▣')),
@@ -52980,7 +53017,7 @@ body.traceops-premium-shell [class*="impact"]{
 */
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   window.TRACEOPS_DISABLE_HEAVY_YIELD_CACHE = true;
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
@@ -54488,8 +54525,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   }
   function apply(){
     document.documentElement.classList.add('smtinel-v13-2-1-hud');
-    window.SMTINEL_BUILD_VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
-    window.SMTINEL_BUILD_BADGE='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+    window.SMTINEL_BUILD_VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
+    window.SMTINEL_BUILD_BADGE='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
     var section=document.getElementById('recovery-section');
     if(section) syncHudButton(section);
   }
@@ -54509,7 +54546,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 (function(){
   "use strict";
 
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   window.TRACEOPS_YIELD_DEFER_CESIUM_DURING_IMPORT = false;
 
   var ftIndexCache = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -54814,8 +54851,8 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
   try { traceOpsYieldBuildSfcStockinCesiumCurrentBreakdown = fastCurrentBreakdown; } catch(_) {}
 
   function enforceBuildBadge(){
-    window.SMTINEL_BUILD_VERSION = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
-    window.SMTINEL_BUILD_BADGE = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+    window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
+    window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   }
 
   function updateBadge(){
@@ -54961,7 +54998,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1325-board-pattern-recovery-light">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55134,7 +55171,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <script id="smtinel-v1326-smt-top-offenders-pareto">
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_VERSION = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  window.SMTINEL_BUILD_VERSION = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   window.SMTINEL_BUILD_BADGE = window.SMTINEL_BUILD_VERSION;
 
   function cleanText(value){ return String(value == null ? "" : value).trim(); }
@@ -55399,7 +55436,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v1327-recovery-light-badge">
 (function(){
-  var badge = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.SMTINEL_BUILD_BADGE = badge;
   window.SMTINEL_BUILD_VERSION = badge;
   function updateBadges(){
@@ -55425,7 +55462,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function() {
-  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var TRACEOPS_RELEASE_BADGE = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.TRACEOPS_RELEASE_BADGE = TRACEOPS_RELEASE_BADGE;
   function syncTraceOpsReleaseBadge() {
     try {
@@ -55449,7 +55486,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 <!-- SMTinel V13.2.10 final badge sync -->
 <script>
 (function(){
-  var badgeText = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var badgeText = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function applyBadge(){
     try{
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55623,7 +55660,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 </style>
 <script id="smtinel-v13-2-11-badge-sync">
 (function(){
-  var badgeText = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var badgeText = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function applyBadge(){
     try{
       window.TRACEOPS_RELEASE_BADGE = badgeText;
@@ -55646,7 +55683,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-12-final-sync">
 (function(){
-  var badge = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.SMTINEL_BUILD_VERSION = badge;
   window.SMTINEL_BUILD_BADGE = badge;
   function syncBadge(){
@@ -55665,7 +55702,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-13-correlation-badge-sync">
 (function(){
-  var versionText = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  var versionText = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   function syncBadge(){
     try {
       var nodes = Array.prototype.slice.call(document.querySelectorAll('body *'));
@@ -55706,7 +55743,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script>
 (function(){
-  var label = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var label = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function sync(){
     try{
       document.querySelectorAll('[class*="version"], [class*="badge"], .smtinel-version-badge, .traceops-version-badge').forEach(function(el){ if (/SMTinel V\d+/i.test(el.textContent||'')) el.textContent = label; });
@@ -55743,7 +55780,7 @@ html.smtinel-v13-2-1-hud #recovery-section.smt-neural-mode.smt-hud-mode .smt-no-
 
 <script id="smtinel-v13-2-22-repair-failure-pareto-restore">
 (function(){
-  var badge = 'SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var badge = 'SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   try { window.SMTINEL_BUILD_VERSION = badge; window.SMTINEL_BUILD_BADGE = badge; } catch(_) {}
 
   function cleanText(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim(); }
@@ -56122,7 +56159,7 @@ body.traceops-premium-shell .traceops-kpi-strip{
 <script id="smtinel-v13-2-40-yield-filter-restore">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function norm(v){return String(v==null?'':v).toUpperCase().replace(/[\s_-]+/g,' ').trim();}
   function val(row, keys){for(var i=0;i<keys.length;i++){var k=keys[i]; if(row&&row[k]!=null&&String(row[k]).trim()!=='') return row[k];} return '';}
   function uniq(a){var m=new Map(); a.forEach(function(x){var n=norm(x); if(n&&!m.has(n)) m.set(n,String(x).trim());}); return Array.from(m.values()).sort(function(a,b){return String(a).localeCompare(String(b));});}
@@ -56232,7 +56269,7 @@ select option { font-weight: 700; }
 </style>
 <script id="smtinel-v13-2-41-version-badge">
 (function(){
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function syncBadge(){
     document.querySelectorAll('.version-badge,.smtinel-version-badge,#version-badge').forEach(function(b){ b.textContent=VERSION; });
   }
@@ -57719,7 +57756,7 @@ body.traceops-premium-shell .saas-header-btn.primary,
 </style>
 <script id="smtinel-v13-10-2-version-badge-sync">
 (function(){
-  var label='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var label='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.SMTINEL_BUILD_VERSION=label;
   window.SMTINEL_BUILD_BADGE=label;
   window.TRACEOPS_RELEASE_BADGE=label;
@@ -63913,7 +63950,7 @@ body.smtinel-gpu-safe-auto .smtinel-real-raven-blip{
 <script>
 (function(){
   "use strict";
-  window.SMTINEL_BUILD_BADGE = "SMTinel V20.20 | Test SN + FPY local | 2026-10-09";
+  window.SMTINEL_BUILD_BADGE = "SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09";
   function exposeRawCesium(rows, source){
     try {
       if (!Array.isArray(rows)) return;
@@ -66330,7 +66367,7 @@ html.smtinel-trueblack-premium :is(.smtinel-bottom-nav,.bottom-nav,.mobile-botto
     requestAnimationFrame(function(){requestAnimationFrame(function(){try{performance.mark('smtinel:shell-ready');performance.measure('smtinel:boot-to-shell','smtinel:boot','smtinel:shell-ready');}catch(_){ }emit('smtinel:shell-ready',{});});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',shellReady,{once:true});else shellReady();
-  window.SMTINEL_BUILD_VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  window.SMTINEL_BUILD_VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.SMTINEL_BUILD_BADGE=window.SMTINEL_BUILD_VERSION;
   window.SMTINEL_VERSION_TEXT=window.SMTINEL_BUILD_VERSION;
   try{console.info('[SMTinel Performance P0] Event-driven runtime foundation active. Use SMTinelPerf.print() for current metrics.');}catch(_){ }
@@ -66560,7 +66597,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_REFINED_V16__) return;
   window.__SMTINEL_LIGHT_THEME_REFINED_V16__=true;
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   var FRAME_STYLE_ID='smtinel-light-theme-refined-v16-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--card:#FCFDFB!important}',
@@ -66659,7 +66696,7 @@ html.smtinel-theme-light body iframe[title="SMTinel Bonepile Visual Tracker"]{
   if(window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__) return;
   window.__SMTINEL_BONEPILE_LIGHT_ISOLATION_V18__=true;
 
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   var STYLE_ID='smtinel-bonepile-native-light-v18';
   var OBS_KEY='__smtinelBonepileThemeObserverV18';
   var applying=false;
@@ -72802,7 +72839,7 @@ html.smtinel-theme-light body :is(.warning,.warn,.in-process,.badge-warning,.sta
   if(window.__SMTINEL_DUAL_THEME_V10__) return;
   window.__SMTINEL_DUAL_THEME_V10__=true;
 
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   var STORAGE_KEY='smtinel-theme-enterprise-v19-8';
   var LIGHT_CLASS='smtinel-theme-light';
   var BUTTON_ID='smtinel-theme-toggle';
@@ -73067,7 +73104,7 @@ html.smtinel-theme-light body .saas-topbar-actions .smtinel-supabase-topbar-trig
   if(window.__SMTINEL_V13_14_54_UI_POLISH__) return;
   window.__SMTINEL_V13_14_54_UI_POLISH__=true;
 
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   window.SMTINEL_BUILD_VERSION=VERSION;
   window.SMTINEL_BUILD_BADGE=VERSION;
   window.SMTINEL_VERSION_TEXT=VERSION;
@@ -73314,7 +73351,7 @@ html.smtinel-theme-light body :is(img,canvas,video,object,embed,svg image){filte
   'use strict';
   if(window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__) return;
   window.__SMTINEL_LIGHT_THEME_INTEGRATED_V17__=true;
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   var FRAME_STYLE_ID='smtinel-light-theme-integrated-v17-frame';
   var frameCss=[
     ':root{--navy:#172018!important;--blue:#6B8E5A!important;--line:#D4DCD1!important;--bg:#EEF2EC!important;--card:#FCFDFB!important;--muted:#667067!important;--good:#2F8F5B!important;--warn:#D9901A!important;--bad:#B8324E!important;--violet:#6B8E5A!important}',
@@ -73510,7 +73547,7 @@ html.smtinel-theme-light body .smtinel-bottom-nav{
   if(window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__) return;
   window.__SMTINEL_LIGHT_FINAL_ISOLATION_V19__=true;
 
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   var STYLE_ID='smtinel-bonepile-light-final-v19';
   var OBS_KEY='__smtinelLightFinalV19Observer';
   var LIGHT_CSS=[
@@ -73753,7 +73790,7 @@ html body .smtinel-product-improvement-more-btn{
   'use strict';
   if(window.__SMTINEL_LIGHT_CHROME_MORE_V20__) return;
   window.__SMTINEL_LIGHT_CHROME_MORE_V20__=true;
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
 
   function removeIntelLogFromMore(){
     var roots=document.querySelectorAll('.smtinel-more-sheet,#smtinel-more-drawer-v8,.smtinel-more-grid');
@@ -73983,7 +74020,7 @@ html.smtinel-theme-light.smtinel-trueblack-premium body #boardimpact-section #tr
 <script id="smtinel-v29-boardimpact-light-deep-contrast-version">
 (function(){
   'use strict';
-  var VERSION='SMTinel V20.20 | Test SN + FPY local | 2026-10-09';
+  var VERSION='SMTinel V20.21 | Hyndman + Test SN Interactive | 2026-10-09';
   function sync(){
     window.SMTINEL_BUILD_VERSION=VERSION;
     window.SMTINEL_BUILD_BADGE=VERSION;
@@ -78905,7 +78942,7 @@ var shown=original.filter(function(g){return [g.pn,g.mode,g.desc,(g.models||[]).
 var valid=shown.filter(function(g){return g.adi!=null&&g.cv2!=null&&isFinite(Number(g.adi))&&isFinite(Number(g.cv2))});
 $('planeCount').textContent=valid.length+' / '+shown.length+' calculables';
 $('plane').innerHTML=hyxPlaneSVG(shown,sel&&sel.key||'');
-$('planeStatus').textContent=valid.length?'':'No hay coordenadas calculables en este alcance. Las firmas visibles requieren más semanas activas; no se colocaron puntos ficticios.';
+$('planeStatus').textContent=valid.length?'Firma seleccionada: '+(sel?sel.pn+' · '+sel.mode+' · '+sel.count+' SN-eventos':'ninguna'):'Sin coordenadas ADI–CV². Firma seleccionada: '+(sel?sel.pn+' · '+sel.mode+' · '+sel.count+' SN-eventos':'ninguna')+'. La selección actualiza el detalle y la recurrencia semanal.';
 Array.prototype.forEach.call($('plane').querySelectorAll('[data-hyx-idx]'),function(c){function choose(){var g=shown[Number(c.getAttribute('data-hyx-idx'))];if(g){sel=g;refresh();}}c.addEventListener('click',choose);c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}});});
 }
 function refresh(){renderRanks();detail();drawWeeks();drawPlane()}$('search').oninput=function(){query=this.value.trim().toLowerCase();refresh()};refresh();})();
@@ -78936,7 +78973,7 @@ var n=0,tm=setInterval(function(){sync();if(++n>40)clearInterval(tm)},1000);
 'use strict';
 if(window.__SMTINEL_TEST_SN_INVESTIGATOR_V2020__)return;
 window.__SMTINEL_TEST_SN_INVESTIGATOR_V2020__=true;
-var widget="<div id=\"tpr-sn-investigator\" class=\"tpr-sn-investigator\">\n <h3 class=\"tpr-sn-title\">Investigador de seriales · Test + Repair Evidence</h3>\n <p>Consulta masiva igual que Yield Flow. La búsqueda acepta números separados por coma, espacio o línea. La genealogía une Test SN, Parent/Part SN, SFC y WO cuando están disponibles; muestra sólo historial de los ZIP cargados. No sustituye un route check de MES.</p>\n <div class=\"tpr-sn-controls\"><div><label for=\"tprSnMode\">Modo de falla (primer intento)</label><select id=\"tprSnMode\"><option value=\"\">Todos los modos</option></select></div><button id=\"tprSnLoadModes\" type=\"button\">Actualizar modos</button></div>\n <p id=\"tprSnSource\">La lista de modos se prepara al abrir el selector; no retrasa el reporte.</p>\n <label for=\"tprSnBulk\">Serial numbers · entrada múltiple</label><textarea id=\"tprSnBulk\" placeholder=\"FJZ3036EK4K, FJZ3035YQ5Q&#10;FJZ3036SSVS\"></textarea>\n <div class=\"tpr-sn-buttons\"><button id=\"tprSnFromMode\" type=\"button\">Tomar SN del modo</button><button id=\"tprSnSearchBtn\" type=\"button\" class=\"primary\">Buscar historial SN</button><button id=\"tprSnExportCsv\" type=\"button\">Exportar CSV</button></div>\n <div id=\"tprSnSummary\" class=\"tpr-sn-summary\" aria-live=\"polite\">Consulta bajo demanda.</div>\n <div id=\"tprSnResults\"></div>\n</div>", css="#tpr-sn-investigator{margin:10px 10px 0;padding:12px;background:#f8fbf9;border:1px solid #b8ccc2;border-left:4px solid #315e87;border-radius:8px;color:#1b2d22}\n#tpr-sn-investigator .tpr-sn-title{font-weight:900;color:#274a37;font-size:14px;margin:0 0 3px}\n#tpr-sn-investigator p{margin:4px 0 10px;font-size:11px;color:#52665a;line-height:1.5}\n#tpr-sn-investigator label{font-size:11px;font-weight:800;color:#344c3a;display:block;margin-bottom:4px}\n#tpr-sn-investigator .tpr-sn-controls{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;align-items:end;margin-bottom:8px}\n#tpr-sn-investigator select,#tpr-sn-investigator textarea{width:100%;background:white;color:#182b23;border:1px solid #9faea4;border-radius:6px;font:12px Consolas,Segoe UI,Arial,sans-serif;padding:9px}\n#tpr-sn-investigator textarea{min-height:74px;resize:vertical;line-height:1.5}\n#tpr-sn-investigator .tpr-sn-buttons{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}\n#tpr-sn-investigator button{border:1px solid #b0c4b6;background:white;color:#274b34;border-radius:6px;padding:9px 12px;min-height:36px;font-size:11px;font-weight:800;cursor:pointer}\n#tpr-sn-investigator button.primary{background:#2c4c36;color:white;border-color:#2c4c36}\n#tpr-sn-investigator .tpr-sn-summary{background:#e7f1eb;padding:9px;border-left:3px solid #378354;font-size:11px;font-weight:700;line-height:1.5;margin:9px 0}\n#tpr-sn-investigator .tpr-sn-scroll{max-width:100%;overflow:auto;max-height:420px;border:1px solid #d6e0d9;background:white;border-radius:7px}\n#tpr-sn-investigator table{border-collapse:collapse;width:100%;min-width:800px;font-size:11px;background:white;color:#26342b}\n#tpr-sn-investigator th,#tpr-sn-investigator td{text-align:left;vertical-align:top;border-bottom:1px solid #e0e6e0;padding:8px 9px;line-height:1.4}\n#tpr-sn-investigator th{background:#e6eee7;color:#304939;position:sticky;top:0;z-index:1}\n#tpr-sn-investigator td small{display:block;font-size:9px;color:#6d776d;margin-top:4px}\n#tpr-sn-investigator .tpr-sn-good{color:#11733c!important}\n#tpr-sn-investigator .tpr-sn-bad{color:#b31e2a!important}\n#tpr-sn-investigator .tpr-sn-warning{color:#ad712a!important}\n#tpr-sn-investigator .tpr-sn-path{display:flex;gap:4px;flex-wrap:wrap;min-width:180px}\n#tpr-sn-investigator .tpr-sn-stage{font-size:10px;border:1px solid #d5e1d5;background:#edf3ed;border-radius:5px;padding:4px;white-space:nowrap}\n#tpr-sn-investigator .tpr-sn-stage.pass{border-color:#9dcbaa;background:#e5f4e8;color:#146d37}\n#tpr-sn-investigator .tpr-sn-stage.fail{border-color:#e2aaad;background:#f9e8e9;color:#a82830}\n#tpr-sn-investigator .tpr-sn-detail{min-width:130px;max-width:340px}\n#tpr-sn-investigator .tpr-sn-detail summary{cursor:pointer;color:#255f8c;font-weight:750}\n#tpr-sn-investigator .tpr-sn-detail[open]{min-width:290px}\n#tpr-sn-investigator .tpr-sn-detail .tpr-sn-scroll{max-height:280px;margin-top:6px}\n#tpr-sn-investigator .tpr-sn-detail table{min-width:600px;font-size:10px;margin:6px 0}\n#tpr-sn-investigator .tpr-sn-foot{font-size:10px;color:#6b7972}\n#sec-product-detail .tpr-route-limitation,#sec-model .tpr-route-limitation{font-size:11px;color:#895b23;background:#fff7e7;border:1px solid #e4d2aa;border-radius:5px;padding:8px 10px;line-height:1.5;margin-top:8px}\n#sec-product-detail .tpr-db-kpi-strip .tpr-db-na{font-size:12px;font-weight:800}\n@media(max-width:700px){#tpr-sn-investigator{margin:8px 6px 0;padding:9px}#tpr-sn-investigator .tpr-sn-controls{grid-template-columns:1fr}#tpr-sn-investigator button{flex:1}#tpr-sn-investigator .tpr-sn-scroll{max-height:355px}}\n\n.tpr-section.is-collapsed #tpr-sn-investigator{display:none}\n", runtime="(function(){\n'use strict';\nif (window.__TPR_SN_INVESTIGATOR_V2020) return;\nwindow.__TPR_SN_INVESTIGATOR_V2020 = true;\nvar root = document.getElementById('tpr-sn-investigator');\nvar node = document.getElementById('tprStandaloneData');\nif (!root || !node) return;\nvar byId = function(id){return document.getElementById(id);};\nvar n = function(v){return String(v == null ? '' : v).trim().toUpperCase();};\nvar safe = function(v){return String(v == null ? '' : v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c];});};\nvar P=null, C={}, D=[], rows=[], units=null, aliases=null, repairItems=[], repairLinks={}, firstByPair=null, cachedModes=null;\nvar currentResults=[];\nfunction getPayload(){\n  if(P) return P;\n  try {P=JSON.parse(node.textContent||'{}');}\n  catch(e){byId('tprSnSummary').textContent='No se puede abrir el índice de Test exportado.';return null;}\n  (P.columns||[]).forEach(function(s,i){C[s]=i;});\n  D=P.dict||[]; rows=P.rows||[];\n  var rep=P.repairs||{};repairLinks=rep.links||{};\n  repairItems=(rep.items||[]).map(function(arr){var o={};(rep.columns||[]).forEach(function(k,i){o[k]=arr[i]});return o});\n  return P;\n}\nfunction val(a,k){\n  var i=C[k];if(i==null || !a)return '';\n  var v=a[i];if(P&&P.format==='dict-v1'&&(P.numeric||[]).indexOf(k)<0)return D[v]||'';\n  return v==null?'':v;\n}\nfunction parseList(s){var used={},out=[];String(s||'').split(/[\\s,;|]+/).forEach(function(z){z=n(z);if(z&&!used[z]){used[z]=1;out.push(z)}});return out;}\nfunction makeScope(){var fields={model:'tprFModel',sku:'tprFSku',wo:'tprFWo',week:'tprFWeek',area:'tprFArea',shift:'tprFShift',from:'tprFFrom',to:'tprFTo'};var f={};Object.keys(fields).forEach(function(k){var x=byId(fields[k]);f[k]=x?String(x.value||''):'ALL';});return f;}\nfunction matchesScope(a,f){\n  function strict(k,actual){var x=n(f[k]);return !x||x==='ALL'||x===n(actual);}\n  if(!strict('model',val(a,'model'))||!strict('wo',val(a,'wo'))||!strict('week',val(a,'week'))||!strict('area',val(a,'station'))||!strict('shift',val(a,'shift')))return false;\n  var sku=n(f.sku);if(sku&&sku!=='ALL'&&sku!==n(val(a,'sku'))&&sku!==n(val(a,'cesiumSku'))&&sku!==n(val(a,'uutType')))return false;\n  var date=n(val(a,'opDate'));if(f.from&&f.from!=='ALL'&&date<n(f.from))return false;\n  if(f.to&&f.to!=='ALL'&&date>n(f.to))return false;\n  return true;\n}\nfunction buildIndex(){\n  if(units)return;\n  if(!getPayload())return;\n  units=Object.create(null);aliases=Object.create(null);firstByPair=Object.create(null);\n  var aliasFields=['logicalKey','logicalUnit','testSn','parentSn','partSn','boxSn','sfcSn','sfcBox'];\n  rows.forEach(function(a,i){\n    var id=n(val(a,'logicalKey'))||n(val(a,'logicalUnit'))||('ROW'+i);\n    var u=units[id];if(!u)u=units[id]={id:id,indices:[],aliases:Object.create(null)};\n    u.indices.push(i);\n    aliasFields.forEach(function(k){var v=n(val(a,k));if(!v||u.aliases[v])return;u.aliases[v]=1;var s=aliases[v]||(aliases[v]=[]);if(s.indexOf(id)<0)s.push(id);});\n    var pair=id+'|'+n(val(a,'station')),tm=Number(val(a,'timeMs'))||0;\n    var first=firstByPair[pair];if(!first || tm<first.tm)firstByPair[pair]={idx:i,tm:tm};\n  });\n}\nfunction refreshModes(){\n  if(!getPayload())return;\n  var f=makeScope(),seen=Object.create(null),result=[];\n  buildIndex();\n  Object.keys(firstByPair).forEach(function(pair){var a=rows[firstByPair[pair].idx];if(n(val(a,'kind'))!=='FAIL'||!matchesScope(a,f))return;var v=n(val(a,'failure'));if(v&&!seen[v]){seen[v]=1;result.push(v);}});\n  result.sort();cachedModes=result;\n  var sel=byId('tprSnMode'),prev=sel.value;\n  sel.innerHTML='<option value=\"\">Todos los modos</option>'+result.map(function(z){return '<option value=\"'+safe(z)+'\">'+safe(z)+'</option>'}).join('');\n  var main=byId('tprFFailure');var fall=n(main&&main.value);\n  sel.value=result.indexOf(prev)>=0?prev:(result.indexOf(fall)>=0?fall:'');\n  byId('tprSnSource').textContent=result.length+' modos de primer intento en los filtros del reporte.';\n}\nfunction fromMode(){\n  buildIndex();var mode=n(byId('tprSnMode').value),summary=byId('tprSnSummary');\n  if(!mode){summary.textContent='Selecciona primero un modo de falla.';return;}\n  var f=makeScope(),found=Object.create(null),sns=[];\n  Object.keys(firstByPair).forEach(function(pair){var a=rows[firstByPair[pair].idx];if(n(val(a,'kind'))!=='FAIL'||n(val(a,'failure'))!==mode||!matchesScope(a,f))return;\n    var sn=n(val(a,'logicalUnit'))||n(val(a,'parentSn'))||n(val(a,'testSn'));\n    if(sn&&!found[sn]){found[sn]=1;sns.push(sn);}\n  });\n  byId('tprSnBulk').value=sns.join('\\n');\n  summary.textContent=sns.length+' seriales únicos de primer intento FAIL para '+mode+' (alcance actual). Buscar para consultar todo el historial cargado.';\n}\nfunction repRows(u){\n  var seen=Object.create(null),out=[];\n  Object.keys(u.aliases).forEach(function(alias){(repairLinks[alias]||[]).forEach(function(i){if(!seen[i]){seen[i]=1;if(repairItems[i])out.push(repairItems[i]);}})});\n  return out.sort(function(a,b){return Number(a.repairTime||0)-Number(b.repairTime||0)});\n}\nfunction dateText(ms,backup){if(!Number(ms))return String(backup||'N/D');var d=new Date(Number(ms));return isNaN(d.getTime())?'N/D':d.toLocaleString();}\nfunction resultFor(sn,u,mode){\n  var e=u.indices.map(function(i){var a=rows[i];return {sn:n(val(a,'testSn')),station:n(val(a,'station'))||'N/D',kind:n(val(a,'kind')),failure:n(val(a,'failure')),tm:Number(val(a,'timeMs'))||0,date:String(val(a,'opDate')||''),model:String(val(a,'model')||''),wo:String(val(a,'wo')||''),sku:String(val(a,'sku')||''),week:String(val(a,'week')||'')};}).filter(function(a){return a.kind==='PASS'||a.kind==='FAIL';});\n  e.sort(function(a,b){return a.tm-b.tm});\n  var stations=Object.create(null),first=[];\n  e.forEach(function(x){var k=x.station;if(!stations[k]){stations[k]={station:k,runs:[],first:x,last:x};first.push(stations[k]);}var s=stations[k];s.runs.push(x);s.last=x;});\n  var model=(e.find(function(x){return x.model&&x.model!=='N/D'})||e[0]||{}).model||'N/D';\n  var wo=(e.find(function(x){return x.wo})||e[0]||{}).wo||'N/D';\n  var last=e[e.length-1],repair=repRows(u);\n  var matched=!mode || e.some(function(x){return x.kind==='FAIL'&&x.failure===mode});\n  var openStations=first.filter(function(st){return st.last.kind==='FAIL';}).map(function(st){return st.station;});\n  var localStatus=openStations.length?'FAIL OBSERVADO':first.length?'PASS OBSERVADO':'N/D';\n  var stationPath=first.map(function(st){return st.station+' '+st.first.kind+(st.runs.length>1?' → '+st.last.kind:'');});\n  return {query:sn,id:u.id,model:model,wo:wo,events:e,stations:first,repair:repair,match:matched,mode:mode,last:last||null,ambiguous:false,localStatus:localStatus,openStations:openStations,path:stationPath.join(' | ')};\n}\nfunction pathHtml(r){return r.stations.map(function(st){var last=st.last.kind,css=last==='PASS'?'pass':'fail';var history=st.first.kind+(st.runs.length>1?'→'+last:'');return '<span class=\"tpr-sn-stage '+css+'\" title=\"'+st.runs.length+' intento(s)\">'+safe(st.station)+' <b>'+safe(history)+'</b></span>';}).join('')||'<span class=\"tpr-sn-stage\">Sin pruebas</span>';}\nfunction evidenceHtml(r){\n  var rows=r.events.map(function(x){return '<tr><td>'+safe(x.station)+'</td><td class=\"'+(x.kind==='PASS'?'tpr-sn-good':'tpr-sn-bad')+'\">'+safe(x.kind)+'</td><td>'+safe(x.failure||'')+'</td><td>'+safe(dateText(x.tm,x.date))+'</td><td>'+safe(x.sn)+'</td></tr>';}).join('');\n  var repairs=r.repair.map(function(x){return '<tr><td>'+safe(dateText(x.repairTime,''))+'</td><td>'+safe(x.sn||'')+'</td><td>'+safe(x.refdes||'N/D')+'</td><td>'+safe(x.partNumber||'N/D')+'</td><td>'+safe(x.actionDesc||x.repairType||'N/D')+'</td><td>'+safe(x.rootCause||x.rawRootCause||'N/D')+'</td></tr>';}).join('');\n  return '<details class=\"tpr-sn-detail\"><summary>Ver '+r.events.length+' prueba(s) y '+r.repair.length+' reparación(es)</summary><div class=\"tpr-sn-scroll\"><b>Cesium · historial observado</b><table><thead><tr><th>Estación</th><th>Estado</th><th>Falla</th><th>Fecha</th><th>Test SN</th></tr></thead><tbody>'+rows+'</tbody></table><b>Common DB · Repair Record (no implica causalidad)</b><table><thead><tr><th>Fecha</th><th>Repair SN</th><th>RefDes</th><th>CPN</th><th>Acción</th><th>Diagnóstico</th></tr></thead><tbody>'+(repairs||'<tr><td colspan=\"6\">No hay Repair Record vinculado en los archivos cargados.</td></tr>')+'</tbody></table></div></details>';\n}\nfunction render(results,queries){\n  currentResults=results;\n  var hits=results.filter(function(r){return !r.missing}),linked=hits.filter(function(r){return r.repair.length}),passed=hits.filter(function(r){return r.localStatus==='PASS OBSERVADO'}),badMode=hits.filter(function(r){return !r.match}),amb=results.filter(function(r){return r.ambiguous});\n  byId('tprSnSummary').textContent=queries+' SN solicitados · '+hits.length+' coincidencias de unidad · '+linked.length+' con Repair Record · '+passed.length+' con PASS en las estaciones observadas (no ruta completa)'+(badMode.length?' · '+badMode.length+' sin el modo seleccionado':'')+(amb.length?' · '+amb.length+' identidades ambiguas':'');\n  var cap=160;\n  var html=results.slice(0,cap).map(function(r){\n    if(r.missing)return '<tr><td><code>'+safe(r.query)+'</code></td><td colspan=\"5\">No aparece en el snapshot de Cesium/SFC cargado. No se puede afirmar que no exista en MES.</td></tr>';\n    var state=r.localStatus||'N/D';\n    return '<tr><td><code>'+safe(r.query)+'</code>'+((r.ambiguous)?'<small class=\"tpr-sn-warning\">Alias compartido: validar genealogía</small>':'')+'</td><td>'+safe(r.model)+'<small>'+safe(r.wo)+'</small></td><td><div class=\"tpr-sn-path\">'+pathHtml(r)+'</div></td><td><b class=\"'+(state.indexOf('PASS')===0?'tpr-sn-good':'tpr-sn-bad')+'\">'+safe(state)+'</b><small>No valida ruta completa</small></td><td>'+(r.repair.length?'<b class=\"tpr-sn-good\">'+r.repair.length+' registro(s)</b>':'<span class=\"tpr-sn-warning\">Sin evidencia cargada</span>')+(r.mode&&!r.match?'<small class=\"tpr-sn-warning\">Falla seleccionada no coincide</small>':'')+'</td><td>'+evidenceHtml(r)+'</td></tr>';\n  }).join('');\n  byId('tprSnResults').innerHTML='<div class=\"tpr-sn-scroll\"><table><thead><tr><th>SN consultado</th><th>Producto / WO</th><th>Path de pruebas observadas</th><th>Estado local</th><th>Reparación</th><th>Evidencia</th></tr></thead><tbody>'+(html||'<tr><td colspan=\"6\">Sin resultados. Ingresa SN y ejecuta la búsqueda.</td></tr>')+'</tbody></table></div>'+(results.length>cap?'<p class=\"tpr-sn-foot\">Mostrando las primeras '+cap+' filas de '+results.length+'. Exportar CSV para obtener todos los registros encontrados.</p>':'');\n}\nfunction search(){\n  var requested=parseList(byId('tprSnBulk').value),mode=n(byId('tprSnMode').value);\n  if(!requested.length){byId('tprSnSummary').textContent='Ingresa uno o más SN o selecciona un modo de falla y usa “Tomar SN del modo”.';return;}\n  buildIndex();var results=[];\n  requested.forEach(function(sn){var ids=aliases[sn]||[];if(!ids.length){results.push({query:sn,missing:true});return;}\n    ids.forEach(function(id){var r=resultFor(sn,units[id],mode);r.ambiguous=ids.length>1;results.push(r);});\n  });\n  render(results,requested.length);\n}\nfunction exportCsv(){\n  if(!currentResults.length){byId('tprSnSummary').textContent='Busca seriales antes de exportar.';return;}\n  var fields=['SN consultado','SN logico','Producto','WO','Estaciones observadas','Estado local observado','Coincide modo','Reparaciones encontradas','Identidad ambigua'];\n  function cell(v){v=String(v==null?'':v);return /[\",\\r\\n]/.test(v)?'\"'+v.replace(/\"/g,'\"\"')+'\"':v;}\n  var lines=[fields.join(',')];currentResults.forEach(function(r){lines.push([r.query,r.id||'',r.model||'',r.wo||'',r.path||'',r.localStatus||'',r.missing?'N/D':r.match?'Si':'No',r.repair&&r.repair.length||0,r.ambiguous?'Si':'No'].map(cell).join(','));});\n  var content='\\ufeff'+lines.join('\\r\\n'),url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));var a=document.createElement('a');a.href=url;a.download='SMTinel_Test_SN_Evidence_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},20000);\n}\nbyId('tprSnLoadModes').addEventListener('click',function(){refreshModes();byId('tprSnMode').focus();});\nbyId('tprSnFromMode').addEventListener('click',function(){if(!cachedModes)refreshModes();fromMode();});\nbyId('tprSnSearchBtn').addEventListener('click',search);\nbyId('tprSnExportCsv').addEventListener('click',exportCsv);\nbyId('tprSnBulk').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();search();}});\nvar modeDropdown=byId('tprSnMode');modeDropdown.addEventListener('focus',function(){if(!cachedModes)refreshModes();});\n['tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea','tprFShift','tprFFrom','tprFTo'].forEach(function(id){var el=byId(id);if(el)el.addEventListener('change',function(){cachedModes=null;});});\nvar applyBtn=byId('tprApplyStandalone');if(applyBtn)applyBtn.addEventListener('click',function(){cachedModes=null;});\nvar restored=byId('tprRestoreStandalone');if(restored)restored.addEventListener('click',function(){cachedModes=null;});\nbyId('tprSnSummary').textContent='Ingresa uno o varios seriales (coma, espacio o línea). Consulta bajo demanda; no retrasa la apertura del reporte.';\n})();\n";
+var widget="<div id=\"tpr-sn-investigator\" class=\"tpr-sn-investigator\">\n <h3 class=\"tpr-sn-title\">Investigador de seriales · Test + Repair Evidence</h3>\n <p>Consulta masiva igual que Yield Flow. La búsqueda acepta números separados por coma, espacio o línea. La genealogía une Test SN, Parent/Part SN, SFC y WO cuando están disponibles; muestra sólo historial de los ZIP cargados. No sustituye un route check de MES.</p>\n <div class=\"tpr-sn-controls\"><div><label for=\"tprSnMode\">Modo de falla (primer intento)</label><select id=\"tprSnMode\"><option value=\"\">Todos los modos</option></select></div><button id=\"tprSnLoadModes\" type=\"button\">Actualizar modos</button></div>\n <p id=\"tprSnSource\">La lista de modos se prepara al abrir el selector; no retrasa el reporte.</p>\n <label for=\"tprSnBulk\">Serial numbers · entrada múltiple</label><textarea id=\"tprSnBulk\" placeholder=\"FJZ3036EK4K, FJZ3035YQ5Q&#10;FJZ3036SSVS\"></textarea>\n <div class=\"tpr-sn-buttons\"><button id=\"tprSnFromMode\" type=\"button\">Tomar SN del modo</button><button id=\"tprSnSearchBtn\" type=\"button\" class=\"primary\">Buscar historial SN</button><button id=\"tprSnExportCsv\" type=\"button\">Exportar CSV</button></div>\n <div id=\"tprSnSummary\" class=\"tpr-sn-summary\" aria-live=\"polite\">Consulta bajo demanda.</div>\n <div id=\"tprSnResults\"></div>\n</div>", css="#tpr-sn-investigator{margin:10px 10px 0;padding:12px;background:#f8fbf9;border:1px solid #b8ccc2;border-left:4px solid #315e87;border-radius:8px;color:#1b2d22}\n#tpr-sn-investigator .tpr-sn-title{font-weight:900;color:#274a37;font-size:14px;margin:0 0 3px}\n#tpr-sn-investigator p{margin:4px 0 10px;font-size:11px;color:#52665a;line-height:1.5}\n#tpr-sn-investigator label{font-size:11px;font-weight:800;color:#344c3a;display:block;margin-bottom:4px}\n#tpr-sn-investigator .tpr-sn-controls{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;align-items:end;margin-bottom:8px}\n#tpr-sn-investigator select,#tpr-sn-investigator textarea{width:100%;background:white;color:#182b23;border:1px solid #9faea4;border-radius:6px;font:12px Consolas,Segoe UI,Arial,sans-serif;padding:9px}\n#tpr-sn-investigator textarea{min-height:74px;resize:vertical;line-height:1.5}\n#tpr-sn-investigator .tpr-sn-buttons{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}\n#tpr-sn-investigator button{border:1px solid #b0c4b6;background:white;color:#274b34;border-radius:6px;padding:9px 12px;min-height:36px;font-size:11px;font-weight:800;cursor:pointer}\n#tpr-sn-investigator button.primary{background:#2c4c36;color:white;border-color:#2c4c36}\n#tpr-sn-investigator .tpr-sn-summary{background:#e7f1eb;padding:9px;border-left:3px solid #378354;font-size:11px;font-weight:700;line-height:1.5;margin:9px 0}\n#tpr-sn-investigator .tpr-sn-scroll{max-width:100%;overflow:auto;max-height:420px;border:1px solid #d6e0d9;background:white;border-radius:7px}\n#tpr-sn-investigator table{border-collapse:collapse;width:100%;min-width:800px;font-size:11px;background:white;color:#26342b}\n#tpr-sn-investigator th,#tpr-sn-investigator td{text-align:left;vertical-align:top;border-bottom:1px solid #e0e6e0;padding:8px 9px;line-height:1.4}\n#tpr-sn-investigator th{background:#e6eee7;color:#304939;position:sticky;top:0;z-index:1}\n#tpr-sn-investigator td small{display:block;font-size:9px;color:#6d776d;margin-top:4px}\n#tpr-sn-investigator .tpr-sn-good{color:#11733c!important}\n#tpr-sn-investigator .tpr-sn-bad{color:#b31e2a!important}\n#tpr-sn-investigator .tpr-sn-warning{color:#ad712a!important}\n#tpr-sn-investigator .tpr-sn-path{display:flex;gap:4px;flex-wrap:wrap;min-width:180px}\n#tpr-sn-investigator .tpr-sn-stage{font-size:10px;border:1px solid #d5e1d5;background:#edf3ed;border-radius:5px;padding:4px;white-space:nowrap}\n#tpr-sn-investigator .tpr-sn-stage.pass{border-color:#9dcbaa;background:#e5f4e8;color:#146d37}\n#tpr-sn-investigator .tpr-sn-stage.fail{border-color:#e2aaad;background:#f9e8e9;color:#a82830}\n#tpr-sn-investigator .tpr-sn-detail{min-width:130px;max-width:340px}\n#tpr-sn-investigator .tpr-sn-detail summary{cursor:pointer;color:#255f8c;font-weight:750}\n#tpr-sn-investigator .tpr-sn-detail[open]{min-width:290px}\n#tpr-sn-investigator .tpr-sn-detail .tpr-sn-scroll{max-height:280px;margin-top:6px}\n#tpr-sn-investigator .tpr-sn-detail table{min-width:600px;font-size:10px;margin:6px 0}\n#tpr-sn-investigator .tpr-sn-foot{font-size:10px;color:#6b7972}\n#sec-product-detail .tpr-route-limitation,#sec-model .tpr-route-limitation{font-size:11px;color:#895b23;background:#fff7e7;border:1px solid #e4d2aa;border-radius:5px;padding:8px 10px;line-height:1.5;margin-top:8px}\n#sec-product-detail .tpr-db-kpi-strip .tpr-db-na{font-size:12px;font-weight:800}\n@media(max-width:700px){#tpr-sn-investigator{margin:8px 6px 0;padding:9px}#tpr-sn-investigator .tpr-sn-controls{grid-template-columns:1fr}#tpr-sn-investigator button{flex:1}#tpr-sn-investigator .tpr-sn-scroll{max-height:355px}}\n\n.tpr-section.is-collapsed #tpr-sn-investigator{display:none}\n", runtime="(function(){\n'use strict';\nif (window.__TPR_SN_INVESTIGATOR_V2020) return;\nwindow.__TPR_SN_INVESTIGATOR_V2020 = true;\nvar node = document.getElementById('tprStandaloneData');\nif (!node) return; // The exported payload must be available before initializing.\nvar byId = function(id){return document.getElementById(id);};\nvar n = function(v){return String(v == null ? '' : v).trim().toUpperCase();};\nvar safe = function(v){return String(v == null ? '' : v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c];});};\nvar P=null, C={}, D=[], rows=[], units=null, aliases=null, repairItems=[], repairLinks={}, firstByPair=null, cachedModes=null;\nvar currentResults=[];\nfunction getPayload(){\n  if(P) return P;\n  try {P=JSON.parse(node.textContent||'{}');}\n  catch(e){byId('tprSnSummary').textContent='No se puede abrir el índice de Test exportado.';return null;}\n  (P.columns||[]).forEach(function(s,i){C[s]=i;});\n  D=P.dict||[]; rows=P.rows||[];\n  var rep=P.repairs||{};repairLinks=rep.links||{};\n  repairItems=(rep.items||[]).map(function(arr){var o={};(rep.columns||[]).forEach(function(k,i){o[k]=arr[i]});return o});\n  return P;\n}\nfunction val(a,k){\n  var i=C[k];if(i==null || !a)return '';\n  var v=a[i];if(P&&P.format==='dict-v1'&&(P.numeric||[]).indexOf(k)<0)return D[v]||'';\n  return v==null?'':v;\n}\nfunction parseList(s){var used={},out=[];String(s||'').split(/[\\s,;|]+/).forEach(function(z){z=n(z);if(z&&!used[z]){used[z]=1;out.push(z)}});return out;}\nfunction makeScope(){var fields={model:'tprFModel',sku:'tprFSku',wo:'tprFWo',week:'tprFWeek',area:'tprFArea',shift:'tprFShift',from:'tprFFrom',to:'tprFTo'};var f={};Object.keys(fields).forEach(function(k){var x=byId(fields[k]);f[k]=x?String(x.value||''):'ALL';});return f;}\nfunction matchesScope(a,f){\n  function strict(k,actual){var x=n(f[k]);return !x||x==='ALL'||x===n(actual);}\n  if(!strict('model',val(a,'model'))||!strict('wo',val(a,'wo'))||!strict('week',val(a,'week'))||!strict('area',val(a,'station'))||!strict('shift',val(a,'shift')))return false;\n  var sku=n(f.sku);if(sku&&sku!=='ALL'&&sku!==n(val(a,'sku'))&&sku!==n(val(a,'cesiumSku'))&&sku!==n(val(a,'uutType')))return false;\n  var date=n(val(a,'opDate'));if(f.from&&f.from!=='ALL'&&date<n(f.from))return false;\n  if(f.to&&f.to!=='ALL'&&date>n(f.to))return false;\n  return true;\n}\nfunction buildIndex(){\n  if(units)return;\n  if(!getPayload())return;\n  units=Object.create(null);aliases=Object.create(null);firstByPair=Object.create(null);\n  var aliasFields=['logicalKey','logicalUnit','testSn','parentSn','partSn','boxSn','sfcSn','sfcBox'];\n  rows.forEach(function(a,i){\n    var id=n(val(a,'logicalKey'))||n(val(a,'logicalUnit'))||('ROW'+i);\n    var u=units[id];if(!u)u=units[id]={id:id,indices:[],aliases:Object.create(null)};\n    u.indices.push(i);\n    aliasFields.forEach(function(k){var v=n(val(a,k));if(!v||u.aliases[v])return;u.aliases[v]=1;var s=aliases[v]||(aliases[v]=[]);if(s.indexOf(id)<0)s.push(id);});\n    var pair=id+'|'+n(val(a,'station')),tm=Number(val(a,'timeMs'))||0;\n    var first=firstByPair[pair];if(!first || tm<first.tm)firstByPair[pair]={idx:i,tm:tm};\n  });\n}\nfunction refreshModes(){\n  if(!getPayload())return;\n  var f=makeScope(),seen=Object.create(null),result=[];\n  buildIndex();\n  Object.keys(firstByPair).forEach(function(pair){var a=rows[firstByPair[pair].idx];if(n(val(a,'kind'))!=='FAIL'||!matchesScope(a,f))return;var v=n(val(a,'failure'));if(v&&!seen[v]){seen[v]=1;result.push(v);}});\n  result.sort();cachedModes=result;\n  var sel=byId('tprSnMode'),prev=sel.value;\n  sel.innerHTML='<option value=\"\">Todos los modos</option>'+result.map(function(z){return '<option value=\"'+safe(z)+'\">'+safe(z)+'</option>'}).join('');\n  var main=byId('tprFFailure');var fall=n(main&&main.value);\n  sel.value=result.indexOf(prev)>=0?prev:(result.indexOf(fall)>=0?fall:'');\n  byId('tprSnSource').textContent=result.length?result.length+' modos de primer intento en los filtros del reporte.':'No hay modos FAIL de primer intento con los filtros actuales. Amplía fecha/producto/estación.';\n}\nfunction fromMode(){\n  buildIndex();var mode=n(byId('tprSnMode').value),summary=byId('tprSnSummary');\n  if(!mode){summary.textContent='Selecciona primero un modo de falla.';return;}\n  var f=makeScope(),found=Object.create(null),sns=[];\n  Object.keys(firstByPair).forEach(function(pair){var a=rows[firstByPair[pair].idx];if(n(val(a,'kind'))!=='FAIL'||n(val(a,'failure'))!==mode||!matchesScope(a,f))return;\n    var sn=n(val(a,'logicalUnit'))||n(val(a,'parentSn'))||n(val(a,'testSn'));\n    if(sn&&!found[sn]){found[sn]=1;sns.push(sn);}\n  });\n  byId('tprSnBulk').value=sns.join('\\n');\n  summary.textContent=sns.length+' seriales únicos de primer intento FAIL para '+mode+' (alcance actual). Buscar para consultar todo el historial cargado.';\n}\nfunction repRows(u){\n  var seen=Object.create(null),out=[];\n  Object.keys(u.aliases).forEach(function(alias){(repairLinks[alias]||[]).forEach(function(i){if(!seen[i]){seen[i]=1;if(repairItems[i])out.push(repairItems[i]);}})});\n  return out.sort(function(a,b){return Number(a.repairTime||0)-Number(b.repairTime||0)});\n}\nfunction dateText(ms,backup){if(!Number(ms))return String(backup||'N/D');var d=new Date(Number(ms));return isNaN(d.getTime())?'N/D':d.toLocaleString();}\nfunction resultFor(sn,u,mode){\n  var e=u.indices.map(function(i){var a=rows[i];return {sn:n(val(a,'testSn')),station:n(val(a,'station'))||'N/D',kind:n(val(a,'kind')),failure:n(val(a,'failure')),tm:Number(val(a,'timeMs'))||0,date:String(val(a,'opDate')||''),model:String(val(a,'model')||''),wo:String(val(a,'wo')||''),sku:String(val(a,'sku')||''),week:String(val(a,'week')||'')};}).filter(function(a){return a.kind==='PASS'||a.kind==='FAIL';});\n  e.sort(function(a,b){return a.tm-b.tm});\n  var stations=Object.create(null),first=[];\n  e.forEach(function(x){var k=x.station;if(!stations[k]){stations[k]={station:k,runs:[],first:x,last:x};first.push(stations[k]);}var s=stations[k];s.runs.push(x);s.last=x;});\n  var model=(e.find(function(x){return x.model&&x.model!=='N/D'})||e[0]||{}).model||'N/D';\n  var wo=(e.find(function(x){return x.wo})||e[0]||{}).wo||'N/D';\n  var last=e[e.length-1],repair=repRows(u);\n  var matched=!mode || e.some(function(x){return x.kind==='FAIL'&&x.failure===mode});\n  var openStations=first.filter(function(st){return st.last.kind==='FAIL';}).map(function(st){return st.station;});\n  var localStatus=openStations.length?'FAIL OBSERVADO':first.length?'PASS OBSERVADO':'N/D';\n  var stationPath=first.map(function(st){return st.station+' '+st.first.kind+(st.runs.length>1?' → '+st.last.kind:'');});\n  return {query:sn,id:u.id,model:model,wo:wo,events:e,stations:first,repair:repair,match:matched,mode:mode,last:last||null,ambiguous:false,localStatus:localStatus,openStations:openStations,path:stationPath.join(' | ')};\n}\nfunction pathHtml(r){return r.stations.map(function(st){var last=st.last.kind,css=last==='PASS'?'pass':'fail';var history=st.first.kind+(st.runs.length>1?'→'+last:'');return '<span class=\"tpr-sn-stage '+css+'\" title=\"'+st.runs.length+' intento(s)\">'+safe(st.station)+' <b>'+safe(history)+'</b></span>';}).join('')||'<span class=\"tpr-sn-stage\">Sin pruebas</span>';}\nfunction evidenceHtml(r){\n  var rows=r.events.map(function(x){return '<tr><td>'+safe(x.station)+'</td><td class=\"'+(x.kind==='PASS'?'tpr-sn-good':'tpr-sn-bad')+'\">'+safe(x.kind)+'</td><td>'+safe(x.failure||'')+'</td><td>'+safe(dateText(x.tm,x.date))+'</td><td>'+safe(x.sn)+'</td></tr>';}).join('');\n  var repairs=r.repair.map(function(x){return '<tr><td>'+safe(dateText(x.repairTime,''))+'</td><td>'+safe(x.sn||'')+'</td><td>'+safe(x.refdes||'N/D')+'</td><td>'+safe(x.partNumber||'N/D')+'</td><td>'+safe(x.actionDesc||x.repairType||'N/D')+'</td><td>'+safe(x.rootCause||x.rawRootCause||'N/D')+'</td></tr>';}).join('');\n  return '<details class=\"tpr-sn-detail\"><summary>Ver '+r.events.length+' prueba(s) y '+r.repair.length+' reparación(es)</summary><div class=\"tpr-sn-scroll\"><b>Cesium · historial observado</b><table><thead><tr><th>Estación</th><th>Estado</th><th>Falla</th><th>Fecha</th><th>Test SN</th></tr></thead><tbody>'+rows+'</tbody></table><b>Common DB · Repair Record (no implica causalidad)</b><table><thead><tr><th>Fecha</th><th>Repair SN</th><th>RefDes</th><th>CPN</th><th>Acción</th><th>Diagnóstico</th></tr></thead><tbody>'+(repairs||'<tr><td colspan=\"6\">No hay Repair Record vinculado en los archivos cargados.</td></tr>')+'</tbody></table></div></details>';\n}\nfunction render(results,queries){\n  currentResults=results;\n  var hits=results.filter(function(r){return !r.missing}),linked=hits.filter(function(r){return r.repair.length}),passed=hits.filter(function(r){return r.localStatus==='PASS OBSERVADO'}),badMode=hits.filter(function(r){return !r.match}),amb=results.filter(function(r){return r.ambiguous});\n  byId('tprSnSummary').textContent=queries+' SN solicitados · '+hits.length+' coincidencias de unidad · '+linked.length+' con Repair Record · '+passed.length+' con PASS en las estaciones observadas (no ruta completa)'+(badMode.length?' · '+badMode.length+' sin el modo seleccionado':'')+(amb.length?' · '+amb.length+' identidades ambiguas':'');\n  var cap=160;\n  var html=results.slice(0,cap).map(function(r){\n    if(r.missing)return '<tr><td><code>'+safe(r.query)+'</code></td><td colspan=\"5\">No aparece en el snapshot de Cesium/SFC cargado. No se puede afirmar que no exista en MES.</td></tr>';\n    var state=r.localStatus||'N/D';\n    return '<tr><td><code>'+safe(r.query)+'</code>'+((r.ambiguous)?'<small class=\"tpr-sn-warning\">Alias compartido: validar genealogía</small>':'')+'</td><td>'+safe(r.model)+'<small>'+safe(r.wo)+'</small></td><td><div class=\"tpr-sn-path\">'+pathHtml(r)+'</div></td><td><b class=\"'+(state.indexOf('PASS')===0?'tpr-sn-good':'tpr-sn-bad')+'\">'+safe(state)+'</b><small>No valida ruta completa</small></td><td>'+(r.repair.length?'<b class=\"tpr-sn-good\">'+r.repair.length+' registro(s)</b>':'<span class=\"tpr-sn-warning\">Sin evidencia cargada</span>')+(r.mode&&!r.match?'<small class=\"tpr-sn-warning\">Falla seleccionada no coincide</small>':'')+'</td><td>'+evidenceHtml(r)+'</td></tr>';\n  }).join('');\n  byId('tprSnResults').innerHTML='<div class=\"tpr-sn-scroll\"><table><thead><tr><th>SN consultado</th><th>Producto / WO</th><th>Path de pruebas observadas</th><th>Estado local</th><th>Reparación</th><th>Evidencia</th></tr></thead><tbody>'+(html||'<tr><td colspan=\"6\">Sin resultados. Ingresa SN y ejecuta la búsqueda.</td></tr>')+'</tbody></table></div>'+(results.length>cap?'<p class=\"tpr-sn-foot\">Mostrando las primeras '+cap+' filas de '+results.length+'. Exportar CSV para obtener todos los registros encontrados.</p>':'');\n}\nfunction search(){\n  var requested=parseList(byId('tprSnBulk').value),mode=n(byId('tprSnMode').value);\n  if(!requested.length && mode){fromMode();requested=parseList(byId('tprSnBulk').value);}\n  if(!requested.length){byId('tprSnSummary').textContent='Ingresa uno o más SN o selecciona un modo de falla y usa “Tomar SN del modo”.';return;}\n  buildIndex();var results=[];\n  requested.forEach(function(sn){var ids=aliases[sn]||[];if(!ids.length){results.push({query:sn,missing:true});return;}\n    ids.forEach(function(id){var r=resultFor(sn,units[id],mode);r.ambiguous=ids.length>1;results.push(r);});\n  });\n  render(results,requested.length);\n}\nfunction exportCsv(){\n  if(!currentResults.length){byId('tprSnSummary').textContent='Busca seriales antes de exportar.';return;}\n  var fields=['SN consultado','SN logico','Producto','WO','Estaciones observadas','Estado local observado','Coincide modo','Reparaciones encontradas','Identidad ambigua'];\n  function cell(v){v=String(v==null?'':v);return /[\",\\r\\n]/.test(v)?'\"'+v.replace(/\"/g,'\"\"')+'\"':v;}\n  var lines=[fields.join(',')];currentResults.forEach(function(r){lines.push([r.query,r.id||'',r.model||'',r.wo||'',r.path||'',r.localStatus||'',r.missing?'N/D':r.match?'Si':'No',r.repair&&r.repair.length||0,r.ambiguous?'Si':'No'].map(cell).join(','));});\n  var content='\\ufeff'+lines.join('\\r\\n'),url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));var a=document.createElement('a');a.href=url;a.download='SMTinel_Test_SN_Evidence_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},20000);\n}\n// V20.21: document-level event delegation survives dynamically rebuilt report sections.\nfunction showError(e){\n  var out=byId('tprSnSummary');\n  if(out)out.textContent='No se completó la consulta: '+String(e&&e.message||e)+'. Verifica los filtros y vuelve a buscar.';\n  try{console.warn('[SMTinel Test SN Investigator]',e)}catch(_){}\n}\nfunction invoke(fn){try{fn();}catch(e){showError(e);}}\nfunction isControl(target,id){\n  return target && target.closest && target.closest('#'+id) &&\n    target.closest('#tpr-sn-investigator');\n}\ndocument.addEventListener('click',function(e){\n  var t=e.target;\n  if(isControl(t,'tprSnLoadModes')){invoke(function(){refreshModes();var x=byId('tprSnMode');if(x)x.focus();});}\n  else if(isControl(t,'tprSnFromMode')){invoke(function(){if(!cachedModes)refreshModes();fromMode();});}\n  else if(isControl(t,'tprSnSearchBtn')){invoke(search);}\n  else if(isControl(t,'tprSnExportCsv')){invoke(exportCsv);}\n});\n// Populate modes without waiting for the first native-select focus. Also support taps\n// before the deferred indexing has finished.\nfunction ensureModes(){if(!cachedModes && byId('tprSnMode'))invoke(refreshModes);}\ndocument.addEventListener('pointerdown',function(e){if(isControl(e.target,'tprSnMode'))ensureModes();},true);\ndocument.addEventListener('touchstart',function(e){if(isControl(e.target,'tprSnMode'))ensureModes();},{capture:true,passive:true});\ndocument.addEventListener('focusin',function(e){if(isControl(e.target,'tprSnMode'))ensureModes();});\ndocument.addEventListener('keydown',function(e){\n  if(isControl(e.target,'tprSnBulk')&&e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();invoke(search);}\n});\ndocument.addEventListener('change',function(e){\n  if(['tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea','tprFShift','tprFFrom','tprFTo','tprFLine','tprFBu'].indexOf(e.target&&e.target.id)>=0){\n    cachedModes=null;\n    var source=byId('tprSnSource');if(source)source.textContent='Actualizando modos para el filtro seleccionado...';\n    setTimeout(ensureModes,120);\n  }\n});\nvar starter=byId('tprSnSummary');\nif(starter)starter.textContent='Buscador listo. Preparando la lista de modos de falla...';\nsetTimeout(ensureModes,700);\n\n})();\n";
 function enhance(html){
   html=String(html||'');
   if(html.indexOf('id="tprStandaloneData"')<0||html.indexOf('id="sec-repair"')<0)return html;
