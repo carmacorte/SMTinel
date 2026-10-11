@@ -1,4 +1,4 @@
-/* SMTinel 8D Railway Bridge V20.25.2.
+/* SMTinel 8D Railway Bridge V20.25.3.
    Lazy: no Railway or Supabase calls until Export Center is opened.
    Auth token stays in memory; no presentation/credentials in localStorage. */
 (function () {
@@ -16,7 +16,7 @@
     '.s8bridge .s8actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:11px}.s8bridge button,.s8bridge a.s8download{border:1px solid #9b5a70;border-radius:9px;background:#a52b4c;color:#fff;padding:10px 13px;font:700 12px Inter,Arial,sans-serif;min-height:40px;text-decoration:none;cursor:pointer}.s8bridge button.secondary{background:transparent;color:#efc6d0}.s8bridge button:disabled{opacity:.48;cursor:not-allowed}',
     '.s8bridge .s8status{font-size:12px;line-height:1.55;color:#ecc1cc;margin:11px 0 0;overflow-wrap:anywhere}.s8bridge .s8status[data-type=good]{color:#a0e0bd}.s8bridge .s8status[data-type=bad]{color:#ff91a5}.s8bridge [hidden]{display:none!important}.s8bridge .s8login{border-top:1px solid #624350;margin-top:12px;padding-top:13px}.s8bridge .s8login form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}.s8bridge label.field{font-size:12px;color:#dac7cf}.s8bridge input.cred{display:block;width:100%;margin-top:5px;min-width:0;background:#211e27;border:1px solid #896577;color:#fff;border-radius:8px;padding:9px;font-size:14px}.s8bridge .s8note{font-size:11px;color:#c9bbc2;line-height:1.5;margin:11px 0 0}',
     '@media(max-width:700px){.s8bridge{padding:13px}.s8bridge .s8login form{grid-template-columns:1fr}.s8bridge .s8actions button,.s8bridge a.s8download{flex:1;text-align:center}}'
-  ].join('');
+  ].join('') + "#smtinel8dRailwayBridge{width:100%!important;max-width:100%!important;min-width:0!important;margin:12px 0!important;overflow-wrap:anywhere;isolation:isolate}#smtinel8dRailwayBridge *{min-width:0}#smtinel8dRailwayBridge .s8head b,#smtinel8dRailwayBridge .s8drop strong{color:#fff!important;text-shadow:none!important;opacity:1!important}#smtinel8dRailwayBridge .s8drop{color:#fff!important;min-width:0!important;max-width:100%!important}#smtinel8dRailwayBridge .s8drop small{color:#e5d2d8!important;opacity:1!important}#smtinel8dRailwayBridge .s8tag{color:#ffbecf!important}#smtinel8dRailwayBridge .s8status{color:#ffe0e9!important;font-size:13px!important;line-height:1.5!important}#smtinel8dRailwayBridge .s8status[data-type=good]{color:#a7efc7!important}#smtinel8dRailwayBridge .s8status[data-type=bad]{color:#ff9aaf!important}#smtinel8dRailwayBridge .s8note{color:#d5c8ce!important;font-size:12px!important}#smtinel8dRailwayBridge button{color:#fff!important}#smtinel8dRailwayBridge button.secondary{background:#261c28!important;color:#ffcad7!important;border-color:#a76a7e!important}#smtinel8dRailwayBridge .s8drop.disabled{opacity:.8;cursor:not-allowed;background:rgba(90,50,62,.22)}#smtinel8dRailwayBridge .s8drop:focus-visible{outline:3px solid #ff8ca7;outline-offset:3px}@media(max-width:700px){html,body{min-width:0!important;max-width:100%!important;overflow-x:hidden!important}#exportLanding{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important;padding-left:12px!important;padding-right:12px!important}#emailModal,#emailModal .dialog.export-dialog,#emailModal .dialog-body{min-width:0!important;max-width:100%!important}#smtinel8dRailwayBridge{padding:14px!important;border-radius:14px!important}#smtinel8dRailwayBridge .s8head{align-items:flex-start!important}#smtinel8dRailwayBridge .s8head b{font-size:17px!important}#smtinel8dRailwayBridge .s8drop{min-height:105px!important;padding:14px 9px!important}#smtinel8dRailwayBridge .s8actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px!important}#smtinel8dRailwayBridge .s8actions button{width:100%!important;min-width:0!important;white-space:normal!important;padding:10px 7px!important;font-size:13px!important}#smtinel8dRailwayBridge .s8actions .s8refresh,#smtinel8dRailwayBridge .s8actions .s8download{grid-column:1/-1!important}#smtinel8dRailwayBridge .s8login form{grid-template-columns:minmax(0,1fr)!important}#smtinel8dRailwayBridge .s8note{line-height:1.5!important}}";
   function message(root, text, type) {
     var node = root.querySelector('.s8status');
     node.textContent = text;
@@ -47,20 +47,30 @@
   }
   async function check(root) {
     message(root, 'Comprobando motor Railway...', 'info');
+    root.querySelector('.s8refresh').disabled = true;
     try {
       var x = await Promise.all([readJSON(BASE+'/health'), readJSON(BASE+'/auth-config')]);
       if (!root.isConnected) return;
       var health=x[0];auth=x[1];ready=health.ready===true && auth.configured===true;
       root.querySelector('.s8choose').disabled = !ready;
       root.querySelector('.s8access').disabled = !ready;
-      if (ready) message(root, 'Motor disponible. Carga una presentación; el acceso se solicita únicamente al convertir.', 'good');
-      else if (health.status==='disabled') message(root, 'Railway y LibreOffice están listos. Conversión deshabilitada hasta configurar el acceso en Railway.', 'info');
-      else if (!health.libreoffice_available) message(root,'LibreOffice no detectado en Railway.','bad');
-      else message(root, 'El acceso del convertidor aún no está configurado en Railway.', 'bad');
+      root.querySelector('#s8file').disabled = !ready;
+      root.querySelector('.s8drop').classList.toggle('disabled',!ready);
+      root.querySelector('.s8drop').setAttribute('aria-disabled',String(!ready));
+      if (ready) message(root, 'Motor disponible. Selecciona un PPT/PPTX; solo se enviará cuando autorices la conversión.', 'good');
+      else if (health.converter_enabled===false || health.status==='disabled') message(root,'Railway y LibreOffice están operativos. Falta configurar el acceso autorizado y activar SMTINEL_CONVERTER_ENABLED=1 en Railway. No se ha enviado ningún archivo.', 'info');
+      else if (!health.libreoffice_available) message(root,'LibreOffice no está disponible en Railway. Comprueba el contenedor Docker.','bad');
+      else if (!auth.configured) message(root,'El motor está disponible, pero falta configurar el acceso 8D en Railway (Supabase Auth o token independiente).','info');
+      else message(root,'El servicio aún no está disponible. Revisa las variables de Railway.','bad');
     } catch (err) {
       ready=false;
       root.querySelector('.s8choose').disabled=true;root.querySelector('.s8access').disabled=true;
-      message(root, 'No se pudo contactar la API: '+String(err.message||err)+'. Abre SMTinel mediante https://smtinel.com.', 'bad');
+      root.querySelector('#s8file').disabled=true;
+      root.querySelector('.s8drop').classList.add('disabled');
+      root.querySelector('.s8drop').setAttribute('aria-disabled','true');
+      message(root, 'No se pudo contactar Railway: '+String(err.message||err)+'. Verifica la conexión y vuelve a comprobar.', 'bad');
+    } finally {
+      if(root.isConnected) root.querySelector('.s8refresh').disabled=false;
     }
   }
   async function signIn(root) {
@@ -90,7 +100,7 @@
   }
   async function convert(root, file) {
     if (running || !file) return;
-    if (!ready) { message(root,'El motor no está habilitado para conversiones.','bad'); return; }
+    if (!ready) { message(root,'Railway aún no permite conversiones. Configura el acceso y activa el servicio; tu presentación no se ha enviado.','bad'); return; }
     if (!/\.pptx?$/i.test(file.name||'')) { message(root,'Solo se admiten PPT y PPTX.','bad');return; }
     if (!file.size || file.size>MAX) {message(root,'El archivo debe ser menor de 60 MiB y no estar vacío.','bad');return;}
     if (!token) {pendingFile=file;authPanel(root,true);message(root,'Inicia sesión para convertir. Tu archivo todavía no se ha enviado.');return;}
@@ -137,16 +147,18 @@
       root.setAttribute('aria-label','SMTinel convertidor PowerPoint a HTML');
       root.innerHTML=
         '<div class="s8head"><b>8D Interactive Exporter</b><span class="s8tag">SHAININ RED X · PPT/PPTX → HTML</span></div>'+
-        '<label class="s8drop" for="s8file"><strong>Arrastra tu PPT / PPTX aquí</strong><small>O selecciona una presentación · Máximo 60 MiB</small></label>'+
-        '<input id="s8file" type="file" accept=".ppt,.pptx" hidden>'+
-        '<div class="s8actions"><button class="s8choose" type="button" disabled>Elegir presentación</button><button class="s8access secondary" type="button" disabled>Acceso 8D</button><a class="s8download" download hidden>Descargar HTML</a></div>'+
+        '<label class="s8drop disabled" for="s8file" tabindex="0" role="button" aria-disabled="true"><strong>Arrastra tu PPT / PPTX aquí</strong><small>O selecciona una presentación · Máximo 60 MiB</small></label>'+
+        '<input id="s8file" type="file" accept=".ppt,.pptx" hidden disabled>'+
+        '<div class="s8actions"><button class="s8choose" type="button" disabled>Elegir presentación</button><button class="s8access secondary" type="button" disabled>Acceso 8D</button><button class="s8refresh secondary" type="button">Revisar conexión</button><a class="s8download" download hidden>Descargar HTML</a></div>'+
         '<div class="s8status" role="status" aria-live="polite">Comprobando motor...</div>'+
         '<div class="s8login" hidden><div style="font-size:12px;margin-bottom:10px">Acceso independiente · Solo para conversiones 8D</div><form autocomplete="off"><label class="field s8email">Correo<input class="cred" type="email" autocomplete="username"></label><label class="field">Contraseña / clave<input class="cred s8password" type="password" autocomplete="off" required></label><button type="submit">Entrar y convertir</button></form></div>'+
         '<p class="s8note">La conversión utiliza Railway únicamente bajo demanda. No se almacenan PowerPoints ni HTML en Supabase, GitHub o el navegador.</p>';
       var foot=landing.querySelector('.export-landing-foot');if(foot)landing.insertBefore(root,foot);else landing.appendChild(root);
       activeRoot=root;
       var input=root.querySelector('#s8file'),drop=root.querySelector('.s8drop');
-      root.querySelector('.s8choose').addEventListener('click',function(){input.click();});
+      root.querySelector('.s8choose').addEventListener('click',function(){if(ready)input.click();});
+      root.querySelector('.s8refresh').addEventListener('click',function(){check(root);});
+      drop.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&ready){e.preventDefault();input.click();}});
       input.addEventListener('change',function(){if(input.files&&input.files[0])convert(root,input.files[0]);input.value='';});
       root.querySelector('.s8access').addEventListener('click',function(){
         if(token){token='';pendingFile=null;updateAccess(root);authPanel(root,false);message(root,'Sesión de 8D cerrada. Los demás módulos no se alteraron.');}
@@ -160,10 +172,18 @@
       check(root);
     } catch(e){console.warn('[SMTinel 8D bridge]',e);}
   }
+  function ensureMobileParentStyles() {
+    if (document.getElementById('smtinel8dMobileParentFix')) return;
+    var style=document.createElement('style');
+    style.id='smtinel8dMobileParentFix';
+    style.textContent="@media(max-width:720px){#exportcenter-section{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important}#exportcenter-section>section{box-sizing:border-box!important;max-width:100%!important;min-width:0!important}#smtinel-exportcenter-frame{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}}";
+    document.head.appendChild(style);
+  }
   function tryMount() {
     var frame=document.getElementById('smtinel-exportcenter-frame');
     if(!frame)return;
     if(!frame.__s8load){frame.__s8load=true;frame.addEventListener('load',function(){activeRoot=null;token='';pendingFile=null;setTimeout(tryMount,0);});}
+    ensureMobileParentStyles();
     mount(frame);
   }
   function schedule(){[0,250,900].forEach(function(ms){setTimeout(tryMount,ms);});}
