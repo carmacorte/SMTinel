@@ -1,0 +1,70 @@
+name: Inject mobile Export Center polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inject-mobile-export-polish.yml'
+      - 'assets/smtinel-mobile-export-polish-v2026.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-app-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inject mobile runtime loader
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          script = '<script src="./assets/smtinel-mobile-export-polish-v2026.js?v=mobile-export-v1"></script>'
+          marker = 'smtinel-mobile-export-polish-v2026.js?v=mobile-export-v1'
+          touched = []
+
+          for candidate in ['app.html', 'index.html']:
+              path = Path(candidate)
+              if not path.exists() or path.stat().st_size == 0:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              if marker in text:
+                  print(f'{candidate}: mobile Export Center loader already present.')
+                  continue
+              closing = text.rfind('</body>')
+              if closing < 0:
+                  raise SystemExit(f'{candidate} does not contain </body>')
+              text = text[:closing] + script + '\n' + text[closing:]
+              path.write_text(text, encoding='utf-8')
+              touched.append(candidate)
+              print(f'{candidate}: mobile Export Center loader injected.')
+
+          if not touched:
+              print('No shell file needed changes.')
+          PY
+
+      - name: Validate mobile runtime loader
+        shell: bash
+        run: |
+          test -s assets/smtinel-mobile-export-polish-v2026.js
+          grep -Fq 'smtinel-mobile-export-polish-v2026.js?v=mobile-export-v1' app.html
+
+      - name: Commit updated app shell
+        shell: bash
+        run: |
+          if git diff --quiet -- app.html index.html; then
+            echo 'Shell already contains mobile runtime loader; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.html index.html
+          git commit -m 'fix(app): inject mobile Export Center polish loader'
+          git push origin HEAD:main
