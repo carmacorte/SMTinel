@@ -14,6 +14,9 @@ try:
  mail_patch=root/'SMTinel_8D_Mail_Evidence_Patch.py'
  if mail_patch.exists():
   subprocess.run([sys.executable,str(mail_patch),str(dst)],check=True)
+ mobile_excel_patch=root/'SMTinel_8D_Mobile_Excel_Visibility_Patch.py'
+ if mobile_excel_patch.exists():
+  subprocess.run([sys.executable,str(mobile_excel_patch),str(dst)],check=True)
 finally:
  intermediate.unlink(missing_ok=True)
 print('HTML portátil creado:',dst)
