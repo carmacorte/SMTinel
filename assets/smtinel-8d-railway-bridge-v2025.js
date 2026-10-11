@@ -186,6 +186,17 @@
     ensureMobileParentStyles();
     mount(frame);
   }
+  // Independent 8D Studio entry: outside the Export Center iframe lifecycle.
+  function ensureStudioEntry(){
+    if(document.getElementById('smtinel8dStudioEntry'))return;
+    var link=document.createElement('a');
+    link.id='smtinel8dStudioEntry';
+    link.href='/8d-studio.html';
+    link.textContent='8D Studio';
+    link.setAttribute('aria-label','Abrir modulo independiente 8D Studio');
+    link.style.cssText='position:fixed;right:14px;bottom:88px;z-index:2147483000;background:#572631;color:#fff;border:1px solid #b86b82;border-radius:14px;padding:12px 16px;font:700 13px system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 22px #0005;max-width:calc(100vw - 28px)';
+    document.body.appendChild(link);
+  }
   function schedule(){[0,250,900].forEach(function(ms){setTimeout(tryMount,ms);});}
   function navigation(e){
     if(activeRoot&&activeRoot.isConnected)return;
@@ -197,6 +208,6 @@
   }
   document.addEventListener('click',navigation,true);
   document.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' ')navigation(e);},true);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});
-  else schedule();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){ensureStudioEntry();schedule();},{once:true});
+  else {ensureStudioEntry();schedule();}
 })();
