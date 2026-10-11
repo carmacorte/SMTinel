@@ -20,6 +20,20 @@ try:
  handoff_theme_patch=root/'SMTinel_8D_Handoff_English_Theme_Patch.py'
  if handoff_theme_patch.exists():
   subprocess.run([sys.executable,str(handoff_theme_patch),str(dst)],check=True)
+  # Validate the final exported artifact, including the no-JavaScript iPhone view.
+  output=dst.read_text(encoding='utf-8')
+  checks={
+   'English document language':'<html lang="en"' in output,
+   'Light Handoff theme':'smtinel-8d-english-handoff-theme-v1' in output,
+   'iPhone fallback':'id="safariFallback"' in output,
+   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
+   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
+  }
+  missing=[name for name,ok in checks.items() if not ok]
+  if missing:
+   raise RuntimeError('8D Handoff export failed validation: '+', '.join(missing))
+  print('8D English Light Handoff verified (desktop + iPhone fallback)')
+
 finally:
  intermediate.unlink(missing_ok=True)
 print('Portable English handoff HTML created:',dst)
