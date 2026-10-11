@@ -18,8 +18,10 @@ try:
  if mobile_excel_patch.exists():
   subprocess.run([sys.executable,str(mobile_excel_patch),str(dst)],check=True)
  handoff_theme_patch=root/'SMTinel_8D_Handoff_English_Theme_Patch.py'
- if handoff_theme_patch.exists():
-  subprocess.run([sys.executable,str(handoff_theme_patch),str(dst)],check=True)
+ if not handoff_theme_patch.is_file():
+  raise RuntimeError('Required English Light Handoff theme patch missing from deployment')
+ subprocess.run([sys.executable,str(handoff_theme_patch),str(dst)],check=True)
+ if True:
   # Validate the final exported artifact, including the no-JavaScript iPhone view.
   output=dst.read_text(encoding='utf-8')
   checks={
