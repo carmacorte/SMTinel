@@ -63,3 +63,5 @@ jobs:
           git add index.html
           git commit -m 'feat(index): load isolated 8D Railway bridge in Export Center'
           git push origin HEAD:${GITHUB_REF_NAME}
+
+# Final syntax verification after security allowlist changes.
