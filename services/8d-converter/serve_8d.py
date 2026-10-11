@@ -117,8 +117,21 @@ def _check_rate(request:Request)->None:
 @app.get('/api/8d/health')
 def health(request:Request):
     _allow_origin(request)
-    ready=SERVICE_ENABLED and bool(shutil.which('soffice') or shutil.which('libreoffice'))
-    return {'ready':ready,'status':'ready' if ready else 'libreoffice_missing','formats':['ppt','pptx'], 'engine':'SMTinel 8D Interactive V20.25 Railway', 'requires_auth':True}
+    # Service switch and LibreOffice availability are independent conditions.
+    # Never report that LibreOffice is missing merely because conversion is disabled.
+    libreoffice_available = bool(shutil.which('soffice') or shutil.which('libreoffice'))
+    ready = SERVICE_ENABLED and libreoffice_available
+    status = ('disabled' if not SERVICE_ENABLED else
+              'libreoffice_missing' if not libreoffice_available else 'ready')
+    return {
+        'ready': ready,
+        'status': status,
+        'converter_enabled': SERVICE_ENABLED,
+        'libreoffice_available': libreoffice_available,
+        'formats': ['ppt', 'pptx'],
+        'engine': 'SMTinel 8D Interactive V20.25.1 Railway',
+        'requires_auth': True,
+    }
 
 
 @app.post('/api/8d/convert')
