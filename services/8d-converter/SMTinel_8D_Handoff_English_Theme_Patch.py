@@ -61,6 +61,17 @@ else:
 
 # UI copy. The exported PowerPoint slide images remain untouched; only the viewer chrome changes.
 replacements = {
+    'Notas originales': 'Original notes',
+    'Diapositivas y notas': 'Slides and notes',
+    'Notas del PowerPoint': 'PowerPoint notes',
+    'Esta diapositiva no contiene notas en el archivo original.': 'This slide has no notes in the original file.',
+    'Ir a diapositiva': 'Go to slide',
+    'Descargar original': 'Download original',
+    'No hay diapositivas con esa búsqueda.': 'No slides match your search.',
+    'Evidencias (': 'Evidence (',
+    'DIAPOSITIVA ': 'SLIDE ',
+    'Diapositivas': 'Slides',
+    'Notas originales': 'Original notes',
     'Índice de presentación': 'Presentation Index',
     'Buscar en las diapositivas...': 'Search slides...',
     'Diapositivas': 'Slides',
