@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Motor piloto 8D: PPTX -> HTML autónomo con fallback móvil sin JavaScript."""
+"""SMTinel 8D engine: PPTX -> autonomous English handoff HTML."""
 from pathlib import Path
 import sys,subprocess
 if len(sys.argv)<3:
- print('Uso: python Convertir_PPTX_a_HTML_iOS.py reporte.pptx reporte.html')
+ print('Usage: python Convertir_PPTX_a_HTML_iOS.py report.pptx report.html')
  raise SystemExit(2)
 src=Path(sys.argv[1]).resolve(); dst=Path(sys.argv[2]).resolve()
 root=Path(__file__).resolve().parent
-intermediate=dst.with_name(dst.stem+'__intermedio.html')
+intermediate=dst.with_name(dst.stem+'__intermediate.html')
 try:
  subprocess.run([sys.executable,str(root/'SMTinel_PPTX_a_HTML_Converter.py'),str(src),str(intermediate)],check=True)
  subprocess.run([sys.executable,str(root/'SMTinel_8D_iOS_Progressive_Patch.py'),str(intermediate),str(dst)],check=True)
@@ -17,6 +17,9 @@ try:
  mobile_excel_patch=root/'SMTinel_8D_Mobile_Excel_Visibility_Patch.py'
  if mobile_excel_patch.exists():
   subprocess.run([sys.executable,str(mobile_excel_patch),str(dst)],check=True)
+ handoff_theme_patch=root/'SMTinel_8D_Handoff_English_Theme_Patch.py'
+ if handoff_theme_patch.exists():
+  subprocess.run([sys.executable,str(handoff_theme_patch),str(dst)],check=True)
 finally:
  intermediate.unlink(missing_ok=True)
-print('HTML portátil creado:',dst)
+print('Portable English handoff HTML created:',dst)
