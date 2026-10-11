@@ -42,6 +42,23 @@ SERVICE_ENABLED = os.getenv('SMTINEL_CONVERTER_ENABLED','0').strip() == '1'
 AUTH_MODE = os.getenv('SMTINEL_AUTH_MODE','supabase').strip().lower()
 
 
+def _is_public_supabase_key(key: str) -> bool:
+    """Fail closed: never publish a service_role or sb_secret credential."""
+    if key.startswith('sb_publishable_'):
+        return True
+    if not key or key.startswith('sb_secret_'):
+        return False
+    try:
+        import base64
+        pieces = key.split('.')
+        if len(pieces) != 3:
+            return False
+        payload = json.loads(base64.urlsafe_b64decode(pieces[1] + '=' * (-len(pieces[1]) % 4)))
+        return payload.get('role') == 'anon'
+    except Exception:
+        return False
+
+
 def _authorize(request: Request) -> None:
     if not SERVICE_ENABLED:
         raise HTTPException(status_code=503, detail='Servicio de conversion deshabilitado hasta configurar acceso autorizado.')
@@ -62,7 +79,8 @@ def _authorize(request: Request) -> None:
         raise HTTPException(status_code=503, detail='Autenticacion del convertidor sin configurar.')
     url = os.getenv('SMTINEL_SUPABASE_URL','').rstrip('/')
     anon = os.getenv('SMTINEL_SUPABASE_ANON_KEY','')
-    if not (url.startswith('https://') and anon):
+    allowed_emails = {v.strip().lower() for v in os.getenv('SMTINEL_8D_ALLOWED_EMAILS', '').split(',') if v.strip()}
+    if not (url.startswith('https://') and _is_public_supabase_key(anon) and allowed_emails):
         raise HTTPException(status_code=503, detail='Validacion Supabase pendiente.')
     # Supabase validates the access token; the public anon key is NOT a service_role key.
     req = urllib.request.Request(url+'/auth/v1/user', headers={'apikey':anon, 'Authorization':'Bearer '+token})
@@ -71,6 +89,8 @@ def _authorize(request: Request) -> None:
             user = json.loads(response.read(65536))
         if not user.get('id'):
             raise HTTPException(status_code=401, detail='Sesion no valida.')
+        if str(user.get('email') or '').strip().lower() not in allowed_emails:
+            raise HTTPException(status_code=403, detail='Usuario sin permiso para el convertidor 8D.')
     except (urllib.error.HTTPError,urllib.error.URLError,TimeoutError,ValueError) as exc:
         raise HTTPException(status_code=401, detail='No se pudo verificar la sesion.') from exc
 
@@ -112,6 +132,32 @@ def _check_rate(request:Request)->None:
     if len(hits)>=4:
         raise HTTPException(status_code=429,detail='Límite de conversiones. Intenta nuevamente en un minuto.')
     hits.append(now)
+
+
+@app.get('/api/8d/auth-config')
+def auth_config(request: Request):
+    """Public metadata for just-in-time 8D login. Never includes private keys."""
+    _allow_origin(request)
+    mode = AUTH_MODE if AUTH_MODE in ('supabase', 'token') else 'unavailable'
+    url = os.getenv('SMTINEL_SUPABASE_URL', '').strip().rstrip('/')
+    public_key = os.getenv('SMTINEL_SUPABASE_ANON_KEY', '').strip()
+    if mode == 'supabase':
+        configured = (url.startswith('https://') and _is_public_supabase_key(public_key)
+                      and bool(os.getenv('SMTINEL_8D_ALLOWED_EMAILS', '').strip()))
+    elif mode == 'token':
+        configured = len(os.getenv('SMTINEL_CONVERTER_SECRET', '')) >= 32
+    else:
+        configured = False
+    response = {
+        'mode': mode,
+        'configured': configured,
+        'requires_auth': True,
+        # The anon/publishable key is explicitly designed for client use.
+        'supabase_url': url if configured and mode == 'supabase' else '',
+        'supabase_anon_key': public_key if configured and mode == 'supabase' else '',
+    }
+    return Response(content=json.dumps(response), media_type='application/json',
+                    headers={'Cache-Control': 'no-store'})
 
 
 @app.get('/api/8d/health')
