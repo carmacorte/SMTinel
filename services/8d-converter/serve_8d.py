@@ -114,6 +114,31 @@ def _check_rate(request:Request)->None:
     hits.append(now)
 
 
+@app.get('/api/8d/auth-config')
+def auth_config(request: Request):
+    """Public metadata for just-in-time 8D login. Never includes private keys."""
+    _allow_origin(request)
+    mode = AUTH_MODE if AUTH_MODE in ('supabase', 'token') else 'unavailable'
+    url = os.getenv('SMTINEL_SUPABASE_URL', '').strip().rstrip('/')
+    public_key = os.getenv('SMTINEL_SUPABASE_ANON_KEY', '').strip()
+    if mode == 'supabase':
+        configured = url.startswith('https://') and bool(public_key)
+    elif mode == 'token':
+        configured = len(os.getenv('SMTINEL_CONVERTER_SECRET', '')) >= 32
+    else:
+        configured = False
+    response = {
+        'mode': mode,
+        'configured': configured,
+        'requires_auth': True,
+        # The anon/publishable key is explicitly designed for client use.
+        'supabase_url': url if configured and mode == 'supabase' else '',
+        'supabase_anon_key': public_key if configured and mode == 'supabase' else '',
+    }
+    return Response(content=json.dumps(response), media_type='application/json',
+                    headers={'Cache-Control': 'no-store'})
+
+
 @app.get('/api/8d/health')
 def health(request:Request):
     _allow_origin(request)
