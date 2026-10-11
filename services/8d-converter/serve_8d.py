@@ -55,7 +55,7 @@ def _is_public_supabase_key(key: str) -> bool:
             return False
         payload = json.loads(base64.urlsafe_b64decode(pieces[1] + '=' * (-len(pieces[1]) % 4)))
         return payload.get('role') == 'anon'
-    except (ValueError, UnicodeError, TypeError, KeyError):
+    except Exception:
         return False
 
 
