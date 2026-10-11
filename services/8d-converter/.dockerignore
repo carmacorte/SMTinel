@@ -1,0 +1,9 @@
+*.ppt
+*.pptx
+*.pdf
+*.xlsx
+*.html
+__pycache__/
+*.pyc
+.venv/
+.git/
