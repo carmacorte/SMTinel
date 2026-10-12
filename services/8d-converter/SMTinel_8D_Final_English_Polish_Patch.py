@@ -18,8 +18,9 @@ if len(sys.argv) < 2:
 path = Path(sys.argv[1]).resolve()
 text = path.read_text(encoding='utf-8')
 
-# Remaining Spanish strings from the original desktop viewer, the evidence panel
-# and the iPhone no-JavaScript fallback. Keep this broad but UI-focused.
+# Remaining Spanish strings from the desktop viewer, evidence panel and iPhone
+# no-JavaScript fallback. These are intentionally UI-specific; do not translate
+# slide images or PowerPoint notes.
 replacements = {
     'Evidence del 8D': '8D Evidence',
     'Evidencia del 8D': '8D Evidence',
@@ -37,8 +38,8 @@ replacements = {
     'Ligas detectadas': 'Detected links',
     'Mostrar todos': 'Show all',
     'Ocultar': 'Hide',
-    'Página': 'Page',
-    'de': 'of',
+    'Página 1/1': 'Page 1/1',
+    'records · Página': 'records · Page',
     'registros': 'records',
     'registro': 'record',
     'láminas': 'slides',
@@ -65,23 +66,23 @@ replacements = {
     'Verificación': 'Verification',
     'Prevención': 'Prevention',
     'Equipo': 'Team',
+    'archivo adjunto': 'attached file',
+    'archivos adjuntos': 'attached files',
 }
 for old, new in replacements.items():
     text = text.replace(old, new)
 
 # Target dynamic template strings that are assembled with JavaScript template literals.
-text = text.replace('`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`', '`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`')
 text = text.replace('`${p.links.length} enlace(s) interactivo(s)`', '`${p.links.length} interactive link(s)`')
-text = text.replace("att.name||'Embedded file'", "att.name||'Embedded file'")
+text = text.replace('`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`', '`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`')
 
-# Fix accidental broad Spanish replacement artifacts if any appear.
+# Fix accidental mixed labels produced by sequential patches.
 cleanup = {
-    'PowerPoint Evidence ofl 8D': '8D Evidence',
-    'Evidence ofl 8D': '8D Evidence',
+    'PowerPoint Evidence del 8D': '8D Evidence',
+    'Evidence del 8D': '8D Evidence',
     'Files recovered from the original PPTX original': 'Files recovered from the original PPTX',
     'Original PowerPoint links originales': 'Original PowerPoint links',
-    'records · Page 1/1': 'records · Page 1/1',
-    'ofl': 'del' if False else 'of',
+    'attached Evidence': 'attached evidence',
 }
 for old, new in cleanup.items():
     text = text.replace(old, new)
@@ -89,6 +90,20 @@ for old, new in cleanup.items():
 # Make the evidence drawer title consistently English even when injected after earlier patches.
 text = re.sub(r'<h2 id="drawerTitle">[^<]*</h2>', '<h2 id="drawerTitle">PowerPoint Evidence</h2>', text)
 text = re.sub(r'<p id="drawerSubtitle">[^<]*</p>', '<p id="drawerSubtitle">Files recovered from the original PPTX</p>', text)
+
+# Validate that the common chrome strings from the screenshots are gone.
+blocked = [
+    'Evidence del 8D',
+    'Evidencia del 8D',
+    'archivo(s) incrustado(s)',
+    'toca el icono resaltado',
+    'Enlaces originales de PowerPoint',
+    'Diapositivas',
+    'Notas originales',
+]
+missing = [s for s in blocked if s in text]
+if missing:
+    raise RuntimeError('8D final English polish failed. Remaining UI strings: ' + ', '.join(missing))
 
 # The content from PowerPoint notes and slide images is intentionally not translated.
 path.write_text(text, encoding='utf-8')
