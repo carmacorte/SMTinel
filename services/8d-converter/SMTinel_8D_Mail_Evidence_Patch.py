@@ -40,8 +40,8 @@ let DATA;
 try{DATA=JSON.parse(dataNode.textContent||'{}');}catch(err){console.warn('SMTinel mail evidence: data parse failed',err);return;}
 const attachments = Array.isArray(DATA.attachments)?DATA.attachments:[];
 const pages = Array.isArray(DATA.pages)?DATA.pages:[];
-const MAIL_EXT = /\.(eml|msg|pdf|html?|txt)$/i;
-const mailEvidence = attachments.map((a,i)=>({...a,_id:i,_name:String(a.name||'evidence_'+i)})).filter(a=>MAIL_EXT.test(a._name));
+const MAIL_EXT = /\.(eml|msg)$/i;
+const mailEvidence = attachments.map((a,i)=>({...a,_id:i,_name:String(a.name||'evidence_'+i)})).filter(a=>MAIL_EXT.test(a._name) || /^(message\/rfc822|application\/vnd\.ms-outlook)$/i.test(String(a.mime||'')));
 if(!mailEvidence.length) return;
 
 function bytesFromB64(b64){const raw=atob(String(b64||''));const arr=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;}
@@ -148,9 +148,9 @@ function renderGenericCard(att){
 }
 function openMailEvidence(){
  const overlay=$('overlay'),drawer=$('drawer'),body=$('drawerBody');if(!overlay||!drawer||!body)return;
- overlay.classList.add('visible');drawer.classList.add('open');$('drawerTitle').textContent='Mail Evidence Viewer';$('drawerSubtitle').textContent=mailEvidence.length+' correo(s) / evidencia(s) detectada(s) · .eml prioritario';body.replaceChildren();
- const info=document.createElement('div');info.className='mail-warn';info.innerHTML='Prioridad de lectura: <b>.eml</b> → .msg → .pdf → .html/.txt. El sistema no inventa campos: lo faltante queda como <b>Dato pendiente de confirmar</b>.';body.append(info);
- mailEvidence.forEach(att=>body.append(/\.eml$/i.test(att._name)?renderEmlCard(att):renderGenericCard(att)));
+ overlay.classList.add('visible');drawer.classList.add('open');$('drawerTitle').textContent='Mail Evidence Viewer';$('drawerSubtitle').textContent=mailEvidence.length+' email file(s) detected · .eml/.msg';body.replaceChildren();
+ const info=document.createElement('div');info.className='mail-warn';info.innerHTML='Only <b>.eml</b> and <b>.msg</b> files are treated as email. Text, HTML, and PDF files remain regular evidence attachments.';body.append(info);
+ mailEvidence.forEach(att=>body.append(/\.eml$/i.test(att._name)||/message\/rfc822/i.test(String(att.mime||''))?renderEmlCard(att):renderGenericCard(att)));
  body.onclick=(ev)=>{
   const d=ev.target.closest('[data-mail-download]');if(d){const att=mailEvidence.find(x=>String(x._id)===String(d.dataset.mailDownload));if(att)downloadOriginal(att);return;}
   const s=ev.target.closest('[data-mail-slide]');if(s){try{if(typeof window.go==='function')window.go(Number(s.dataset.mailSlide)||0);}catch(e){} if(typeof window.closeDrawer==='function')window.closeDrawer();return;}
