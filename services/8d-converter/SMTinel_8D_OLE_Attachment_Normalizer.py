@@ -58,6 +58,7 @@ MIME_BY_EXT = {
     '.eml': 'message/rfc822',
     '.msg': 'application/vnd.ms-outlook',
     '.txt': 'text/plain',
+    '.zip': 'application/zip',
 }
 
 LABEL_BY_EXT = {
@@ -73,16 +74,25 @@ LABEL_BY_EXT = {
     '.eml': 'Email',
     '.msg': 'Outlook mail',
     '.txt': 'Text',
+    '.zip': 'ZIP',
 }
 
 SAFE_CHARS = re.compile(r'[^A-Za-z0-9._()\- ]+')
-FILENAME_RE = re.compile(r'[^\x00\\/:*?"<>|\r\n]{1,120}\.(?:xlsx|xlsm|xls|csv|pdf|docx|doc|pptx|ppt|eml|msg|txt)', re.I)
+FILENAME_RE = re.compile(r'[^\x00\\/:*?"<>|\r\n]{1,120}\.(?:xlsx|xlsm|xls|csv|pdf|docx|doc|pptx|ppt|eml|msg|txt|zip)', re.I)
 
 
 def safe_name(name: str, fallback: str) -> str:
     name = (name or '').strip().replace('\\', '/').split('/')[-1]
     name = SAFE_CHARS.sub('_', name).strip(' ._')
     return name or fallback
+
+
+def trim_payload(payload: bytes, ext: str | None) -> bytes:
+    if ext == '.pdf':
+        eof = payload.rfind(b'%%EOF')
+        if eof > 0:
+            return payload[:eof + 5]
+    return payload
 
 
 def infer_payload(data_bytes: bytes) -> tuple[str | None, str | None]:
@@ -99,8 +109,8 @@ def infer_payload(data_bytes: bytes) -> tuple[str | None, str | None]:
             if 'ppt/presentation.xml' in names:
                 return '.pptx', 'PowerPoint'
         except Exception:
-            return '.zip', 'File'
-        return '.zip', 'File'
+            return '.zip', 'ZIP'
+        return '.zip', 'ZIP'
     if data_bytes.startswith(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
         return '.xls', 'Excel'
     return None, None
@@ -126,6 +136,27 @@ def extract_filename(blob: bytes, ext: str | None) -> str | None:
     return candidates[-1] if candidates else None
 
 
+def carve_known_payload(blob: bytes, header: bytes | None = None) -> tuple[bytes, str | None, str | None, str | None] | None:
+    """Find a recognizable document payload inside an OLE blob or stream.
+
+    Some Acrobat/Package insertions leave the real PDF or OOXML file buried
+    inside a stream, not neatly at byte zero. So we scan the whole thing. Yes,
+    it is as charming as it sounds.
+    """
+    header = header or blob[:8192]
+    for magic in (b'%PDF-', b'PK\x03\x04', b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
+        start = blob.find(magic)
+        while start >= 0:
+            payload = blob[start:]
+            ext, label = infer_payload(payload)
+            if ext:
+                payload = trim_payload(payload, ext)
+                fname = extract_filename(header, ext) or extract_filename(blob[max(0, start - 4096):start + 4096], ext)
+                return payload, fname, ext, label
+            start = blob.find(magic, start + 1)
+    return None
+
+
 def stream_name(parts: list[str]) -> str:
     return '/'.join(str(p) for p in parts)
 
@@ -136,12 +167,15 @@ def extract_from_ole(data_bytes: bytes) -> tuple[bytes, str | None, str | None, 
     For real OLE Package objects, the useful file is normally inside the
     \x01Ole10Native stream. When exact parsing is unclear, scan for a plausible
     native-size prefix and known file magic. This is defensive because PowerPoint
-    versions write slightly different package wrappers, because apparently one
-    binary wrapper was not enough punishment.
+    versions write slightly different package wrappers.
     """
     ext, label = infer_payload(data_bytes)
     if ext:
-        return data_bytes, extract_filename(data_bytes[:2048], ext), ext, label
+        return trim_payload(data_bytes, ext), extract_filename(data_bytes[:8192], ext), ext, label
+
+    carved = carve_known_payload(data_bytes)
+    if carved:
+        return carved
 
     if not (olefile and olefile.isOleFile(io.BytesIO(data_bytes))):
         return data_bytes, None, None, None
@@ -149,11 +183,12 @@ def extract_from_ole(data_bytes: bytes) -> tuple[bytes, str | None, str | None, 
     ole = olefile.OleFileIO(io.BytesIO(data_bytes))
     try:
         streams = ole.listdir(streams=True, storages=False)
-        native_paths = [p for p in streams if 'Ole10Native' in stream_name(p)]
-        native_paths += [p for p in streams if stream_name(p).endswith('Package')]
-        native_paths += streams
+        preferred = [p for p in streams if 'Ole10Native' in stream_name(p)]
+        preferred += [p for p in streams if stream_name(p).endswith('Package')]
+        preferred += [p for p in streams if stream_name(p).lower().endswith('contents')]
+        preferred += streams
         seen: set[str] = set()
-        for spath in native_paths:
+        for spath in preferred:
             sname = stream_name(spath)
             if sname in seen:
                 continue
@@ -162,11 +197,12 @@ def extract_from_ole(data_bytes: bytes) -> tuple[bytes, str | None, str | None, 
                 native = ole.openstream(spath).read()
             except Exception:
                 continue
-            header = native[:4096]
+            header = native[:8192]
             guessed_name = extract_filename(header, None)
+
             # Search size-prefixed native payloads used by Ole10Native.
-            limit = min(len(native) - 4, 4096)
-            for pos in range(max(0, limit)):
+            limit = max(0, len(native) - 4)
+            for pos in range(limit):
                 size = struct.unpack_from('<I', native, pos)[0]
                 if size <= 8 or size > len(native) - pos - 4:
                     continue
@@ -174,20 +210,12 @@ def extract_from_ole(data_bytes: bytes) -> tuple[bytes, str | None, str | None, 
                 ext, label = infer_payload(payload)
                 if ext:
                     fname = extract_filename(header, ext) or guessed_name
-                    return payload, fname, ext, label
-            # Fallback: known magic inside stream without size prefix.
-            for magic in (b'%PDF-', b'PK\x03\x04', b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
-                idx = native.find(magic)
-                if idx >= 0:
-                    payload = native[idx:]
-                    ext, label = infer_payload(payload)
-                    if ext:
-                        fname = extract_filename(header, ext) or guessed_name
-                        if ext == '.pdf':
-                            eof = payload.rfind(b'%%EOF')
-                            if eof > 0:
-                                payload = payload[:eof + 5]
-                        return payload, fname, ext, label
+                    return trim_payload(payload, ext), fname, ext, label
+
+            carved = carve_known_payload(native, header)
+            if carved:
+                payload, fname, ext, label = carved
+                return payload, fname or guessed_name, ext, label
     finally:
         ole.close()
 
@@ -222,6 +250,7 @@ def parse_xlsx_sheets(payload: bytes) -> list[dict]:
         return []
 
 changed = 0
+unresolved = 0
 for idx, att in enumerate(attachments, 1):
     name = str(att.get('name') or '')
     try:
@@ -234,16 +263,17 @@ for idx, att in enumerate(attachments, 1):
         continue
 
     payload, recovered_name, ext, label = extract_from_ole(raw)
+    slides = att.get('slides') or []
+    slide_num = (slides[0].get('index', 0) + 1) if slides and isinstance(slides[0], dict) else idx
     if not ext:
-        # Last resort: still avoid an Office-generated oleObject*.bin name.
-        slides = att.get('slides') or []
-        slide_num = (slides[0].get('index', 0) + 1) if slides and isinstance(slides[0], dict) else idx
+        # Last resort: avoid Office's oleObject*.bin label while staying honest
+        # about the bytes. Do not fake a PDF extension if the PDF payload was not
+        # recovered. Humans hate .bin; auditors hate lying. Both are annoying.
         ext = '.bin'
         label = 'Embedded file'
-        recovered_name = f'embedded_slide_{slide_num:02d}.bin'
+        recovered_name = f'embedded_evidence_slide_{slide_num:02d}.bin'
+        unresolved += 1
     else:
-        slides = att.get('slides') or []
-        slide_num = (slides[0].get('index', 0) + 1) if slides and isinstance(slides[0], dict) else idx
         recovered_name = recovered_name or f'evidence_slide_{slide_num:02d}{ext}'
 
     fallback = f'evidence_{idx:02d}{ext}'
@@ -271,4 +301,4 @@ if changed:
     text = text[:match.start(2)] + new_json + text[match.end(2):]
     path.write_text(text, encoding='utf-8')
 
-print(f'OLE attachment normalization applied: {changed} attachment(s) updated in {path}')
+print(f'OLE attachment normalization applied: {changed} attachment(s) updated in {path}; unresolved={unresolved}')
