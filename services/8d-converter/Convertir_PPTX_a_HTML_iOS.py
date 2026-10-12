@@ -15,6 +15,10 @@ try:
  if not ole_patch.is_file():
   raise RuntimeError('Required OLE attachment normalizer missing from deployment')
  subprocess.run([sys.executable,str(ole_patch),str(dst)],check=True)
+ ole_package_patch=root/'SMTinel_8D_OLE_Package_Recoverer.py'
+ if not ole_package_patch.is_file():
+  raise RuntimeError('Required OLE Package recoverer missing from deployment')
+ subprocess.run([sys.executable,str(ole_package_patch),str(dst)],check=True)
  mail_patch=root/'SMTinel_8D_Mail_Evidence_Patch.py'
  if mail_patch.exists():
   subprocess.run([sys.executable,str(mail_patch),str(dst)],check=True)
@@ -29,6 +33,10 @@ try:
  if not final_polish_patch.is_file():
   raise RuntimeError('Required final English polish patch missing from deployment')
  subprocess.run([sys.executable,str(final_polish_patch),str(dst)],check=True)
+ mobile_guard_patch=root/'SMTinel_8D_Mobile_Final_Guard_Patch.py'
+ if not mobile_guard_patch.is_file():
+  raise RuntimeError('Required mobile final guard patch missing from deployment')
+ subprocess.run([sys.executable,str(mobile_guard_patch),str(dst)],check=True)
  # Validate only the structural contract. Generic OLE fallback names are warnings,
  # not conversion blockers: some PowerPoint packages do not expose the original
  # payload cleanly. Failing the whole report for that is bureaucratic comedy.
@@ -39,11 +47,13 @@ try:
   'iPhone fallback':'id="safariFallback"' in output,
   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
-  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output,
+  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output or 'Original PowerPoint Evidence' in output,
  }
  missing=[name for name,ok in checks.items() if not ok]
  if missing:
   raise RuntimeError('8D Handoff export failed validation: '+', '.join(missing))
+ if 'Evidence originales del PowerPoint' in output or 'Las tablas siguientes permiten' in output:
+  raise RuntimeError('8D Handoff export failed validation: mobile fallback still has mixed Spanish UI')
  if 'oleObject1.bin' in output or 'oleObject2.bin' in output:
   print('Warning: one or more OLE attachments remained opaque; export kept the report usable.')
  print('8D English Light Handoff verified (desktop + iPhone fallback)')
