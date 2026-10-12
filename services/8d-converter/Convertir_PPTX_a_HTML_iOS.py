@@ -11,6 +11,10 @@ intermediate=dst.with_name(dst.stem+'__intermediate.html')
 try:
  subprocess.run([sys.executable,str(root/'SMTinel_PPTX_a_HTML_Converter.py'),str(src),str(intermediate)],check=True)
  subprocess.run([sys.executable,str(root/'SMTinel_8D_iOS_Progressive_Patch.py'),str(intermediate),str(dst)],check=True)
+ ole_patch=root/'SMTinel_8D_OLE_Attachment_Normalizer.py'
+ if not ole_patch.is_file():
+  raise RuntimeError('Required OLE attachment normalizer missing from deployment')
+ subprocess.run([sys.executable,str(ole_patch),str(dst)],check=True)
  mail_patch=root/'SMTinel_8D_Mail_Evidence_Patch.py'
  if mail_patch.exists():
   subprocess.run([sys.executable,str(mail_patch),str(dst)],check=True)
@@ -34,6 +38,7 @@ try:
   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
   'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output,
+  'No generic OLE downloads':'oleObject1.bin' not in output and 'oleObject2.bin' not in output,
  }
  missing=[name for name,ok in checks.items() if not ok]
  if missing:
