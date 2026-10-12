@@ -43,11 +43,11 @@ try:
  output=dst.read_text(encoding='utf-8')
  checks={
   'English document language':'<html lang="en"' in output,
-  'Light Handoff theme':'smtinel-8d-english-handoff-theme-v1' in output,
+  'Light Handoff theme':'smtinel-8d-english-handoff-theme-v2' in output,
   'iPhone fallback':'id="safariFallback"' in output,
   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
-  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output or 'Original PowerPoint Evidence' in output,
+  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output or 'Original PowerPoint Evidence' in output,\n  'Integrated presentation index':'id="sidebar"' in output and 'id="navScroll"' in output and 'id="searchSlide"' in output,
  }
  missing=[name for name,ok in checks.items() if not ok]
  if missing:
