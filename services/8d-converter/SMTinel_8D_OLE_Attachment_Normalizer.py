@@ -59,6 +59,7 @@ MIME_BY_EXT = {
     '.msg': 'application/vnd.ms-outlook',
     '.txt': 'text/plain',
     '.zip': 'application/zip',
+    '.bin': 'application/octet-stream',
 }
 
 LABEL_BY_EXT = {
@@ -75,16 +76,30 @@ LABEL_BY_EXT = {
     '.msg': 'Outlook mail',
     '.txt': 'Text',
     '.zip': 'ZIP',
+    '.bin': 'Embedded file',
 }
 
 SAFE_CHARS = re.compile(r'[^A-Za-z0-9._()\- ]+')
 FILENAME_RE = re.compile(r'[^\x00\\/:*?"<>|\r\n]{1,120}\.(?:xlsx|xlsm|xls|csv|pdf|docx|doc|pptx|ppt|eml|msg|txt|zip)', re.I)
+CFB_MAGIC = b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'
 
 
 def safe_name(name: str, fallback: str) -> str:
     name = (name or '').strip().replace('\\', '/').split('/')[-1]
     name = SAFE_CHARS.sub('_', name).strip(' ._')
     return name or fallback
+
+
+def normalize_extension(name: str, ext: str | None, fallback: str) -> str:
+    final = safe_name(name, fallback)
+    if ext and ext != '.bin':
+        suffix = Path(final).suffix.lower()
+        if suffix != ext.lower():
+            stem = Path(final).stem or Path(fallback).stem or 'evidence'
+            final = safe_name(stem, Path(fallback).stem or 'evidence') + ext
+    elif ext and not Path(final).suffix:
+        final += ext
+    return final
 
 
 def trim_payload(payload: bytes, ext: str | None) -> bytes:
@@ -95,7 +110,35 @@ def trim_payload(payload: bytes, ext: str | None) -> bytes:
     return payload
 
 
-def infer_payload(data_bytes: bytes) -> tuple[str | None, str | None]:
+def classify_cfb_payload(data_bytes: bytes) -> tuple[str | None, str | None]:
+    """Classify a real legacy Office CFB payload without lying about OLE packages.
+
+    A PDF inserted from Acrobat is also a CFB object at the outer layer, so the
+    old blanket CFB -> Excel rule turned Acrobat documents into fake Excel files.
+    Civilization barely survives enough spreadsheets as it is.
+    """
+    if not (olefile and data_bytes.startswith(CFB_MAGIC) and olefile.isOleFile(io.BytesIO(data_bytes))):
+        return None, None
+    try:
+        ole = olefile.OleFileIO(io.BytesIO(data_bytes))
+        try:
+            names = ['/'.join(p).lower() for p in ole.listdir(streams=True, storages=False)]
+        finally:
+            ole.close()
+    except Exception:
+        return None, None
+
+    joined = ' '.join(names)
+    if any(n.endswith('/workbook') or n == 'workbook' or n.endswith('/book') or n == 'book' for n in names):
+        return '.xls', 'Excel'
+    if 'worddocument' in joined:
+        return '.doc', 'Word'
+    if 'powerpoint document' in joined:
+        return '.ppt', 'PowerPoint'
+    return None, None
+
+
+def infer_payload(data_bytes: bytes, *, allow_cfb: bool = False) -> tuple[str | None, str | None]:
     if data_bytes.startswith(b'%PDF-'):
         return '.pdf', 'PDF'
     if data_bytes.startswith(b'PK\x03\x04') or data_bytes.startswith(b'PK\x05\x06') or data_bytes.startswith(b'PK\x07\x08'):
@@ -111,8 +154,8 @@ def infer_payload(data_bytes: bytes) -> tuple[str | None, str | None]:
         except Exception:
             return '.zip', 'ZIP'
         return '.zip', 'ZIP'
-    if data_bytes.startswith(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
-        return '.xls', 'Excel'
+    if allow_cfb and data_bytes.startswith(CFB_MAGIC):
+        return classify_cfb_payload(data_bytes)
     return None, None
 
 
@@ -131,29 +174,34 @@ def extract_filename(blob: bytes, ext: str | None) -> str | None:
         pass
     if ext:
         by_ext = [c for c in candidates if c.lower().endswith(ext.lower())]
-        if by_ext:
-            return by_ext[-1]
+        return by_ext[-1] if by_ext else None
     return candidates[-1] if candidates else None
 
 
 def carve_known_payload(blob: bytes, header: bytes | None = None) -> tuple[bytes, str | None, str | None, str | None] | None:
-    """Find a recognizable document payload inside an OLE blob or stream.
-
-    Some Acrobat/Package insertions leave the real PDF or OOXML file buried
-    inside a stream, not neatly at byte zero. So we scan the whole thing. Yes,
-    it is as charming as it sounds.
-    """
+    """Find a recognizable document payload inside an OLE blob or stream."""
     header = header or blob[:8192]
-    for magic in (b'%PDF-', b'PK\x03\x04', b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
+    for magic in (b'%PDF-', b'PK\x03\x04'):
         start = blob.find(magic)
         while start >= 0:
             payload = blob[start:]
-            ext, label = infer_payload(payload)
+            ext, label = infer_payload(payload, allow_cfb=False)
             if ext:
                 payload = trim_payload(payload, ext)
                 fname = extract_filename(header, ext) or extract_filename(blob[max(0, start - 4096):start + 4096], ext)
                 return payload, fname, ext, label
             start = blob.find(magic, start + 1)
+    # Only accept CFB magic when it can be positively identified as a real
+    # legacy Office document. Generic OLE packages are not Excel. Let that be
+    # etched somewhere PowerPoint can read.
+    start = blob.find(CFB_MAGIC)
+    while start >= 0:
+        payload = blob[start:]
+        ext, label = infer_payload(payload, allow_cfb=True)
+        if ext:
+            fname = extract_filename(header, ext) or extract_filename(blob[max(0, start - 4096):start + 4096], ext)
+            return payload, fname, ext, label
+        start = blob.find(CFB_MAGIC, start + 1)
     return None
 
 
@@ -165,59 +213,69 @@ def extract_from_ole(data_bytes: bytes) -> tuple[bytes, str | None, str | None, 
     """Return payload, filename, extension and label.
 
     For real OLE Package objects, the useful file is normally inside the
-    \x01Ole10Native stream. When exact parsing is unclear, scan for a plausible
-    native-size prefix and known file magic. This is defensive because PowerPoint
-    versions write slightly different package wrappers.
+    \x01Ole10Native stream. Acrobat PDF insertions often expose a CONTENTS stream
+    or bury %PDF later in a stream, so PDF/OOXML carving must happen before the
+    legacy Office CFB fallback.
     """
-    ext, label = infer_payload(data_bytes)
+    ext, label = infer_payload(data_bytes, allow_cfb=False)
     if ext:
         return trim_payload(data_bytes, ext), extract_filename(data_bytes[:8192], ext), ext, label
+
+    if olefile and data_bytes.startswith(CFB_MAGIC) and olefile.isOleFile(io.BytesIO(data_bytes)):
+        ole = olefile.OleFileIO(io.BytesIO(data_bytes))
+        try:
+            streams = ole.listdir(streams=True, storages=False)
+            preferred = [p for p in streams if 'Ole10Native' in stream_name(p)]
+            preferred += [p for p in streams if stream_name(p).endswith('Package')]
+            preferred += [p for p in streams if stream_name(p).lower().endswith('contents')]
+            preferred += [p for p in streams if 'contents' in stream_name(p).lower()]
+            preferred += streams
+            seen: set[str] = set()
+            for spath in preferred:
+                sname = stream_name(spath)
+                if sname in seen:
+                    continue
+                seen.add(sname)
+                try:
+                    native = ole.openstream(spath).read()
+                except Exception:
+                    continue
+                header = native[:8192]
+                guessed_name = extract_filename(header, None)
+
+                ext, label = infer_payload(native, allow_cfb=False)
+                if ext:
+                    fname = extract_filename(header, ext) or guessed_name
+                    return trim_payload(native, ext), fname, ext, label
+
+                carved = carve_known_payload(native, header)
+                if carved:
+                    payload, fname, ext, label = carved
+                    return payload, fname or guessed_name, ext, label
+
+                # Search size-prefixed native payloads used by Ole10Native.
+                limit = max(0, len(native) - 4)
+                for pos in range(limit):
+                    size = struct.unpack_from('<I', native, pos)[0]
+                    if size <= 8 or size > len(native) - pos - 4:
+                        continue
+                    payload = native[pos + 4:pos + 4 + size]
+                    ext, label = infer_payload(payload, allow_cfb=True)
+                    if ext:
+                        fname = extract_filename(header, ext) or guessed_name
+                        return trim_payload(payload, ext), fname, ext, label
+        finally:
+            ole.close()
+
+        # Only now, after checking streams for real payloads, accept a legacy
+        # Office CFB classification.
+        ext, label = infer_payload(data_bytes, allow_cfb=True)
+        if ext:
+            return data_bytes, extract_filename(data_bytes[:8192], ext), ext, label
 
     carved = carve_known_payload(data_bytes)
     if carved:
         return carved
-
-    if not (olefile and olefile.isOleFile(io.BytesIO(data_bytes))):
-        return data_bytes, None, None, None
-
-    ole = olefile.OleFileIO(io.BytesIO(data_bytes))
-    try:
-        streams = ole.listdir(streams=True, storages=False)
-        preferred = [p for p in streams if 'Ole10Native' in stream_name(p)]
-        preferred += [p for p in streams if stream_name(p).endswith('Package')]
-        preferred += [p for p in streams if stream_name(p).lower().endswith('contents')]
-        preferred += streams
-        seen: set[str] = set()
-        for spath in preferred:
-            sname = stream_name(spath)
-            if sname in seen:
-                continue
-            seen.add(sname)
-            try:
-                native = ole.openstream(spath).read()
-            except Exception:
-                continue
-            header = native[:8192]
-            guessed_name = extract_filename(header, None)
-
-            # Search size-prefixed native payloads used by Ole10Native.
-            limit = max(0, len(native) - 4)
-            for pos in range(limit):
-                size = struct.unpack_from('<I', native, pos)[0]
-                if size <= 8 or size > len(native) - pos - 4:
-                    continue
-                payload = native[pos + 4:pos + 4 + size]
-                ext, label = infer_payload(payload)
-                if ext:
-                    fname = extract_filename(header, ext) or guessed_name
-                    return trim_payload(payload, ext), fname, ext, label
-
-            carved = carve_known_payload(native, header)
-            if carved:
-                payload, fname, ext, label = carved
-                return payload, fname or guessed_name, ext, label
-    finally:
-        ole.close()
 
     return data_bytes, None, None, None
 
@@ -277,9 +335,7 @@ for idx, att in enumerate(attachments, 1):
         recovered_name = recovered_name or f'evidence_slide_{slide_num:02d}{ext}'
 
     fallback = f'evidence_{idx:02d}{ext}'
-    final_name = safe_name(recovered_name or '', fallback)
-    if not Path(final_name).suffix and ext:
-        final_name += ext
+    final_name = normalize_extension(recovered_name or '', ext, fallback)
 
     att['containerName'] = name
     att['name'] = final_name
@@ -293,7 +349,7 @@ for idx, att in enumerate(attachments, 1):
             att['sheets'] = sheets
             att.pop('parse_warning', None)
     else:
-        att['sheets'] = att.get('sheets') or []
+        att['sheets'] = []
     changed += 1
 
 if changed:
