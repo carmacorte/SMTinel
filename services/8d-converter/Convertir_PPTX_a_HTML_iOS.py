@@ -21,6 +21,10 @@ try:
  if not handoff_theme_patch.is_file():
   raise RuntimeError('Required English Light Handoff theme patch missing from deployment')
  subprocess.run([sys.executable,str(handoff_theme_patch),str(dst)],check=True)
+ final_polish_patch=root/'SMTinel_8D_Final_English_Polish_Patch.py'
+ if not final_polish_patch.is_file():
+  raise RuntimeError('Required final English polish patch missing from deployment')
+ subprocess.run([sys.executable,str(final_polish_patch),str(dst)],check=True)
  # Validate the final exported artifact, including the no-JavaScript iPhone view.
  output=dst.read_text(encoding='utf-8')
  checks={
@@ -29,6 +33,7 @@ try:
   'iPhone fallback':'id="safariFallback"' in output,
   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
+  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output,
  }
  missing=[name for name,ok in checks.items() if not ok]
  if missing:
