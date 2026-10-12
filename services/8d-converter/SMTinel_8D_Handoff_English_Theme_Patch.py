@@ -18,7 +18,7 @@ if len(sys.argv) < 2:
 
 path = Path(sys.argv[1]).resolve()
 text = path.read_text(encoding='utf-8')
-marker = 'smtinel-8d-english-handoff-theme-v1'
+marker = 'smtinel-8d-english-handoff-theme-v2'
 if marker in text:
     print('English Handoff theme already present:', path)
     raise SystemExit(0)
@@ -38,7 +38,7 @@ svg_icon = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <path d="M28 58h58v8H28v-8Zm0 16h44v8H28v-8Z" fill="#f7faf3"/>
   <path d="M85 51c8 0 14 6 14 13s-6 13-14 13H73l16-13-16-13h12Z" fill="#1b2d25" opacity=".95"/>
 </svg>'''
-icon_uri = 'data:image/svg+xml,' + quote(svg_icon, safe='/:;,#%?&=+@!$()*[]')
+icon_uri = 'data:image/svg+xml,' + quote(svg_icon, safe='/:')
 
 # Language, document metadata and embedded icon.
 text = re.sub(r'<html\s+lang="[^"]*"', '<html lang="en"', text, count=1)
@@ -125,7 +125,7 @@ text = text.replace('<div class="logo">8D</div>', f'<div class="logo" role="img"
 # SMTinel shift handoff reports: olive rail, operational intelligence band,
 # quiet cards and wine only for evidence/action accents.
 css = r'''
-/* smtinel-8d-english-handoff-theme-v1 | report-identity-v2 */
+/* smtinel-8d-english-handoff-theme-v2 | report-identity-v2 */
 :root{
   color-scheme:light;
   --bg:#eef4ea;
@@ -147,11 +147,11 @@ css = r'''
 }
 html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:Aptos,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;}
 .app{background:linear-gradient(180deg,#fbfcf8 0,#eef4ea 100%)!important;color:var(--ink)!important;}
-.top{min-height:82px!important;background:rgba(255,255,255,.97)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 28px rgba(31,49,39,.09)!important;backdrop-filter:saturate(1.25) blur(10px)!important;padding:10px 24px!important;}
+.app{grid-template-rows:64px minmax(0,1fr)!important;}\n.top{height:64px!important;min-height:64px!important;background:rgba(255,255,255,.97)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 28px rgba(31,49,39,.09)!important;backdrop-filter:saturate(1.25) blur(10px)!important;padding:10px 24px!important;}
 .top:after{content:"TRACE · MONITOR · PROTECT";margin-left:auto;color:#26372f!important;font-size:10px!important;font-weight:900!important;letter-spacing:.32em!important;white-space:nowrap!important;opacity:.9!important;}
-.logo{width:56px!important;height:56px!important;border-radius:16px!important;background:linear-gradient(145deg,#20372d,#7fa26a)!important;color:#fff!important;box-shadow:0 16px 30px rgba(38,69,49,.22)!important;font-weight:950!important;letter-spacing:-1.3px!important;border:1px solid rgba(255,255,255,.55)!important;}
+.logo{width:42px!important;height:42px!important;border-radius:16px!important;background:linear-gradient(145deg,#20372d,#7fa26a)!important;color:#fff!important;box-shadow:0 16px 30px rgba(38,69,49,.22)!important;font-weight:950!important;letter-spacing:-1.3px!important;border:1px solid rgba(255,255,255,.55)!important;}
 .logo:before{content:"";position:absolute;inset:7px;border-radius:12px;border:1px solid rgba(255,255,255,.32);pointer-events:none;}.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit;display:block;}
-.brand-title{color:var(--ink)!important;font-size:23px!important;font-weight:950!important;letter-spacing:-.8px!important;}
+.brand-title{color:var(--ink)!important;font-size:19px!important;font-weight:950!important;letter-spacing:-.8px!important;}
 .brand-sub{color:var(--muted)!important;font-size:12px!important;letter-spacing:.01em!important;}
 .mini{background:#f4f8ef!important;color:#455c50!important;border:1px solid #d3dfce!important;border-radius:999px!important;font-weight:850!important;box-shadow:0 5px 15px rgba(31,49,39,.05)!important;}
 .mini.em{background:#fff4e3!important;color:#8c5d08!important;border-color:#ecd6a5!important;}
@@ -160,7 +160,7 @@ html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:
 .btn.primary{background:var(--wine)!important;border-color:var(--wine)!important;color:#fff!important;box-shadow:0 12px 26px rgba(156,36,67,.20)!important;}
 .main{background:transparent!important;}
 .sidebar{background:linear-gradient(180deg,#fbfcf8 0,#eef5ea 100%)!important;border-right:1px solid var(--line)!important;box-shadow:8px 0 28px rgba(31,49,39,.06)!important;}
-.sidebar:before{content:"";display:block;height:76px;margin:14px 14px 8px;border-radius:18px;background:linear-gradient(145deg,#fdfefb,#e7f0e2);border:1px solid var(--line);box-shadow:var(--shadow-soft);}
+.sidebar:before{display:none!important;}
 .shead{background:#fbfcf8!important;border-bottom:1px solid var(--line)!important;padding-top:16px!important;}
 .shead h2{color:#1b2c24!important;font-weight:950!important;letter-spacing:-.35px!important;}
 .search{background:#fff!important;color:#1b2c24!important;border:1px solid #cfdcca!important;border-radius:14px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;}
@@ -173,8 +173,8 @@ html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:
 .nav-no{color:var(--wine)!important;font-weight:950!important;}
 .nav-sub{color:#728278!important;}
 .viewer{background:radial-gradient(circle at 50% 0,#ffffff 0,#f5f9f2 48%,#e6efdf 100%)!important;}
-.viewer-header{background:rgba(255,255,255,.88)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 22px rgba(31,49,39,.06)!important;position:relative!important;padding-bottom:54px!important;}
-.viewer-header:after{content:"OPERATIONAL INTELLIGENCE   ·   8D EVIDENCE HANDOFF   ·   CURRENT PRESENTATION PACKAGE";position:absolute!important;left:24px!important;right:24px!important;bottom:12px!important;background:linear-gradient(90deg,var(--olive),#385f34)!important;color:#fff!important;border-radius:8px!important;padding:13px 18px!important;font-size:13px!important;font-weight:900!important;letter-spacing:.14em!important;box-shadow:0 10px 24px rgba(47,79,43,.20)!important;}
+.viewer-header{background:rgba(255,255,255,.88)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 22px rgba(31,49,39,.06)!important;position:relative!important;padding-bottom:12px!important;}
+.viewer-header:after{display:none!important;content:none!important;}
 .page-title{color:#17231d!important;font-size:22px!important;font-weight:950!important;letter-spacing:-.45px!important;}
 .page-path,.counter{color:#64756c!important;}
 .stage{background:linear-gradient(180deg,#f8fbf5,#eef5ea)!important;padding:24px!important;}
@@ -227,7 +227,7 @@ html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:
 #safariFallback .sf-table-overflow th{background:#eef5ea!important;color:#17231d!important;}
 #safariFallback .sf-table-overflow td,#safariFallback .sf-table-overflow th{border-bottom:1px solid #e3eadf!important;color:#26382f!important;}
 @media(max-width:900px){.top:after{display:none!important}.viewer-header{padding-bottom:12px!important}.viewer-header:after{display:none!important}.stage{padding:10px!important}.brand-title{font-size:16px!important}.brand-sub{font-size:10px!important}.logo{width:40px!important;height:40px!important}.drawer{width:100%!important}}
-@media(max-width:730px){.app{grid-template-rows:58px minmax(0,1fr)!important}.top{min-height:58px!important;padding:8px 10px!important}.sidebar:before{display:none!important}.stage{padding:8px 4px!important}.footer{min-height:54px!important;padding-bottom:max(7px,env(safe-area-inset-bottom))!important}#safariFallback .sf-slide{border-radius:16px!important;margin:10px 8px 16px!important}#safariFallback .sf-assets,#safariFallback .sf-evidence-primer,#safariFallback .sf-index{margin:8px!important;border-radius:16px!important}}
+@media(max-width:730px){.app{grid-template-rows:54px minmax(0,1fr)!important}.top{height:54px!important;min-height:54px!important;padding:4px 8px!important}.logo{width:36px!important;height:36px!important;}.sidebar:before{display:none!important}.stage{padding:8px 4px!important}.footer{min-height:54px!important;padding-bottom:max(7px,env(safe-area-inset-bottom))!important}#safariFallback .sf-slide{border-radius:16px!important;margin:10px 8px 16px!important}#safariFallback .sf-assets,#safariFallback .sf-evidence-primer,#safariFallback .sf-index{margin:8px!important;border-radius:16px!important}}
 @media print{body{background:white!important;color:#111!important}.top,.sidebar,.footer,.drawer{display:none!important}.stage{padding:0!important;background:#fff!important}.frame{box-shadow:none!important;border-radius:0!important}}
 '''
 
