@@ -119,6 +119,7 @@ for old, new in replacements.items():
 
 text = re.sub(r'(<div class="brand-title">).*?(</div>)', r'\1SMTinel · 8D Handoff\2', text, count=1, flags=re.S)
 text = re.sub(r'(<div class="brand-sub">).*?(</div>)', r'\1Trace · Monitor · Protect · Offline evidence\2', text, count=1, flags=re.S)
+text = text.replace('<div class="logo">8D</div>', f'<div class="logo" role="img" aria-label="SMTinel"><img src="{icon_uri}" alt=""/></div>')
 
 # Light executive handoff skin. This intentionally borrows the visual language of
 # SMTinel shift handoff reports: olive rail, operational intelligence band,
@@ -149,7 +150,7 @@ html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:
 .top{min-height:82px!important;background:rgba(255,255,255,.97)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 28px rgba(31,49,39,.09)!important;backdrop-filter:saturate(1.25) blur(10px)!important;padding:10px 24px!important;}
 .top:after{content:"TRACE · MONITOR · PROTECT";margin-left:auto;color:#26372f!important;font-size:10px!important;font-weight:900!important;letter-spacing:.32em!important;white-space:nowrap!important;opacity:.9!important;}
 .logo{width:56px!important;height:56px!important;border-radius:16px!important;background:linear-gradient(145deg,#20372d,#7fa26a)!important;color:#fff!important;box-shadow:0 16px 30px rgba(38,69,49,.22)!important;font-weight:950!important;letter-spacing:-1.3px!important;border:1px solid rgba(255,255,255,.55)!important;}
-.logo:before{content:"";position:absolute;inset:7px;border-radius:12px;border:1px solid rgba(255,255,255,.32);pointer-events:none;}
+.logo:before{content:"";position:absolute;inset:7px;border-radius:12px;border:1px solid rgba(255,255,255,.32);pointer-events:none;}.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit;display:block;}
 .brand-title{color:var(--ink)!important;font-size:23px!important;font-weight:950!important;letter-spacing:-.8px!important;}
 .brand-sub{color:var(--muted)!important;font-size:12px!important;letter-spacing:.01em!important;}
 .mini{background:#f4f8ef!important;color:#455c50!important;border:1px solid #d3dfce!important;border-radius:999px!important;font-weight:850!important;box-shadow:0 5px 15px rgba(31,49,39,.05)!important;}
