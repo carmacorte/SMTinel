@@ -186,17 +186,38 @@
     ensureMobileParentStyles();
     mount(frame);
   }
-  // Independent 8D Studio entry: outside the Export Center iframe lifecycle.
+  // Place the independent 8D Studio entry inside SMTinel's generated dock.
   function ensureStudioEntry(){
-    if(document.getElementById('smtinel8dStudioEntry'))return;
-    var link=document.createElement('a');
-    link.id='smtinel8dStudioEntry';
-    link.href='/8d-studio.html';
-    link.textContent='8D Studio';
-    link.setAttribute('aria-label','Abrir modulo independiente 8D Studio');
-    link.style.cssText='position:fixed;right:14px;bottom:88px;z-index:2147483000;background:#572631;color:#fff;border:1px solid #b86b82;border-radius:14px;padding:12px 16px;font:700 13px system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 22px #0005;max-width:calc(100vw - 28px)';
-    document.body.appendChild(link);
+    var link=document.getElementById('smtinel8dStudioEntry');
+    var nav=document.querySelector('.smtinel-bottom-nav');
+    if(!nav){
+      if(link)link.remove();
+      return;
+    }
+    var style=document.getElementById('smtinel8dDockEntryStyles');
+    if(!style){
+      style=document.createElement('style');
+      style.id='smtinel8dDockEntryStyles';
+      style.textContent='html body .smtinel-bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important}html body .smtinel-bottom-nav .smtinel-tab{min-width:0!important;padding-left:2px!important;padding-right:2px!important}html body .smtinel-bottom-nav .smtinel-tab span:last-child{font-size:clamp(8px,2.5vw,11px)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}';
+      (document.head||document.documentElement).appendChild(style);
+    }
+    if(link&&link.parentElement===nav)return;
+    if(!link){
+      link=document.createElement('a');
+      link.id='smtinel8dStudioEntry';
+      link.href='/8d-studio.html';
+      link.className='smtinel-tab';
+      link.setAttribute('aria-label','Abrir modulo independiente 8D Studio');
+      link.innerHTML='<span class="smtinel-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h4"/></svg></span><span>8D Studio</span>';
+    }else{
+      link.className='smtinel-tab';
+      link.removeAttribute('style');
+      link.innerHTML='<span class="smtinel-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h4"/></svg></span><span>8D Studio</span>';
+    }
+    nav.appendChild(link);
   }
+  var studioDockObserver=new MutationObserver(ensureStudioEntry);
+  studioDockObserver.observe(document.documentElement,{childList:true,subtree:true});
   function schedule(){[0,250,900].forEach(function(ms){setTimeout(tryMount,ms);});}
   function navigation(e){
     if(activeRoot&&activeRoot.isConnected)return;
