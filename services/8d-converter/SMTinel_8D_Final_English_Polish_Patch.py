@@ -28,13 +28,16 @@ replacements = {
     'archivo(s) recuperado(s)': 'recovered file(s)',
     'archivo(s)': 'file(s)',
     'enlace(s) interactivo(s)': 'interactive link(s)',
+    'hipervínculos de correo': 'email hyperlinks',
     'toca el icono resaltado': 'tap the highlighted icon',
     'en la diapositiva': 'on the slide',
     'Este archivo se recuperó sin modificación del PowerPoint original.': 'This file was recovered from the original PowerPoint without modification.',
+    'Este archivo se recuperó sin modificar sus bytes. Vista previa no disponible.': 'This file was recovered byte-for-byte. Preview is not available.',
     'Este archivo se recuperó sin modificar.': 'This file was recovered without modification.',
     'Enlaces originales de PowerPoint': 'Original PowerPoint links',
     'Direcciones de correo detectadas en la presentación': 'Email addresses detected in the presentation',
     'Direcciones de correo detectadas': 'Detected email addresses',
+    'solo se abrirán si las seleccionas.': 'They only open when selected.',
     'Ligas detectadas': 'Detected links',
     'Mostrar todos': 'Show all',
     'Ocultar': 'Hide',
@@ -68,6 +71,7 @@ replacements = {
     'Equipo': 'Team',
     'archivo adjunto': 'attached file',
     'archivos adjuntos': 'attached files',
+    'El HTML contiene copias de las slides renderizadas y los documentos incrustados originales. No ejecuta código de Office. Las imágenes incluidas dentro de las slides no constituyen adjuntos independientes. Revisa la información confidencial antes de compartir el archivo.': 'This HTML contains rendered slide copies and the original embedded documents. It does not execute Office code. Images inside slides are not independent attachments. Review confidential information before sharing the file.',
 }
 for old, new in replacements.items():
     text = text.replace(old, new)
@@ -75,6 +79,14 @@ for old, new in replacements.items():
 # Target dynamic template strings that are assembled with JavaScript template literals.
 text = text.replace('`${p.links.length} enlace(s) interactivo(s)`', '`${p.links.length} interactive link(s)`')
 text = text.replace('`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`', '`${p.attachmentIds.length} embedded file(s) · tap the highlighted icon`')
+
+# The original generator used a hardcoded hotspot label: Excel. That makes PDF or
+# generic OLE packages look like Excel even when the recovered file is oleObject.bin.
+# Keep Excel only for real Excel-like files; otherwise use PDF or File.
+text = text.replace(
+    "let tag=mk('span','glow','Excel ↗');",
+    "let label=((att.type||'').toLowerCase().includes('excel')||/\\.(xlsx|xlsm|xls|csv)$/i.test(att.name||''))?'Excel':(/\\.pdf$/i.test(att.name||'')?'PDF':'File');let tag=mk('span','glow',label+' ↗');"
+)
 
 # Fix accidental mixed labels produced by sequential patches.
 cleanup = {
@@ -100,6 +112,7 @@ blocked = [
     'Enlaces originales de PowerPoint',
     'Diapositivas',
     'Notas originales',
+    "mk('span','glow','Excel ↗')",
 ]
 missing = [s for s in blocked if s in text]
 if missing:
