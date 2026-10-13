@@ -7,7 +7,9 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY serve_8d.py Convertir_PPTX_a_HTML_iOS.py SMTinel_PPTX_a_HTML_Converter.py SMTinel_8D_iOS_Progressive_Patch.py SMTinel_8D_OLE_Attachment_Normalizer.py SMTinel_8D_OLE_Package_Recoverer.py SMTinel_8D_Handoff_English_Theme_Patch.py SMTinel_8D_Final_English_Polish_Patch.py SMTinel_8D_Mail_Evidence_Patch.py SMTinel_8D_Mobile_Excel_Visibility_Patch.py SMTinel_8D_Mobile_Final_Guard_Patch.py smtinel_favicon.png ./
+RUN python -m compileall -q /app
 RUN useradd -m -u 10001 smtinel && mkdir -p /tmp/smtinel && chown -R smtinel:smtinel /tmp/smtinel /app
 USER smtinel
 EXPOSE 8765
 CMD ["sh", "-c", "exec uvicorn serve_8d:app --host 0.0.0.0 --port ${PORT:-8765} --workers 1 --proxy-headers"]
+
