@@ -171,3 +171,101 @@
     setInterval(apply, 1500);
   }
 }());
+
+
+/* Yokoten preview/export appearance: identical palette, isolated from app skins. */
+(function () {
+  'use strict';
+  var VERSION = 'smtinel-yokoten-appearance-v1';
+  var seen = new WeakSet();
+  function mode() {
+    return document.documentElement.classList.contains('smtinel-theme-light') ? 'light' : 'dark';
+  }
+  function palette(dark) {
+    return dark
+      ? '--yk-page:#141719;--yk-paper:#22272b;--yk-soft:#2b3236;--yk-text:#ffffff;--yk-muted:#d0d6da;--yk-border:#59646c;--yk-accent:#adc59a;'
+      : '--yk-page:#f5f7f4;--yk-paper:#ffffff;--yk-soft:#edf1eb;--yk-text:#171b18;--yk-muted:#49544c;--yk-border:#c6cec8;--yk-accent:#405c35;';
+  }
+  function exportCss(theme) {
+    return 'html:root{' + palette(theme === 'dark') + 'color-scheme:' + theme + ';}' + `
+html body{background:var(--yk-page)!important;color:var(--yk-text)!important;font-family:Segoe UI,Arial,sans-serif!important}
+html body header{background:var(--yk-paper)!important;color:var(--yk-text)!important;border:1px solid var(--yk-border)!important;border-top:4px solid var(--yk-accent)!important;border-radius:14px!important;margin:12px 12px 0!important;padding:14px 16px!important;box-shadow:none!important}
+html body header .brand-copy h1,html body header .brand-word,html body header .brand-word .accent{color:var(--yk-text)!important}
+html body header p,html body header .brand-tag{color:var(--yk-muted)!important}
+html body .kpi,html body .panel,html body .card,html body .cb,html body #mx .matrix .cell,html body #mx .matrix .rowhead,html body .subkpis div{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}
+html body .panel,html body .card{border-radius:14px!important;overflow:hidden}
+html body .kpi b,html body .grid4 strong,html body .rowhead b{color:var(--yk-text)!important}
+html body #mx .matrix .cell .exposure-copy,html body .kpi span,html body .grid4 span,html body .rowhead small,html body .foot,html body .empty{color:var(--yk-muted)!important}
+html body .matrix th,html body .matrix td,html body .mini th,html body .mini td,html body .tracker th,html body .tracker td{border-color:var(--yk-border)!important}
+html body .matrix thead th,html body .ct,html body .mini th,html body .tracker th,html body .subkpis{background:var(--yk-soft)!important;color:var(--yk-text)!important}
+html body #mx .matrix tbody tr:nth-child(even) .cell,html body #mx .matrix tbody tr:nth-child(even) .rowhead{background:var(--yk-soft)!important}
+html body #mx .matrix .cell:hover,html body #mx .matrix .cell.sel{background:var(--yk-soft)!important;box-shadow:inset 0 0 0 2px var(--yk-accent)!important}
+html body .hero{background:var(--yk-soft)!important;color:var(--yk-text)!important;border-bottom:1px solid var(--yk-border)!important}
+html body .hero h2,html body .hero p{color:var(--yk-text)!important}
+html body #meta{color:var(--yk-muted)!important}
+html body .tools input,html body .tools select,html body .btn,html body .tracker input,html body .tracker select,html body .tracker textarea{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}
+html body .btn:hover{background:var(--yk-soft)!important}
+@media print{html:root{${palette(false)}color-scheme:light}html body header{position:static!important}}
+`;
+  }
+  function transform(html, theme) {
+    if (typeof html !== 'string' || html.indexOf('window.__YK__=') < 0) return html;
+    var style = '<style id="' + VERSION + '">' + exportCss(theme) + '</style>';
+    var rx = new RegExp('<style id="' + VERSION + '">[\\s\\S]*?</style>');
+    return rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
+  }
+  function previewCss(theme) {
+    var scope = 'html body #emailPreview .smt-yokoten-preview';
+    return scope + '{' + palette(theme === 'dark') + 'color:var(--yk-text)!important;background:var(--yk-page)!important}' +
+      scope + ' div,' + scope + ' p,' + scope + ' small,' + scope + ' span,' + scope + ' b,' + scope + ' h2{color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
+      scope + ' div{background:var(--yk-paper)!important}' +
+      scope + '>div{background:var(--yk-page)!important}' +
+      scope + '>div>div:first-child{background:var(--yk-paper)!important;border-top:4px solid var(--yk-accent)!important}' +
+      scope + ' p,' + scope + ' small{color:var(--yk-muted)!important}' +
+      scope + ' table{background:var(--yk-paper)!important;color:var(--yk-text)!important}' +
+      scope + ' th{background:var(--yk-soft)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
+      scope + ' td{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
+      scope + ' tr:nth-child(even) td{background:var(--yk-soft)!important}';
+  }
+  function install(w) {
+    var d;
+    try { d = w.document; if (!d || !d.head) return; } catch (_) { return; }
+    ['SMTinelBuildYokotenExportHtml', 'SMTinelBuildYokotenPreviewHtml'].forEach(function (key) {
+      var original = w[key];
+      if (typeof original !== 'function' || original.__yokotenAppearanceV1) return;
+      var wrapped = function () {
+        var value = original.apply(this, arguments);
+        if (key === 'SMTinelBuildYokotenExportHtml') return transform(value, mode());
+        return '<div class="smt-yokoten-preview">' + value + '</div>';
+      };
+      wrapped.__yokotenAppearanceV1 = true;
+      w[key] = wrapped;
+    });
+    if (typeof w.SMTinelBuildYokotenExportHtml === 'function') {
+      var style = d.getElementById(VERSION + '-preview');
+      if (!style) { style = d.createElement('style'); style.id = VERSION + '-preview'; d.head.appendChild(style); }
+      var css = previewCss(mode());
+      if (style.textContent !== css) style.textContent = css;
+      var preview = d.getElementById('emailPreview');
+      if (preview && !preview.querySelector('.smt-yokoten-preview') && /Product \/ Revision x Line Matrix/.test(preview.textContent)) {
+        var shell = d.createElement('div'); shell.className = 'smt-yokoten-preview';
+        while (preview.firstChild) shell.appendChild(preview.firstChild);
+        preview.appendChild(shell);
+      }
+      var note = d.querySelector('.report-preview-head span');
+      if (note && preview && preview.querySelector('.smt-yokoten-preview') && /original light layout|Preview y exportación/.test(note.textContent)) note.textContent = 'Preview y exportación comparten el tema seleccionado';
+    }
+    if (!seen.has(d)) {
+      seen.add(d);
+      var timer;
+      new w.MutationObserver(function () { clearTimeout(timer); timer = setTimeout(function () { install(w); }, 100); }).observe(d.documentElement, { childList: true, subtree: true });
+      d.addEventListener('click', function () { install(w); }, true);
+      d.addEventListener('load', function (ev) { if (ev.target.tagName === 'IFRAME') install(ev.target.contentWindow); }, true);
+    }
+    Array.prototype.forEach.call(d.querySelectorAll('iframe'), function (frame) { install(frame.contentWindow); });
+  }
+  new MutationObserver(function () { install(window); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  install(window);
+  window.addEventListener('load', function () { install(window); });
+}());
+
