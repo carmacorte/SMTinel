@@ -47,7 +47,8 @@ try:
   'iPhone fallback':'id="safariFallback"' in output,
   'Light iPhone fallback CSS':'#safariFallback .sf-slide-head{background:#ffffff!important' in output,
   'English mobile notes':'Original notes' in output or 'Show original notes' in output,
-  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output or 'Original PowerPoint Evidence' in output,\n  'Integrated presentation index':'id="sidebar"' in output and 'id="navScroll"' in output and 'id="searchSlide"' in output,
+  'English evidence labels':'8D Evidence' in output or 'PowerPoint Evidence' in output or 'Original PowerPoint Evidence' in output,
+  'Integrated presentation index':'id="sidebar"' in output and 'id="navScroll"' in output and 'id="searchSlide"' in output,
  }
  missing=[name for name,ok in checks.items() if not ok]
  if missing:
