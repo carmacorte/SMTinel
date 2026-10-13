@@ -253,7 +253,7 @@ html body .btn:hover{background:var(--yk-soft)!important}
         preview.appendChild(shell);
       }
       var note = d.querySelector('.report-preview-head span');
-      if (note && preview && preview.querySelector('.smt-yokoten-preview') && /original light layout|Preview y exportación/.test(note.textContent)) note.textContent = 'Preview y exportación comparten el tema seleccionado';
+      if (note && preview && preview.querySelector('.smt-yokoten-preview') && /original light layout/.test(note.textContent)) note.textContent = 'Preview y exportación comparten el tema seleccionado';
     }
     if (!seen.has(d)) {
       seen.add(d);
