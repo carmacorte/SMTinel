@@ -147,7 +147,8 @@ css = r'''
 }
 html,body{background:var(--bg)!important;color:var(--ink)!important;font-family:Aptos,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;}
 .app{background:linear-gradient(180deg,#fbfcf8 0,#eef4ea 100%)!important;color:var(--ink)!important;}
-.app{grid-template-rows:64px minmax(0,1fr)!important;}\n.top{height:64px!important;min-height:64px!important;background:rgba(255,255,255,.97)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 28px rgba(31,49,39,.09)!important;backdrop-filter:saturate(1.25) blur(10px)!important;padding:10px 24px!important;}
+.app{grid-template-rows:64px minmax(0,1fr)!important;}
+.top{height:64px!important;min-height:64px!important;background:rgba(255,255,255,.97)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 8px 28px rgba(31,49,39,.09)!important;backdrop-filter:saturate(1.25) blur(10px)!important;padding:6px 16px!important;gap:10px!important;}
 .top:after{content:"TRACE · MONITOR · PROTECT";margin-left:auto;color:#26372f!important;font-size:10px!important;font-weight:900!important;letter-spacing:.32em!important;white-space:nowrap!important;opacity:.9!important;}
 .logo{width:42px!important;height:42px!important;border-radius:16px!important;background:linear-gradient(145deg,#20372d,#7fa26a)!important;color:#fff!important;box-shadow:0 16px 30px rgba(38,69,49,.22)!important;font-weight:950!important;letter-spacing:-1.3px!important;border:1px solid rgba(255,255,255,.55)!important;}
 .logo:before{content:"";position:absolute;inset:7px;border-radius:12px;border:1px solid rgba(255,255,255,.32);pointer-events:none;}.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit;display:block;}
@@ -238,3 +239,4 @@ else:
 
 path.write_text(text, encoding='utf-8')
 print('English Handoff theme applied:', path)
+
