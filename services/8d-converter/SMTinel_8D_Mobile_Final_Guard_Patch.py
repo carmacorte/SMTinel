@@ -9,6 +9,7 @@ Slide images and PowerPoint notes are not translated.
 from __future__ import annotations
 
 import json
+import html
 import re
 import sys
 from pathlib import Path
@@ -61,6 +62,7 @@ text = re.sub(r'<summary>\s*(?:Evidence|Evidencias?)\s+original(?:es)?\s+del\s+P
 # Repair attachment labels in the embedded JSON if a prior pass left opaque OLE
 # files unresolved. Do not fake extensions; just avoid incorrect Excel/Word/PDF
 # labels when the bytes are still a CFB/OLE wrapper.
+data = None
 match = re.search(r'(<script\s+id="embedded-data"\s+type="application/json">)(.*?)(</script>)', text, flags=re.S)
 if match:
     try:
@@ -88,6 +90,59 @@ if match:
     except Exception:
         pass
 
+# The iPhone fallback is generated before OLE recovery. Rebuild its evidence
+# section from the final attachments so names, download bytes and tables agree
+# with the interactive viewer. Do not replace labels alone: the old href may
+# still contain the OLE container instead of the recovered file.
+def render_evidence(attachments):
+    def esc(value):
+        return html.escape(str(value), quote=True)
+
+    cards = []
+    for att in attachments:
+        tables = []
+        for sheet in att.get('sheets') or []:
+            rows = sheet.get('rows') or []
+            if not rows:
+                continue
+            cols = max((len(row) for row in rows), default=0)
+            if not cols:
+                continue
+            def cells(row, tag):
+                return ''.join(f'<{tag}>{esc(row[j] if j < len(row) else "")}</{tag}>' for j in range(cols))
+            head = cells(rows[0], 'th')
+            body = ''.join('<tr>' + cells(row, 'td') + '</tr>' for row in rows[1:])
+            tables.append(
+                '<details open><summary>' + esc(sheet.get('name', 'Data')) +
+                ' · ' + esc(sheet.get('count', len(rows) - 1)) + ' records</summary>' +
+                '<div class="sf-table-overflow"><table><thead><tr>' + head +
+                '</tr></thead><tbody>' + body + '</tbody></table></div></details>'
+            )
+        name = esc(att.get('name') or 'attachment')
+        mime = esc(att.get('mime') or 'application/octet-stream')
+        payload = esc(att.get('b64') or '')
+        slides = ', '.join(str(s['index'] + 1) for s in att.get('slides') or [])
+        cards.append(
+            f'<div class="sf-inline-evidence"><strong>{name}</strong> · '
+            f'{att.get("size", 0) / 1024:.1f} KB · slide(s) {esc(slides)}'
+            f'<p><a class="sf-download" download="{name}" href="data:{mime};base64,{payload}">'
+            'Download original file</a></p><div class="sf-warning">'
+            'If the Files preview blocks downloads, use the tables below or open the HTML in a full browser.'
+            '</div>' + ''.join(tables) + '</div>'
+        )
+    return (
+        '<section id="sf-evidence" class="sf-assets"><h2>Original PowerPoint Evidence</h2>'
+        '<p class="sf-warning">The tables below allow evidence review without running scripts. '
+        'Embedded evidence preserves its original bytes.</p>' + ''.join(cards) +
+        '<p class="sf-warning">SMTinel · internal quality document. Protect according to applicable confidentiality rules.</p>'
+        '<a href="#sf-slide-1">↑ Back to top</a></section>'
+    )
+
+if data is not None:
+    evidence = render_evidence(data.get('attachments') or [])
+    text = re.sub(r'<section\s+id="sf-evidence"\s+class="sf-assets">.*?</section>',
+                  lambda _: evidence, text, count=1, flags=re.S)
+
 blocked = [
     'Evidence originales del PowerPoint',
     'Evidencias originales del PowerPoint',
@@ -105,3 +160,4 @@ if remaining:
 
 path.write_text(text, encoding='utf-8')
 print('8D mobile final guard applied:', path)
+
