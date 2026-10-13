@@ -210,6 +210,9 @@ html body .btn:hover{background:var(--yk-soft)!important}
   }
   function transform(html, theme) {
     if (typeof html !== 'string' || html.indexOf('window.__YK__=') < 0) return html;
+    // Older wrappers append literal backslash-n separators after these blocks.
+    // Limit normalization to those boundaries; report data and JS stay intact.
+    html = html.replace(/(<(?:style|script)\b[^>]*\bid=["']smtinel-yokoten-(?:v28-(?:style|runtime)|v203-actions-only-(?:style|runtime))["'][^>]*>[\s\S]*?<\/(?:style|script)>)(?:\\n)+/gi, function (_, block) { return block + '\n'; });
     var style = '<style id="' + VERSION + '">' + exportCss(theme) + '</style>';
     var rx = new RegExp('<style id="' + VERSION + '">[\\s\\S]*?</style>');
     return rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
@@ -268,4 +271,3 @@ html body .btn:hover{background:var(--yk-soft)!important}
   install(window);
   window.addEventListener('load', function () { install(window); });
 }());
-
