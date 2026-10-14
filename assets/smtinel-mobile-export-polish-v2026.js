@@ -208,6 +208,94 @@ html body .btn:hover{background:var(--yk-soft)!important}
 @media print{html:root{${palette(false)}color-scheme:light}html body header{position:static!important}}
 `;
   }
+  // Serialized into the standalone report; does not alter its embedded snapshot.
+  function yokotenTimeFilter() {
+    'use strict';
+    var S = window.__YK__, mx = document.getElementById('mx');
+    if (!S || !mx || document.getElementById('ykTimeFilter')) return;
+    var cells = Object.create(null), latest = '', missing = 0;
+    function day(value) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/.exec(String(value || ''));
+      if (!m) return '';
+      var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? m[1] + '-' + m[2] + '-' + m[3] : '';
+    }
+    function localToday() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function offset(date, n) {
+      var d = new Date(date + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+    (S.rows || []).forEach(function (r) {
+      Object.keys(r.cells || {}).forEach(function (line) {
+        var c = r.cells[line];
+        cells[c.key] = c;
+        if (c.exposure) return;
+        var date = day(c.last);
+        if (!date) missing++;
+        if (date > latest) latest = date;
+      });
+    });
+    var box = document.createElement('section');
+    box.id = 'ykTimeFilter';
+    box.setAttribute('aria-label', 'Filtro de fecha de última corrida');
+    box.innerHTML = '<div class="yk-time-fields"><label>Última corrida registrada<select id="ykTimePreset"><option value="all">Todo el historial</option><option value="latest">Último día con datos</option><option value="today">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="custom">Rango de fechas</option></select></label><label>Desde<input id="ykTimeFrom" type="date" disabled></label><label>Hasta<input id="ykTimeTo" type="date" disabled></label><button id="ykTimeReset" type="button">Restablecer</button></div><p id="ykTimeCutoff"></p><p id="ykTimeStatus" role="status" aria-live="polite"></p><p class="yk-time-scope">Filtra combinaciones producto × línea por su última fecha de corrida en Common DB. Piezas, WO y detalle conservan el historial completo. No confirma producción en vivo.</p><p id="ykTimeEmpty" hidden>No hay combinaciones que coincidan con la fecha, el producto y la línea seleccionados.</p>';
+    var anchor = mx.closest('.panel') || mx;
+    anchor.parentNode.insertBefore(box, anchor);
+    var css = document.createElement('style');
+    css.id = 'ykTimeFilterStyles';
+    css.textContent = '#ykTimeFilter{margin:0 0 12px;padding:12px 14px;border:1px solid var(--yk-border,#d7ded8);border-radius:12px;background:var(--yk-paper,#fff);color:var(--yk-text,#202124);font:12px/1.5 system-ui,sans-serif}#ykTimeFilter .yk-time-fields{display:flex;align-items:end;gap:10px;flex-wrap:wrap}#ykTimeFilter label{display:grid;gap:4px;font-size:11px;font-weight:700}#ykTimeFilter input,#ykTimeFilter select,#ykTimeFilter button{font:inherit;padding:9px;border:1px solid var(--yk-border,#bdc9c0);border-radius:8px;background:var(--yk-paper,#fff);color:var(--yk-text,#202124);min-height:38px}#ykTimeFilter input:disabled{opacity:.6}#ykTimeFilter p{margin:6px 0 0}#ykTimeFilter .yk-time-scope,#ykTimeCutoff{color:var(--yk-muted,#61656d);font-size:11px}#ykTimeStatus{font-weight:700}#ykTimeEmpty{padding:12px;background:var(--yk-soft,#f5f5f6);border-radius:8px}html body #mx .yk-time-out{position:relative}html body #mx .yk-time-out>button{display:none!important}html body #mx .yk-time-out:after{content:"Fuera del periodo / sin fecha";display:block;padding:16px;font:11px/1.5 system-ui,sans-serif;color:var(--yk-muted,#61656d)}html body #mx tr[hidden],#ykTimeFilter [hidden]{display:none!important}@media(max-width:600px){#ykTimeFilter .yk-time-fields{display:grid;grid-template-columns:1fr 1fr}#ykTimeFilter label:first-child{grid-column:1/-1}#ykTimeFilter input,#ykTimeFilter select{width:100%;min-width:0}}';
+    document.head.appendChild(css);
+    var preset = document.getElementById('ykTimePreset'), from = document.getElementById('ykTimeFrom'), to = document.getElementById('ykTimeTo');
+    var status = document.getElementById('ykTimeStatus'), empty = document.getElementById('ykTimeEmpty');
+    var cutoff = document.getElementById('ykTimeCutoff');
+    cutoff.textContent = 'Última fecha registrada en Common DB: ' + (latest || 'sin fecha disponible') + ' · Exportado: ' + (day(S.generated) || 'sin fecha') + (missing ? ' · ' + missing + ' combinaciones sin fecha' : '');
+    function clearDetail() {
+      var detail = document.getElementById('detail');
+      if (detail) { detail.classList.remove('open'); detail.innerHTML = ''; }
+    }
+    function apply() {
+      observer.disconnect();
+      var active = preset.value !== 'all', start = day(from.value), end = day(to.value);
+      var valid = !active || (!!start && !!end && start <= end), count = 0, rowCount = 0;
+      mx.querySelectorAll('tbody tr').forEach(function (row) {
+        var hits = 0;
+        row.querySelectorAll('button[data-k]').forEach(function (button) {
+          var cell = cells[button.getAttribute('data-k')], date = cell && !cell.exposure ? day(cell.last) : '';
+          var show = !active || (valid && !!date && date >= start && date <= end);
+          var td = button.closest('td');
+          if (td) td.classList.toggle('yk-time-out', !show);
+          if (show) { hits++; count++; }
+        });
+        row.hidden = active && !hits;
+        if (hits) rowCount++;
+      });
+      empty.hidden = count > 0 || !valid;
+      if (!valid) status.textContent = preset.value === 'latest' && !latest ? 'No hay fechas de corrida disponibles en Common DB.' : 'Selecciona un rango válido: Desde debe ser anterior o igual a Hasta.';
+      else status.textContent = (active ? start + ' a ' + end + ' · ' : 'Historial completo · ') + rowCount + ' productos/revisiones · ' + count + ' combinaciones visibles';
+      observer.observe(mx, { childList: true, subtree: true });
+    }
+    function changePreset() {
+      var mode = preset.value, today = localToday();
+      from.disabled = to.disabled = mode !== 'custom';
+      if (mode === 'all') { from.value = ''; to.value = ''; }
+      else if (mode === 'latest') { from.value = latest; to.value = latest; }
+      else if (mode === 'today') { from.value = today; to.value = today; }
+      else if (mode === '7' || mode === '30') { from.value = offset(today, 1 - Number(mode)); to.value = today; }
+      else { if (!from.value) from.value = latest || today; if (!to.value) to.value = latest || today; }
+      clearDetail(); apply();
+    }
+    preset.addEventListener('change', changePreset);
+    [from, to].forEach(function (input) { input.addEventListener('change', function () { clearDetail(); apply(); }); });
+    document.getElementById('ykTimeReset').addEventListener('click', function () { preset.value = 'all'; changePreset(); });
+    // Native search, line changes and cell clicks rebuild the table. Reapply only
+    // after its child nodes change; attribute-only filtering cannot loop.
+    var observer = new MutationObserver(apply);
+    apply();
+  }
   function transform(html, theme) {
     if (typeof html !== 'string' || html.indexOf('window.__YK__=') < 0) return html;
     // Older wrappers append literal backslash-n separators after these blocks.
@@ -215,7 +303,12 @@ html body .btn:hover{background:var(--yk-soft)!important}
     html = html.replace(/(<(?:style|script)\b[^>]*\bid=["']smtinel-yokoten-(?:v28-(?:style|runtime)|v203-actions-only-(?:style|runtime))["'][^>]*>[\s\S]*?<\/(?:style|script)>)(?:\\n)+/gi, function (_, block) { return block + '\n'; });
     var style = '<style id="' + VERSION + '">' + exportCss(theme) + '</style>';
     var rx = new RegExp('<style id="' + VERSION + '">[\\s\\S]*?</style>');
-    return rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
+    html = rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
+    if (html.indexOf('id="smtinel-yokoten-time-filter-v1"') < 0) {
+      var runtime = '<scr' + 'ipt id="smtinel-yokoten-time-filter-v1">(' + yokotenTimeFilter.toString() + ')();</scr' + 'ipt>';
+      html = html.replace(/<\/body>/i, function () { return runtime + '\n</body>'; });
+    }
+    return html;
   }
   function previewCss(theme) {
     var scope = 'html body #emailPreview .smt-yokoten-preview';
