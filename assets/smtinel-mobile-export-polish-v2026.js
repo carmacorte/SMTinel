@@ -205,6 +205,16 @@ html body .hero h2,html body .hero p{color:var(--yk-text)!important}
 html body #meta{color:var(--yk-muted)!important}
 html body .tools input,html body .tools select,html body .btn,html body .tracker input,html body .tracker select,html body .tracker textarea{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}
 html body .btn:hover{background:var(--yk-soft)!important}
+html body header{min-height:108px;padding-right:126px!important}
+#ykEvidenceRadar{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:80px;height:80px;pointer-events:none;color:#c8102e}
+#ykEvidenceRadar .yk-radar-disc{position:absolute;inset:6px;border:1px solid rgba(200,16,46,.18);border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 10px,rgba(200,16,46,.13) 11px 12px)}
+#ykEvidenceRadar .yk-radar-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 275deg,rgba(200,16,46,.04) 285deg,rgba(200,16,46,.28) 359deg,transparent 360deg);animation:ykEvidenceSweep 8s linear infinite;transform-origin:center}
+#ykEvidenceRadar .yk-radar-disc:after{content:"";position:absolute;left:calc(50% - 3px);top:calc(50% - 3px);width:6px;height:6px;border-radius:50%;background:#c8102e;box-shadow:16px -22px 0 -1px rgba(200,16,46,.48),-20px -12px 0 -1px rgba(200,16,46,.4),23px 9px 0 -1px rgba(200,16,46,.4),-12px 23px 0 -1px rgba(200,16,46,.48)}
+#ykEvidenceRadar .yk-radar-label{position:absolute;top:-6px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 7px/1 system-ui,sans-serif;letter-spacing:.16em;color:var(--yk-muted)}
+@keyframes ykEvidenceSweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@media(max-width:600px){html body header{padding-right:80px!important}#ykEvidenceRadar{right:10px;width:56px;height:56px}#ykEvidenceRadar .yk-radar-label{font-size:5px}#ykEvidenceRadar .yk-radar-disc{inset:3px;background:repeating-radial-gradient(circle,transparent 0 7px,rgba(200,16,46,.13) 8px 9px)}#ykEvidenceRadar .yk-radar-disc:after{box-shadow:10px -16px 0 -1px rgba(200,16,46,.48),-14px -8px 0 -1px rgba(200,16,46,.4),15px 7px 0 -1px rgba(200,16,46,.4)}}
+@media(prefers-reduced-motion:reduce){#ykEvidenceRadar .yk-radar-sweep{animation:none}}
+@media print{#ykEvidenceRadar{display:none}html body header{padding-right:16px!important}}
 @media print{html:root{${palette(false)}color-scheme:light}html body header{position:static!important}}
 `;
   }
@@ -301,6 +311,10 @@ html body .btn:hover{background:var(--yk-soft)!important}
     // Older wrappers append literal backslash-n separators after these blocks.
     // Limit normalization to those boundaries; report data and JS stay intact.
     html = html.replace(/(<(?:style|script)\b[^>]*\bid=["']smtinel-yokoten-(?:v28-(?:style|runtime)|v203-actions-only-(?:style|runtime))["'][^>]*>[\s\S]*?<\/(?:style|script)>)(?:\\n)+/gi, function (_, block) { return block + '\n'; });
+    if (html.indexOf('id="ykEvidenceRadar"') < 0) {
+      var radar = '<div id="ykEvidenceRadar" aria-hidden="true"><span class="yk-radar-label">YOKOTEN RADAR</span><div class="yk-radar-disc"><span class="yk-radar-sweep"></span></div></div>';
+      html = html.replace(/<\/header>/i, function () { return radar + '</header>'; });
+    }
     var style = '<style id="' + VERSION + '">' + exportCss(theme) + '</style>';
     var rx = new RegExp('<style id="' + VERSION + '">[\\s\\S]*?</style>');
     html = rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
