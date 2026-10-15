@@ -173,327 +173,303 @@
 }());
 
 
-/* Yokoten preview/export appearance: identical palette, isolated from app skins. */
+/* Yokoten run matrix: shared desktop/mobile renderer and explicit mobile saving. */
 (function () {
   'use strict';
-  var VERSION = 'smtinel-yokoten-appearance-v1';
+  var VERSION = 'smtinel-yokoten-runs-v3';
   var seen = new WeakSet();
-  function mode() {
-    // Reports use the same light Shainin canvas as 8D, independent of app chrome.
-    return 'light';
-  }
+  var LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAf+UlEQVR42u2bd5hW1bXwf3ufc942fYBhCsMMI4zUAQFFsAwKKhbkWsYeTRRyLbGm6s0NQb3RxNhiolEToxiJOl4rggWBkS5taEMvw/TyTn/rOXvv74/BXL98TwrG5Pvu89397/u8++z122vtvdbaa8H/jP+/h/XP/Nj8+fNlTk6OrKmpMQYjam/ff+/ICcMvnDR2yppt27Z5zEdW5FTImpoa889ak/hnCV5TUyMqKysVwM3f/vrZSeUu0EadHolFUUm32rHtf3/tN+8tBqioqLBGjx5tFixYoP9bA/hTwb9599fHeXg/xOgrjDC4CU9HYhEjhLCkEBht3re0fPD1l95b/zkIgM///98FgKioqJBf3ME7vvuvI+ImeofreXOllIFkImkMmFg8KqOxGD7bpw1g20IqTyOEtchxfI9V/ubtzV+cs7KyUgPm/0UAoqKiQlIBlVf8127d/v2bT0p48VuUdq+RtkxJxJOgjYomYpbWmlMnT6Wnp4cNW9ZjWTY+n08ZrS3HsfBcT4H1psT+1dsvL676fM4vaMVXAuPLAhDz588XNWNqBPzvQn/7kW+nJMJdF7ie9w2l1bnSllYy4YI2Kp6My2QyKQoLhnLRORdTlFdMPB5n35G9LF3+PrX1R7BtB8d2FEZb0pIobTCe+dSW1u8GBtPf/e1vKzu+CKO1tVVMnz5dL1iwwHwZIOJvFramRowe3SpqanLMn9rk3XffHUz6eqYooy9Fm9nCFsXGaJJJD6O1F0/ErUQyKQoGFzDjzJmcNGYSyvXYtWcnS5Yt4a6b7yYai7J5+yZWrltBY2sjtuUYx7K0wUgppABQnmkRQnxoC+t14Q+seeeld7q+uI7PgeTk5JhjJvhXofxlAAaB+D8nMPONvMP712Fam5MFnKuVKjdCl0jLwnM9PE9prZWJJWLSU54ozBvK6aecwcnjTyEjLZP7f/pjsgZmU35qOc8s/BXf+vrtvLX4bS6ZfSmO7bB11xY+XV9FY0s9GIFj20oIAGlZlkQpjVamUUqxTkqxVBhrw8CW5IGXqqrif0bGPwvB/iv6YZ588kn/ocaaPGWrEsvIsQo9+bbE3ElKqxMcx/YLIcCA8rRJJlyVdBMynkxIv9/P2JHjmHX2BQwrLCEUCOJzfLz+5uv0xfpwIg57DuwhJZSK4/Nz4Oh+Wtqb8eIemSmZ3HLdreyv3c/6Les5eGSflYgncCzbKGFphBBCkI+QlyljLnOTSVOXJQ6fc1n5VmHYpI2p0UofGODPa6isrOz+SyL+RQC3fm/uswfadp3r4g62jAzigGUkxtMILXATrvKUa5JuUnqekkIIOz83n9NOOZ1JZSeTMyCH1WvX0JvRw6GDBwh3djBiRCnrt64DAzkDc1Cq/6oP+IMEA0E27dxEY0cDV154FZHuKJfPupxwV5i9h/eya8920RputdyEh5QYKW0thEQIYUlJiUGXGMFl2mg8rXWn19x29kXT1jQfKri6pqYyeVwA7n707mC0qWO2NHaeVgqtlE4mXa2Uh+d60lWuEAgrNSWV4rwCykaNZ9L4kykYPIS6uqOE2ztIDaby7MJnuOlrc1letZzeaB+zzjqPO+bdSSAYYMkHS+nu7cLv9yMtgcEgLYtAIAgI/vP9Sm6bexvGMxTlFlFWWkZndwcHjh7g4OH9or2j3YrG42ijjRTCSKSRljAghTFGep432FPeeWm5R7OooeW4AFg9iQyDsRPxpDbGoLSSIGR6aho5A3MoKiyhZGgJuTl55A7Kw00mWLl6JcMuLOXVt14jLSON28Z8i4yMDMDg8zukkoLBkJ9bwNKPl/Lau3/g29/6Dju276CltYVB2YOIx2OgYdW6T8nISic7ayCr13zK9r3b+MYVN9HeGmZEYSkTR0+it6+HppYmWsItorm9WfT0dNEXiWCMRiCM8pQB7EBQDYLjBBCNJQdopTOEFDIWj5lpJ5/GedPPJ+gP4PcFUErjui6JRIJkMsmOXdt5Y/HrXHDexfT0dmMsRTKZJBqLMXzYcBobm9i6azMXnHMB7y1ZzC+ef4L7vvNv6ITmVy8+xbfm3c7+fQdYtbGKYCCE9gzzbpiHdjUbtmykaNhQQqEUlnyyhGmnTqVkyAls2LyBUyaeQkZKJicWjcSgEZZk664tbN25RQT9AWPA73lm4J+TU/65H5R2M8E4xhhczxMjTxjFoMxBdHV20d3TjTaKnJxB5Ofnk5GRjs/vo6i4iKo1y3H8DlIIVq5ZQSgYRBtDIBAgLS2N3t5eFr7+IrfMuwVLWTz81EPceeud+K0AP3/mZ0yaOJlQKMhVl19FbnYuzy38NcE0P7Nnzub9jxYjfYLxoyewZfsW6sP1ZGZm4imP3r5eurq6CflDZKVmozwFCCMQGCMGHDcA7ZoBSCmU1saSEr/PT09fL0OGFDKsuISOzk5+9fyvaGpuBCRSWHR0hBlaOBTXTdDV1UV+bj7ReIxQKAWjDUprEokEgVCACWMm8OGKDzl1yqmMLB7Fb199nvHjy+ho6yBnYC4lhSX8/JeP4OJy5013sWz5Mqo+q+K2m77Ftu3b2LRjE7PPuZjtu7YTCPgpHFJIXm4+ylNIaSGEQBuNEGA5IvW4bwHXJFJt46CVNkYbkZmZxYpPV7Bi7TKCwRRisShFRcW8/vbrfP/O+3jp1RcZPDifESWjGJA1kO6+bsaPnURKSojX336V7IyB+BwHA3ieSyQSRdoC27ZobmnG9tlce+nXqG+oY0D2IH778m/AZ7j1+tt4/4PFrNu2lntuvoetm6v5eO3HzL1uLtuqtxPuaWfLji2kp6WRSCQoHT6S9LQ0MAIMxgBam8zj1wBt0rRRaKWwbBujNePLyphz4Rwq/uVyTpt6OrFolEkTJnLvgu/hD/mYd+03aWlt4tyzz2fr9i2898FbPPHgU+zau4tX3lyI4/hIJhJYlgUCyk+bztTJpyGlxJY2kWiU4oISFr7yEp19Xdxz83f5aNnHfLx6Gffc8m327tnL4hXvceM1N5I3MB+ERghBZmYWeXm55ObnkpGRgSUspJRoo8GAY9kZx60BxuDTSqONMkJItNYUDx1GXk4e0pKceMIoek4+gz+88QpdfZ3cc8t3+NXzTxFNRLn1xtt55MePcfe/3Y5Wip/c9zA/+cUDnDh8JLmDc/nB7f+Gm0wSjUSJRWJkZ2cz79pvkpWRzbYd1QTTAlxz/jW8t/hd1m5byz233EPN9ho+WvUhN1xxPdVbtrHTt4OJZRNpbmshLzcfC4kxBtuxaWpu+iMAicRVyjpuANrzpLQctDEY5eH3Bfj1C79m3ea1hAJBEJBIJMnMzOTx/3iCLVu30tnTRTAQ5OZvz+XZx37Lz+9/nB89/EOmTJ7Cg9/7CdXbq3ml8vfUNtRSW3+ESDzCwb2HSE1JY2jBUIqGFFNcWMT1l91AQ2MDG6o3cNuNt1F7sJbfVb5AxSUV9PVEaGirx+dzqH6tmvS0dOLJOMpTxONxTpk0hVEnjEZ5Hra0MUajPc2X0ABjjDkWcQpBJNLHZRdfxnkzz8OyrP6JjWFo/lAcy2HcmLE0tzcDmmmnTuO279/Mgu8/wO9//RoHDu5l0ZuLOHz0ILZf4AsE8If82D6LYEqIWDzK9j072LqrGstIiouGcuF5F/GdW7/D6rWrWVe9jimnTCEeTzBpTCn1zXVYlsM5Z54LxmCOufpaaUKhEF1dPQjZrxEYkNI+/lhAGaOF0ShlhDEKISUrVq2geudWQsEQnuvh+Bz6In0U5A/h5q/fzOzzZgOGUDBEPB6ju6eT9vY2/vDOIgbmZZHQ+cQTUYw2aK1RRqG1QUhJKBDEaI0/GCCmory19E0unXU5tmMz5/w5HK07ypZdW4j2RQkFg3R0dvLRio9wfE6/4yMEnlKMGDaCvEF5x84uB2MMUhh9/BqgdUQpgT622FgsxtDCoQhbEPD5ORahYgx8uHIpP3vqp3z71u/gOA6e53H1pddw8NAhXnj9eQYOzsa2LDIyMuip78aS1rFd6w/UjDFo+teYnpGKp1w81+XNDyq5aMYc8nPyiEZiTBg9ATfpsmrjKvLycikbOb7/mrNsjDG4rktBfj7JqIs2xzZdCDyte477FpCCXqM0BoPnucQSMVICKeikAi3QrqGvJ0LxkGE88qNHqWus4/FnHmXfgX1s37md7u5unnvxWQ4dOYwUEiMEqSkphIIpuJ6H0QajFcKAMKCUIiMrHXMMhG3bNDQ2sXz1chJukoDjp6x0PPG+OHk5ecy7+pvkZecT6Y7jxhTSWHgJjUr2+xvmGABjwGgix28Cnuk2UgMIz/OIx2M0dTSzeuNqUlNTsKRNKBjk3Y/e5vKLruTnP36UB5+4n/k//REFeQV8//Yf0NDcwMEjB2lsaGT8hDJKiosYmJ1NT283ti2xhNVvqxgCfj/BkB+tPHq6e2lubEMrTWtbG/F4guVrltPV10Vebi43XTOXDRs+o2rjCkqHj6S+9SgIQ9J1GTAwG+MalPaAgDAalDE9xw3Asa2OmJfU0rKkNsY0tzSL82dcwFmnTcfxOezeU8OOPTuZWDaZ5xc+hxCG+7/7H3R0hUlNS6PuaB2NzY1ooThn+kx21uxm69ZqzjtnBrk5gzlSW0tDfROdXd34/X5ysjPxXJddO/eQN6iA82fOYvFH79PZ2UnSTTL3a3NRnkdWZjZr1q/hw08/5MpLrqS3p4chJ01hSF7hH9detWYlAoFACm0UUou24/cEE16bsOgTmHSlPJJukn379vHU808RCAWIJSIMys4hryOfH9x1Lw8/8RAfffIxwhJceO5FpAZTicajpKWnkZGWyV0338VzLz5H9dadRKJ9HD50hIp/qaC1rY2Pl39MY0MTGMEJRaVcddmVNDTWIy1BPBknFo+xZ98eVn+2GoGkNdzMzTfdzPr1G+iN9rB+63osaaM8zVWXXYXWGt1vA8Jo7VratB73y9Dpp053I6r7RiFEZtJ1yc7MFqNLxzJw0ABOGn8SqSlpdHV2MWHcBKZOnErp8JEMHDSA4qHFDCsspmZPDQkTZ9SoUSz94AMy0tKZNHESy1euIJlI8PxTz1Mxp4Lag0fITE9n/8FDuMkk55w1k9bWdt5+/x2KhhWitEt25iBGlAwna0AWQwuGMPPMmYwYVkok1kdbuJ3hJcOZMnkKBXl55A4azM7du2hsbcTn9wutCQeM/bPa2qbocWnAc889F51z/awmaVEsBLqlrdmyLAsv4VHfUY9OGPIG59EeDvP8y78hGAiSkpKCVpqgP0RnTweZGekoz2XSyeOpWr+chsZGmltbmHvtPHx2gK7uLpqaGunp6KUov4jq3Vt55T8XkZaWSu6QgRijCPgDdHSHGZCZTUNjA36/n4OHDrJtx3bSMtLJGZSLIx3aW9rxBXw4to9wZxhpSSOEEELTlpOzufPL5QQxtRgzVSBMT18P0WiUfYf30h5ux+/3YzsOze1NgEBKgeu5GAMjThjO4brDKOGSEgr1/5b0SA1mcM1lM5lz4cW8+/7bXHPltXhK0dTazMgTR2L7Leoa60FotFFI4+AmPbp7O0l6LtW7qjnccIjiocPw2z5aOprx+fy0J13iiTh5ubmMHD6K3r4epJQGAUhTV1mJ+lIAtDIHtOx3MnojvUSifZxXPovevl5s20YphdIaKSQIsC2LQYMG0dzUTGd3BynpQY7WNbB/7wG0MVx0zoVcU3EteYMHM+eCixHHPIHCgkKCfj9lpWNJDaayeecW+nr7yM7OxvE79PR14/P5mHftPB597ud8reJr2NiEO8I4toPt2CQScVJCqUQiEfpifUjrc+9P7PvSSVHtqj1agpRCRKMR2jvaqKtrYOW65YRCQZJJFyEEUkri8ThSWtwx7w4amupRRhHpi5FMuliOjRuL0x5u54mnn+SiWRcw+aTJfwQY8Pvo7OqirrGBQMiPl3TxOTYJN0nICRCNxejo7qAgpwDP80gmklQurmTfkX2EAiFs2yISjTLr7PPJyR5EJBolJS0FYwxCiF1fGoAxcpfneQaEVK42h2sPiTOmTKdsXBnK8xBC9muZlDS3NvHmB2+itaG9M4zrJmlv6aNwWAGpqSnUH21kW812rrnkalZ8uoLCgiGkp2cgZf/DQ2tHO8NLTuCTVZ9g2ZLsQQPQRtHbE8EfsGnvaGN48XCMMfh9fhLJGJfMvoTTJ59GT28PxkBKMMTSZR+ijUEgLa00xrD7SwMYkuXfV9cZaRIW+QZ0c1uL6O3r5cVFvyMajxAIBHE9l2FDi5lcdjJaGdxkknBXmI5wF1LYKE8hBAwZmsf+/YdYvmYFk8ZNYtXaNVw46wKCgSD7Dx5kQPZAdtTsIJKIMGRIfr+rrSVKK/oiSVo7WvH5/CAEPp8PISWpqWls2PQZm6o3c+mFl5CVkU1jSwNSCnPMgevBOF8OwPz5yAULFkfPv/yszVKIfMuSprGlgb6+HmZMn4Ht2AT8AT7bsoH2rrZjAYkkFo9x4MB+4vEEuYOz8Dt+ovE+EBKf7admfw1+x0/x0GF0d3Vj2zaxWJzeyFEO1x8mGAyg0RgF2ZlZ2NJHfWMd+w7sJ+kmsaSF5Vg4jo/6+nrq6+sIBH1s2r6JvNw8jtbX4ji2BixpxM6NVZvbj7n8+rhigZUryyWAEXxqAEtK09XdRUNzA8OLhhNuC5OIJhicnYtyDZ5SKM/Ftm18jp+kl2RAxkCC/iBKKzrbuojFYgR8AXbs2cGO3TsId4TRStEabuXQ0YM4jkMi6RKLJtBKMTgnl5KiEnp6e/BZfkKBIIlkEiEEyvPIy82jMH8IdY31zDrnfPbu30tbRzuW43weB68EKC8vl8cdDOXk5Jh+T8lZ4bmewQhLeR619bUYbdi+Zzt7D+3pf3UTgvTUNJRWrF6/muuvvJ6i/GIc2yEjPZNoJE53dy9SSvx+Hz6fw96De6itqyWeTNLc1oQ8Fl1a0iIRTZBIxCkqHEpqKJXRpWP4xU+f5K3Fb2OMJndQXv8309M5YegJpIRSKCoYyo7dO/sToUZIozWOkMu+KMtxmcCx93fR15rY5mSbGinFGGlZ+mjjUdkX7cPn+AFJKCVEa3sLrutx+QWX8/u3fw/AdZdeS0dnBy0dzYTbOo+F2GDZkkAolXC4g9379xBuD6O0QgjRf6AKgRAQjUQZkJ3NqROmcsfNt7PwlYV8uHIpj//kcVTS5dDhQ6SGUgj3tuPYDl3dXezYvR2/z68xRnpK1ce79GdfkOX4NAAw5eXlVlVVlSfhLSHBcWwd7mznYO0BhgwuIOkmKR02gsKCIfzu9d8RCqRw/aU3sGnHJtZvWc+40WMxHvT29GI7Doj+sDfgdwiFQmzZtoXdB/bg9znHwtf+7JPjc+ju6cNnBzh/1sW8/ubrLHrzFZ594jlyB+Zx1313U1Y2jmmTp+EqxTlnnUvN7hrqGuvwBXxaSIEQ8t3t27dHjhVUmC8DgOnTpx+Lh61XXdf1jDEWErbs2srIESfS2dlJfXMjc2bOITdnMC+98RK2tLnxyhvZfaiGV995jZPGTWT8uAn0Rnrx+/2kpqT2R3VZGTS1NdHc2oTP50cpRWZGFimpKbSG2zjrjLO4+tKr+dH997J0xRL+8MIfSAulM/fOeYwcPZIF319A7dEj7NyzgzOnnsH7Hy3GcmzQWMZopG39/u8uk6uqqjLMRx587khrcemQM4QlSjBSd3Z3yqKCYlJCIRZ/8h7DCocxcexEGlsbWLNxHaOGj2RM6Vg+3fApPb1dXHbBZdQ31dPc2sK4kWPp7A7j89kk3H6nBkAbzRmnnsHO3TuZfNJkXn5uIY899Rgfr/yIZ594DjTccs8tnDjyRB647wGam5q56947mXXuLIwSvPT6S6SkpiowQiuzaXP59gVUIWpqavTfVSf4ed1eyaiSdoy5zihttFGyu6ebaZOm0djcwIat6ykaMoyTRp9EU3sT67esp6uzi5lnzmTrrq20tLRw+UUV1DXWkT+4gFgiQiwRxZYWfT1RXNclPy+fsjFlALzw9As89ovHWL9lPQ/88EEWvbqIFxb9lrKyMh647wHq6uq46947KTmhhLnXzeORJ39Ge3c7ju0zUiIFfLfppdYd5eXlVm1t7d8HoKamxjAfeX3u1w8eOrp/lrRFoZBSdXR3yNRQGtMmTqM13Mq6TWspLSklPTWdtvZWEm6C4cXDCfhCvLf8XQSCC2ZcgM/24fP7OVx3EL/PT6QvRk93DxeddyGTyiZy7dXX8buFL/DoM49y5y13kpWWxQcrPiArPZOrLr+agB1g7u03MbRoKPf/4AFWfrqCyvfeIC0tXWG0VJ7eOzhlyJ0HDhzQtbW15u8ygS9qwdNPP61HjBl+WKOuV0YbS0rZ3NrC8KLhlBSW0Bfro2pDFeNOHEcwFKS4sJj6+kZWb1zFTdfcyGdbN9DQ2MgZU04nKyObA7UHiMWjdIa7yRmUw63zbuPEESfy+C8fZ/P2jTz044d5+jdPM3jQYMaOGkt+fgEjikfwr3d9k7Jx47j1pm/hJV0efOwnaKkQSCMlUmpx66rla7dXVFRYf039/+oh+IUrUVVUVFjL3ln5iXLVW1JKCyFVb6yXNRtX4/gcJo2bzIjiEbyx9D8ZkltIPJpg3Za1OH6H7q4evnHFjdQ31/Pym6+QmZ7Jmaeched5JNwE115xHQW5+Tz084fYumsLTz/6NLG+OEII/vDWIgBOO+V0br3nFiZOnMg3rrmJnIE5PPPCr2kJN+O3fEoILO3qqs2rd7wxf/58+bcWV/7NtcIVFTWiqgpOKC1dr1TyJmOMz7Js0xxuFgFfgCF5BWRnDEBYgiXLllC9eyuzz5vNSWMm8Oq7rxLyh5h97kWs2rSKA4cPMvOMmYQ7OyguLKbi4st5/JePc7D+IM88+jQrVq7koScfYsF9CygtLuWBRx/g/Y8XM+uc87lyzpUMGjSIJUuX8PIbL5OdlW2UUkaAazv2nMYjLa05OVWypuZvK5n7mwFUVWEqKiqs9995v3PYiKI2YYk5SnnKsW1ZW19L7sA8MtIzyEjJoKM7zInDR9LY2Mi0ydMoyB3CB58uxe8LUD5lOsvXfEJmeiYzzpjBlEmnsu6zdSxbvYxHFjzCuvXrePblZ3nw3x/k9FNOZ+GihYwbU0YoGOSGK24gMzOLffv38sCjD5KakYrytLIcy9aYH2yp2vFORUWFVVlZ8zeX1h5XtXhNTY0pLy+3q5at3lRYkl9qW9Z4TxlPCOShIwcpGlJMSiiFrp4uWttaGTtyDLFoHNf1OHF4KR+s+JCyUeNoC7eSOziXcHsnHZ1hItEIcTfOuNJxPPyLn/LD79xH0A7R1NxEICXAxuqNlBQO47SppxNub+d7P/o+WmgsYXmWLWztqcXVq3fd3i985XEVWNvHW1lZVVWl5s9Hbt6cM6/LbTnRkkzSHsrTrrX4k/e4aMZsThk/haSXBANLP/mAQIqfYUOGMTArG43G8xSWlOzcs5PUtBSGFQ7DUx7ReJSC/HwaGhpZv3EdSmlunXsrw4cNpyC/gHB7mO/+8LvEkn0E/CElBDaK/YGU9BsAWVlZedzVopLjH2YBsHjx4qgIBC4x2tQhsaSwVDwZZ/Gy9+joChOwfXR0dRBI8WO0wfM8OJY9Mrr/WSwQ8OP3+3Bdl67uLqSQSCn6U11+H76Aj/rGegrzC2lqbOKee++hozdMwB9S2mhLCMKWsS5Z/9H6jooKxJ8Leb9qALAAXVFRYa16Z1WdMNZsYQgjjGVJWyXcOG9/9Da1TXWUnjCC1FAqkXiEsjFlxBPx/icx9B9Tae0dYfYf2kfOgIEsq1qG1oYZ5WfT1dnFwIEDmH7GWVRvq+a7P/oePfEegoGg0lpZlhQRYew5G9ds21VeXm7/pcTnV2oCX7way8vL7aqPqradcfakC4xkKdJkCyE8o7W9ZMVieiO9TJs8jXBnmHg8jtEahOnXAqPpT1kZjADPVVi2hee69EX6uOTCSxg1chTvvPcOv37xGSyfRcDnV9poS0oZQZk5m9dtW1NeXm5XVVV5X1YOyd8xqqqqvPLycnvV8s2fCWHNQFMnhLAReLZjs2LdJ3y6ror8wfn4HB+BQACj+wEcqz7B7/Nx5pQzmTp5KtNOnoplSYLBECeNm8CiVxfxxLOP4wv5sS3bMxhLSBm2DOdvXbf7k79X+K+sX+DzhUw966QibVEpJCd7rudJIa1YLCay0rM5+7QZ5A7Oxe/zs/CNhZx+6ul0d3Wxct1KbGkzdtRYLpt9GY7t0NTYxMuv/Z7apsOkp6ejtPEs27JRZq/f8l/62erqmq9C+K+saaq2tlZXVFRYH77/SefoE8YtSqhokWWLCZ7SwnEcFY1H5O79u1GuJjcnl5yBOeQOyuXI0SPsObiHE0tLmXX2LEKBVD74+ENeeu0l+uI9pKWmaaU0lmNZQovFvlDqxRurthytqKiwlixZ8pW00Xy1LTPzkSzoP4lPPXviXcqohxHGr7X2hBFWPB4X6WkZnHHKmYwfO576xjqkLRg/ajwbt2zivQ/fo6m1kbS0NCMQCokNwkghf1y9tub+fpcUiy954P3TeoaYj2AB+tSzJ52ijPdLYXGydjWIfsctmUyQl53H9NPOIhgI8uEnH7H/8D78Qf9/HXS2hdFmlyP8t29eu23FF84r/dUu9h80PrfRiooK39H2A99TePciCWlPaymkSbpJSylNItafEAkGgtoYg7SENJCQQjyW6YifVFXV9JWXY1dV4fEP2a1/aNsccsExkzj5rJPHIJL3a6MvRYBR/eVdbsITGAOyvwsCwfsC8cNta2uq+4MwrMqvUOX/qQD+pOVNAZw8/aQZGvUDhJ5pNLgJ7/M3vNWWtB+qXrtzyRcE/8rb5P5vAPivA/KYFwkwdcbEixKJxHzXVUFLyh9Xr6t54098E83/jP8Z//DxvwACxeIl1pM22QAAAABJRU5ErkJggg==';
   function palette(dark) {
     return dark
       ? '--yk-page:#17181b;--yk-paper:#24262b;--yk-soft:#303239;--yk-text:#ffffff;--yk-muted:#d3d5db;--yk-border:#62656e;--yk-accent:#ff8195;'
       : '--yk-page:#f5f5f7;--yk-paper:#ffffff;--yk-soft:#f2f2f5;--yk-text:#202124;--yk-muted:#61656d;--yk-border:#dcdde1;--yk-accent:#c8102e;';
   }
-  function exportCss(theme) {
-    return 'html:root{' + palette(theme === 'dark') + 'color-scheme:' + theme + ';}' + `
-html body{background:var(--yk-page)!important;color:var(--yk-text)!important;font-family:Segoe UI,Arial,sans-serif!important}
-html body header{background:var(--yk-paper)!important;color:var(--yk-text)!important;border:1px solid var(--yk-border)!important;border-top:4px solid var(--yk-accent)!important;border-radius:14px!important;margin:12px 12px 0!important;padding:14px 16px!important;box-shadow:none!important}
-html body header .brand-copy h1,html body header .brand-word,html body header .brand-word .accent{color:var(--yk-text)!important}
-html body header p,html body header .brand-tag{color:var(--yk-muted)!important}
-html body .kpi,html body .panel,html body .card,html body .cb,html body #mx .matrix .cell,html body #mx .matrix .rowhead,html body .subkpis div{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}
-html body .panel,html body .card{border-radius:14px!important;overflow:hidden}
-html body .kpi b,html body .grid4 strong,html body .rowhead b{color:var(--yk-text)!important}
-html body #mx .matrix .cell .exposure-copy,html body .kpi span,html body .grid4 span,html body .rowhead small,html body .foot,html body .empty{color:var(--yk-muted)!important}
-html body .matrix th,html body .matrix td,html body .mini th,html body .mini td,html body .tracker th,html body .tracker td{border-color:var(--yk-border)!important}
-html body .matrix thead th,html body .ct,html body .mini th,html body .tracker th,html body .subkpis{background:var(--yk-soft)!important;color:var(--yk-text)!important}
-html body #mx .matrix tbody tr:nth-child(even) .cell,html body #mx .matrix tbody tr:nth-child(even) .rowhead{background:var(--yk-soft)!important}
-html body #mx .matrix .cell:hover,html body #mx .matrix .cell.sel{background:var(--yk-soft)!important;box-shadow:inset 0 0 0 2px var(--yk-accent)!important}
-html body .hero{background:var(--yk-soft)!important;color:var(--yk-text)!important;border-bottom:1px solid var(--yk-border)!important}
-html body .hero h2,html body .hero p{color:var(--yk-text)!important}
-html body #meta{color:var(--yk-muted)!important}
-html body .tools input,html body .tools select,html body .btn,html body .tracker input,html body .tracker select,html body .tracker textarea{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}
-html body .btn:hover{background:var(--yk-soft)!important}
-html body header{min-height:108px;padding-right:126px!important}
-#ykEvidenceRadar{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:80px;height:80px;pointer-events:none;color:#c8102e}
-#ykEvidenceRadar .yk-radar-disc{position:absolute;inset:6px;border:1px solid rgba(200,16,46,.18);border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 10px,rgba(200,16,46,.13) 11px 12px)}
-#ykEvidenceRadar .yk-radar-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 275deg,rgba(200,16,46,.04) 285deg,rgba(200,16,46,.28) 359deg,transparent 360deg);animation:ykEvidenceSweep 8s linear infinite;transform-origin:center}
-#ykEvidenceRadar .yk-radar-disc:after{content:"";position:absolute;left:calc(50% - 3px);top:calc(50% - 3px);width:6px;height:6px;border-radius:50%;background:#c8102e;box-shadow:16px -22px 0 -1px rgba(200,16,46,.48),-20px -12px 0 -1px rgba(200,16,46,.4),23px 9px 0 -1px rgba(200,16,46,.4),-12px 23px 0 -1px rgba(200,16,46,.48)}
-#ykEvidenceRadar .yk-radar-label{position:absolute;top:-6px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 7px/1 system-ui,sans-serif;letter-spacing:.16em;color:var(--yk-muted)}
-@keyframes ykEvidenceSweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@media(max-width:600px){html body header{padding-right:80px!important}#ykEvidenceRadar{right:10px;width:56px;height:56px}#ykEvidenceRadar .yk-radar-label{font-size:5px}#ykEvidenceRadar .yk-radar-disc{inset:3px;background:repeating-radial-gradient(circle,transparent 0 7px,rgba(200,16,46,.13) 8px 9px)}#ykEvidenceRadar .yk-radar-disc:after{box-shadow:10px -16px 0 -1px rgba(200,16,46,.48),-14px -8px 0 -1px rgba(200,16,46,.4),15px 7px 0 -1px rgba(200,16,46,.4)}}
-@media(prefers-reduced-motion:reduce){#ykEvidenceRadar .yk-radar-sweep{animation:none}}
-@media print{#ykEvidenceRadar{display:none}html body header{padding-right:16px!important}}
-@media print{html:root{${palette(false)}color-scheme:light}html body header{position:static!important}}
-` + readingCss() + `
-html:root body{margin:0;overflow-wrap:anywhere}
-html:root body header{position:relative!important}
-html:root body header .brand-icon{background:transparent!important;border:0!important;box-shadow:none!important}
-html:root body header .brand-icon img{object-fit:contain;max-width:100%}
-html:root body .wrap{max-width:1600px;min-width:0}
-html:root body .tools input,html:root body .tools select{min-height:44px}
-html:root body .btn:focus-visible,html:root body .cell:focus-visible{outline:3px solid var(--yk-accent);outline-offset:2px}
-html:root body .ct,html:root body .yk20-critical-head{background:var(--yk-soft)!important;color:var(--yk-text)!important}
-html:root body .yk20-critical-head b{color:var(--yk-accent)!important}
-html:root body .yk20-critical-card,html:root body .yk203-actions-note{border-color:var(--yk-border)!important}
-html.yk-interactive-ready #ykStaticReport{display:none!important}
-html:not(.yk-interactive-ready) body>.wrap{display:none!important}
-@media(max-width:700px){
- html:root body header{margin:8px!important;padding:12px 76px 12px 12px!important;min-height:88px}
- html:root body header .brand{min-width:0;gap:8px}html:root body header .brand-copy{min-width:0}
- html:root body header .brand-icon{width:36px;height:40px;flex-shrink:0}
- html:root body header h1{font-size:20px!important}html:root body header p{font-size:12px!important;line-height:1.5}
- html:root body header .brand-topline{flex-wrap:wrap}html:root body header .brand-tag{font-size:8px!important}
- html:root body .wrap{padding:8px!important}html:root body .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
- html:root body .tools{display:flex!important;flex-wrap:wrap!important}html:root body .tools>*{width:100%!important;min-width:0!important;box-sizing:border-box}
- html:root body input,html:root body select,html:root body textarea{font-size:16px!important;max-width:100%}
- html:root body #mx{overflow:visible!important;max-height:none!important}
- html:root body #mx .matrix,html:root body #mx .matrix tbody{display:block!important;width:100%!important;min-width:0!important}
- html:root body #mx .matrix thead{display:none!important}
- html:root body #mx .matrix tr{display:block!important;border-bottom:8px solid var(--yk-page)}
- html:root body #mx .matrix td,html:root body #mx .matrix .rowhead{display:block!important;position:static!important;width:auto!important;min-width:0!important;max-width:none!important}
- html:root body #mx .matrix td[data-yk-empty="1"]{display:none!important}
- html:root body #mx .matrix td[data-yk-line]:before{content:attr(data-yk-line);display:block;padding:10px 12px 0;font:700 13px/1.5 system-ui;color:var(--yk-accent)}
- html:root body #mx .matrix .rowhead{padding:14px!important;border-top:3px solid var(--yk-accent)!important}
- html:root body #mx .matrix .rowhead b{font-size:16px!important}html:root body #mx .matrix .rowhead small{font-size:12px!important}
- html:root body #mx .matrix .cell{min-width:0!important;width:100%!important;padding:12px!important;min-height:104px!important}
- html:root body #mx .grid4 span{font-size:12px!important}html:root body #mx .grid4 strong{font-size:14px!important}
- html:root body .subkpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
- html:root body .cb,html:root body .yk20-critical-body{overflow-x:auto;-webkit-overflow-scrolling:touch}
- html:root body .mini,html:root body .tracker{font-size:12px!important}
- html:root body #detail .hero h2{font-size:20px!important}html:root body #detail .hero p{font-size:12px!important}
- html:root body #mx tr[hidden]{display:none!important}
-}
-`;
-  }
-  // Serialized into the standalone report; does not alter its embedded snapshot.
-  function yokotenTimeFilter() {
-    'use strict';
-    var S = window.__YK__, mx = document.getElementById('mx');
-    if (!S || !mx || document.getElementById('ykTimeFilter')) return;
-    var cells = Object.create(null), latest = '', missing = 0;
-    function day(value) {
-      var m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/.exec(String(value || ''));
+  // One schema and renderer for desktop, mobile, preview and standalone export.
+  // Only WO-level run metadata is read; station/serial histories are never read.
+  function runCore() {
+    function text(v) { return String(v == null ? '' : v).trim(); }
+    function norm(v) { return text(v).toUpperCase(); }
+    function pn(v) { return norm(v).replace(/\s+/g, ''); }
+    function esc(v) { return text(v).replace(/[&<>"'=]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '=': '&#61;' }[c]; }); }
+    function line(v) { var m = norm(v).match(/^L\s*0*(\d+)$/); return m ? 'L' + Number(m[1]) : norm(v); }
+    function order(a, b) { return text(a).localeCompare(text(b), 'es', { numeric: true, sensitivity: 'base' }); }
+    function unique(a) { return Array.from(new Set(a)).sort(order); }
+    function day(v) {
+      var m = text(v).match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
       if (!m) return '';
       var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
       return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? m[1] + '-' + m[2] + '-' + m[3] : '';
     }
-    function localToday() {
-      var d = new Date();
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    function dateLabel(v) {
+      if (!day(v)) return 'Inicio no disponible';
+      var date = v.slice(0, 10).split('-');
+      return date[2] + '/' + date[1] + '/' + date[0] + (v.length > 10 ? ' · ' + v.slice(11, 16) : '');
     }
-    function offset(date, n) {
-      var d = new Date(date + 'T12:00:00Z');
-      d.setUTCDate(d.getUTCDate() + n);
-      return d.toISOString().slice(0, 10);
-    }
-    (S.rows || []).forEach(function (r) {
-      Object.keys(r.cells || {}).forEach(function (line) {
-        var c = r.cells[line];
-        cells[c.key] = c;
-        if (c.exposure) return;
-        var date = day(c.last);
-        if (!date) missing++;
-        if (date > latest) latest = date;
+    function filter(runs, filters, except) {
+      return runs.filter(function (r) {
+        var dimensions = ['bu', 'line', 'model', 'sku', 'rev', 'wo'];
+        if (dimensions.some(function (k) { return k !== except && filters[k] && r[k] !== filters[k]; })) return false;
+        var terms = norm(filters.q).split(/\s+/).filter(Boolean), hay = norm([r.bu, r.model, r.sku, r.rev, r.line, r.wo].join(' '));
+        if (terms.some(function (q) { return hay.indexOf(q) < 0; })) return false;
+        var date = day(r.start);
+        if (filters.period === 'undated') return !date;
+        if (filters.period && filters.period !== 'all') return !!date && !!day(filters.from) && !!day(filters.to) && filters.from <= filters.to && date >= filters.from && date <= filters.to;
+        return true;
       });
-    });
-    var box = document.createElement('section');
-    box.id = 'ykTimeFilter';
-    box.setAttribute('aria-label', 'Filtro de fecha de última corrida');
-    box.innerHTML = '<div class="yk-time-fields"><label>Última corrida registrada<select id="ykTimePreset"><option value="all">Todo el historial</option><option value="latest">Último día con datos</option><option value="today">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="custom">Rango de fechas</option></select></label><label>Desde<input id="ykTimeFrom" type="date" disabled></label><label>Hasta<input id="ykTimeTo" type="date" disabled></label><button id="ykTimeReset" type="button">Restablecer</button></div><p id="ykTimeCutoff"></p><p id="ykTimeStatus" role="status" aria-live="polite"></p><p class="yk-time-scope">Filtra combinaciones producto × línea por su última fecha de corrida en Common DB. Piezas, WO y detalle conservan el historial completo. No confirma producción en vivo.</p><p id="ykTimeEmpty" hidden>No hay combinaciones que coincidan con la fecha, el producto y la línea seleccionados.</p>';
-    var anchor = mx.closest('.panel') || mx;
-    anchor.parentNode.insertBefore(box, anchor);
-    var css = document.createElement('style');
-    css.id = 'ykTimeFilterStyles';
-    css.textContent = '#ykTimeFilter{margin:0 0 12px;padding:12px 14px;border:1px solid var(--yk-border,#d7ded8);border-radius:12px;background:var(--yk-paper,#fff);color:var(--yk-text,#202124);font:12px/1.5 system-ui,sans-serif}#ykTimeFilter .yk-time-fields{display:flex;align-items:end;gap:10px;flex-wrap:wrap}#ykTimeFilter label{display:grid;gap:4px;font-size:11px;font-weight:700}#ykTimeFilter input,#ykTimeFilter select,#ykTimeFilter button{font:inherit;padding:9px;border:1px solid var(--yk-border,#bdc9c0);border-radius:8px;background:var(--yk-paper,#fff);color:var(--yk-text,#202124);min-height:38px}#ykTimeFilter input:disabled{opacity:.6}#ykTimeFilter p{margin:6px 0 0}#ykTimeFilter .yk-time-scope,#ykTimeCutoff{color:var(--yk-muted,#61656d);font-size:11px}#ykTimeStatus{font-weight:700}#ykTimeEmpty{padding:12px;background:var(--yk-soft,#f5f5f6);border-radius:8px}html body #mx .yk-time-out{position:relative}html body #mx .yk-time-out>button{display:none!important}html body #mx .yk-time-out:after{content:"Fuera del periodo / sin fecha";display:block;padding:16px;font:11px/1.5 system-ui,sans-serif;color:var(--yk-muted,#61656d)}html body #mx tr[hidden],#ykTimeFilter [hidden]{display:none!important}@media(max-width:600px){#ykTimeFilter .yk-time-fields{display:grid;grid-template-columns:1fr 1fr}#ykTimeFilter label:first-child{grid-column:1/-1}#ykTimeFilter input,#ykTimeFilter select{width:100%;min-width:0}}';
-    document.head.appendChild(css);
-    var preset = document.getElementById('ykTimePreset'), from = document.getElementById('ykTimeFrom'), to = document.getElementById('ykTimeTo');
-    var status = document.getElementById('ykTimeStatus'), empty = document.getElementById('ykTimeEmpty');
-    var cutoff = document.getElementById('ykTimeCutoff');
-    cutoff.textContent = 'Última fecha registrada en Common DB: ' + (latest || 'sin fecha disponible') + ' · Exportado: ' + (day(S.generated) || 'sin fecha') + (missing ? ' · ' + missing + ' combinaciones sin fecha' : '');
-    function clearDetail() {
-      var detail = document.getElementById('detail');
-      if (detail) { detail.classList.remove('open'); detail.innerHTML = ''; }
     }
-    function apply() {
-      observer.disconnect();
-      var active = preset.value !== 'all', start = day(from.value), end = day(to.value);
-      var valid = !active || (!!start && !!end && start <= end), count = 0, rowCount = 0;
-      mx.querySelectorAll('tbody tr').forEach(function (row) {
-        var hits = 0;
-        row.querySelectorAll('button[data-k]').forEach(function (button) {
-          var cell = cells[button.getAttribute('data-k')], date = cell && !cell.exposure ? day(cell.last) : '';
-          var show = !active || (valid && !!date && date >= start && date <= end);
-          var td = button.closest('td');
-          if (td) td.classList.toggle('yk-time-out', !show);
-          if (show) { hits++; count++; }
-        });
-        row.hidden = active && !hits;
-        if (hits) rowCount++;
+    function group(runs) {
+      var map = new Map();
+      runs.forEach(function (r) {
+        var key = JSON.stringify([r.bu, r.model, r.sku, r.rev]);
+        if (!map.has(key)) map.set(key, { bu: r.bu, model: r.model, sku: r.sku, rev: r.rev, cells: Object.create(null) });
+        var row = map.get(key);
+        (row.cells[r.line] || (row.cells[r.line] = [])).push(r);
       });
-      empty.hidden = count > 0 || !valid;
-      if (!valid) status.textContent = preset.value === 'latest' && !latest ? 'No hay fechas de corrida disponibles en Common DB.' : 'Selecciona un rango válido: Desde debe ser anterior o igual a Hasta.';
-      else status.textContent = (active ? start + ' a ' + end + ' · ' : 'Historial completo · ') + rowCount + ' productos/revisiones · ' + count + ' combinaciones visibles';
-      observer.observe(mx, { childList: true, subtree: true });
+      return Array.from(map.values()).sort(function (a, b) { return order(a.bu, b.bu) || order(a.model, b.model) || order(a.sku, b.sku) || order(a.rev, b.rev); });
     }
-    function changePreset() {
-      var mode = preset.value, today = localToday();
-      from.disabled = to.disabled = mode !== 'custom';
-      if (mode === 'all') { from.value = ''; to.value = ''; }
-      else if (mode === 'latest') { from.value = latest; to.value = latest; }
-      else if (mode === 'today') { from.value = today; to.value = today; }
-      else if (mode === '7' || mode === '30') { from.value = offset(today, 1 - Number(mode)); to.value = today; }
-      else { if (!from.value) from.value = latest || today; if (!to.value) to.value = latest || today; }
-      clearDetail(); apply();
+    function matrix(rows, lines) {
+      if (!rows.length) return '<div class="yk-empty">No hay corridas que coincidan con los filtros.</div>';
+      return '<table class="yk-matrix"><caption class="yk-sr">Matriz de corridas por BU, modelo, revisión y línea</caption><thead><tr><th scope="col" class="yk-product">BU · Modelo / SKU / Revisión</th>' + lines.map(function (l) { return '<th scope="col">' + esc(l) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (row) {
+        return '<tr><th scope="row" class="yk-product"><span class="yk-bu">' + esc(row.bu) + '</span><b>' + esc(row.model) + '</b><small>' + esc(row.sku) + '</small><small>Rev ' + esc(row.rev) + '</small></th>' + lines.map(function (l) {
+          var runs = (row.cells[l] || []).slice().sort(function (a, b) { return order(b.start, a.start) || order(a.wo, b.wo); });
+          if (!runs.length) return '<td class="yk-no-run" aria-label="Sin corrida en el periodo">—</td>';
+          var first = runs[0];
+          return '<td data-line="' + esc(l) + '"><details class="yk-cell"><summary><span class="yk-cell-line">' + esc(l) + '</span><span class="yk-caption">' + (runs.length > 1 ? 'Inicio más reciente' : 'Inicio de corrida') + '</span><strong>' + esc(dateLabel(first.start)) + '</strong><span class="yk-caption">' + (runs.length > 1 ? runs.length + ' corridas · Ver WO' : 'WO ' + esc(first.wo)) + '</span>' + '</summary><div class="yk-run-list">' + runs.map(function (r) {
+            return '<div class="yk-run"><b>WO ' + esc(r.wo) + '</b><span>' + esc(dateLabel(r.start)) + '</span>' + (!r.start && r.startRaw ? '<small>Fecha fuente no reconocida: ' + esc(r.startRaw) + '</small>' : '') + '</div>';
+          }).join('') + '</div></details></td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
     }
-    preset.addEventListener('change', changePreset);
-    [from, to].forEach(function (input) { input.addEventListener('change', function () { clearDetail(); apply(); }); });
-    document.getElementById('ykTimeReset').addEventListener('click', function () { preset.value = 'all'; changePreset(); });
-    // Native search, line changes and cell clicks rebuild the table. Reapply only
-    // after its child nodes change; attribute-only filtering cannot loop.
-    var observer = new MutationObserver(apply);
-    apply();
+    return { text: text, norm: norm, pn: pn, esc: esc, line: line, order: order, unique: unique, day: day, dateLabel: dateLabel, filter: filter, group: group, matrix: matrix };
   }
-  function escapeHtml(value) {
-    return String(value == null ? '' : value).replace(/[&<>"'=]/g, function (c) {
-      // Encode '=' too: legacy map enrichment finds the literal __YK__ assignment
-      // in the HTML source. Evidence text must not impersonate that boundary.
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '=': '&#61;' }[c];
+  var core = runCore();
+  function escapeHtml(v) { return core.esc(v); }
+  function number(v) { return Number(v || 0).toLocaleString('es-MX'); }
+  function pick(row, fields) {
+    var keys = Object.keys(row || {}), values = Object.create(null);
+    keys.forEach(function (k) { values[core.norm(k).replace(/[^A-Z0-9]/g, '')] = k; });
+    for (var i = 0; i < fields.length; i++) {
+      var key = values[core.norm(fields[i]).replace(/[^A-Z0-9]/g, '')], value = key == null ? '' : row[key];
+      if (value != null && core.text(value)) return value;
+    }
+    return '';
+  }
+  function startDate(value) {
+    if (value == null || value === '') return '';
+    if (Object.prototype.toString.call(value) === '[object Date]') {
+      if (!isNaN(value.getTime())) return value.toISOString().slice(0, 19).replace('T', ' ');
+      return '';
+    }
+    var raw = core.text(value);
+    if (/^\d+(?:\.\d+)?$/.test(raw) && +raw > 20000 && +raw < 90000) {
+      var excel = new Date(Math.round((+raw - 25569) * 86400000));
+      return excel.toISOString().slice(0, +raw % 1 ? 19 : 10).replace('T', ' ');
+    }
+    // Source wall clock is retained. Explicit UTC/offset timestamps are shown
+    // in the plant timezone; filtering must not depend on the viewer's timezone.
+    if (/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(raw)) {
+      var zoned = new Date(raw);
+      if (isNaN(zoned.getTime())) return '';
+      var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Ciudad_Juarez', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(zoned), p = {};
+      parts.forEach(function (x) { p[x.type] = x.value; });
+      return p.year + '-' + p.month + '-' + p.day + ' ' + p.hour + ':' + p.minute + ':' + p.second;
+    }
+    var m = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(AM|PM)?)?$/i);
+    if (!m) {
+      var us = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+      if (us) m = [us[0], us[3], us[1], us[2], us[4], us[5], us[6], us[7]];
+    }
+    if (!m) return '';
+    var date = m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+    if (!core.day(date)) return '';
+    if (m[4] == null) return date;
+    var hour = +m[4], min = +m[5], sec = +(m[6] || 0);
+    if (m[7]) { if (hour < 1 || hour > 12) return ''; hour = hour % 12 + (/PM/i.test(m[7]) ? 12 : 0); }
+    if (hour > 23 || min > 59 || sec > 59) return '';
+    return date + ' ' + String(hour).padStart(2, '0') + ':' + m[5] + ':' + String(sec).padStart(2, '0');
+  }
+  function buildRunSnapshot(w) {
+    var P = w.SMTINEL_CROSSMODEL_LAST_PARSED || w.TRACEOPS_YIELD_LAST_PARSED || w.SMTINEL_LAST_PARSED || {};
+    var work = Array.isArray(P.wo) ? P.wo : (w.TRACEOPS_YIELD_RAW_STATION_ON_LINE_ROWS || []);
+    var catalog = Array.isArray(P.dbmodel) ? P.dbmodel : [], db = new Map(), groups = new Map(), skipped = 0;
+    var skuFields = ['P_NO', 'skuno', 'SkuNo', 'SKU', 'Part Number', 'PN', 'Product Number', 'Number Model', 'Model Number', 'Model', 'Modelo'];
+    var modelFields = ['Product Family', 'Prodcut Family', 'ProductFamily', 'Product Family Name', 'Model Name', 'ModelName', 'MODEL_NAME', 'Nombre del Modelo', 'Nombre Modelo', 'Family', 'Product', 'UUTTYPE', 'UUT Type Name', 'UUT Type Description', 'CODENAME', 'Code Name', 'Description', 'Descripcion', 'Descripción'];
+    var buFields = ['BU', 'Business Unit', 'BU Name', 'BusinessUnit', 'Unidad Negocio', 'Unidad de Negocio', 'Division', 'División'];
+    function present(value) { return !/^(?:N\/?[AD]|UNKNOWN|UNASSIGNED)$/i.test(core.text(value)) ? core.text(value) : ''; }
+    function uniqueValue(list, key) { var values = core.unique(list.map(function (r) { return r[key]; }).filter(Boolean)); return values.length === 1 ? values[0] : ''; }
+    catalog.forEach(function (r) {
+      var sku = core.pn(pick(r, skuFields));
+      if (!sku) return;
+      if (!db.has(sku)) db.set(sku, []);
+      db.get(sku).push({ bu: core.norm(present(pick(r, buFields))), model: present(pick(r, modelFields)) });
     });
-  }
-  function number(value) { return Number(value || 0).toLocaleString('es-MX'); }
-  // Read only JSON, never evaluate scripts from a report. Braces/semicolons in
-  // source evidence are legal and must not be mistaken for the end of __YK__.
-  function snapshotFromHtml(html) {
-    var mark = 'window.__YK__=', start = html.indexOf(mark);
-    if (start < 0) throw new Error('No se encontró el contenido Yokoten.');
-    start += mark.length;
-    while (/\s/.test(html.charAt(start)) && start < html.length) start++;
-    if (html.charAt(start) !== '{') throw new Error('Contenido Yokoten inválido.');
-    var depth = 0, quoted = false, escaped = false;
-    for (var i = start; i < html.length; i++) {
-      var c = html.charAt(i);
-      if (quoted) {
-        if (escaped) escaped = false;
-        else if (c === '\\') escaped = true;
-        else if (c === '"') quoted = false;
-      } else if (c === '"') quoted = true;
-      else if (c === '{') depth++;
-      else if (c === '}' && --depth === 0) {
-        var data = JSON.parse(html.slice(start, i + 1));
-        if (!Array.isArray(data.rows) || !Array.isArray(data.lines)) throw new Error('La matriz Yokoten está incompleta.');
-        return data;
-      }
-    }
-    throw new Error('El contenido Yokoten está truncado.');
-  }
-  function normalized(value) { return String(value || '').trim().toUpperCase(); }
-  function part(value) { return normalized(value).replace(/\s+/g, ''); }
-  function lineKey(value) {
-    var m = normalized(value).match(/(?:^|[^A-Z])L\s*0*(\d{1,2})(?:$|[^0-9])/);
-    return m ? 'L' + Number(m[1]) : normalized(value);
-  }
-  // Match the existing V20.3 Action Tracker authority, including SKU, revision
-  // and line restrictions. Never promote inherited lessons into critical actions.
-  function actionsFor(S, cell) {
-    return (S.criticalActions || []).filter(function (a) {
-      if (normalized(a.status) === 'CANCELLED') return false;
-      if (!(normalized(a.product || a.family) === normalized(cell.product) || (a.sku && part(a.sku) === part(cell.sku)))) return false;
-      if (a.sku && cell.sku && part(a.sku) !== part(cell.sku)) return false;
-      if (a.rev && normalized(a.rev) !== 'N/D' && normalized(a.rev) !== normalized(cell.rev)) return false;
-      return !a.line || normalized(a.line) === 'N/D' || lineKey(a.line) === lineKey(cell.line);
+    work.forEach(function (r) {
+      var wo = core.text(pick(r, ['Work Orde 00000', 'WorkOrderNo', 'Work Order', 'Work Order to search', 'WO Number', 'WO NO', 'WO_NO', 'WO', 'WorkOrder', 'Orden', 'Order'])).replace(/\.0+$/, '').replace(/\s+/g, '');
+      if (!wo) { skipped++; return; }
+      var sku = present(pick(r, skuFields)) || 'N/D', matches = db.get(core.pn(sku)) || [];
+      var model = present(pick(r, modelFields)) || uniqueValue(matches, 'model');
+      if (!model) { var candidate = present(pick(r, ['Model', 'Modelo'])); if (core.pn(candidate) !== core.pn(sku)) model = candidate; }
+      var bu = core.norm(present(pick(r, buFields))) || uniqueValue(matches, 'bu') || 'Sin BU';
+      var rev = core.norm(present(pick(r, ['P_VERSION', 'P Version', 'Version', 'Revision', 'REV']))) || 'N/D';
+      var line = core.line(present(pick(r, ['Line ID', 'Line', 'Linea', 'Línea', 'Production Line', 'productionLine', 'production_line', 'SMT Line']))) || 'Sin línea';
+      var raw = pick(r, ['Time Start', 'Start Time', 'WO Start Time', 'Build Start Time', 'Build Start Date', 'Build Start Date (Month)', 'Start Date', 'Date', 'Fecha Inicio', 'Fecha']);
+      var start = startDate(raw), run = { bu: bu, model: model || 'Modelo no disponible', sku: sku, rev: rev, line: line, wo: wo, start: start };
+      if (!start && core.text(raw)) run.startRaw = core.text(raw);
+      var key = JSON.stringify([bu, core.norm(run.model), core.pn(sku), rev, line, wo.replace(/^0+(?=\d)/, '')]);
+      var old = groups.get(key);
+      // One corrida per WO/line/model/revision, even when the source repeats the
+      // row for stations. The earliest valid start is the beginning of that run.
+      if (!old || (start && (!old.start || start < old.start))) groups.set(key, run);
     });
+    return { schema: 'smtinel.yokoten.runs.v3', generated: new Date().toISOString(), source: 'Common DB · Station_on_line_report + DB_Model', runs: Array.from(groups.values()), skipped: skipped };
   }
-  function readingCss() {
+  function runsCss() {
     return `
-.yk-reading{font:14px/1.5 system-ui,Segoe UI,sans-serif;color:var(--yk-text,#202124);min-width:0;overflow-wrap:anywhere}
-.yk-reading *{box-sizing:border-box}.yk-reading h2{font-size:20px;margin:0 0 6px}.yk-reading p{margin:6px 0 12px}
-.yk-reading .yk-read-intro{padding:16px;border-top:3px solid #c8102e;border-radius:12px;background:var(--yk-paper,#fff);margin-bottom:12px}
-.yk-reading .yk-read-brand{display:flex;gap:10px;align-items:center;margin-bottom:10px;font-weight:800}.yk-read-brand img{width:32px;height:36px;object-fit:contain}
-.yk-reading details{border:1px solid var(--yk-border,#dcdde1);border-radius:12px;margin:10px 0;background:var(--yk-paper,#fff)}
-.yk-reading summary{padding:14px;cursor:pointer;font-weight:750;min-height:48px;color:var(--yk-text,#202124)}
-.yk-reading summary:focus-visible{outline:3px solid #c8102e;outline-offset:2px}.yk-reading summary small{display:block;margin:4px 0 0;font-weight:400;color:var(--yk-muted,#61656d)}
-.yk-reading .yk-read-body{padding:0 12px 12px}.yk-reading .yk-read-line{border-radius:8px}.yk-reading .yk-read-line>summary{color:#a70f29}
-.yk-reading dl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.yk-reading dl>div{padding:10px;border-radius:8px;background:var(--yk-soft,#f2f2f5)}
-.yk-reading dt{font-size:12px;color:var(--yk-muted,#61656d)}.yk-reading dd{margin:3px 0 0;font-weight:700}
-.yk-reading .yk-read-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.yk-reading table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
-.yk-reading th,.yk-reading td{border-bottom:1px solid var(--yk-border,#dcdde1);padding:8px;vertical-align:top}.yk-reading th{background:var(--yk-soft,#f2f2f5)}
-.yk-reading h3{font-size:15px;margin:16px 0 8px}.yk-reading .yk-read-action{border-left:3px solid #c8102e;padding:10px 12px;background:var(--yk-soft,#f2f2f5);margin:8px 0}
-.yk-reading .yk-read-action p{margin:4px 0;white-space:pre-wrap}.yk-reading .yk-read-muted{color:var(--yk-muted,#61656d);font-size:12px}
-#ykStaticReport{margin:12px}.yk-reading [hidden]{display:none!important}
-.yk-reading .yk-read-tools{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:12px 0}.yk-reading label{display:grid;gap:4px;font-weight:700;font-size:12px}
-.yk-reading input,.yk-reading select,.yk-reading button{font:inherit;color:var(--yk-text,#202124);background:var(--yk-paper,#fff);border:1px solid var(--yk-border,#dcdde1);border-radius:8px;padding:10px;min-height:44px;min-width:0;max-width:100%}
-.yk-reading .yk-read-paging{display:flex;align-items:center;justify-content:space-between;gap:8px}.yk-reading button:disabled{opacity:.45}
-@media(max-width:700px){.yk-reading .yk-read-tools{grid-template-columns:1fr}.yk-reading input,.yk-reading select{font-size:16px}.yk-reading summary{font-size:15px}}
+*{box-sizing:border-box}html{color-scheme:light}body{margin:0;background:#f5f5f7;color:#202124;font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button,summary,select{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #c8102e;outline-offset:2px}[hidden]{display:none!important}
+.yk-head{display:flex;align-items:center;gap:12px;position:relative;margin:12px;padding:14px 106px 14px 16px;border:1px solid #dcdde1;border-top:4px solid #c8102e;border-radius:14px;background:#fff;min-height:94px}.yk-head img{width:40px;height:46px;object-fit:contain}.yk-head h1{font-size:22px;line-height:1.25;margin:1px 0 3px}.yk-head p{margin:0;color:#61656d;font-size:12px}.yk-word{font-size:10px;letter-spacing:.1em;font-weight:800}
+.yk-main{width:100%;max-width:none;padding:0 12px 20px;margin:0}.yk-controls{background:#fff;border:1px solid #dcdde1;border-radius:12px;padding:14px;margin-bottom:12px}.yk-filter-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end}.yk-filter-grid label{display:grid;gap:4px;font-size:12px;font-weight:700;min-width:0}.yk-search{grid-column:span 2}.yk-filter-grid input,.yk-filter-grid select,.yk-filter-grid button{width:100%;min-width:0;min-height:42px;padding:9px 10px;border:1px solid #cfd1d6;border-radius:8px;background:#fff;color:#202124}.yk-filter-grid input:disabled{background:#f2f2f5;color:#777}.yk-filter-grid button{background:#c8102e;color:#fff;border-color:#c8102e;font-weight:700}.yk-filter-grid button:hover{background:#9f0d25}.yk-count{font-weight:700;margin:10px 0 3px}.yk-note{font-size:12px;color:#61656d;margin:5px 0}.yk-empty{padding:24px;background:#fff;text-align:center;color:#61656d}
+.yk-matrix-wrap{max-width:100%;width:100%;overflow:auto;max-height:70vh;border:1px solid #dcdde1;border-radius:12px;background:#fff;-webkit-overflow-scrolling:touch}.yk-matrix{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;min-width:100%;font-size:12px}.yk-matrix th,.yk-matrix td{width:170px;min-width:170px;border-right:1px solid #dcdde1;border-bottom:1px solid #dcdde1;vertical-align:top;padding:10px;background:#fff;color:#202124}.yk-matrix thead th{position:sticky;top:0;z-index:2;padding:12px;background:#f0f0f3;color:#202124;font-weight:800;text-align:center}.yk-matrix .yk-product{position:sticky;left:0;width:230px;min-width:230px;max-width:230px;background:#fff;text-align:left;z-index:1;box-shadow:1px 0 #dcdde1}.yk-matrix thead .yk-product{z-index:3;background:#f0f0f3;color:#202124}.yk-product b{display:block;font-size:14px;overflow-wrap:anywhere}.yk-product small{display:block;font-weight:400;font-size:12px;color:#61656d;overflow-wrap:anywhere}.yk-bu{font-size:10px;font-weight:800;letter-spacing:.05em;color:#a00e27}.yk-matrix tbody tr:nth-child(even)>th,.yk-matrix tbody tr:nth-child(even)>td{background:#fafafb}.yk-matrix td:last-child{border-right:0}.yk-matrix .yk-no-run{text-align:center;vertical-align:middle;color:#92959c}.yk-cell summary{padding:4px;min-height:66px;color:#202124;border-radius:6px}.yk-cell summary::marker{color:#c8102e}.yk-cell summary strong{display:block;font-size:13px;margin:3px 0}.yk-caption{display:block;color:#61656d;font-size:11px;font-weight:400}.yk-cell-line{display:none}.yk-cell[open]{min-width:0}.yk-run-list{border-top:1px solid #dcdde1;margin-top:10px;padding-top:4px}.yk-run{padding:8px 2px;border-bottom:1px solid #eee;overflow-wrap:anywhere}.yk-run b,.yk-run span,.yk-run small{display:block}.yk-run span,.yk-run small{font-size:11px;color:#61656d}.yk-pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0}.yk-pager button{min-height:42px;border:1px solid #cfd1d6;border-radius:8px;background:#fff;color:#202124;padding:8px 16px}.yk-pager button:disabled{opacity:.4;cursor:default}.yk-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+#ykEvidenceRadar{position:absolute;right:18px;top:50%;transform:translateY(-50%);width:64px;height:64px;pointer-events:none}.yk-radar-disc{position:absolute;inset:2px;border-radius:50%;border:1px solid #edbcc5;background:repeating-radial-gradient(circle,transparent 0 9px,#f5d8de 10px 11px)}.yk-radar-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(transparent 0deg 275deg,rgba(200,16,46,.04) 285deg,rgba(200,16,46,.3) 359deg,transparent 360deg);animation:ykEvidenceSweep 8s linear infinite}.yk-radar-disc:after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#c8102e;left:calc(50% - 3px);top:calc(50% - 3px);box-shadow:17px -15px 0 -1px #d27a8a,-13px 18px 0 -1px #d27a8a}.yk-radar-label{position:absolute;top:-10px;width:100%;font-size:6px;letter-spacing:.1em;text-align:center;color:#61656d}@keyframes ykEvidenceSweep{to{transform:rotate(360deg)}}
+@media(max-width:1100px){.yk-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.yk-head{margin:8px;padding:12px 74px 12px 12px;gap:8px}.yk-head h1{font-size:20px}.yk-head img{width:30px;height:36px}#ykEvidenceRadar{right:12px;width:46px;height:46px}.yk-main{padding:0 8px 16px}.yk-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yk-filter-grid input,.yk-filter-grid select{font-size:16px}.yk-controls{padding:12px}.yk-matrix-wrap{max-height:none;overflow:visible;border:0;background:transparent}.yk-matrix,.yk-matrix tbody{display:block;width:100%;min-width:0}.yk-matrix thead{display:none}.yk-matrix tr{display:block;border:1px solid #dcdde1;border-radius:12px;background:#fff;overflow:hidden;margin-bottom:12px}.yk-matrix .yk-product{display:block;position:static;width:auto;min-width:0;max-width:none;padding:14px;border-top:3px solid #c8102e;box-shadow:none}.yk-matrix td{display:block;width:auto;min-width:0;padding:12px;border-right:0}.yk-matrix .yk-no-run{display:none}.yk-cell-line{display:block;color:#a00e27;font-weight:800;font-size:14px;margin-bottom:4px}.yk-cell summary{min-height:78px}.yk-cell summary strong{font-size:15px}.yk-caption,.yk-run span{font-size:12px}.yk-pager{font-size:12px}.yk-pager button{padding:8px 12px}}
+@media(prefers-reduced-motion:reduce){.yk-radar-sweep{animation:none}}@media print{.yk-controls,.yk-pager,#ykEvidenceRadar{display:none!important}.yk-matrix-wrap{max-height:none;overflow:visible}.yk-matrix{width:100%;min-width:0;table-layout:auto}.yk-matrix th,.yk-matrix td{min-width:0;width:auto;font-size:9px}.yk-head{padding-right:16px}.yk-matrix .yk-product{position:static;min-width:0;width:auto}.yk-main{padding:0}}
 `;
   }
-  function rowReading(S, row, selectedLine, open) {
-    var lines = Object.keys(row.cells || {}).filter(function (l) { return !selectedLine || l === selectedLine; });
-    return '<details class="yk-read-product"' + (open ? ' open' : '') + '><summary>' + escapeHtml(row.product || row.sku || 'Producto') + '<small>' + escapeHtml(row.sku) + ' · Rev ' + escapeHtml(row.rev || 'N/D') + ' · ' + lines.length + ' líneas</small></summary><div class="yk-read-body">' + lines.map(function (line) {
-      var c = row.cells[line], actions = actionsFor(S, c);
-      var facts = c.facts || [], wos = c.wos || [];
-      return '<details class="yk-read-line"><summary>' + escapeHtml(line) + '<small>' + (c.exposure ? 'Aplicabilidad Yokoten · sin historial de corrida' : number(c.runs) + ' corridas · ' + number(c.qty) + ' piezas · Última: ' + escapeHtml(c.last || 'sin fecha')) + '</small></summary><div class="yk-read-body"><dl>' + [['WO', wos.length], ['Primera corrida', c.first || 'Sin fecha'], ['Última corrida', c.last || 'Sin fecha'], ['Piezas históricas', number(c.qty)]].map(function (pair) { return '<div><dt>' + pair[0] + '</dt><dd>' + escapeHtml(pair[1]) + '</dd></div>'; }).join('') + '</dl><h3>Historial WO · Common DB</h3>' + (facts.length ? '<div class="yk-read-scroll" tabindex="0" role="region" aria-label="Historial de órdenes"><table><thead><tr><th>WO</th><th>Rev</th><th>Piezas</th><th>Primera</th><th>Última</th></tr></thead><tbody>' + facts.map(function (f) { return '<tr><td>' + escapeHtml(f.wo) + '</td><td>' + escapeHtml(f.rev || 'N/D') + '</td><td>' + number(f.qty) + '</td><td>' + escapeHtml(f.first || 'N/D') + '</td><td>' + escapeHtml(f.last || 'N/D') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p>' + (wos.length ? escapeHtml(wos.join(', ')) : 'Sin WO registrada para esta combinación.') + '</p>') + '<h3>Acciones críticas · Action Tracker</h3>' + (actions.length ? actions.map(function (a) { return '<article class="yk-read-action"><b>' + escapeHtml(a.refdes) + (a.componentPn ? ' · ' + escapeHtml(a.componentPn) : '') + '</b>' + [['Condición', a.condition], ['Motivo', a.reason], ['Acción', a.control], ['Estado', a.status], ['Responsable', a.owner], ['Compromiso', a.due], ['Evidencia', a.evidence], ['Fuente', a.source]].filter(function (x) { return x[1]; }).map(function (x) { return '<p><strong>' + x[0] + ':</strong> ' + escapeHtml(x[1]) + '</p>'; }).join('') + '</article>'; }).join('') : '<p class="yk-read-muted">Sin acciones críticas aplicables en el Action Tracker incluido. Esto no confirma calificación ni ausencia de riesgos.</p>') + '</div></details>';
-    }).join('') + '</div></details>';
-  }
-  function staticReading(S) {
-    return '<section id="ykStaticReport" class="yk-reading" aria-label="Lectura compatible sin JavaScript"><div class="yk-read-intro"><h2>Contenido del Yokoten</h2><p>Abre un producto y una línea para consultar el historial WO y las acciones críticas, incluso sin JavaScript.</p><p class="yk-read-muted">' + number(S.rows.length) + ' productos/revisiones · ' + number(S.lines.length) + ' líneas · Corte del archivo: ' + escapeHtml(S.generated || 'N/D') + '</p><p class="yk-read-muted">Esta vista de lectura no incluye el detalle de pruebas, reparaciones, Handoff ni mapas. Para revisarlos y usar los filtros, abre el reporte completo en un navegador. El historial no confirma producción en vivo.</p></div>' + (S.rows.length ? S.rows.map(function (r, i) { return rowReading(S, r, '', i === 0); }).join('') : '<p>No hay historial cargado en Common DB para este reporte.</p>') + '</section>';
-  }
-  function mobileReportRuntime() {
-    var mx = document.getElementById('mx');
-    if (!mx) return;
-    function mark() {
-      var table = mx.querySelector('table');
-      if (!table) return;
-      document.documentElement.classList.add('yk-interactive-ready');
-      var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function (n) { return n.textContent.trim(); });
-      table.querySelectorAll('tbody tr').forEach(function (row) {
-        Array.prototype.forEach.call(row.children, function (td, i) {
-          if (!i) return;
-          td.setAttribute('data-yk-line', heads[i] || 'Línea');
-          td.setAttribute('data-yk-empty', td.querySelector('button[data-k]') ? '0' : '1');
-        });
+  function runRuntime(S) {
+    var C = runCore(), root = document.querySelector('[data-yk-runs-root]');
+    if (!root) return;
+    var filters = { q: '', bu: '', line: '', model: '', sku: '', rev: '', wo: '', period: 'all', from: '', to: '' }, page = 0, pageSize = 30;
+    var fields = ['bu', 'line', 'model', 'sku', 'rev', 'wo'], labels = { bu: 'Todas las BU', line: 'Todas las líneas', model: 'Todos los modelos', sku: 'Todos los SKU / PN', rev: 'Todas las revisiones', wo: 'Todas las WO' };
+    function el(key) { return root.querySelector('[data-filter="' + key + '"]'); }
+    var latest = S.runs.reduce(function (v, r) { return C.day(r.start) > v ? C.day(r.start) : v; }, '');
+    function today() { var p = {}; new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Ciudad_Juarez', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); return p.year + '-' + p.month + '-' + p.day; }
+    function offset(day, n) { var d = new Date(day + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+    function presets() {
+      var mode = filters.period, now = today();
+      if (mode === 'latest') filters.from = filters.to = latest;
+      else if (mode === 'today') filters.from = filters.to = now;
+      else if (mode === '7' || mode === '30') { filters.from = offset(now, 1 - Number(mode)); filters.to = now; }
+      else if (mode === 'all' || mode === 'undated') filters.from = filters.to = '';
+      el('from').value = filters.from; el('to').value = filters.to;
+      el('from').disabled = el('to').disabled = mode !== 'custom';
+    }
+    function render() {
+      fields.forEach(function (field) {
+        var values = C.unique(C.filter(S.runs, filters, field).map(function (r) { return r[field]; }));
+        if (filters[field] && values.indexOf(filters[field]) < 0) values.unshift(filters[field]);
+        var select = el(field);
+        select.innerHTML = '<option value="">' + labels[field] + '</option>' + values.map(function (value) { return '<option value="' + C.esc(value) + '">' + C.esc(value) + '</option>'; }).join('');
+        select.value = filters[field];
       });
+      var selected = C.filter(S.runs, filters), rows = C.group(selected), lines = C.unique(selected.map(function (r) { return r.line; }));
+      var pages = Math.max(1, Math.ceil(rows.length / pageSize)); page = Math.min(page, pages - 1);
+      root.querySelector('[data-yk-matrix]').innerHTML = C.matrix(rows.slice(page * pageSize, (page + 1) * pageSize), lines);
+      var invalid = !['all', 'undated'].includes(filters.period) && (!C.day(filters.from) || !C.day(filters.to) || filters.from > filters.to);
+      root.querySelector('[data-yk-count]').textContent = invalid ? 'Selecciona un rango válido de inicio de corrida.' : selected.length + ' de ' + S.runs.length + ' corridas · ' + rows.length + ' modelos/SKU/revisiones · ' + lines.length + ' líneas';
+      root.querySelector('[data-yk-page]').textContent = 'Página ' + (page + 1) + ' de ' + pages;
+      root.querySelector('[data-yk-prev]').disabled = page === 0;
+      root.querySelector('[data-yk-next]').disabled = page + 1 >= pages;
+      root.querySelector('[data-yk-pager]').hidden = rows.length <= pageSize;
     }
-    new MutationObserver(mark).observe(mx, { childList: true, subtree: true });
-    mark();
+    root.querySelector('[data-yk-cutoff]').textContent = 'Último inicio registrado: ' + (latest || 'sin fecha') + ' · ' + S.runs.filter(function (r) { return !C.day(r.start); }).length + ' corridas sin fecha válida. Fechas de inicio de la fuente; no confirman producción en vivo.';
+    fields.concat(['period', 'from', 'to']).forEach(function (field) { el(field).addEventListener('change', function () { filters[field] = this.value; if (field === 'period') presets(); page = 0; render(); }); });
+    el('q').addEventListener('input', function () { filters.q = this.value; page = 0; render(); });
+    root.querySelector('[data-yk-reset]').onclick = function () { Object.keys(filters).forEach(function (k) { filters[k] = k === 'period' ? 'all' : ''; }); el('q').value = ''; el('period').value = 'all'; page = 0; presets(); render(); };
+    root.querySelector('[data-yk-prev]').onclick = function () { page--; render(); };
+    root.querySelector('[data-yk-next]').onclick = function () { page++; render(); };
+    presets(); render();
+    root.querySelector('[data-yk-controls]').hidden = false;
   }
-  function transform(html, theme) {
-    if (typeof html !== 'string' || html.indexOf('window.__YK__=') < 0) return html;
-    // Older wrappers append literal backslash-n separators after these blocks.
-    // Limit normalization to those boundaries; report data and JS stay intact.
-    html = html.replace(/(<(?:style|script)\b[^>]*\bid=["']smtinel-yokoten-(?:v28-(?:style|runtime)|v203-actions-only-(?:style|runtime))["'][^>]*>[\s\S]*?<\/(?:style|script)>)(?:\\n)+/gi, function (_, block) { return block + '\n'; });
-    if (html.indexOf('id="ykEvidenceRadar"') < 0) {
-      var radar = '<div id="ykEvidenceRadar" aria-hidden="true"><span class="yk-radar-label">YOKOTEN RADAR</span><div class="yk-radar-disc"><span class="yk-radar-sweep"></span></div></div>';
-      html = html.replace(/<\/header>/i, function () { return radar + '</header>'; });
-    }
-    var style = '<style id="' + VERSION + '">' + exportCss(theme) + '</style>';
-    var rx = new RegExp('<style id="' + VERSION + '">[\\s\\S]*?</style>');
-    html = rx.test(html) ? html.replace(rx, function () { return style; }) : html.replace(/<\/head>/i, function () { return style + '\n</head>'; });
-    if (html.indexOf('id="ykStaticReport"') < 0) {
-      var fallback = staticReading(snapshotFromHtml(html));
-      html = html.replace(/<\/header>/i, function () { return '</header>' + fallback; });
-    }
-    if (html.indexOf('id="smtinel-yokoten-time-filter-v1"') < 0) {
-      var runtime = '<scr' + 'ipt id="smtinel-yokoten-time-filter-v1">(' + yokotenTimeFilter.toString() + ')();</scr' + 'ipt>';
-      html = html.replace(/<\/body>/i, function () { return runtime + '\n</body>'; });
-    }
-    if (html.indexOf('id="smtinel-yokoten-mobile-runtime-v2"') < 0) {
-      var mobile = '<scr' + 'ipt id="smtinel-yokoten-mobile-runtime-v2">(' + mobileReportRuntime.toString() + ')();</scr' + 'ipt>';
-      html = html.replace(/<\/body>/i, function () { return mobile + '\n</body>'; });
-    }
-    return html;
+  function logoFor(w) {
+    // The existing 8D shield is embedded once for offline exports; no external
+    // logo request is needed when the file is opened in iPhone Files.
+    return LOGO;
   }
-  function previewCss(theme) {
-    var base = 'html body #emailModal[data-yk-report="1"] #emailPreview .smt-yokoten-preview';
-    var scope = base + ':not(.yk-reading)';
-    return base + '{' + palette(theme === 'dark') + 'color:var(--yk-text)!important;background:var(--yk-page)!important}' +
-      base + '.yk-reading :is(h2,h3,b,strong,summary,label,dd){color:var(--yk-text)!important}' +
-      base + '.yk-reading :is(p,small,dt){color:var(--yk-muted)!important}' +
-      base + '.yk-reading :is(th,td,details,div){border-color:var(--yk-border)!important}' +
-      base + '.yk-reading th{background:var(--yk-soft)!important;color:var(--yk-text)!important}' +
-      base + '.yk-reading td{background:var(--yk-paper)!important;color:var(--yk-text)!important}' +
-      scope + ' div,' + scope + ' p,' + scope + ' small,' + scope + ' span,' + scope + ' b,' + scope + ' h2{color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
-      scope + ' div{background:var(--yk-paper)!important}' +
-      scope + '>div{background:var(--yk-page)!important}' +
-      scope + '>div>div:first-child{background:var(--yk-paper)!important;border-top:4px solid var(--yk-accent)!important}' +
-      scope + ' p,' + scope + ' small{color:var(--yk-muted)!important}' +
-      scope + ' table{background:var(--yk-paper)!important;color:var(--yk-text)!important}' +
-      scope + ' th{background:var(--yk-soft)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
-      scope + ' td{background:var(--yk-paper)!important;color:var(--yk-text)!important;border-color:var(--yk-border)!important}' +
-      scope + ' tr:nth-child(even) td{background:var(--yk-soft)!important}' + readingCss();
+  function reportHtml(S, w) {
+    var esc = core.esc, rows = core.group(S.runs), lines = core.unique(S.runs.map(function (r) { return r.line; }));
+    var controls = '<section class="yk-controls" data-yk-controls hidden aria-label="Filtros de corridas"><div class="yk-filter-grid"><label class="yk-search">Buscar<input type="search" data-filter="q" placeholder="Modelo, SKU, revisión o WO"></label>' + [['bu', 'BU'], ['line', 'Línea'], ['model', 'Modelo'], ['sku', 'SKU / PN'], ['rev', 'Revisión'], ['wo', 'WO']].map(function (p) { return '<label>' + p[1] + '<select data-filter="' + p[0] + '"></select></label>'; }).join('') + '<label>Inicio de corrida<select data-filter="period"><option value="all">Todo el historial</option><option value="latest">Último día con datos</option><option value="today">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="custom">Rango de fechas</option><option value="undated">Sin fecha de inicio</option></select></label><label>Desde<input type="date" data-filter="from" disabled></label><label>Hasta<input type="date" data-filter="to" disabled></label><button type="button" data-yk-reset>Restablecer</button></div><p class="yk-count" data-yk-count role="status" aria-live="polite"></p><p class="yk-note" data-yk-cutoff></p></section>';
+    var payload = JSON.stringify(S).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+    return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SMTinel · Matriz de corridas Yokoten</title><link rel="icon" href="' + logoFor(w) + '"><style>' + runsCss() + '</style></head><body data-yk-runs-root><header class="yk-head"><img alt="Logo SMTinel" src="' + logoFor(w) + '"><div><span class="yk-word">SMTinel · YOKOTEN</span><h1>Matriz de corridas</h1><p>BU · Modelo · SKU · Revisión × Línea. Abre una celda para consultar WO e inicio.</p></div><div id="ykEvidenceRadar" aria-hidden="true"><span class="yk-radar-label">YOKOTEN RADAR</span><div class="yk-radar-disc"><span class="yk-radar-sweep"></span></div></div></header><main class="yk-main">' + controls + '<noscript><p class="yk-note">Vista de lectura: todas las corridas. Los filtros se habilitan al abrir el HTML en un navegador con JavaScript.</p></noscript><div class="yk-matrix-wrap" data-yk-matrix tabindex="0" role="region" aria-label="Matriz por línea">' + (rows.length ? core.matrix(rows, lines) : '<div class="yk-empty">No hay corridas en Common DB. Carga Station_on_line_report y DB_Model y vuelve a generar el reporte.</div>') + '</div><nav class="yk-pager" data-yk-pager hidden aria-label="Páginas de matriz"><button type="button" data-yk-prev>Anterior</button><span data-yk-page></span><button type="button" data-yk-next>Siguiente</button></nav><p class="yk-note">Fuente: ' + esc(S.source) + ' · Generado: ' + esc(core.dateLabel(S.generated.slice(0, 10))) + '. Cada corrida agrupa una WO por línea, modelo/SKU y revisión; se conserva el inicio más antiguo válido. Sin BU o fecha no disponible se muestran explícitamente.</p></main><script id="yk-runs-data">window.__YK_RUNS__=' + payload + ';</scr' + 'ipt><script id="yk-runs-runtime">' + runCore.toString() + '\n(' + runRuntime.toString() + ')(window.__YK_RUNS__);</scr' + 'ipt></body></html>';
   }
+  function downloadRuns(w) {
+    w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__ = 1;
+    try {
+      var html = reportHtml(buildRunSnapshot(w), w), blob = new w.Blob([html], { type: 'text/html;charset=utf-8' });
+      var a = w.document.createElement('a'), url = w.URL.createObjectURL(blob);
+      a.href = url; a.download = 'SMTinel_Yokoten_Corridas_' + new Date().toISOString().slice(0, 10) + '.html';
+      a.style.display = 'none'; w.document.body.appendChild(a); a.click();
+      w.__SMTINEL_LAST_YOKOTEN_EXPORT__ = { at: new Date().toISOString(), bytes: blob.size, name: a.download, method: 'download-requested', build: 'runs-v3' };
+      w.setTimeout(function () { a.remove(); w.URL.revokeObjectURL(url); }, 120000);
+      return true;
+    } finally { w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__ = 0; }
+  }
+  function mountPreview(w, owner) {
+    var root = w.document.querySelector('[data-yk-run-preview]');
+    if (!root || root.__ykMounted) return;
+    root.__ykMounted = true;
+    root.innerHTML = '<button type="button" data-yk-refresh class="btn">Actualizar matriz</button><p style="font:12px/1.5 system-ui;color:#61656d">Los filtros de la vista previa no recortan el archivo. El HTML exportado incluye los mismos filtros.</p><iframe data-yk-run-frame title="Vista previa de matriz de corridas Yokoten" style="display:block;width:100%;height:850px;border:1px solid #dcdde1;border-radius:12px;background:#f5f5f7"></iframe><p data-yk-preview-error role="alert" hidden></p>';
+    var frame = root.querySelector('iframe'), error = root.querySelector('[data-yk-preview-error]');
+    // This dedicated frame isolates the report from the accumulated app skins.
+    function refresh() {
+      try { frame.srcdoc = reportHtml(buildRunSnapshot(owner), owner); error.hidden = true; }
+      catch (err) { error.textContent = 'No se pudo cargar la matriz: ' + err.message; error.hidden = false; }
+    }
+    root.querySelector('[data-yk-refresh]').onclick = refresh;
+    refresh();
+  }
+  function install(w) {
+    var d;
+    try { d = w.document; if (!d || !d.head || d.querySelector('[data-yk-runs-root]')) return; } catch (_) { return; }
+    if (typeof w.SMTinelBuildYokotenExportHtml === 'function' && !w.SMTinelBuildYokotenExportHtml.__yokotenRunsV3) {
+      var build = function () { return reportHtml(buildRunSnapshot(w), w); };
+      build.__yokotenRunsV3 = true;
+      w.SMTinelBuildYokotenExportHtml = build;
+      w.SMTinelBuildYokotenPreviewHtml = function () { return '<div data-yk-run-preview></div>'; };
+      w.SMTinelDownloadYokotenHtml = function () { return downloadRuns(w); };
+    }
+    var owner = builderWindow(w);
+    if (owner) {
+      var style = d.getElementById(VERSION);
+      if (!style) { style = d.createElement('style'); style.id = VERSION; d.head.appendChild(style); }
+      var css = sectionCss(); if (style.textContent !== css) style.textContent = css;
+      var type = d.getElementById('reportType'), modal = d.getElementById('emailModal'), yokoten = !!(type && type.value === 'YOKOTEN');
+      if (modal) {
+        if (yokoten && modal.getAttribute('data-yk-report') !== '1') modal.setAttribute('data-yk-report', '1');
+        else if (!yokoten && modal.hasAttribute('data-yk-report')) modal.removeAttribute('data-yk-report');
+      }
+      var preview = d.getElementById('emailPreview');
+      if (yokoten && preview) {
+        if (!preview.querySelector('[data-yk-run-preview]')) preview.innerHTML = '<div data-yk-run-preview></div>';
+        mountPreview(w, owner);
+        var note = d.querySelector('.report-preview-head span'), noteText = 'Matriz de corridas · Common DB · Shainin Red X';
+        if (note && note.textContent !== noteText) note.textContent = noteText;
+        var title = d.getElementById('reportModalTitle'), hint = d.getElementById('reportScopeHint');
+        if (title && title.textContent !== 'Yokoten · Matriz de corridas') title.textContent = 'Yokoten · Matriz de corridas';
+        var hintText = 'BU, modelo, SKU, revisión, línea e inicio de corrida desde Common DB. Filtra la matriz y abre una celda para consultar las WO.';
+        if (hint && hint.textContent !== hintText) hint.textContent = hintText;
+      }
+    }
+    if (!seen.has(d)) {
+      seen.add(d);
+      var timer;
+      new w.MutationObserver(function () { clearTimeout(timer); timer = setTimeout(function () { install(w); }, 120); }).observe(d.documentElement, { childList: true, subtree: true });
+      d.addEventListener('click', function (ev) { receiveDownload(w, ev); }, true);
+      d.addEventListener('change', function (ev) { if (ev.target.id === 'reportType') setTimeout(function () { install(w); }, 0); }, true);
+      w.addEventListener('click', function (ev) {
+        var button = ev.target && ev.target.closest && ev.target.closest('#downloadEmail'), type = d.getElementById('reportType'), owner = builderWindow(w);
+        if (!button || !type || type.value !== 'YOKOTEN' || !owner) return;
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        if (isMobile(w)) mobileExport(w, owner);
+        else {
+          try { owner.SMTinelDownloadYokotenHtml(); }
+          catch (err) { var panel = deliveryPanel(d); panel.innerHTML = '<p role="alert">No se pudo generar la matriz: ' + escapeHtml(err.message) + '</p>'; }
+        }
+      }, true);
+      d.addEventListener('load', function (ev) { if (ev.target.tagName === 'IFRAME' && !ev.target.hasAttribute('data-yk-run-frame')) install(ev.target.contentWindow); }, true);
+    }
+    d.querySelectorAll('iframe:not([data-yk-run-frame])').forEach(function (frame) { install(frame.contentWindow); });
+  }
+
   function sectionCss() {
     return `
 html body #exportcenter-section>section:first-child{background:#fff!important;color:#202124!important;border-top:4px solid #c8102e;border-radius:14px!important;padding:14px 16px!important}
@@ -540,44 +516,6 @@ html body #emailModal[data-yk-report="1"] .report-preview-head span{display:bloc
     }
     return null;
   }
-  function mountPreview(w, owner) {
-    var root = w.document.querySelector('[data-yk-mobile-preview]');
-    if (!root || root.__ykMounted) return;
-    root.__ykMounted = true;
-    function load() {
-      root.innerHTML = '<p role="status">Cargando contenido Yokoten…</p>';
-      w.setTimeout(function () {
-        if (!root.isConnected) return;
-        try {
-          var build = owner.SMTinelBuildYokotenExportHtml;
-          var S = snapshotFromHtml((build.__yokotenAppearanceSource || build).call(owner));
-          root.innerHTML = '<div class="yk-read-intro"><div class="yk-read-brand"><img src="/services/8d-converter/smtinel_favicon.png" alt="Logo SMTinel"><span>SMTinel · Yokoten</span></div><h2>Contenido del reporte</h2><p>Busca el producto, abre una línea y revisa sus WO y acciones críticas.</p><p class="yk-read-muted">Vista de lectura · Common DB + Action Tracker. El HTML completo conserva pruebas, reparaciones, Handoff y mapas preparados durante la exportación.</p></div><div class="yk-read-tools"><label>Producto, PN o revisión<input data-yk-search type="search" placeholder="Buscar…"></label><label>Línea<select data-yk-line-filter><option value="">Todas las líneas</option>' + S.lines.map(function (l) { return '<option value="' + escapeHtml(l) + '">' + escapeHtml(l) + '</option>'; }).join('') + '</select></label></div><p data-yk-count role="status" aria-live="polite"></p><div data-yk-rows></div><nav class="yk-read-paging" aria-label="Páginas de productos"><button type="button" data-yk-prev>Anterior</button><span data-yk-page></span><button type="button" data-yk-next>Siguiente</button></nav><p class="yk-read-muted">El filtro de esta vista no recorta el archivo exportado. El historial no confirma producción en vivo.</p><button type="button" data-yk-refresh>Actualizar contenido</button>';
-          var q = root.querySelector('[data-yk-search]'), line = root.querySelector('[data-yk-line-filter]'), page = 0;
-          function render() {
-            var needle = normalized(q.value), selected = line.value;
-            var rows = S.rows.filter(function (r) { return (!selected || r.cells[selected]) && (!needle || normalized([r.product, r.sku, r.rev].join(' ')).indexOf(needle) >= 0); });
-            var pages = Math.max(1, Math.ceil(rows.length / 12));
-            page = Math.max(0, Math.min(page, pages - 1));
-            root.querySelector('[data-yk-rows]').innerHTML = rows.length ? rows.slice(page * 12, page * 12 + 12).map(function (r) { return rowReading(S, r, selected, false); }).join('') : '<p>' + (S.rows.length ? 'No hay coincidencias con estos filtros.' : 'No hay historial cargado. Carga Common DB / Production y pulsa Actualizar contenido.') + '</p>';
-            root.querySelector('[data-yk-count]').textContent = rows.length + ' de ' + S.rows.length + ' productos/revisiones';
-            root.querySelector('[data-yk-page]').textContent = (page + 1) + ' / ' + pages;
-            root.querySelector('[data-yk-prev]').disabled = page === 0;
-            root.querySelector('[data-yk-next]').disabled = page + 1 >= pages;
-          }
-          q.addEventListener('input', function () { page = 0; render(); });
-          line.addEventListener('change', function () { page = 0; render(); });
-          root.querySelector('[data-yk-prev]').onclick = function () { page--; render(); };
-          root.querySelector('[data-yk-next]').onclick = function () { page++; render(); };
-          root.querySelector('[data-yk-refresh]').onclick = load;
-          render();
-        } catch (err) {
-          root.innerHTML = '<p role="alert">No se pudo cargar la vista: ' + escapeHtml(err.message) + '</p><button type="button">Reintentar vista</button>';
-          root.querySelector('button').onclick = load;
-        }
-      }, 30);
-    }
-    load();
-  }
   var delivery = { doc: null, panel: null, url: '', generation: 0, busy: false };
   function deliveryPanel(d) {
     var panel = d.getElementById('ykMobileDelivery');
@@ -594,7 +532,7 @@ html body #emailModal[data-yk-report="1"] .report-preview-head span{display:bloc
     delivery.busy = true; delivery.generation++;
     var generation = delivery.generation, panel = deliveryPanel(w.document), button = w.document.getElementById('downloadEmail');
     if (delivery.url) { window.URL.revokeObjectURL(delivery.url); delivery.url = ''; }
-    panel.innerHTML = '<b>Preparando Yokoten</b><p role="status">Se están reuniendo el reporte y los mapas. Al terminar podrás abrirlo, descargarlo o guardarlo en Archivos.</p>';
+    panel.innerHTML = '<b>Preparando Yokoten</b><p role="status">Se está preparando la matriz de corridas. Al terminar podrás abrirlo, descargarlo o guardarlo en Archivos.</p>';
     if (button) { button.disabled = true; button.textContent = 'Preparando Yokoten…'; }
     function finish() {
       if (generation !== delivery.generation) return;
@@ -613,8 +551,7 @@ html body #emailModal[data-yk-report="1"] .report-preview-head span{display:bloc
   function receiveDownload(w, ev) {
     var a = ev.target && ev.target.closest && ev.target.closest('a[download]');
     if (!a || a.hasAttribute('data-yk-save') || (!delivery.busy && !isMobile(w)) || !/yokoten.*\.html$/i.test(a.download || '') || !/^blob:/.test(a.href)) return;
-    // Keep the existing Knowledge DB + drawing pipeline. Intercept only its
-    // final mobile HTML delivery, never CSVs or other report downloads.
+    // Intercept only the final mobile HTML delivery, never CSVs or other reports.
     ev.preventDefault();
     var generation = delivery.generation, panel = deliveryPanel(delivery.doc && delivery.doc.defaultView ? delivery.doc : w.document);
     panel.innerHTML = '<b data-yk-receiving>Reporte preparado</b><p role="status">Creando las opciones para guardarlo…</p>';
@@ -622,7 +559,7 @@ html body #emailModal[data-yk-report="1"] .report-preview-head span{display:bloc
     w.fetch(a.href).then(function (r) { if (!r.ok) throw new Error('No se pudo leer el archivo preparado.'); return r.blob(); }).then(function (blob) {
       if (generation !== delivery.generation) return;
       if (delivery.url) window.URL.revokeObjectURL(delivery.url);
-      // Own this URL: the old pipeline revokes its temporary URL after 120s.
+      // Own this URL independently of the exporter’s temporary download URL.
       delivery.url = window.URL.createObjectURL(blob);
       var ui = panel.ownerDocument.defaultView, file = typeof ui.File === 'function' ? new ui.File([blob], name, { type: 'text/html' }) : null;
       var shareData = file && { files: [file], title: 'SMTinel · Yokoten' };
@@ -641,72 +578,10 @@ html body #emailModal[data-yk-report="1"] .report-preview-head span{display:bloc
           });
         } catch (_) { panel.querySelector('[data-yk-save-status]').textContent = 'No se pudo compartir. Usa Descargar HTML o Abrir reporte completo.'; }
       };
-      w.__SMTINEL_LAST_YOKOTEN_EXPORT__ = { at: new Date().toISOString(), bytes: blob.size, name: name, method: 'ready-for-user', build: 'mobile-shainin-v2' };
+      w.__SMTINEL_LAST_YOKOTEN_EXPORT__ = { at: new Date().toISOString(), bytes: blob.size, name: name, method: 'ready-for-user', build: 'runs-v3' };
     }).catch(function (err) {
       if (generation === delivery.generation) panel.innerHTML = '<b>No se pudo preparar el guardado</b><p role="alert">' + escapeHtml(err.message) + ' Vuelve a preparar la exportación.</p>';
     });
-  }
-  function install(w) {
-    var d;
-    try { d = w.document; if (!d || !d.head) return; } catch (_) { return; }
-    ['SMTinelBuildYokotenExportHtml', 'SMTinelBuildYokotenPreviewHtml'].forEach(function (key) {
-      var original = w[key];
-      if (typeof original !== 'function' || original.__yokotenAppearanceV1) return;
-      var wrapped = function () {
-        if (key === 'SMTinelBuildYokotenPreviewHtml' && isMobile(w)) return '<div class="smt-yokoten-preview yk-reading" data-yk-mobile-preview><p role="status">Cargando contenido Yokoten…</p></div>';
-        var value = original.apply(this, arguments);
-        if (key === 'SMTinelBuildYokotenExportHtml') return transform(value, mode());
-        return '<div class="smt-yokoten-preview">' + value + '</div>';
-      };
-      wrapped.__yokotenAppearanceV1 = true;
-      wrapped.__yokotenAppearanceSource = original;
-      w[key] = wrapped;
-    });
-    var owner = builderWindow(w);
-    if (owner) {
-      var style = d.getElementById(VERSION + '-preview');
-      if (!style) { style = d.createElement('style'); style.id = VERSION + '-preview'; d.head.appendChild(style); }
-      var css = previewCss(mode()) + sectionCss();
-      if (style.textContent !== css) style.textContent = css;
-      var type = d.getElementById('reportType'), modal = d.getElementById('emailModal');
-      var yokoten = !!(type && type.value === 'YOKOTEN');
-      if (modal) {
-        if (yokoten && modal.getAttribute('data-yk-report') !== '1') modal.setAttribute('data-yk-report', '1');
-        else if (!yokoten && modal.hasAttribute('data-yk-report')) modal.removeAttribute('data-yk-report');
-      }
-      var preview = d.getElementById('emailPreview');
-      if (yokoten && preview && isMobile(w) && !preview.querySelector('[data-yk-mobile-preview]')) {
-        preview.innerHTML = '<div class="smt-yokoten-preview yk-reading" data-yk-mobile-preview><p role="status">Cargando contenido Yokoten…</p></div>';
-      }
-      if (preview && !preview.querySelector('.smt-yokoten-preview') && /Product \/ Revision x Line Matrix/.test(preview.textContent)) {
-        var shell = d.createElement('div'); shell.className = 'smt-yokoten-preview';
-        while (preview.firstChild) shell.appendChild(preview.firstChild);
-        preview.appendChild(shell);
-      }
-      var note = d.querySelector('.report-preview-head span');
-      var noteText = 'Vista de lectura · HTML completo al exportar · Shainin Red X';
-      if (note && yokoten && note.textContent !== noteText) note.textContent = noteText;
-      if (yokoten) mountPreview(w, owner);
-    }
-    if (!seen.has(d)) {
-      seen.add(d);
-      var timer;
-      new w.MutationObserver(function () { clearTimeout(timer); timer = setTimeout(function () { install(w); }, 100); }).observe(d.documentElement, { childList: true, subtree: true });
-      d.addEventListener('click', function () { install(w); }, true);
-      d.addEventListener('click', function (ev) { receiveDownload(w, ev); }, true);
-      d.addEventListener('change', function (ev) { if (ev.target.id === 'reportType') setTimeout(function () { install(w); }, 0); }, true);
-      // Window capture runs before the legacy document handler, which reports
-      // "HTML ready" while its asynchronous parent exporter is still working.
-      w.addEventListener('click', function (ev) {
-        var button = ev.target && ev.target.closest && ev.target.closest('#downloadEmail');
-        var type = d.getElementById('reportType'), owner = builderWindow(w);
-        if (!button || !type || type.value !== 'YOKOTEN' || !owner || !isMobile(w)) return;
-        ev.preventDefault(); ev.stopImmediatePropagation();
-        mobileExport(w, owner);
-      }, true);
-      d.addEventListener('load', function (ev) { if (ev.target.tagName === 'IFRAME') install(ev.target.contentWindow); }, true);
-    }
-    Array.prototype.forEach.call(d.querySelectorAll('iframe'), function (frame) { install(frame.contentWindow); });
   }
   new MutationObserver(function () { install(window); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   install(window);
