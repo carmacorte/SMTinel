@@ -79132,5 +79132,326 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
 <!-- SMTinel 8D Railway Bridge V20.25.2: lazy Export Center -->
 <script defer src="./assets/smtinel-8d-railway-bridge-v2025.js"></script>
 <script src="./assets/smtinel-mobile-export-polish-v2026.js?v=mobile-export-v1"></script>
+<script id="smtinel-yokoten-yield-knowledge-bridge-v5">
+/* SMTinel Yokoten v5: Yield Flow/Common DB + Cisco Calendar + GitHub Knowledge bridge.
+   Preserves the slim runs-v3 matrix, builds standalone evidence from the same loaded data.
+   Does not import or modify ZIP contents, Action Tracker or customer change approvals. */
+(function () {
+  'use strict';
+  var FLAG = '__SMTINEL_YOKOTEN_YIELD_KNOWLEDGE_V5__';
+  if (window[FLAG]) return;
+  window[FLAG] = true;
+  var BUILD = 'YOKOTEN-YIELD-KNOWLEDGE-V5.0';
+
+  function t(v) { return String(v == null ? '' : v).trim(); }
+  function n(v) { return t(v).toUpperCase(); }
+  function pn(v) { return n(v).replace(/\s+/g, ''); }
+  function line(v) { var x = n(v).match(/^L\s*0*(\d+)$/); return x ? 'L' + Number(x[1]) : n(v); }
+  function p2(x) { return String(x).padStart(2, '0'); }
+  function validYmd(y, m, d) {
+    var v = new Date(Date.UTC(y, m - 1, d));
+    return v.getUTCFullYear() === y && v.getUTCMonth() === m - 1 && v.getUTCDate() === d;
+  }
+  function plantDate(v) {
+    if (v == null || v === '') return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      return v.getFullYear() + '-' + p2(v.getMonth() + 1) + '-' + p2(v.getDate()) + ' ' + p2(v.getHours()) + ':' + p2(v.getMinutes()) + ':' + p2(v.getSeconds());
+    }
+    var s = t(v);
+    if (/^\d{5}(?:\.\d+)?$/.test(s) && +s > 20000 && +s < 90000) {
+      var millis = (+s - 25569) * 86400000;
+      var x = new Date(Math.round(millis));
+      if (isNaN(x.getTime())) return '';
+      return x.getUTCFullYear() + '-' + p2(x.getUTCMonth() + 1) + '-' + p2(x.getUTCDate()) + ' ' + p2(x.getUTCHours()) + ':' + p2(x.getUTCMinutes()) + ':' + p2(x.getUTCSeconds());
+    }
+    if (/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d\d:\d\d)$/i.test(s)) {
+      var zoned = new Date(s), parts = {};
+      if (isNaN(zoned.getTime())) return '';
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/Ciudad_Juarez', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(zoned).forEach(function (x) { parts[x.type] = x.value; });
+      return parts.year + '-' + parts.month + '-' + parts.day + ' ' + parts.hour + ':' + parts.minute + ':' + parts.second;
+    }
+    var m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2})(?:\.\d+)?)?\s*(AM|PM)?)?$/i);
+    if (!m) {
+      var us = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM)?)?$/i);
+      if (us) { var yy = +us[3]; if (yy < 100) yy += yy >= 70 ? 1900 : 2000; m = [s, String(yy), us[1], us[2], us[4], us[5], us[6], us[7]]; }
+    }
+    if (!m) return '';
+    var y = +m[1], mo = +m[2], d = +m[3];
+    if (!validYmd(y, mo, d)) return '';
+    var h = m[4] == null ? 0 : +m[4], mi = m[5] == null ? 0 : +m[5], sec = m[6] == null ? 0 : +m[6];
+    if (m[7]) { if (h < 1 || h > 12) return ''; h = h % 12 + (/PM/i.test(m[7]) ? 12 : 0); }
+    if (h > 23 || mi > 59 || sec > 59) return '';
+    return y + '-' + p2(mo) + '-' + p2(d) + ' ' + p2(h) + ':' + p2(mi) + ':' + p2(sec);
+  }
+  function scoped(item, run) {
+    if (!item || !run || !pn(item.sku) || pn(item.sku) !== pn(run.sku)) return false;
+    if (n(item.rev) && n(item.rev) !== n(run.rev)) return false;
+    if (line(item.line) && line(item.line) !== line(run.line)) return false;
+    return true;
+  }
+  function activeRecords(k, runs) {
+    var included = function (r) { return runs.some(function (x) { return scoped(r, x); }); };
+    var findings = (k.findings || []).filter(included);
+    var actions = (k.actions || []).filter(included);
+    var fIndex = Object.create(null);
+    var records = findings.map(function (f) {
+      if (f.id) fIndex[n(f.id)] = true;
+      return { id: t(f.id), kind: 'finding', sku: t(f.sku), rev: t(f.rev), line: t(f.line), model: t(f.family || f.product), title: t(f.title), severity: t(f.severity), refdes: t(f.refdes), component: t(f.component), gate: t(f.gate), critical: t(f.critical), status: t(f.status), source: t(f.source),
+        actions: actions.filter(function (a) { return a.findingId && n(a.findingId) === n(f.id) && a.sku && pn(a.sku) === pn(f.sku); }).map(function (a) { return { id: t(a.id), sku: t(a.sku), rev: t(a.rev), line: t(a.line), text: t(a.action), owner: t(a.owner), status: t(a.status), refdes: t(a.refdes), component: t(a.component), due: t(a.due) }; }) };
+    });
+    // Preserve orphan actions from Action Tracker without inventing a finding.
+    actions.forEach(function (a) {
+      if (a.findingId && fIndex[n(a.findingId)]) return;
+      if (!a.action) return;
+      records.push({ id: t(a.id), kind: 'action', sku: t(a.sku), rev: t(a.rev), line: t(a.line), model: t(a.family || a.product), title: t(a.action), severity: '', status: t(a.status), source: 'Action Tracker', refdes: t(a.refdes), component: t(a.component), gate: '', critical: '', actions: [] });
+    });
+    var seen = Object.create(null), refs = [];
+    actions.forEach(function (a) {
+      var ref = n(a.refdes).replace(/[^A-Z0-9_]/g, '');
+      if (!a.directComponentControl || !pn(a.sku) || !pn(a.component) || !/^(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/.test(ref)) return;
+      var key = [pn(a.sku), n(a.rev), line(a.line), pn(a.component), ref].join('|');
+      if (seen[key]) return;
+      seen[key] = 1;
+      refs.push({ sku: t(a.sku), rev: t(a.rev), line: t(a.line), model: t(a.family || a.product), component: t(a.component), refdes: ref, actionId: t(a.id), status: t(a.status) });
+    });
+    // Drawing candidates come from complete source-backed triples in Findings OR Actions.
+    // Critical-reference classification still comes only from Action Tracker.
+    var drawings = [], usedDrawings = Object.create(null);
+    findings.concat(actions).forEach(function (f) {
+      var ref = n(f.refdes).replace(/[^A-Z0-9_]/g, '');
+      if (!pn(f.sku) || !pn(f.component) || !/^(?:LED|TR|VR|FB|CN|TP|SW|CR|RN|RT|R|C|U|D|Q|L|F|X|Y|J|P)\d{1,6}(?:[A-Z]+)?(?:_[A-Z0-9]+)?$/.test(ref)) return;
+      var key = [pn(f.sku), n(f.rev), line(f.line), pn(f.component), ref].join('|');
+      if (usedDrawings[key]) return;
+      usedDrawings[key] = true;
+      drawings.push({ sku: t(f.sku), rev: t(f.rev), line: t(f.line), model: t(f.family || f.product), component: t(f.component), refdes: ref, source: f.findingId === undefined ? 'Lesson Learned' : 'Action Tracker' });
+    });
+    return { records: records, refs: refs, drawings: drawings, totalRepoFindings: (k.findings || []).length, totalRepoActions: (k.actions || []).length, source: t(k.source), loadedAt: t(k.loadedAt), connected: true };
+  }
+  function enrichSnapshot(S, w) {
+    S = S || {};
+    var runs = Array.isArray(S.runs) ? S.runs : [];
+    var source = w.SMTINEL_CROSSMODEL_LAST_PARSED || w.TRACEOPS_YIELD_LAST_PARSED || {};
+    var map = w.TRACEOPS_YIELD_CISCO_CALENDAR_MAP || {};
+    if (!Object.keys(map).length && source.calendar && source.calendar.length && typeof w.traceOpsYieldBuildCiscoCalendarMap === 'function') {
+      try { map = w.traceOpsYieldBuildCiscoCalendarMap(source.calendar) || {}; w.TRACEOPS_YIELD_CISCO_CALENDAR_MAP = map; } catch (e) { console.warn('[Yokoten V5] Cisco Calendar', e); }
+    }
+    var dated = 0, fiscal = 0;
+    runs.forEach(function (r) {
+      var original = r.start || r.startRaw;
+      var fixed = plantDate(original);
+      if (fixed) { r.start = fixed; dated++; delete r.startRaw; }
+      var d = fixed.slice(0, 10), c = map[d] || {};
+      r.fiscalWeek = t(c.week && c.week !== 'Imported' ? c.week : '');
+      r.fiscalQuarter = t(c.quarter);
+      if (r.fiscalWeek) fiscal++;
+    });
+    S.schema = 'smtinel.yokoten.runs.v5';
+    S.dateSource = 'Common DB · Time Start';
+    S.fiscalSource = Object.keys(map).length ? 'Yield Flow · Cisco Calendar map' : 'Cisco Calendar no disponible en Yield Flow';
+    S.dateCoverage = { dated: dated, total: runs.length, fiscal: fiscal };
+    var k = w.SMTINEL_YOKOTEN_KNOWLEDGE || {};
+    S.knowledge = k.loaded ? activeRecords(k, runs) : { records: [], refs: [], drawings: [], connected: false, source: '', error: t((w.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS || {}).message) || 'Knowledge no cargado' };
+    S.customerChanges = { state: 'pending-master-validation', approved: 0 };
+    return S;
+  }
+  function reportStyles() {
+    return '\n.yk-evidence{background:#fff;border:1px solid #dcdde1;border-radius:12px;padding:14px;margin:14px 0 10px;color:#202124}.yk-evidence-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}.yk-evidence h2{font-size:16px;margin:0}.yk-evidence .yk-sub{color:#61656d;font-size:11px}.yk-evidence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:9px;margin-top:12px}.yk-ll-card{border:1px solid #e0e1e4;border-left:3px solid #c8102e;border-radius:9px;padding:12px;background:#fbfbfc;min-width:0}.yk-ll-card h3{margin:5px 0;font-size:13px;line-height:1.35}.yk-ll-meta{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0}.yk-ll-meta span{font-size:10px;color:#49515c;border:1px solid #e0e1e4;background:#fff;border-radius:5px;padding:2px 6px}.yk-ll-card p{font-size:11px;line-height:1.45;color:#454b54;margin:7px 0}.yk-action{border-top:1px dashed #d7d9dc;padding:7px 0;font-size:11px}.yk-action b{display:block}.yk-ref-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}.yk-ref-table th,.yk-ref-table td{border:1px solid #e0e1e4;padding:7px;text-align:left;overflow-wrap:anywhere}.yk-ref-table th{background:#f3f4f5}.yk-evidence-status{font-weight:700;font-size:11px}.yk-evidence-status[data-ok="0"]{color:#9b271d}.yk-evidence-status[data-ok="1"]{color:#23633b}.yk-ref-link{font-size:11px;color:#a00e27;text-decoration:underline}.yk-ref-note{font-size:10px;color:#61656d;margin-top:8px}.yk-no-evidence{padding:12px;background:#f5f5f7;border-radius:8px;font-size:12px;color:#61656d}.yk-fiscal{font-weight:700;color:#9b273c!important}.yk-customer-placeholder{border-top:1px solid #e2e2e5;margin-top:10px;padding-top:10px;color:#61656d;font-size:11px}.yk-statusrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}.yk-statusrow span{font-size:10.5px;color:#61656d}.yk-error-retry{border:1px solid #e9b9c2;background:#fff7f8;padding:10px;border-radius:9px}.yk-filter-hint{font-size:10px;color:#61656d}@media(max-width:700px){.yk-evidence{margin:9px 0;padding:12px}.yk-evidence-grid{grid-template-columns:1fr}.yk-ref-table{display:block;overflow-x:auto}.yk-evidence-head{display:block}}@media print{.yk-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yk-ll-card{break-inside:avoid}}\n';
+  }
+
+  // Self-contained runtime included only in the exported report.
+  function standaloneRuntime() {
+    'use strict';
+    var S = window.__YK_RUNS__ || {}, K = S.knowledge || {}, root = document.querySelector('[data-yk-runs-root]');
+    if (!root) return;
+    function txt(v) { return String(v == null ? '' : v).trim(); }
+    function up(v) { return txt(v).toUpperCase(); }
+    function pn(v) { return up(v).replace(/\s+/g, ''); }
+    function ln(v) { var x = up(v).match(/^L\s*0*(\d+)$/); return x ? 'L' + Number(x[1]) : up(v); }
+    function esc(v) { return txt(v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function elt(s) { return root.querySelector(s); }
+    function get(k) { var e = elt('[data-filter="' + k + '"]'); return e ? e.value : ''; }
+    function day(s) { return txt(s).slice(0, 10); }
+    function matchRecord(f, r) { return !!(pn(f.sku) && pn(f.sku) === pn(r.sku) && (!up(f.rev) || up(f.rev) === up(r.rev)) && (!ln(f.line) || ln(f.line) === ln(r.line))); }
+    function matchingRuns() {
+      var values = ['bu', 'line', 'model', 'sku', 'rev', 'wo'], query = up(get('q')).split(/\s+/).filter(Boolean), period = get('period'), from = get('from'), to = get('to');
+      return (S.runs || []).filter(function (r) {
+        if (values.some(function (f) { return get(f) && get(f) !== r[f]; })) return false;
+        var hay = up([r.bu, r.line, r.model, r.sku, r.rev, r.wo].join(' '));
+        if (query.some(function (q) { return hay.indexOf(q) < 0; })) return false;
+        var d = day(r.start);
+        if (period === 'undated') return !r.start;
+        if (period && period !== 'all') return !!d && !!from && !!to && d >= from && d <= to;
+        return true;
+      });
+    }
+    function runToWeek() {
+      var map = Object.create(null);
+      (S.runs || []).forEach(function (r) {
+        var k = ln(r.line) + '|' + txt(r.wo);
+        if (!map[k]) map[k] = { week: r.fiscalWeek, quarter: r.fiscalQuarter };
+        else if (map[k].week !== r.fiscalWeek) map[k] = { week: '', quarter: '' };
+      });
+      return map;
+    }
+    var fiscalLookup = runToWeek();
+    function decorateFiscal() {
+      document.querySelectorAll('.yk-matrix td[data-line] .yk-run').forEach(function (node) {
+        if (node.getAttribute('data-yk-fiscal-ready')) return;
+        node.setAttribute('data-yk-fiscal-ready', '1');
+        var cell = node.closest('td[data-line]');
+        var wo = txt(node.querySelector('b') && node.querySelector('b').textContent).replace(/^WO\s*/i, '');
+        var f = fiscalLookup[ln(cell && cell.getAttribute('data-line')) + '|' + wo];
+        if (!f || !f.week) return;
+        var e = document.createElement('small'); e.className = 'yk-fiscal'; e.textContent = 'Cisco ' + f.week + (f.quarter ? ' · ' + f.quarter : ''); node.appendChild(e);
+      });
+    }
+    function drawingUrl(f) {
+      // Only offer a document link when the full, source-backed triple exists.
+      if (!pn(f.sku) || !pn(f.component) || !txt(f.refdes)) return '';
+      // The reference engine resolves a family drawing, but a URL is a candidate,
+      // not a verified located RefDes. Never claim a rendered/highlighted view.
+      var known = { PICTORIS:'PICTORIS.pdf', HEIMDALL:'HEIMDALL.pdf', BROOKLYN:'BROOKLYN.pdf', DAVINCI:'DAVINCI.pdf', OCTAVIO:'OCTAVIO.pdf', MILLENNIUM:'MILLENNIUM.pdf', TYNE:'TYNE.pdf', ARATA:'ARATA.pdf', CHARON:'CHARON.pdf', TAYLOR:'TAYLOR.pdf', LANCER:'Lancer.pdf' };
+      var name = known[up(f.model)];
+      return name ? 'https://smtinel.com/docs/datasheets/' + encodeURIComponent(name) : '';
+    }
+    function update() {
+      var runs = matchingRuns(), facts = (K.records || []).filter(function (x) { return runs.some(function (r) { return matchRecord(x, r); }); }), refs = (K.refs || []).filter(function (x) { return runs.some(function (r) { return matchRecord(x, r); }); });
+      var count = elt('[data-yk-knowledge-count]'), factsEl = elt('[data-yk-facts]'), refsEl = elt('[data-yk-refs]'), refsCount = elt('[data-yk-ref-count]'), drawingsEl = elt('[data-yk-drawings]'), drawingsCount = elt('[data-yk-drawings-count]');
+      if (count) count.textContent = facts.length + ' Lesson Learned / acciones aplicables · ' + runs.length + ' corridas seleccionadas';
+      if (refsCount) refsCount.textContent = refs.length + ' referencias directas con PN de componente y RefDes';
+      if (factsEl) {
+        factsEl.innerHTML = !K.connected ? '<div class="yk-no-evidence yk-error-retry">Knowledge de GitHub no disponible en esta exportación. No se atribuyen Lesson Learned sin conexión verificada.</div>' : (!facts.length ? '<div class="yk-no-evidence">Sin Lesson Learned con coincidencia exacta de PCBA, revisión y línea para las corridas seleccionadas.</div>' : facts.map(function (f) {
+          var a = (f.actions || []).filter(function (x) { return x.text && runs.some(function (r) { return matchRecord(x, r); }); });
+          return '<article class="yk-ll-card"><div class="yk-ll-meta"><span>' + esc(f.kind === 'action' ? 'Action Tracker' : 'Lesson Learned') + '</span><span>' + esc(f.id) + '</span><span>' + esc(f.sku) + '</span>' + (f.rev ? '<span>Rev ' + esc(f.rev) + '</span>' : '') + (f.line ? '<span>' + esc(f.line) + '</span>' : '') + (f.severity ? '<span>' + esc(f.severity) + '</span>' : '') + (f.status ? '<span>' + esc(f.status) + '</span>' : '') + '</div><h3>' + esc(f.title) + '</h3>' + (f.critical ? '<p><b>Característica crítica:</b> ' + esc(f.critical) + '</p>' : '') + (f.gate ? '<p><b>Antes de liberar:</b> ' + esc(f.gate) + '</p>' : '') + (f.component || f.refdes ? '<p><b>Componente:</b> ' + esc(f.component || 'N/D') + ' · <b>RefDes:</b> ' + esc(f.refdes || 'N/D') + '</p>' : '') + a.map(function (z) { return '<div class="yk-action"><b>' + esc(z.id) + ' · ' + esc(z.status) + (z.owner ? ' · ' + esc(z.owner) : '') + '</b>' + esc(z.text) + '</div>'; }).join('') + '</article>';
+        }).join(''));
+      }
+      var drawings = (K.drawings || []).filter(function (x) { return runs.some(function (r) { return matchRecord(x, r); }); });
+      if (drawingsCount) drawingsCount.textContent = drawings.length + ' dibujos elegibles con PCBA PN + Component PN + RefDes';
+      if (drawingsEl) {
+        drawingsEl.innerHTML = drawings.length ? '<table class="yk-ref-table"><thead><tr><th>PCBA PN</th><th>Component PN</th><th>RefDes</th><th>Origen</th><th>Plano</th></tr></thead><tbody>' + drawings.map(function (f) {
+          var url = drawingUrl(f);
+          return '<tr><td>' + esc(f.sku) + '</td><td>' + esc(f.component) + '</td><td><b>' + esc(f.refdes) + '</b></td><td>' + esc(f.source) + '</td><td>' + (url ? '<a class="yk-ref-link" target="_blank" rel="noopener" href="' + esc(url) + '">Consultar plano PDF</a>' : 'Plano no identificado') + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="yk-no-evidence">Sin combinaciones completas para generar un dibujo. No se generan mapas por modelo sin RefDes y CPN.</div>';
+      }
+      if (refsEl) {
+        refsEl.innerHTML = refs.length ? '<table class="yk-ref-table"><thead><tr><th>PCBA PN</th><th>Component PN</th><th>RefDes</th><th>Control</th><th>Dibujo</th></tr></thead><tbody>' + refs.map(function (f) {
+          var url = drawingUrl(f);
+          return '<tr><td>' + esc(f.sku) + (f.rev ? '<small> · ' + esc(f.rev) + '</small>' : '') + '</td><td>' + esc(f.component) + '</td><td><b>' + esc(f.refdes) + '</b></td><td>' + esc(f.actionId) + '</td><td>' + (url ? '<a class="yk-ref-link" href="' + esc(url) + '" target="_blank" rel="noopener">Consultar PDF de familia</a>' : 'Sin PDF asociado') + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="yk-no-evidence">No existen referencias directas completas y aplicables en las corridas seleccionadas.</div>';
+      }
+      decorateFiscal();
+    }
+    var scheduled = false;
+    function later() { if (scheduled) return; scheduled = true; setTimeout(function () { scheduled = false; update(); }, 0); }
+    root.addEventListener('change', later, false);
+    root.addEventListener('input', later, false);
+    var matrix = elt('[data-yk-matrix]');
+    if (matrix && typeof MutationObserver !== 'undefined') new MutationObserver(later).observe(matrix, { childList: true, subtree: true });
+    update();
+  }
+  function extractSnapshot(doc) {
+    var tag = doc.getElementById('yk-runs-data'); if (!tag) return null;
+    var body = t(tag.textContent), begin = 'window.__YK_RUNS__=';
+    if (body.slice(0, begin.length) !== begin) return null;
+    try { return JSON.parse(body.slice(begin.length).replace(/;\s*$/, '')); } catch (_) { return null; }
+  }
+  function buildHtml(html, w) {
+    var d = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    if (!d || !d.body || !d.querySelector('[data-yk-runs-root]')) return html;
+    var S = extractSnapshot(d); if (!S) throw new Error('Matriz V3 sin payload de corridas; no es seguro generar Yokoten V5.');
+    enrichSnapshot(S, w);
+    var tag = d.getElementById('yk-runs-data');
+    tag.textContent = 'window.__YK_RUNS__=' + JSON.stringify(S).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029') + ';';
+    var style = d.createElement('style'); style.id = 'smtinel-yokoten-yield-knowledge-style-v5'; style.textContent = reportStyles(); d.head.appendChild(style);
+    var panel = d.createElement('section'); panel.className = 'yk-evidence'; panel.id = 'yk-evidence-v5';
+    panel.innerHTML = '<div class="yk-evidence-head"><div><h2>Lesson Learned · controles de referencias críticas</h2><p class="yk-sub">Correlación por PCBA PN, revisión y línea · Fuente: Knowledge de GitHub · Fechas y fiscal desde Yield Flow</p></div><span data-yk-knowledge-status class="yk-evidence-status" data-ok="' + (S.knowledge.connected ? '1' : '0') + '">' + (S.knowledge.connected ? 'Knowledge conectado' : 'Knowledge sin conexión') + '</span></div><div class="yk-statusrow"><span>' + S.dateCoverage.dated + '/' + S.dateCoverage.total + ' inicios válidos</span><span>' + S.dateCoverage.fiscal + '/' + S.dateCoverage.total + ' con semana Cisco</span><span>' + (S.knowledge.connected ? (S.knowledge.totalRepoFindings + ' hallazgos / ' + S.knowledge.totalRepoActions + ' acciones en GitHub') : 'Revisar conexión GitHub') + '</span></div><div class="yk-evidence-head" style="margin-top:13px"><h2 style="font-size:14px">Lecciones y acciones relevantes</h2><span data-yk-knowledge-count class="yk-sub"></span></div><div data-yk-facts class="yk-evidence-grid"></div><div class="yk-evidence-head" style="margin-top:16px"><h2 style="font-size:14px">Dibujos elegibles de Lesson Learned y Action Tracker</h2><span data-yk-drawings-count class="yk-sub"></span></div><div data-yk-drawings></div><div class="yk-evidence-head" style="margin-top:16px"><h2 style="font-size:14px">Referencias críticas del Action Tracker</h2><span data-yk-ref-count class="yk-sub"></span></div><div data-yk-refs></div><p class="yk-ref-note">Un dibujo se considera elegible solo con PCBA PN + Component PN + RefDes. El vínculo PDF es únicamente una fuente candidata, no evidencia automática de ubicación ni validación de montaje.</p><div class="yk-customer-placeholder"><b>ECN / ECO / Desviaciones:</b> esquema preparado para relacionar documentos por PN/revisión/WO/fecha; las autorizaciones y vigencias requieren validación del archivo maestro del customer.</div>';
+    var host = d.querySelector('.yk-main');
+    var note = host && host.querySelector('.yk-pager');
+    if (note && note.parentNode) note.parentNode.insertBefore(panel, note.nextSibling);
+    else if (host) host.appendChild(panel);
+    var script = d.createElement('script'); script.id = 'smtinel-yokoten-yield-knowledge-runtime-v5'; script.textContent = '(' + standaloneRuntime.toString() + ')();'; d.body.appendChild(script);
+    d.title = 'SMTinel · Yokoten Corridas + Knowledge V5';
+    return '<!doctype html>\n' + d.documentElement.outerHTML;
+  }
+  function downloadHtml(w, html) {
+    var blob = new w.Blob([html], { type: 'text/html;charset=utf-8' });
+    var a = w.document.createElement('a'); var url = w.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = 'SMTinel_Yokoten_Corridas_Knowledge_V5_' + new Date().toISOString().slice(0, 10) + '.html';
+    a.style.display = 'none'; w.document.body.appendChild(a); a.click();
+    w.__SMTINEL_LAST_YOKOTEN_EXPORT__ = { at: new Date().toISOString(), bytes: blob.size, name: a.download, method: 'download-requested', build: BUILD, connected: !!(w.SMTINEL_YOKOTEN_KNOWLEDGE && w.SMTINEL_YOKOTEN_KNOWLEDGE.loaded) };
+    w.setTimeout(function () { try { a.remove(); w.URL.revokeObjectURL(url); } catch (_) {} }, 120000);
+    return true;
+  }
+  async function ensureKnowledge(w) {
+    var k = w.SMTINEL_YOKOTEN_KNOWLEDGE;
+    if (k && k.loaded) return k;
+    if (typeof w.SMTinelReloadYokotenKnowledge !== 'function') throw new Error('No se localizó SMTinelReloadYokotenKnowledge() en este index.');
+    k = await w.SMTinelReloadYokotenKnowledge();
+    if (!k || !k.loaded) throw new Error(t((w.SMTINEL_YOKOTEN_KNOWLEDGE_STATUS || {}).message) || 'Falló la carga del Excel Knowledge desde GitHub.');
+    return k;
+  }
+  function install(w) {
+    try {
+      if (!w || !w.document || w.document.querySelector('[data-yk-runs-root]')) return false;
+      var base = w.SMTinelBuildYokotenExportHtml;
+      if (typeof base !== 'function' || !base.__yokotenRunsV3) return false;
+      if (base.__smtinelYkYieldKnowledgeV5) return true;
+      var wrap = function () { return buildHtml(base.apply(this, arguments), w); };
+      wrap.__yokotenRunsV3 = true; // Prevent the legacy mobile installer from replacing our bridge.
+      wrap.__smtinelYkYieldKnowledgeV5 = true;
+      wrap.__base = base;
+      w.SMTinelBuildYokotenExportHtml = wrap;
+      w.SMTinelDownloadYokotenHtml = function () {
+        if (w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__) return true;
+        w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__ = 1;
+        (async function () {
+          try {
+            await ensureKnowledge(w);
+            downloadHtml(w, wrap());
+          } catch (err) {
+            console.error('[Yokoten V5] Export cancelado:', err);
+            if (typeof w.alert === 'function') w.alert('No se exportó Yokoten con Lesson Learned: ' + t(err && err.message || err));
+          } finally { w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__ = 0; }
+        })();
+        return true;
+      };
+      if (!w.__smtinelYkPreviewBridgeV5) {
+        w.__smtinelYkPreviewBridgeV5 = true;
+        w.document.addEventListener('load', function (event) {
+          var frame = event.target;
+          if (!frame || !frame.matches || !frame.matches('iframe[data-yk-run-frame]')) return;
+          try {
+            if (frame.contentDocument && frame.contentDocument.getElementById('yk-evidence-v5')) return;
+            function refresh() {
+              if (!frame.isConnected) return;
+              try { frame.srcdoc = w.SMTinelBuildYokotenExportHtml(); }
+              catch (e) { console.warn('[Yokoten V5] Preview', e); }
+            }
+            if (w.SMTINEL_YOKOTEN_KNOWLEDGE && w.SMTINEL_YOKOTEN_KNOWLEDGE.loaded) refresh();
+            else {
+              if (!w.__smtinelYkPreviewLoadingV5) w.__smtinelYkPreviewLoadingV5 = ensureKnowledge(w).catch(function (e) { console.warn('[Yokoten V5] Knowledge preview', e); });
+              w.__smtinelYkPreviewLoadingV5.then(refresh);
+            }
+          } catch (e) { console.warn('[Yokoten V5] Iframe check', e); }
+        }, true);
+      }
+      w.SMTINEL_YOKOTEN_INTEGRATION_BUILD = BUILD;
+      console.info('[Yokoten V5] Bridge conectado · Yield Flow + GitHub Knowledge.');
+      return true;
+    } catch (err) { console.warn('[Yokoten V5] install', err); return false; }
+  }
+  // Expose limited diagnostics to make regression testing possible without imports.
+  window.SMTinelYokotenYieldKnowledgeV5 = { build: BUILD, plantDate: plantDate, scoped: scoped, enrichSnapshot: enrichSnapshot, install: install, buildHtml: buildHtml };
+  install(window);
+  document.addEventListener('smtinel:yokoten-knowledge-ready', function () { install(window); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { install(window); });
+  window.addEventListener('load', function () { install(window); });
+  // A later Export Center render may install the V3 function after our bridge.
+  var attempts = 0, timer = setInterval(function () { if (install(window) || ++attempts >= 30) clearInterval(timer); }, 500);
+})();
+
+</script>
 </body>
 </html>
