@@ -79507,7 +79507,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
   'use strict';
   if (window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__) return;
   window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__ = true;
-  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V6.0';
+  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V8.0-UNIQUE-DOCUMENTS';
   var cachedSeed = null;
   function t(v) { return String(v == null ? '' : v).trim(); }
   function up(v) { return t(v).toUpperCase(); }
@@ -79608,7 +79608,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       scopes: D.scopes || [],
       instructions: D.instructions || [],
       masterCounts: types,
-      candidateCount: hits.length,
+      candidateCount: new Set(hits.map(function(h){return up(h.doc.id);})).size,
       releaseAuthorized: false,
       context: 'Coincidencia documental preliminar; no es una autorizacion de ensamble o sustitucion'
     };
@@ -79629,6 +79629,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     .cc-status{font-size:10.5px;color:#69727e}.cc-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}.cc-doc{border:1px solid #e1e3e7;border-left:3px solid #b77837;border-radius:9px;background:#fff;min-width:0;overflow:hidden}.cc-doc summary{list-style:none;cursor:pointer;padding:11px;display:grid;gap:7px}.cc-doc summary::-webkit-details-marker{display:none}.cc-doc summary:focus-visible,.cc-tab:focus-visible{outline:3px solid #bc2641;outline-offset:2px}
     .cc-doc-title{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.cc-doc-title strong{font-size:14px;color:#222f38}.cc-pill{display:inline-flex;border:1px solid #e2d0b9;background:#fff6eb;color:#83502d;border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800}.cc-pill.neutral{border-color:#dce0e5;background:#f4f6f8;color:#475462}.cc-pill.warn{background:#fff0f0;border-color:#ecc4c4;color:#922f34}
     .cc-doc-summary{font-size:11.5px;color:#27313a;line-height:1.4}.cc-doc-meta{font-size:10px;color:#6b747c}.cc-detail{border-top:1px solid #e2e3e6;background:#fcfcfd;padding:12px}.cc-detail p{margin:7px 0;font-size:11px;line-height:1.55;overflow-wrap:anywhere}.cc-table{border-collapse:collapse;width:100%;font-size:10.5px;margin:9px 0}.cc-table th,.cc-table td{border:1px solid #dce0e4;padding:7px;text-align:left;overflow-wrap:anywhere;white-space:normal;vertical-align:top}.cc-table th{background:#eef0f3}
+    .cc-table-scroll{max-width:100%;overflow:auto}.cc-table-scroll .cc-table{min-width:580px}.cc-wo-detail{margin-top:3px;color:#704758;max-width:240px;overflow-wrap:anywhere}.cc-wo-detail summary{cursor:pointer;font-weight:750}.cc-source-text summary{cursor:pointer;font-weight:750;color:#704758}
     .cc-row-meta{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 7px}.cc-data-source{color:#737d84;font-size:10px;border-top:1px solid #eceef0;margin-top:13px;padding-top:10px;overflow-wrap:anywhere}.cc-blank{padding:17px;background:#f6f6f8;border:1px solid #e3e4e7;border-radius:9px;color:#626a75;font-size:12px;grid-column:1/-1}
     .cc-pages{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.cc-pages button{background:#fff;color:#7b2940;border:1px solid #dbdce0;padding:8px 14px;border-radius:8px;cursor:pointer}.cc-pages button:disabled{opacity:.35;cursor:default}
     .cc-cell-notice{display:inline-flex;gap:4px;align-items:center;margin-top:6px;padding:3px 6px;color:#8d4b1e;background:#fff4e8;border:1px solid #e9cba9;border-radius:5px;font-size:10px;font-weight:800;text-decoration:none}
@@ -79714,30 +79715,81 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       var c=(D.masterCounts||{})[type];
       return typeof c==='number'?c:(D.documents||[]).filter(function(d){return U(d.type)===type;}).length;
     }
+    // V8: one visual card per customer document, even if multiple PCBAs match.
+    // Keep board-level hits untouched for cell alerts, metrics, and traceability.
+    function groupDocuments(hits){
+      var out=[],byId=Object.create(null);
+      (hits||[]).forEach(function(h){
+        var id=U(h.doc.id||h.doc.ctan||h.doc.number),group=byId[id];
+        if(!group){
+          group=byId[id]={doc:h.doc,boards:[],runs:[],instructions:[],seenRuns:Object.create(null),seenInstructions:Object.create(null)};
+          out.push(group);
+        }
+        group.boards.push(h);
+        (h.runs||[]).forEach(function(r){
+          var rk=[PN(h.boardPn),W(r.wo),U(r.rev),LN(r.line)].join('|');
+          if(group.seenRuns[rk])return;
+          group.seenRuns[rk]=1;
+          group.runs.push(r);
+        });
+        (h.instructions||[]).forEach(function(i){
+          var ik=[U(i.ctan),PN(i.boardPn),U(i.refdes),U(i.operation),PN(i.old),PN(i.new)].join('|');
+          if(group.seenInstructions[ik])return;
+          group.seenInstructions[ik]=1;
+          group.instructions.push(i);
+        });
+      });
+      return out;
+    }
+    function uniqueValues(list){return Array.from(new Set(list.filter(function(v){return T(v);})));}
     function renderCards(hits){
-      var show=hits.filter(function(h){
-        if(tab!=='ALL'&&U(h.doc.type)!==tab)return false;
-        if(rangeMode==='future'&&(!h.doc.effectiveUntil||T(h.doc.effectiveUntil)<now))return false;
-        if(rangeMode==='instructions'&&!h.instructions.length)return false;
-        if(phrase){var blob=U([h.doc.number,h.doc.ctan,h.doc.description,h.doc.workflow,h.boardPn,h.runs.map(function(r){return r.wo+' '+r.rev+' '+r.line;}).join(' '),h.instructions.map(function(i){return [i.refdes,i.old,i.new].join(' ');}).join(' ')].join(' '));if(blob.indexOf(phrase)<0)return false;}
+      var docs=groupDocuments(hits),show=docs.filter(function(g){
+        var d=g.doc;
+        if(tab!=='ALL'&&U(d.type)!==tab)return false;
+        if(rangeMode==='future'&&(!d.effectiveUntil||T(d.effectiveUntil)<now))return false;
+        if(rangeMode==='instructions'&&!g.instructions.length)return false;
+        if(phrase){
+          var words=[d.number,d.ctan,d.description,d.workflow];
+          g.boards.forEach(function(h){
+            words.push(h.boardPn,h.scope&&h.scope.rev,h.scope&&h.scope.curation);
+            (h.runs||[]).forEach(function(r){words.push(r.wo,r.rev,r.line,r.start);});
+          });
+          g.instructions.forEach(function(i){words.push(i.refdes,i.old,i.new,i.boardPn,i.operation);});
+          if(U(words.join(' ')).indexOf(phrase)<0)return false;
+        }
         return true;
       });
       var count=el('[data-cc-results]'),out=el('[data-cc-items]'),pg=el('[data-cc-pages]'),pgLabel=el('[data-cc-page-label]');
-      if(count)count.textContent=show.length+' documento(s) para los filtros del modulo';
+      if(count)count.textContent=show.length+' documento(s) unico(s) para los filtros del modulo';
       var pages=Math.max(1,Math.ceil(show.length/pageSize));page=Math.max(0,Math.min(page,pages-1));
       if(pg)pg.hidden=show.length<=pageSize;
       if(pgLabel)pgLabel.textContent='Pagina '+(page+1)+' de '+pages;
-      var prev=el('[data-cc-prev]'),next=el('[data-cc-next]');if(prev)prev.disabled=page===0;if(next)next.disabled=page>=pages-1;
+      var prev=el('[data-cc-prev]'),next=el('[data-cc-next]');
+      if(prev)prev.disabled=page===0;
+      if(next)next.disabled=page>=pages-1;
       if(!out)return;
       if(!show.length){
         var typeMessage=(tab==='ECN'||tab==='ECO')&&masterFlag(tab)===0?'No se ha incorporado el maestro de '+tab+'. Las menciones dentro de una desviacion no son documentos '+tab+' independientes.':'No hay documentos '+(tab==='ALL'?'ECN, ECO o desviaciones':tab)+' asociados a las corridas y filtros actuales.';
-        out.innerHTML='<div class="cc-blank">'+E(typeMessage)+'</div>';return;
+        out.innerHTML='<div class="cc-blank">'+E(typeMessage)+'</div>';
+        return;
       }
-      out.innerHTML=show.slice(page*pageSize,(page+1)*pageSize).map(function(h){
-        var d=h.doc,day=T(d.effectiveUntil),wc=windowClass(h),rev=Array.from(new Set(h.runs.map(function(r){return r.rev;}))).join(', '),wo=Array.from(new Set(h.runs.map(function(r){return W(r.wo);}))),lines=Array.from(new Set(h.runs.map(function(r){return r.line;}))),description=T(d.description),short=description.slice(0,160)+(description.length>160?'...':'');
-        var instr=h.instructions.length?'<p><b>Instrucciones de cambio documentadas, SIN AUTORIZAR:</b></p><table class="cc-table"><thead><tr><th>PN objetivo</th><th>RefDes</th><th>Operacion</th><th>CPN anterior</th><th>CPN propuesto</th><th>Validacion</th></tr></thead><tbody>'+h.instructions.map(function(i){return '<tr><td><b>'+E(i.boardPn||'N/D')+'</b></td><td><b>'+E(i.refdes||'No indicado')+'</b></td><td>'+E(i.operation)+'</td><td>'+E(i.old||'No indicado')+'</td><td>'+E(i.new||'No indicado')+'</td><td>'+E(i.validation||'Validar documentacion')+'</td></tr>';}).join('')+'</tbody></table><details><summary style="font-weight:750">Ver texto de origen para operaciones</summary>'+h.instructions.map(function(i){return '<p>'+E(i.refdes)+' · '+E(i.evidence)+'</p>';}).join('')+'</details>':'';
+      out.innerHTML=show.slice(page*pageSize,(page+1)*pageSize).map(function(g){
+        var d=g.doc,day=T(d.effectiveUntil),description=T(d.description),short=description.slice(0,160)+(description.length>160?'...':''),wc=windowClass(g);
+        var lines=uniqueValues(g.runs.map(function(r){return r.line;})).sort(),workOrders=uniqueValues(g.runs.map(function(r){return W(r.wo);})),boardPns=uniqueValues(g.boards.map(function(h){return PN(h.boardPn);}));
+        var boardRows=g.boards.map(function(h){
+          var br=h.runs||[],brRev=uniqueValues(br.map(function(r){return r.rev;})),brLines=uniqueValues(br.map(function(r){return r.line;})).sort(),brWo=uniqueValues(br.map(function(r){return W(r.wo);}));
+          var dates=uniqueValues(br.map(function(r){return T(r.start).slice(0,10);})).sort();
+          var windowText=dates.length?(dates[0]+(dates.length>1?' a '+dates[dates.length-1]:'')):'Fecha no disponible';
+          return '<tr><td><b>'+E(h.boardPn)+'</b></td><td>'+E(brRev.join(', ')||h.scope.rev||'Por verificar')+'</td><td>'+E(brLines.join(', ')||'N/D')+'</td><td>'+brWo.length+'<details class="cc-wo-detail"><summary>Ver WO</summary>'+E(brWo.join(', ')||'N/D')+'</details></td><td>'+E(windowText)+'</td><td>'+E(h.scope.curation||'Por verificar')+'</td></tr>';
+        }).join('');
+        var boardsTable='<p><b>Alcance por PCBA, con sus corridas reales:</b></p><div class="cc-table-scroll"><table class="cc-table"><thead><tr><th>PCBA PN</th><th>Rev corrida</th><th>Lineas</th><th>WO</th><th>Inicio de corridas</th><th>Revision documental</th></tr></thead><tbody>'+boardRows+'</tbody></table></div>';
+        var instructions=g.instructions.length?'<p><b>Instrucciones CPN documentadas, SIN AUTORIZAR:</b></p><div class="cc-table-scroll"><table class="cc-table"><thead><tr><th>PN objetivo</th><th>RefDes</th><th>Operacion</th><th>CPN anterior</th><th>CPN propuesto</th><th>Validacion</th></tr></thead><tbody>'+g.instructions.map(function(i){
+          return '<tr><td><b>'+E(i.boardPn||'N/D')+'</b></td><td><b>'+E(i.refdes||'No indicado')+'</b></td><td>'+E(i.operation)+'</td><td>'+E(i.old||'No indicado')+'</td><td>'+E(i.new||'No indicado')+'</td><td>'+E(i.validation||'Validar documentacion')+'</td></tr>';
+        }).join('')+'</tbody></table></div><details class="cc-source-text"><summary>Ver texto de origen</summary>'+g.instructions.map(function(i){return '<p>'+E(i.boardPn||'')+' · '+E(i.evidence||'')+'</p>';}).join('')+'</details>':'';
         var sourceLink=/^https:\/\//i.test(T(d.officialUrl))?'<a href="'+E(d.officialUrl)+'" target="_blank" rel="noopener">Documento oficial</a>':'Documento oficial firmado: no adjuntado';
-        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(U(d.type))+'</span><span class="cc-pill">Por validar</span>'+(h.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta"><span class="cc-pill neutral">PCBA '+E(h.boardPn)+'</span><span class="cc-pill neutral">Rev '+E(rev||'No identificada')+'</span><span class="cc-pill neutral">'+E(lines.join(', '))+'</span><span class="cc-pill">'+E(d.workflow||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+E(wc.value)+' · Fin reportado: '+E(day||'N/D')+' · '+wo.length+' WO relacionada(s)</div></summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Origen:</b> '+E(d.workflow||'Sin estado')+'</p><p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · Fecha fin (origen) '+E(day||'N/D')+' · <b>NO se comprobo Effective From ni aprobacion</b></p><p><b>WO en la seleccion:</b> '+E(wo.slice(0,20).join(', '))+(wo.length>20?' y '+(wo.length-20)+' adicionales':'')+'</p><p><b>Revision / FJZ:</b> '+E(h.scope.rev||'No definida en el maestro')+' · '+E(h.scope.plant||'Sitio por confirmar con Common DB y documento firmado')+' · <b>Estado de revision:</b> '+E(h.scope.curation||'Pendiente')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instr+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad a FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
+        var allScope=uniqueValues(g.boards.map(function(h){return T(h.scope&&h.scope.plant);}));
+        var chips=boardPns.slice(0,3).map(function(b){return '<span class="cc-pill neutral">'+E(b)+'</span>';}).join('')+(boardPns.length>3?'<span class="cc-pill neutral">+'+(boardPns.length-3)+' PCBAs</span>':'');
+        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(U(d.type))+'</span><span class="cc-pill">Por validar</span>'+(g.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta">'+chips+'<span class="cc-pill neutral">'+E(lines.join(', ')||'Sin linea')+'</span><span class="cc-pill">'+E(d.workflow||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+boardPns.length+' PCBA'+(boardPns.length===1?'':'s')+' · '+workOrders.length+' WO · '+E(wc.value)+' · Fin reportado: '+E(day||'N/D')+'</div></summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan||d.id)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Origen:</b> '+E(d.workflow||'Sin estado')+'</p><p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · Fecha fin (origen) '+E(day||'N/D')+' · <b>Effective From y aprobacion no comprobados</b></p>'+boardsTable+'<p><b>Sitio documentado:</b> '+E(allScope.join(', ')||'FJZ por confirmar mediante Common DB y documento firmado')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instructions+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
       }).join('');
     }
     function signalCells(hits){
@@ -79831,7 +79883,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     fusionStyle.id='smtinel-yokoten-soft-fusion-v1';
     fusionStyle.textContent="\n/* Soft Fusion V7: visual-only refinement of generated, offline-capable Yokoten. */\n:root{--yk-fusion-olive:#6c7960;--yk-fusion-wine:#874b57;--yk-fusion-border:#dce1d9;}\nbody[data-yk-runs-root]{background:#f6f7f4;color:#27302a;}\n.yk-head,.yk-controls,.yk-evidence,.cc-panel{\n  border-color:var(--yk-fusion-border)!important;\n  box-shadow:0 3px 13px rgba(33,43,35,.045);\n}\n.yk-head{border-top:3px solid var(--yk-fusion-wine)!important;}\n.yk-head .yk-word{color:var(--yk-fusion-olive);}\n.yk-head h1,.yk-evidence h2,.cc-head h2{letter-spacing:-.02em;}\n.yk-filter-grid :is(input,select){border-color:#d4dad1;}\n.yk-filter-grid button[data-yk-reset]{background:var(--yk-fusion-wine);border-color:var(--yk-fusion-wine);}\n.yk-filter-grid button[data-yk-reset]:hover{background:#733c48;border-color:#733c48;}\n.yk-matrix thead th{background:#f0f3ed!important;}\n.yk-matrix tbody tr:nth-child(even)>th,.yk-matrix tbody tr:nth-child(even)>td{background:#fafbf8;}\n.yk-cell[open] summary{background:#f2f5ef;}\n.yk-evidence .yk-sub{color:#657062;}\n.yk-ll-card{background:#fcfdfa;border-color:var(--yk-fusion-border);border-left-color:var(--yk-fusion-wine);}\n.yk-ll-meta span{border-color:var(--yk-fusion-border);}\n.yk-ref-table th{background:#f0f3ed;}\n.yk-ref-link{color:var(--yk-fusion-wine);}\n.cc-panel{border-top:3px solid var(--yk-fusion-wine)!important;}\n.cc-metric{background:#fafbf8;border-color:var(--yk-fusion-border);}\n.cc-tabs{background:#f1f3ef;border-color:var(--yk-fusion-border);}\n.cc-tab[aria-pressed=\"true\"]{color:var(--yk-fusion-wine);box-shadow:0 1px 4px rgba(39,49,39,.07);}\n.cc-doc{border-top-color:var(--yk-fusion-border);border-right-color:var(--yk-fusion-border);border-bottom-color:var(--yk-fusion-border);}\n.cc-doc[open]{box-shadow:0 3px 10px rgba(45,60,45,.045);}\n.cc-detail{background:#fdfdfa;}\n.cc-table th{background:#f0f3ed;}\n.cc-navlink{color:var(--yk-fusion-wine);}\n:where(.yk-controls,.cc-panel) :is(input,select,button):focus-visible{outline:2px solid var(--yk-fusion-olive);outline-offset:2px;}\n@media(max-width:700px){.cc-panel{padding:14px!important;}.yk-head{box-shadow:none;}}\n@media print{.yk-head,.yk-controls,.yk-evidence,.cc-panel{box-shadow:none!important;}}\n";
     if(doc.head)doc.head.appendChild(fusionStyle);
-    doc.title='SMTinel · Yokoten Corridas + Knowledge + Customer Changes V6';
+    doc.title='SMTinel · Yokoten Corridas + Knowledge + Customer Changes V8';
     return '<!doctype html>\n'+doc.documentElement.outerHTML;
   }
   function ensureKnowledge(w) {
@@ -79841,7 +79893,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     return Promise.resolve(w.SMTinelReloadYokotenKnowledge()).then(function(v){if(!v||!v.loaded)throw new Error('No se cargo el Knowledge DB del repositorio.');return v;});
   }
   function download(w, html) {
-    var blob=new w.Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Yokoten_Corridas_Knowledge_Change_Control_V6_'+sourceDate()+'.html',url=w.URL.createObjectURL(blob),a=w.document.createElement('a');
+    var blob=new w.Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Yokoten_Corridas_Knowledge_Change_Control_V8_'+sourceDate()+'.html',url=w.URL.createObjectURL(blob),a=w.document.createElement('a');
     a.download=name;a.href=url;a.style.display='none';w.document.body.appendChild(a);a.click();
     w.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:blob.size,name:name,method:'download-requested',build:BUILD,changeSource:t(dataSource(w).source),authorization:'unverified'};
     w.setTimeout(function(){try{a.remove();w.URL.revokeObjectURL(url);}catch(_){}},120000);
