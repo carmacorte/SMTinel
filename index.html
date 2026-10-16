@@ -17,7 +17,7 @@
 <!-- SMTinel V81.13: BU authority fix - LANCER / 73-20176-* resolves to CRBU from DB_Model; stale FIELDWORKS fallback corrected. -->
 
 
-<html lang="es" data-smtinel-release="V20.15" data-smtinel-script-fix="hy-export-safe-closure" class="smtinel-fusion-soft">
+<html lang="es" data-smtinel-release="V20.15" data-ecn-reference-view="v8.2" data-smtinel-script-fix="hy-export-safe-closure" class="smtinel-fusion-soft">
 <head>
 
 <!-- SMTinel Test Performance single-chart authority V2.0.6 -->
@@ -79525,7 +79525,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
   'use strict';
   if (window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__) return;
   window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__ = true;
-  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V8.1-AFFECTED-ITEMS';
+  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V8.2-AGILE-ECN-REFERENCES';
   var cachedSeed = null;
   function t(v) { return String(v == null ? '' : v).trim(); }
   function up(v) { return t(v).toUpperCase(); }
@@ -79639,6 +79639,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
   function CSS() {
     return `
     .cc-panel{padding:16px 18px;margin:15px 0 20px;background:#fff;border:1px solid #dcdde1;border-top:4px solid #a00e27;border-radius:12px;color:#252c33;font:12px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    .cc-ecn-reference-note{padding:9px 11px;margin:8px 0;border-left:3px solid #a66e24;background:#fff7e9;color:#664816;border-radius:6px;font-size:11px}.cc-ecn-reference-note b{color:#764516}
     .cc-head{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between}.cc-head h2{font-size:18px;font-weight:850;margin:0 0 3px;color:#202124}.cc-head p{font-size:11px;color:#69727e;margin:2px 0}
     .cc-label{display:inline-flex;padding:4px 8px;font-size:10px;font-weight:750;border-radius:6px;background:#fff2e2;border:1px solid #e9c8a0;color:#794619;max-width:100%;text-align:center}
     .cc-explain{padding:10px 12px;border:1px solid #eadcc4;background:#fff9f0;border-left:3px solid #aa7239;border-radius:7px;margin:12px 0;font-size:11px;color:#584534}
@@ -79774,6 +79775,47 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       });
       return out;
     }
+    function agileReference(doc){
+      if(!doc||U(doc.type)!=='ECO')return '';
+      var ref=U(doc.ctan||'');
+      return /^FCNJZ\d{6,}$/.test(ref)?ref:'';
+    }
+    // The Agile ECN identifier lives in the ECO source. This is a reference VIEW,
+    // not an imported ECN, approved instruction, separate change, or authorization.
+    function withLinkedEcnCards(groups){
+      var present=Object.create(null),references=Object.create(null),out=groups.slice();
+      groups.forEach(function(g){
+        if(U(g.doc.type)==='ECN'){
+          present[U(g.doc.number||g.doc.ctan)]=true;
+        }
+      });
+      groups.forEach(function(g){
+        var ref=agileReference(g.doc);
+        if(!ref||present[ref])return;
+        var linked=references[ref];
+        if(!linked){
+          var eco=g.doc;
+          var doc=Object.assign({},eco,{
+            id:'ECN-REFERENCE-'+ref,number:ref,ctan:ref,type:'ECN',
+            referenceOnly:true,linkedEco:eco.number||eco.id,linkedEcoId:eco.id,
+            description:'Referencia Agile ECN '+ref+' informada en ECO '+(eco.number||eco.id)+'. '+T(eco.description),
+            workflow:'REFERENCIA DEL ECO, SIN DOCUMENTO ECN',
+            documentState:'Referencia, sin maestro ECN',
+            effectiveUntil:'',releasedSource:'',officialUrl:''
+          });
+          linked=references[ref]={doc:doc,boards:[],runs:[],instructions:[],seenRuns:Object.create(null),seenInstructions:Object.create(null)};
+          out.push(linked);
+        }
+        g.boards.forEach(function(b){linked.boards.push(b);});
+        g.runs.forEach(function(r){
+          var k=[PN(r.sku),W(r.wo),U(r.rev),LN(r.line)].join('|');
+          if(linked.seenRuns[k])return;
+          linked.seenRuns[k]=true;linked.runs.push(r);
+        });
+        g.instructions.forEach(function(i){linked.instructions.push(i);});
+      });
+      return out;
+    }
     function uniqueValues(list){return Array.from(new Set(list.filter(function(v){return T(v);})));}
     // Itemes de la desviacion: tomar primero la seccion literal "Affected Items".
     // Si no existe, exponer los PN citados como referencias, nunca como alcance aprobado.
@@ -79837,19 +79879,21 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     }
     function affectedDetail(a){
       var label=a.source==='ECO Items'?'Affected Items (maestro EngineeringChangeOrder.csv)':(a.declared?'Affected Items (texto declarado en fuente)':'PN citados en descripción (sin sección Affected Items)');
-      var note=a.source==='ECO Items'?'PN y revisiones extraídos de ECO Items. Alcance candidato por fuente CSV; validar ECO firmado y WO/BU/fecha SAP.':(a.declared?'Lista extraída del apartado Affected Items. Verificar contra el documento customer firmado.':'La fuente NO identifica estos PN como Affected Items de forma explícita. Son solo referencias mencionadas, no un alcance confirmado.');
+      var note=a.source==='ECO Items'?'PN y revisiones extraídos del ECO Items. Los ECN vinculados solo referencian el ECO; validar documento firmado y WO/BU/fecha SAP.':(a.declared?'Lista extraída del apartado Affected Items. Verificar contra el documento customer firmado.':'La fuente NO identifica estos PN como Affected Items de forma explícita. Son solo referencias mencionadas, no un alcance confirmado.');
       if(!a.items.length)return '<div class="cc-aff-detail"><b>Affected Items:</b> No disponible en la descripción de origen. Consultar documento oficial.</div>';
       var limit=140,rows=a.items.slice(0,limit).map(function(v){return '<tr><td><b>'+E(v.pn)+'</b></td><td>'+E(v.type||'No indicado')+'</td><td>'+E(v.detail||'Sin descripción separada')+'</td></tr>';}).join('');
       return '<div class="cc-aff-detail"><div class="cc-aff-head"><b>'+E(label)+'</b><small>'+a.items.length+' PN</small></div><p class="cc-aff-caution">'+E(note)+'</p><div class="cc-table-scroll"><table class="cc-table cc-aff-table"><thead><tr><th>Número de parte</th><th>Tipo en fuente</th><th>Detalle disponible</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+(a.items.length>140?'<p>Mostrando 140 de '+a.items.length+' ítems. La lista completa se conserva en la pestaña ECO Items del Knowledge DB.</p>':'')+'</div>';
     }
     function renderCards(hits){
-      var docs=groupDocuments(hits),show=docs.filter(function(g){
+      var docs=groupDocuments(hits);
+      if(tab==='ECN')docs=withLinkedEcnCards(docs);
+      var show=docs.filter(function(g){
         var d=g.doc;
         if(tab!=='ALL'&&U(d.type)!==tab)return false;
         if(rangeMode==='future'&&(!d.effectiveUntil||T(d.effectiveUntil)<now))return false;
         if(rangeMode==='instructions'&&!g.instructions.length)return false;
         if(phrase){
-          var words=[d.number,d.ctan,d.description,d.workflow];
+          var words=[d.number,d.ctan,d.description,d.workflow,d.linkedEco];
           g.boards.forEach(function(h){
             words.push(h.boardPn,h.scope&&h.scope.rev,h.scope&&h.scope.curation);
             (h.runs||[]).forEach(function(r){words.push(r.wo,r.rev,r.line,r.start);});
@@ -79860,7 +79904,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
         return true;
       });
       var count=el('[data-cc-results]'),out=el('[data-cc-items]'),pg=el('[data-cc-pages]'),pgLabel=el('[data-cc-page-label]');
-      if(count)count.textContent=show.length+' documento(s) unico(s) para los filtros del modulo';
+      if(count){var linkedRefCount=show.filter(function(g){return !!g.doc.referenceOnly;}).length;count.textContent=tab==='ECN'?(linkedRefCount+' referencia(s) Agile ECN desde ECO · '+(show.length-linkedRefCount)+' documento(s) ECN originales'):(show.length+' documento(s) unico(s) para los filtros del modulo');}
       var pages=Math.max(1,Math.ceil(show.length/pageSize));page=Math.max(0,Math.min(page,pages-1));
       if(pg)pg.hidden=show.length<=pageSize;
       if(pgLabel)pgLabel.textContent='Pagina '+(page+1)+' de '+pages;
@@ -79869,19 +79913,19 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       if(next)next.disabled=page>=pages-1;
       if(!out)return;
       if(!show.length){
-        var typeMessage=(tab==='ECN'||tab==='ECO')&&masterFlag(tab)===0?'No se ha incorporado el maestro de '+tab+'. Las menciones dentro de una desviacion no son documentos '+tab+' independientes.':(revisionMode==='exact'&&tab==='DEVIATION'?'Las desviaciones fuente no declaran revisión PCBA confirmada. Cambia el filtro a «Incluir candidatos PN (rev N/D)» para revisar coincidencias por PN sin atribuirles alcance por revisión.':'No hay documentos '+(tab==='ALL'?'ECN, ECO o desviaciones':tab)+' con coincidencia documental en los filtros actuales.');
+        var typeMessage=tab==='ECN'&&masterFlag('ECN')===0?'No hay archivos ECN independientes cargados ni referencias Agile ECN asociadas a ECO coincidentes con la BU, PN y revisión seleccionados. El maestro ECO puede contener referencias, pero no sustituye al documento ECN firmado.':(tab==='ECO'&&masterFlag(tab)===0?'No se ha incorporado el maestro ECO.':(revisionMode==='exact'&&tab==='DEVIATION'?'Las desviaciones fuente no declaran revisión PCBA confirmada. Cambia el filtro a «Incluir candidatos PN (rev N/D)» para revisar coincidencias por PN sin atribuirles alcance por revisión.':'No hay documentos '+(tab==='ALL'?'ECN, ECO o desviaciones':tab)+' con coincidencia documental en los filtros actuales.'));
         out.innerHTML='<div class="cc-blank">'+E(typeMessage)+'</div>';
         return;
       }
       out.innerHTML=show.slice(page*pageSize,(page+1)*pageSize).map(function(g){
-        var d=g.doc,day=T(d.effectiveUntil),description=T(d.description),short=description.slice(0,160)+(description.length>160?'...':''),wc=windowClass(g);
+        var d=g.doc,day=T(d.effectiveUntil),description=T(d.description),short=description.slice(0,160)+(description.length>160?'...':''),wc=d.referenceOnly?{value:'Referencia asociada al ECO '+T(d.linkedEco)+'; no es ECN liberado',tone:'warn'}:windowClass(g);
         var lines=uniqueValues(g.runs.map(function(r){return r.line;})).sort(),workOrders=uniqueValues(g.runs.map(function(r){return W(r.wo);})),boardPns=uniqueValues(g.boards.map(function(h){return PN(h.boardPn);}));
         var boardRows=g.boards.map(function(h){
           var br=h.runs||[],brRev=uniqueValues(br.map(function(r){return r.rev;})),brLines=uniqueValues(br.map(function(r){return r.line;})).sort(),brWo=uniqueValues(br.map(function(r){return W(r.wo);}));
           var dates=uniqueValues(br.map(function(r){return T(r.start).slice(0,10);})).sort();
           var windowText=dates.length?(dates[0]+(dates.length>1?' a '+dates[dates.length-1]:'')):'Fecha no disponible';
           var sc=h.scope||{},specified=U(sc.rev),declared=specified&&specified!=='ANY';
-          var transition=U(d.type)==='ECO'?([T(sc.sourceOldRev)||'N/D',T(sc.sourceNewRev)||T(sc.rev)||'N/D'].join(' → ')):(declared?T(sc.rev):'No declarada');
+          var transition=(U(d.type)==='ECO'||d.referenceOnly)?([T(sc.sourceOldRev)||'N/D',T(sc.sourceNewRev)||T(sc.rev)||'N/D'].join(' → ')):(declared?T(sc.rev):'No declarada');
           var quality=declared?('PN + REV EXACTA ('+specified+')'):'SOLO PN · REV POR VALIDAR';
           return '<tr><td><b>'+E(h.boardPn)+'</b></td><td>'+E(brRev.join(', ')||'N/D')+'</td><td><b>'+E(transition)+'</b></td><td>'+E(quality)+'</td><td>'+E(brLines.join(', ')||'N/D')+'</td><td>'+brWo.length+'<details class="cc-wo-detail"><summary>Ver WO</summary>'+E(brWo.join(', ')||'N/D')+'</details></td><td>'+E(windowText)+'</td><td>'+E(sc.curation||'Por verificar')+'</td></tr>';
         }).join('');
@@ -79892,8 +79936,8 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
         var sourceLink=/^https:\/\//i.test(T(d.officialUrl))?'<a href="'+E(d.officialUrl)+'" target="_blank" rel="noopener">Documento oficial</a>':'Documento oficial firmado: no adjuntado';
         var allScope=uniqueValues(g.boards.map(function(h){return T(h.scope&&h.scope.plant);}));var exactGrade=g.boards.every(function(h){return U(h.scope&&h.scope.rev)&&U(h.scope.rev)!=='ANY';});
         var chips=boardPns.slice(0,3).map(function(b){return '<span class="cc-pill neutral">'+E(b)+'</span>';}).join('')+(boardPns.length>3?'<span class="cc-pill neutral">+'+(boardPns.length-3)+' PCBAs</span>':'');
-        var affected=(U(d.type)==='DEVIATION'||U(d.type)==='ECO')?extractAffectedItems(d):null,affectedCard=affected?affectedPreview(affected):'',affectedTable=affected?affectedDetail(affected):'';
-        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(U(d.type))+'</span><span class="cc-pill">Por validar</span><span class="cc-pill '+(exactGrade?'neutral':'warn')+'">'+(exactGrade?'PN + Rev exactas':'PN candidato · Rev N/D')+'</span>'+(g.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta">'+chips+'<span class="cc-pill neutral">'+E(lines.join(', ')||'Sin linea')+'</span><span class="cc-pill">'+E(d.workflow||d.documentState||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+boardPns.length+' PCBA'+(boardPns.length===1?'':'s')+' · '+workOrders.length+' WO · '+E(wc.value)+' · '+E(U(d.type)==='ECO'?('BOM efectiva (fuente): '+(d.bomDate||'por verificar')):('Fin reportado: '+(day||'N/D')))+'</div>'+affectedCard+'</summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan||d.id)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Agile / CTAN relacionado:</b> '+E(d.ctan||'N/D')+' · <b>Estado de fuente:</b> '+E(d.workflow||d.documentState||'Sin estado')+'</p>'+affectedTable+'<p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · '+E(U(d.type)==='ECO'?'BOM effective (fuente) '+(d.bomDate||'variable / N/D'): 'Fecha fin (origen) '+(day||'N/D'))+' · <b>Vigencia y aprobación firmada no comprobadas</b></p>'+boardsTable+'<p><b>Sitio documentado:</b> '+E(allScope.join(', ')||'FJZ por confirmar mediante Common DB y documento firmado')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instructions+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
+        var affected=(U(d.type)==='DEVIATION'||U(d.type)==='ECO'||d.referenceOnly)?extractAffectedItems(d):null,affectedCard=affected?affectedPreview(affected):'',affectedTable=affected?affectedDetail(affected):'';
+        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(d.referenceOnly?'AGILE ECN · REF. ECO':U(d.type))+'</span><span class="cc-pill">'+(d.referenceOnly?'Solo referencia':'Por validar')+'</span><span class="cc-pill '+(exactGrade?'neutral':'warn')+'">'+(exactGrade?'PN + Rev exactas':'PN candidato · Rev N/D')+'</span>'+(g.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta">'+chips+'<span class="cc-pill neutral">'+E(lines.join(', ')||'Sin linea')+'</span><span class="cc-pill">'+E(d.workflow||d.documentState||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+boardPns.length+' PCBA'+(boardPns.length===1?'':'s')+' · '+workOrders.length+' WO · '+E(wc.value)+' · '+E(d.referenceOnly?('Vínculo ECO: '+d.linkedEco+' · BOM según ECO '+(d.bomDate||'por verificar')):(U(d.type)==='ECO'?('BOM efectiva (fuente): '+(d.bomDate||'por verificar')):('Fin reportado: '+(day||'N/D'))))+'</div>'+affectedCard+'</summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan||d.id)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Agile / CTAN relacionado:</b> '+E(d.ctan||'N/D')+' · <b>Estado de fuente:</b> '+E(d.workflow||d.documentState||'Sin estado')+'</p>'+(d.referenceOnly?'<div class="cc-ecn-reference-note"><b>Referencia Agile ECN, sin documento propio.</b> El ID '+E(d.number)+' procede del ECO '+E(d.linkedEco)+'. Los PN, revisiones y affected items corresponden al ECO de origen. No se ha cargado ni comprobado la instrucción ECN firmada.</div>':'')+affectedTable+'<p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · '+E((U(d.type)==='ECO'||d.referenceOnly)?'BOM effective (del ECO fuente) '+(d.bomDate||'variable / N/D'): 'Fecha fin (origen) '+(day||'N/D'))+' · <b>Vigencia y aprobación firmada no comprobadas</b></p>'+boardsTable+'<p><b>Sitio documentado:</b> '+E(allScope.join(', ')||'FJZ por confirmar mediante Common DB y documento firmado')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instructions+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
       }).join('');
     }
     function signalCells(hits){
@@ -79924,13 +79968,18 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
         return revisionMode==='all'||(revisionMode==='exact'?exact:!exact);
       }),ids=new Set(hits.map(function(h){return h.doc.id;}));
       var byType={ECN:new Set(),ECO:new Set(),DEVIATION:new Set()};hits.forEach(function(h){var type=U(h.doc.type);if(byType[type])byType[type].add(h.doc.id);});
-      var stat=el('[data-cc-state]');if(stat)stat.textContent=ids.size+' documentos en vista '+(revisionMode==='exact'?'PN + Rev exactos':(revisionMode==='pending'?'PN sin revisión documental':'mixta'))+' · '+runs.length+' corridas seleccionadas · 0 autorizaciones comprobadas';
+      var stat=el('[data-cc-state]');if(stat)stat.textContent=(tab==='ECN'?(new Set(hits.map(function(h){return agileReference(h.doc);}).filter(Boolean)).size+' referencias Agile ECN desde ECO y '+byType.ECN.size+' documentos ECN independientes coincidentes'):(ids.size+' documentos en vista'))+' '+(revisionMode==='exact'?'PN + Rev exactos':(revisionMode==='pending'?'PN sin revisión documental':'mixta'))+' · '+runs.length+' corridas seleccionadas · 0 autorizaciones comprobadas';
       var m1=el('[data-cc-metric-pn]'),m2=el('[data-cc-metric-doc]'),m3=el('[data-cc-metric-actions]'),m4=el('[data-cc-metric-approved]');
       if(m1)m1.textContent=new Set(hits.map(function(h){return PN(h.boardPn);})).size;
-      if(m2)m2.textContent=ids.size;
+      if(m2){m2.textContent=tab==='ECN'?byType.ECN.size:ids.size;var labelNode=m2.parentElement&&m2.parentElement.querySelector('small');if(labelNode)labelNode.textContent=tab==='ECN'?'ECN originales coincidentes':'Documentos por revisar';}
       if(m3){var instructionIds=new Set();hits.forEach(function(h){h.instructions.forEach(function(i){instructionIds.add([i.ctan,i.boardPn,i.refdes,i.operation,i.old,i.new].join('|'));});});m3.textContent=instructionIds.size;}
       if(m4)m4.textContent='0';
-      ['ECN','ECO','DEVIATION'].forEach(function(kind){var button=el('[data-cc-type="'+kind+'"]');if(button)button.textContent=(kind==='DEVIATION'?'Desviaciones':kind)+' ('+byType[kind].size+')';});
+      var ecnRefs=new Set();hits.forEach(function(h){var ref=agileReference(h.doc);if(ref)ecnRefs.add(ref);});
+      ['ECN','ECO','DEVIATION'].forEach(function(kind){
+        var button=el('[data-cc-type="'+kind+'"]');if(!button)return;
+        if(kind==='ECN')button.textContent='ECN ('+byType.ECN.size+' docs · '+ecnRefs.size+' vínculos ECO)';
+        else button.textContent=(kind==='DEVIATION'?'Desviaciones':kind)+' ('+byType[kind].size+')';
+      });
       var all=el('[data-cc-type="ALL"]');if(all)all.textContent='Todos ('+ids.size+')';
       renderCards(hits);
       signalCells(hits);
@@ -79975,11 +80024,11 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     var panel = doc.createElement('section');panel.className='cc-panel';panel.id='yk-change-control-v6';
     panel.setAttribute('aria-label','Customer Change Control ECN ECO y desviaciones');
     panel.innerHTML = '<div class="cc-head"><div><h2>Customer Change Control · ECN / ECO / Desviaciones</h2><p>Alertas documentales vinculadas a SKU / PCBA PN, revision, linea y WO ya cargados en Yield Flow.</p></div><span class="cc-label">REVISION DOCUMENTAL · NO AUTORIZA MATERIAL</span></div>'+
-      '<div class="cc-explain">Las coincidencias del maestro de desviaciones son <b>candidatas</b>. Fecha fin posterior no significa vigencia aprobada. Faltan validacion firmada del customer, revision/WO de alcance y confirmacion FJZ. Los ECN y ECO aun requieren su archivo maestro.</div>'+
+      '<div class="cc-explain">Las coincidencias del maestro de desviaciones son <b>candidatas</b>. Fecha fin posterior no significa vigencia aprobada. Faltan validacion firmada del customer, revision/WO de alcance y confirmacion FJZ. Los ECO proceden del maestro EngineeringChangeOrder.csv. Los identificadores Agile ECN vinculados se presentan solo como referencias, sin archivo ECN firmado.</div>'+
       '<div class="cc-metrics"><div class="cc-metric"><small>PCBA candidatos</small><b data-cc-metric-pn>0</b></div><div class="cc-metric"><small>Documentos por revisar</small><b data-cc-metric-doc>0</b></div><div class="cc-metric"><small>Operaciones CPN documentadas</small><b data-cc-metric-actions>0</b></div><div class="cc-metric"><small>Autorizaciones verificadas</small><b data-cc-metric-approved>0</b></div></div>'+
       '<div class="cc-bar"><div class="cc-tabs" role="group" aria-label="Tipo de cambio"><button type="button" class="cc-tab" data-cc-type="ALL" aria-pressed="true">Todos</button><button type="button" class="cc-tab" data-cc-type="ECN" aria-pressed="false">ECN</button><button type="button" class="cc-tab" data-cc-type="ECO" aria-pressed="false">ECO</button><button type="button" class="cc-tab" data-cc-type="DEVIATION" aria-pressed="false">Desviaciones</button></div><input class="cc-search" type="search" data-cc-search aria-label="Buscar documento, WO, CPN o RefDes" placeholder="Documento, CTAN, PCBA, RefDes, CPN..."><select class="cc-select" data-cc-view aria-label="Filtro temporal"><option value="all">Todos los historicos</option><option value="future">Fin posterior a hoy (sin aprobar)</option><option value="instructions">Con operaciones CPN</option></select><select class="cc-select" data-cc-revision aria-label="Criterio de revisión documental"><option value="exact">Solo PN + revisión exacta</option><option value="all">Incluir candidatos PN (rev N/D)</option><option value="pending">Solo candidatos sin revisión</option></select></div>'+
-      +'<p class="cc-status"><b>Regla documental:</b> la revisión NEW del ECO se compara exactamente con la revisión de la corrida. La revisión OLD solo describe la transición. Las desviaciones sin Rev declarada se muestran únicamente activando candidatos PN. Sin PDF firmado ni WO validada, ningún registro autoriza uso de material.</p><p class="cc-status" data-cc-state>Evaluando coincidencias...</p><div class="cc-status" data-cc-results></div><div class="cc-list" data-cc-items></div><div class="cc-pages" data-cc-pages hidden><button type="button" data-cc-prev>Anterior</button><span data-cc-page-label></span><button type="button" data-cc-next>Siguiente</button></div>'+
-      '<p class="cc-data-source"><b>Origen:</b> '+esc(S.customerChanges.source)+' · '+(S.customerChanges.masterCounts.ECN||0)+' ECN / '+(S.customerChanges.masterCounts.ECO||0)+' ECO / '+(S.customerChanges.masterCounts.DEVIATION||0)+' desviaciones registrados en esta version. La base se conserva como dato de revision; solo el documento oficial puede autorizar implementacion.</p>';
+      '<p class="cc-status"><b>Regla documental:</b> la revisión NEW del ECO se compara exactamente con la revisión de la corrida. La revisión OLD solo describe la transición. Las desviaciones sin Rev declarada se muestran únicamente activando candidatos PN. Sin PDF firmado ni WO validada, ningún registro autoriza uso de material.</p><p class="cc-status" data-cc-state>Evaluando coincidencias...</p><div class="cc-status" data-cc-results></div><div class="cc-list" data-cc-items></div><div class="cc-pages" data-cc-pages hidden><button type="button" data-cc-prev>Anterior</button><span data-cc-page-label></span><button type="button" data-cc-next>Siguiente</button></div>'+
+      '<p class="cc-data-source"><b>Origen:</b> '+esc(S.customerChanges.source)+' · '+(S.customerChanges.masterCounts.ECN||0)+' ECN independientes / '+(S.customerChanges.masterCounts.ECO||0)+' ECO / '+(S.customerChanges.masterCounts.DEVIATION||0)+' desviaciones registrados en esta version. Los ECO incluyen referencias Agile ECN, NO documentos ECN independientes. La base se conserva como dato de revision; solo el documento oficial puede autorizar implementacion.</p>';
     var main=doc.querySelector('.yk-main'),evidence=doc.getElementById('yk-evidence-v5');
     if(evidence&&evidence.parentNode)evidence.parentNode.insertBefore(panel,evidence.nextSibling);
     else if(main)main.appendChild(panel);
