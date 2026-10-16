@@ -15,7 +15,7 @@
 <!-- SMTinel V81.13: BU authority fix - LANCER / 73-20176-* resolves to CRBU from DB_Model; stale FIELDWORKS fallback corrected. -->
 
 
-<html lang="es" data-smtinel-release="V20.15" data-smtinel-script-fix="hy-export-safe-closure">
+<html lang="es" data-smtinel-release="V20.15" data-smtinel-script-fix="hy-export-safe-closure" class="smtinel-fusion-soft">
 <head>
 
 <!-- SMTinel Test Performance single-chart authority V2.0.6 -->
@@ -79826,6 +79826,11 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     var head=doc.querySelector('.yk-head p');
     if(head){var link=doc.createElement('a');link.className='cc-navlink';link.href='#yk-change-control-v6';link.textContent='Consultar ECN / ECO / Desviaciones';head.parentNode.appendChild(link);}
     var js=doc.createElement('script');js.id='smtinel-yokoten-customer-change-runtime-v6';js.textContent='('+reportRuntime.toString()+')();';doc.body.appendChild(js);
+    // Soft Fusion V7 is bundled with the standalone report, including local/offline export.
+    var fusionStyle=doc.createElement('style');
+    fusionStyle.id='smtinel-yokoten-soft-fusion-v1';
+    fusionStyle.textContent="\n/* Soft Fusion V7: visual-only refinement of generated, offline-capable Yokoten. */\n:root{--yk-fusion-olive:#6c7960;--yk-fusion-wine:#874b57;--yk-fusion-border:#dce1d9;}\nbody[data-yk-runs-root]{background:#f6f7f4;color:#27302a;}\n.yk-head,.yk-controls,.yk-evidence,.cc-panel{\n  border-color:var(--yk-fusion-border)!important;\n  box-shadow:0 3px 13px rgba(33,43,35,.045);\n}\n.yk-head{border-top:3px solid var(--yk-fusion-wine)!important;}\n.yk-head .yk-word{color:var(--yk-fusion-olive);}\n.yk-head h1,.yk-evidence h2,.cc-head h2{letter-spacing:-.02em;}\n.yk-filter-grid :is(input,select){border-color:#d4dad1;}\n.yk-filter-grid button[data-yk-reset]{background:var(--yk-fusion-wine);border-color:var(--yk-fusion-wine);}\n.yk-filter-grid button[data-yk-reset]:hover{background:#733c48;border-color:#733c48;}\n.yk-matrix thead th{background:#f0f3ed!important;}\n.yk-matrix tbody tr:nth-child(even)>th,.yk-matrix tbody tr:nth-child(even)>td{background:#fafbf8;}\n.yk-cell[open] summary{background:#f2f5ef;}\n.yk-evidence .yk-sub{color:#657062;}\n.yk-ll-card{background:#fcfdfa;border-color:var(--yk-fusion-border);border-left-color:var(--yk-fusion-wine);}\n.yk-ll-meta span{border-color:var(--yk-fusion-border);}\n.yk-ref-table th{background:#f0f3ed;}\n.yk-ref-link{color:var(--yk-fusion-wine);}\n.cc-panel{border-top:3px solid var(--yk-fusion-wine)!important;}\n.cc-metric{background:#fafbf8;border-color:var(--yk-fusion-border);}\n.cc-tabs{background:#f1f3ef;border-color:var(--yk-fusion-border);}\n.cc-tab[aria-pressed=\"true\"]{color:var(--yk-fusion-wine);box-shadow:0 1px 4px rgba(39,49,39,.07);}\n.cc-doc{border-top-color:var(--yk-fusion-border);border-right-color:var(--yk-fusion-border);border-bottom-color:var(--yk-fusion-border);}\n.cc-doc[open]{box-shadow:0 3px 10px rgba(45,60,45,.045);}\n.cc-detail{background:#fdfdfa;}\n.cc-table th{background:#f0f3ed;}\n.cc-navlink{color:var(--yk-fusion-wine);}\n:where(.yk-controls,.cc-panel) :is(input,select,button):focus-visible{outline:2px solid var(--yk-fusion-olive);outline-offset:2px;}\n@media(max-width:700px){.cc-panel{padding:14px!important;}.yk-head{box-shadow:none;}}\n@media print{.yk-head,.yk-controls,.yk-evidence,.cc-panel{box-shadow:none!important;}}\n";
+    if(doc.head)doc.head.appendChild(fusionStyle);
     doc.title='SMTinel · Yokoten Corridas + Knowledge + Customer Changes V6';
     return '<!doctype html>\n'+doc.documentElement.outerHTML;
   }
@@ -79885,5 +79890,66 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
 })();
 
 </script>
+
+<style id="smtinel-soft-fusion-v1">
+
+/* SMTinel Soft Fusion V7 | Aesthetic layer only. Do not restyle data or statuses. */
+html.smtinel-fusion-soft {
+  --smf-olive:#788369;
+  --smf-wine:#864b56;
+  --smf-divider-light:rgba(102,117,95,.18);
+  --smf-divider-dark:rgba(173,185,157,.18);
+}
+/* Sidebar retains its existing dimensions, sections and production color scheme. */
+html.smtinel-fusion-soft body.traceops-premium-shell .sidebar {
+  border-right:1px solid var(--smf-divider-dark)!important;
+  box-shadow:12px 0 26px rgba(0,0,0,.16)!important;
+}
+html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn {
+  transition:background-color .16s ease,color .16s ease,border-color .16s ease!important;
+}
+html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn.active {
+  box-shadow:inset 2px 0 0 rgba(174,186,148,.62)!important;
+}
+html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-section-title {
+  letter-spacing:.105em!important;
+}
+/* Slightly quieter top bar. No height or navigation changes. */
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar {
+  border-bottom:1px solid var(--smf-divider-dark)!important;
+  box-shadow:0 3px 14px rgba(0,0,0,.075)!important;
+}
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar-title {
+  letter-spacing:-.025em!important;
+}
+/* Regularize surfaces without changing columns, charts, tables or metrics. */
+html.smtinel-fusion-soft #yieldflow-section :is(.tcard,.pf-card,.traceops-panel,.traceops-kpi-card),
+html.smtinel-fusion-soft #results-section :is(.traceops-panel,.traceops-kpi-card),
+html.smtinel-fusion-soft :is(.smt-exec-kpi,.smt-exec-panel) {
+  border-radius:13px!important;
+  box-shadow:0 4px 14px rgba(12,22,15,.06)!important;
+}
+html.smtinel-fusion-soft :is(.smt-exec-kpi-value,.traceops-kpi-value,.pf-stat-val,.kval) {
+  font-variant-numeric:tabular-nums;
+}
+html.smtinel-fusion-soft #exportcenter-section :is(.report-preview-head,.export-action-panel) {
+  border-radius:12px!important;
+}
+/* Light appearance only: soften edges, preserve labels and contrast. */
+html.smtinel-fusion-soft.smtinel-theme-light body.traceops-premium-shell .sidebar {
+  border-right-color:var(--smf-divider-light)!important;
+  box-shadow:10px 0 24px rgba(40,50,40,.08)!important;
+}
+html.smtinel-fusion-soft.smtinel-theme-light body.traceops-premium-shell .saas-topbar {
+  border-bottom-color:var(--smf-divider-light)!important;
+  box-shadow:0 4px 18px rgba(40,50,40,.045)!important;
+}
+@media(max-width:900px) {
+  html.smtinel-fusion-soft body.traceops-premium-shell .sidebar {box-shadow:12px 0 25px rgba(0,0,0,.19)!important;}
+}
+@media(prefers-reduced-motion:reduce) {
+  html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn{transition:none!important;}
+}
+</style>
 </body>
 </html>
