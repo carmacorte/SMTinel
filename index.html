@@ -30511,10 +30511,10 @@ body:has(#recovery-section) .main-content.expanded{
         var cesiumCurrentBreakdown = yieldFlowModel.cesiumCurrentBreakdown || [];
         var actionTracker = yieldFlowModel.actionTracker || [];
         return (React.createElement("div", { id: "yieldflow-section", style: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 14 } },
-            React.createElement("div", { style: { background: "linear-gradient(135deg,#3B2A2D 0%,#7F1820 56%,#B4232D 100%)", borderRadius: 18, padding: isMobile() ? "16px 14px" : "18px 20px", color: "#fff", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "minmax(0,1fr) auto", alignItems: "center", gap: isMobile() ? 10 : 14, overflow: "hidden" } },
+            React.createElement("div", { className: "smf-yield-header", style: { background: "linear-gradient(135deg,#3B2A2D 0%,#7F1820 56%,#B4232D 100%)", borderRadius: 18, padding: isMobile() ? "16px 14px" : "18px 20px", color: "#fff", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "minmax(0,1fr) auto", alignItems: "center", gap: isMobile() ? 10 : 14, overflow: "hidden" } },
                 React.createElement("div", { style: { minWidth: 0, width: "100%" } },
-                    React.createElement("div", { style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow · Avance y desempeño SMT")),
-                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobile() ? "flex-start" : "flex-end", width: isMobile() ? "100%" : "auto" } },
+                    React.createElement("div", { className: "smf-yield-title", style: { fontSize: isMobile() ? 20 : 24, fontWeight: 800, lineHeight: isMobile() ? 1.16 : 1.05, maxWidth: isMobile() ? "100%" : 680, wordBreak: "normal", overflowWrap: "break-word" } }, "Yield Flow · Avance y desempeño SMT")),
+                React.createElement("div", { className: "smf-yield-context", style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobile() ? "flex-start" : "flex-end", width: isMobile() ? "100%" : "auto" } },
                     React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)" } },
                         yieldFlowModel.kpi.orders,
                         " WO en alcance"),
@@ -30525,8 +30525,8 @@ body:has(#recovery-section) .main-content.expanded{
                         traceOpsYieldFlowFmtHoursDays(yieldFlowModel.kpi.avgLeadHours, 1),
                         " Stockin/FT"),
                     React.createElement("button", { type: "button", onClick: function() { var el = document.getElementById("traceops-yield-zip-import"); if(el) el.click(); }, disabled: yieldImportState.status === "loading", style: { width: "100%", border: "1px solid rgba(255,255,255,.5)", background: yieldImportState.status === "loading" ? "rgba(255,255,255,.1)" : "rgba(255,255,255,.22)", color: "#fff", borderRadius: 999, padding: "9px 14px", fontSize: 11.5, fontWeight: 800, cursor: yieldImportState.status === "loading" ? "wait" : "pointer", marginTop: 4 } }, yieldImportState.status === "loading" ? "Importando…" : "Cargar ZIP"))),
-            React.createElement("section", { style: { background: "#fff", border: "1px solid #E5DCDD", borderRadius: 16, overflow: "hidden" } },
-                React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #F1E9EA", background: "#FBF9F9", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
+            React.createElement("section", { className: "smf-import-panel", style: { background: "#fff", border: "1px solid #E5DCDD", borderRadius: 16, overflow: "hidden" } },
+                React.createElement("div", { className: "smf-panel-head", style: { padding: "14px 18px", borderBottom: "1px solid #F1E9EA", background: "#FBF9F9", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#1F2328" } }, yieldText("importTitle"))),
                     React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
@@ -30546,36 +30546,36 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("div", { style: { fontSize: 11.5, color: "#5F766C", lineHeight: 1.5, marginTop: 6 } },
                             "Ciclo actual",
                             yieldImportState.summary && yieldImportState.summary.sheets ? " Sheets: " + yieldImportState.summary.sheets.map(function (x) { return x.name + " (" + x.role + ":" + x.rows + ")"; }).join(" · ") : "")))),
-            React.createElement("section", { style: { background: "#FFFFFF", border: "1px solid #E5DCDD", borderRadius: 20, overflow: "hidden", boxShadow: "0 14px 30px rgba(16,42,67,.08)" } },
+            React.createElement("section", { className: "smf-yield-kpis", style: { background: "#FFFFFF", border: "1px solid #E5DCDD", borderRadius: 20, overflow: "hidden", boxShadow: "0 14px 30px rgba(16,42,67,.08)" } },
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "42% 58%", minHeight: isMobile() ? 0 : 224 } },
-                    React.createElement("div", { style: { background: "linear-gradient(135deg,#171717 0%,#2A1A1D 56%,#7F1820 100%)", color: "#fff", padding: isMobile() ? "20px 22px" : "24px 26px", position: "relative", overflow: "hidden", borderRight: isMobile() ? "none" : "1px solid rgba(255,255,255,.16)", borderBottom: isMobile() ? "1px solid #E5DCDD" : "none", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 } },
+                    React.createElement("div", { className: "smf-clean-kpi", style: { background: "linear-gradient(135deg,#171717 0%,#2A1A1D 56%,#7F1820 100%)", color: "#fff", padding: isMobile() ? "20px 22px" : "24px 26px", position: "relative", overflow: "hidden", borderRight: isMobile() ? "none" : "1px solid rgba(255,255,255,.16)", borderBottom: isMobile() ? "1px solid #E5DCDD" : "none", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 } },
                         React.createElement("div", { style: { position: "absolute", right: -48, top: -58, width: 190, height: 190, borderRadius: "50%", background: "radial-gradient(circle,rgba(180,35,45,.30),rgba(180,35,45,0) 66%)", pointerEvents: "none" } }),
-                        React.createElement("div", { style: { position: "relative", zIndex: 1, fontSize: 11, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.72)" } }, "Rendimiento limpio"),
-                        React.createElement("div", { style: { position: "relative", zIndex: 1, fontSize: isMobile() ? 54 : 64, fontWeight: 900, lineHeight: .9, letterSpacing: "-.065em" } },
+                        React.createElement("div", { className: "smf-kpi-label", style: { position: "relative", zIndex: 1, fontSize: 11, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.72)" } }, "Rendimiento limpio"),
+                        React.createElement("div", { className: "smf-clean-value", style: { position: "relative", zIndex: 1, fontSize: isMobile() ? 54 : 64, fontWeight: 900, lineHeight: .9, letterSpacing: "-.065em" } },
                             traceOpsYieldFlowFmt(yieldFlowModel.kpi.yield, 1),
                             "%"),
-                        React.createElement("div", { style: { position: "relative", zIndex: 1, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", color: "rgba(255,255,255,.82)" } },
+                        React.createElement("div", { className: "smf-clean-base", style: { position: "relative", zIndex: 1, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", color: "rgba(255,255,255,.82)" } },
                             React.createElement("span", { style: { fontSize: 21, fontWeight: 900, color: "#fff" } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.clean)),
-                            React.createElement("span", { style: { fontSize: 13, fontWeight: 800, opacity: .65 } }, "·"),
+                            React.createElement("span", { style: { fontSize: 13, fontWeight: 800, opacity: .65 } }, "de"),
                             React.createElement("span", { style: { fontSize: 21, fontWeight: 900, color: "#fff" } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.units)),
-                            React.createElement("span", { style: { fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".10em", opacity: .64 } }, "total"))),
+                            React.createElement("span", { style: { fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".10em", opacity: .64 } }, "unidades"))),
                     React.createElement("div", { style: { display: "grid", gridTemplateRows: "1fr 1fr" } },
-                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #E5DCDD" } },
+                        React.createElement("div", { className: "smf-kpi-detail-grid", style: { display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #E5DCDD" } },
                             React.createElement("div", { style: { padding: isMobile() ? "17px 18px" : "18px 22px", borderRight: "1px solid #E5DCDD", background: "linear-gradient(180deg,#FFFFFF,#FCFBFB)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 7 } },
-                                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".10em" } }, "Órdenes de trabajo"),
-                                React.createElement("div", { style: { fontSize: isMobile() ? 34 : 38, fontWeight: 900, color: "#1F2328", lineHeight: .95 } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.orders)),
+                                React.createElement("div", { className: "smf-kpi-label", style: { fontSize: 10, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".10em" } }, "Órdenes de trabajo"),
+                                React.createElement("div", { className: "smf-kpi-number", style: { fontSize: isMobile() ? 34 : 38, fontWeight: 900, color: "#1F2328", lineHeight: .95 } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.orders)),
                                 React.createElement("div", { style: { fontSize: 10.5, color: "#6A6560" } }, "alcance WO")),
                             React.createElement("div", { style: { padding: isMobile() ? "17px 18px" : "18px 22px", background: "linear-gradient(180deg,#FFFCF4,#FFFFFF)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 7 } },
-                                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: "#B87820", textTransform: "uppercase", letterSpacing: ".10em" } }, "Toque de reparación"),
-                                React.createElement("div", { style: { fontSize: isMobile() ? 34 : 38, fontWeight: 900, color: "#B87820", lineHeight: .95 } },
+                                React.createElement("div", { className: "smf-kpi-label", style: { fontSize: 10, fontWeight: 900, color: "#B87820", textTransform: "uppercase", letterSpacing: ".10em" } }, "Toque de reparación"),
+                                React.createElement("div", { className: "smf-kpi-number", style: { fontSize: isMobile() ? 34 : 38, fontWeight: 900, color: "#B87820", lineHeight: .95 } },
                                     traceOpsYieldFlowFmt(yieldFlowModel.kpi.touch, 1),
                                     "%"),
                                 React.createElement("div", { style: { fontSize: 10.5, color: "#6A6560" } }, "unidades con registro de reparación"))),
                         React.createElement("div", { style: { padding: isMobile() ? "18px 20px" : "19px 24px", background: Number(yieldFlowModel.kpi.risk || 0) > 0 ? "linear-gradient(135deg,#FFF7F5 0%,#FDF0EE 100%)" : "#FCFBFB", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 } },
                             React.createElement("div", { style: { minWidth: 0 } },
-                                React.createElement("div", { style: { fontSize: 10, fontWeight: 900, color: Number(yieldFlowModel.kpi.risk || 0) > 0 ? "#A43B2E" : "#5F766C", textTransform: "uppercase", letterSpacing: ".10em" } }, "Unidades en riesgo"),
+                                React.createElement("div", { className: "smf-kpi-label", style: { fontSize: 10, fontWeight: 900, color: Number(yieldFlowModel.kpi.risk || 0) > 0 ? "#A43B2E" : "#5F766C", textTransform: "uppercase", letterSpacing: ".10em" } }, "Unidades en riesgo"),
                                 React.createElement("div", { style: { fontSize: 11.5, color: "#6A6560", marginTop: 7, lineHeight: 1.35 } }, Number(yieldFlowModel.kpi.risk || 0) > 0 ? "Retrabajo visible o registro de reparación" : "Alcance limpio sin unidades en riesgo")),
-                            React.createElement("div", { style: { fontSize: isMobile() ? 42 : 48, fontWeight: 900, color: Number(yieldFlowModel.kpi.risk || 0) > 0 ? "#A43B2E" : "#1F2328", lineHeight: .9, letterSpacing: "-.04em" } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.risk))))),
+                            React.createElement("div", { className: "smf-kpi-number", style: { fontSize: isMobile() ? 42 : 48, fontWeight: 900, color: Number(yieldFlowModel.kpi.risk || 0) > 0 ? "#A43B2E" : "#1F2328", lineHeight: .9, letterSpacing: "-.04em" } }, traceOpsYieldFlowFmt(yieldFlowModel.kpi.risk))))),
             React.createElement("section", { style: { background: "#FFFFFF", border: "1px solid #E5DCDD", borderRadius: 18, overflow: "hidden", boxShadow: "0 10px 22px rgba(16,42,67,.055)" } },
                 React.createElement("div", { style: { padding: "12px 15px", borderBottom: "1px solid #F1E9EA", background: "#FBF9F9", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
                     React.createElement("div", null,
@@ -30590,7 +30590,7 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("div", { style: { fontSize: 9.5, fontWeight: 900, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, k.l),
                         React.createElement("div", { style: { fontSize: isMobile() ? 25 : 29, fontWeight: 900, color: k.c, lineHeight: 1, marginTop: 9, letterSpacing: "-.04em" } }, k.v),
                         React.createElement("div", { style: { fontSize: 10.5, color: "#6A6560", marginTop: 7, lineHeight: 1.25 } }, k.m)); })) ),
-            React.createElement("section", { style: { background: "#F5F7FB", border: "1px solid #E5DCDD", borderRadius: 18, padding: isMobile() ? "12px 14px" : "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,.04)" } },
+            React.createElement("section", { className: "smf-weeks-panel", style: { background: "#F5F7FB", border: "1px solid #E5DCDD", borderRadius: 18, padding: isMobile() ? "12px 14px" : "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,.04)" } },
                 (function () {
                     var weekOptions = (yieldFlowModel.options && yieldFlowModel.options.week) || [];
                     var weekPills = ["ALL"].concat(weekOptions);
@@ -30612,16 +30612,16 @@ body:has(#recovery-section) .main-content.expanded{
                         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, overflowX: "auto", padding: "4px 2px 6px", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" } }, weekPills.map(function (weekValue) {
                             var isActive = weekValue === activeWeek;
                             var shortLabel = shortYieldWeekLabel(weekValue);
-                            return React.createElement("button", { key: "week_pill_" + weekValue, type: "button", title: weekValue === "ALL" ? "Todas las semanas" : weekValue, onClick: function () { updateYieldFilter("week", weekValue); }, style: { minWidth: "auto", height: 28, padding: "4px 10px", borderRadius: 999, textAlign: "center", fontSize: 11, lineHeight: 1, fontWeight: 800, background: isActive ? "#1F3B63" : "#FFFFFF", color: isActive ? "#FFFFFF" : "#4A5568", border: isActive ? "1px solid #1F3B63" : "1px solid #E2E8F0", boxShadow: isActive ? "0 3px 8px rgba(31,59,99,.18)" : "none", cursor: "pointer", transition: "all .2s ease", whiteSpace: "nowrap" } }, shortLabel);
+                            return React.createElement("button", { className: "smf-week-pill" + (isActive ? " active" : ""), key: "week_pill_" + weekValue, type: "button", title: weekValue === "ALL" ? "Todas las semanas" : weekValue, onClick: function () { updateYieldFilter("week", weekValue); }, style: { minWidth: "auto", height: 28, padding: "4px 10px", borderRadius: 999, textAlign: "center", fontSize: 11, lineHeight: 1, fontWeight: 800, background: isActive ? "#1F3B63" : "#FFFFFF", color: isActive ? "#FFFFFF" : "#4A5568", border: isActive ? "1px solid #1F3B63" : "1px solid #E2E8F0", boxShadow: isActive ? "0 3px 8px rgba(31,59,99,.18)" : "none", cursor: "pointer", transition: "all .2s ease", whiteSpace: "nowrap" } }, shortLabel);
                         })));
                 })()),
-            React.createElement("section", { style: { background: "#fff", border: "1px solid #E5DCDD", borderRadius: 16, overflow: "hidden" } },
-                React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid #F1E9EA", background: "#FBF9F9", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" } },
+            React.createElement("section", { className: "smf-yield-filters", style: { background: "#fff", border: "1px solid #E5DCDD", borderRadius: 16, overflow: "hidden" } },
+                React.createElement("div", { className: "smf-panel-head", style: { padding: "14px 18px", borderBottom: "1px solid #F1E9EA", background: "#FBF9F9", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" } },
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: "#1F2328" } }, yieldText("filtersTitle")),
                         React.createElement("div", { style: { fontSize: 10.5, color: "#5F766C", marginTop: 3 } }, yieldText("filtersSubtitle"))),
                     React.createElement("button", { type: "button", onClick: resetYieldFilters, style: { border: "1px solid #E3C7CB", background: "#fff", color: "#7F1820", borderRadius: 999, padding: "8px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer" } }, yieldText("resetFilters"))),
-                React.createElement("div", { style: { padding: "13px 18px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(4,minmax(0,1fr))", gap: 10 } }, [
+                React.createElement("div", { className: "smf-filter-grid", style: { padding: "13px 18px", display: "grid", gridTemplateColumns: isMobile() ? "1fr" : "repeat(4,minmax(0,1fr))", gap: 10 } }, [
                     { key: "bu", label: yieldText("bu"), items: yieldFlowModel.options.bu },
                     { key: "family", label: yieldText("modelFamily"), items: yieldFlowModel.options.family },
                     { key: "sku", label: "SKU", items: yieldFlowModel.options.sku },
@@ -30634,7 +30634,7 @@ body:has(#recovery-section) .main-content.expanded{
                     { key: "from", label: yieldText("dateFrom"), type: "date" },
                     { key: "to", label: yieldText("dateTo"), type: "date" }
                 ].map(function (f) {
-                    return (React.createElement("label", { key: f.key, style: { display: "flex", flexDirection: "column", gap: 5, fontSize: 10, fontWeight: 800, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".04em" } },
+                    return (React.createElement("label", { className: "smf-filter-field", key: f.key, style: { display: "flex", flexDirection: "column", gap: 5, fontSize: 10, fontWeight: 800, color: "#5F766C", textTransform: "uppercase", letterSpacing: ".04em" } },
                         f.label,
                         f.type === "date" ? React.createElement("input", { type: "date", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, style: { height: 38, border: "1px solid #E3C7CB", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#1F2328", background: "#fff", outline: "none" } }) :
                         f.type === "serial" ? React.createElement("input", { type: "search", value: yieldFilters[f.key] || "", onChange: function (e) { updateYieldFilter(f.key, e.target.value); }, onBlur: function (e) { updateYieldFilter(f.key, traceOpsYieldCleanSn(e.target.value)); }, placeholder: "SN / barcode", style: { height: 38, border: "1px solid #E3C7CB", borderRadius: 12, padding: "0 10px", fontSize: 12, fontWeight: 700, color: "#1F2328", background: "#fff", outline: "none", fontFamily: "monospace" } }) :
@@ -79943,65 +79943,302 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
 
 </script>
 
-<style id="smtinel-soft-fusion-v1">
-
-/* SMTinel Soft Fusion V7 | Aesthetic layer only. Do not restyle data or statuses. */
+<style id="smtinel-soft-fusion-v1" data-smtinel-visual-version="8">
+/* SMTinel Soft Fusion V8 — presentation system for the operational UI.
+   Uses the existing theme switch. Semantic status/chart colors retain authority.
+   This replaces Soft Fusion V7; no observer, timer, dependency or data transform. */
 html.smtinel-fusion-soft {
-  --smf-olive:#788369;
-  --smf-wine:#864b56;
-  --smf-divider-light:rgba(102,117,95,.18);
-  --smf-divider-dark:rgba(173,185,157,.18);
+  --smf-bg:#141914;
+  --smf-surface:#1e251f;
+  --smf-subtle:#252d24;
+  --smf-text:#edf0e7;
+  --smf-muted:#b0bba5;
+  --smf-line:#3d4839;
+  --smf-olive:#a9ba8d;
+  --smf-action:#a9ba8d;
+  --smf-action-ink:#192116;
+  --smf-active:#303c29;
+  --smf-wine:#d99aac;
+  --smf-hero:#273325;
+  --smf-shadow:0 3px 14px rgba(0,0,0,.13);
+  --smf-font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --smf-mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  --smtinel-topbar-h:58px;
 }
-/* Sidebar retains its existing dimensions, sections and production color scheme. */
-html.smtinel-fusion-soft body.traceops-premium-shell .sidebar {
-  border-right:1px solid var(--smf-divider-dark)!important;
-  box-shadow:12px 0 26px rgba(0,0,0,.16)!important;
+html.smtinel-fusion-soft.smtinel-theme-light {
+  --smf-bg:#f5f4ed;
+  --smf-surface:#ffffff;
+  --smf-subtle:#eff1e8;
+  --smf-text:#272b25;
+  --smf-muted:#68715f;
+  --smf-line:#d9dfce;
+  --smf-olive:#5a614b;
+  --smf-action:#5a614b;
+  --smf-action-ink:#ffffff;
+  --smf-active:#e7ebdd;
+  --smf-wine:#843d50;
+  --smf-hero:#3f4937;
+  --smf-shadow:0 3px 14px rgba(42,55,31,.045);
 }
-html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn {
-  transition:background-color .16s ease,color .16s ease,border-color .16s ease!important;
+
+/* App chrome. Existing sidebar widths, collapse rules and module visibility stay authoritative. */
+html.smtinel-fusion-soft body.traceops-premium-shell {
+  background:var(--smf-bg)!important;
+  background-image:none!important;
+  font-family:var(--smf-font)!important;
+  -webkit-font-smoothing:antialiased;
 }
-html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn.active {
-  box-shadow:inset 2px 0 0 rgba(174,186,148,.62)!important;
+html.smtinel-fusion-soft body.traceops-premium-shell .main-content {
+  background:transparent!important;background-image:none!important;
 }
-html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-section-title {
-  letter-spacing:.105em!important;
-}
-/* Slightly quieter top bar. No height or navigation changes. */
 html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar {
-  border-bottom:1px solid var(--smf-divider-dark)!important;
-  box-shadow:0 3px 14px rgba(0,0,0,.075)!important;
+  background:var(--smf-surface)!important;background-image:none!important;
+  border:0!important;border-bottom:1px solid var(--smf-line)!important;
+  border-radius:0!important;box-shadow:var(--smf-shadow)!important;
+  height:58px!important;min-height:58px!important;padding:7px 18px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
 html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar-title {
-  letter-spacing:-.025em!important;
+  color:var(--smf-text)!important;-webkit-text-fill-color:var(--smf-text)!important;
+  font-family:var(--smf-font)!important;font-size:17px!important;
+  font-weight:600!important;letter-spacing:-.025em!important;text-shadow:none!important;
 }
-/* Regularize surfaces without changing columns, charts, tables or metrics. */
-html.smtinel-fusion-soft #yieldflow-section :is(.tcard,.pf-card,.traceops-panel,.traceops-kpi-card),
-html.smtinel-fusion-soft #results-section :is(.traceops-panel,.traceops-kpi-card),
-html.smtinel-fusion-soft :is(.smt-exec-kpi,.smt-exec-panel) {
-  border-radius:13px!important;
-  box-shadow:0 4px 14px rgba(12,22,15,.06)!important;
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar-subtitle {
+  color:var(--smf-muted)!important;-webkit-text-fill-color:var(--smf-muted)!important;
+  font-size:11px!important;font-weight:400!important;
 }
-html.smtinel-fusion-soft :is(.smt-exec-kpi-value,.traceops-kpi-value,.pf-stat-val,.kval) {
-  font-variant-numeric:tabular-nums;
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar-actions {
+  gap:8px!important;align-items:center!important;
 }
-html.smtinel-fusion-soft #exportcenter-section :is(.report-preview-head,.export-action-panel) {
-  border-radius:12px!important;
+html.smtinel-fusion-soft body.traceops-premium-shell :is(.saas-menu-btn,.saas-header-btn) {
+  background:var(--smf-surface)!important;background-image:none!important;
+  color:var(--smf-text)!important;border-color:var(--smf-line)!important;
+  border-radius:8px!important;box-shadow:none!important;
+  font-family:var(--smf-font)!important;font-weight:500!important;font-size:12px!important;
+  height:38px!important;min-height:38px!important;padding:0 12px!important;
 }
-/* Light appearance only: soften edges, preserve labels and contrast. */
-html.smtinel-fusion-soft.smtinel-theme-light body.traceops-premium-shell .sidebar {
-  border-right-color:var(--smf-divider-light)!important;
-  box-shadow:10px 0 24px rgba(40,50,40,.08)!important;
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-header-btn.primary {
+  background:var(--smf-action)!important;color:var(--smf-action-ink)!important;
+  -webkit-text-fill-color:var(--smf-action-ink)!important;border-color:var(--smf-action)!important;
 }
-html.smtinel-fusion-soft.smtinel-theme-light body.traceops-premium-shell .saas-topbar {
-  border-bottom-color:var(--smf-divider-light)!important;
-  box-shadow:0 4px 18px rgba(40,50,40,.045)!important;
+html.smtinel-fusion-soft body.traceops-premium-shell .saas-menu-btn {padding:0!important;width:38px!important;}
+
+/* Both legacy and current navigation surfaces receive the same visual vocabulary. */
+html.smtinel-fusion-soft body :is(.sidebar,.smtinel-desktop-sidebar,.smtinel-bottom-nav,.smtinel-more-sheet) {
+  background:var(--smf-surface)!important;background-image:none!important;
+  color:var(--smf-text)!important;border-color:var(--smf-line)!important;
+  box-shadow:var(--smf-shadow)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
-@media(max-width:900px) {
-  html.smtinel-fusion-soft body.traceops-premium-shell .sidebar {box-shadow:12px 0 25px rgba(0,0,0,.19)!important;}
+html.smtinel-fusion-soft body .smtinel-desktop-sidebar {border-radius:12px!important;}
+html.smtinel-fusion-soft body :is(.smtinel-desktop-sidebar,.smtinel-bottom-nav)::before,
+html.smtinel-fusion-soft body .smtinel-desktop-sidebar::after {background:none!important;opacity:0!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-head,.smtinel-side-group,.smtinel-side-foot,.sidebar-header,.sidebar-section,.sidebar-footer) {
+  background:transparent!important;background-image:none!important;border-color:var(--smf-line)!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-brand strong,.sidebar-brand h2) {
+  color:var(--smf-text)!important;font-family:var(--smf-font)!important;
+  font-weight:600!important;letter-spacing:-.025em!important;
+}
+html.smtinel-fusion-soft body .smtinel-side-brand strong {font-size:17px!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-brand span,.smtinel-side-foot,.sidebar-footer p) {
+  color:var(--smf-muted)!important;font-size:10px!important;font-weight:400!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-foot span,.sidebar-brand h2 span) {color:var(--smf-wine)!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-section,.sidebar-section-title) {
+  color:var(--smf-muted)!important;font-size:10px!important;
+  font-weight:500!important;letter-spacing:.08em!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-logo,.smtinel-side-toggle) {
+  background:var(--smf-subtle)!important;background-image:none!important;
+  color:var(--smf-text)!important;border-color:var(--smf-line)!important;
+  border-radius:8px!important;box-shadow:none!important;font-weight:600!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn,.smtinel-tab,.smtinel-more-btn) {
+  background:transparent!important;background-image:none!important;color:var(--smf-muted)!important;
+  border-color:transparent!important;border-radius:8px!important;box-shadow:none!important;
+  font-family:var(--smf-font)!important;font-weight:500!important;letter-spacing:0!important;
+  transition:background-color .15s ease,color .15s ease!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn) {font-size:13px!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn,.smtinel-tab,.smtinel-more-btn):hover {
+  background:var(--smf-subtle)!important;color:var(--smf-text)!important;transform:none!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn,.smtinel-tab,.smtinel-more-btn).active {
+  background:var(--smf-active)!important;color:var(--smf-olive)!important;
+  border-color:transparent!important;box-shadow:none!important;font-weight:600!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn).active {box-shadow:inset 2px 0 0 var(--smf-olive)!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn)::before {background:none!important;}
+html.smtinel-fusion-soft body .smtinel-side-btn.active::after {background:var(--smf-olive)!important;box-shadow:none!important;width:2px!important;}
+html.smtinel-fusion-soft body .smtinel-tab.active::after {background:var(--smf-olive)!important;box-shadow:none!important;}
+html.smtinel-fusion-soft body :is(.smtinel-side-ico,.smtinel-tab-icon,.smtinel-side-btn.active .smtinel-side-ico) {color:inherit!important;}
+
+/* Explicit hooks on Yield Flow prevent visual rules from catching unrelated data cells. */
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header {
+  background:var(--smf-surface)!important;background-image:none!important;
+  border:1px solid var(--smf-line)!important;border-left:3px solid var(--smf-wine)!important;
+  border-radius:10px!important;box-shadow:var(--smf-shadow)!important;
+  color:var(--smf-text)!important;padding:18px 20px!important;gap:18px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header .smf-yield-title {
+  color:var(--smf-text)!important;-webkit-text-fill-color:var(--smf-text)!important;
+  font-family:var(--smf-font)!important;font-weight:600!important;line-height:1.2!important;font-size:26px!important;
+  letter-spacing:-.035em!important;text-shadow:none!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header .smf-yield-context > span {
+  color:var(--smf-muted)!important;-webkit-text-fill-color:var(--smf-muted)!important;
+  background:var(--smf-subtle)!important;border:1px solid var(--smf-line)!important;
+  border-radius:6px!important;font-size:11px!important;font-weight:500!important;
+  padding:6px 9px!important;line-height:1.4!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header .smf-yield-context > button,
+html.smtinel-fusion-soft body #yieldflow-section .smf-import-panel .smf-panel-head button {
+  color:var(--smf-action-ink)!important;-webkit-text-fill-color:var(--smf-action-ink)!important;
+  background:var(--smf-action)!important;border:1px solid var(--smf-action)!important;
+  border-radius:8px!important;padding:9px 14px!important;font-size:13px!important;
+  font-weight:600!important;box-shadow:none!important;min-height:38px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header button:disabled,
+html.smtinel-fusion-soft body #yieldflow-section .smf-import-panel button:disabled {opacity:.6!important;}
+html.smtinel-fusion-soft body #yieldflow-section :is(.smf-import-panel,.smf-yield-filters,.smf-yield-kpis,.smf-weeks-panel) {
+  background:var(--smf-surface)!important;background-image:none!important;
+  border:1px solid var(--smf-line)!important;border-radius:10px!important;
+  box-shadow:var(--smf-shadow)!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-panel-head {
+  background:var(--smf-subtle)!important;background-image:none!important;
+  border-color:var(--smf-line)!important;padding:14px 18px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-panel-head > div > div:first-child {
+  color:var(--smf-text)!important;font-size:14px!important;font-weight:600!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-panel-head > div > div + div {
+  color:var(--smf-muted)!important;font-size:11px!important;font-weight:400!important;line-height:1.5!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-yield-filters .smf-panel-head button {
+  background:var(--smf-surface)!important;color:var(--smf-olive)!important;
+  border:1px solid var(--smf-line)!important;border-radius:8px!important;
+  font-size:12px!important;font-weight:500!important;min-height:36px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-grid {
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px 16px!important;padding:18px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field {
+  color:var(--smf-muted)!important;font-family:var(--smf-font)!important;
+  font-size:11px!important;font-weight:500!important;letter-spacing:.02em!important;
+  text-transform:none!important;gap:7px!important;min-width:0!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field :is(input,select) {
+  background:var(--smf-surface)!important;color:var(--smf-text)!important;
+  border:1px solid var(--smf-line)!important;border-radius:8px!important;
+  height:40px!important;min-height:40px!important;width:100%!important;min-width:0!important;
+  font-family:var(--smf-font)!important;font-size:13px!important;font-weight:400!important;
+  box-shadow:none!important;box-sizing:border-box!important;
+  color-scheme:dark;
+}
+html.smtinel-fusion-soft.smtinel-theme-light body #yieldflow-section .smf-filter-field :is(input,select) {color-scheme:light;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field input::placeholder {color:var(--smf-muted)!important;opacity:1!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field input[placeholder="SN / barcode"] {font-family:var(--smf-mono)!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field :is(input,select):focus {
+  outline:2px solid var(--smf-olive)!important;outline-offset:2px!important;border-color:var(--smf-olive)!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-weeks-panel {padding:14px 18px!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-weeks-panel > div:first-child > span {color:var(--smf-muted)!important;font-weight:500!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-week-pill {
+  background:var(--smf-surface)!important;color:var(--smf-muted)!important;
+  border:1px solid var(--smf-line)!important;border-radius:7px!important;
+  font:500 12px/1.4 var(--smf-font)!important;min-height:36px!important;
+  box-shadow:none!important;padding:7px 12px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-week-pill.active {
+  background:var(--smf-active)!important;color:var(--smf-olive)!important;border-color:var(--smf-olive)!important;
+}
+
+/* KPI values keep their calculations, denominators and semantic colors. */
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-kpi {
+  background:var(--smf-hero)!important;background-image:none!important;
+  border-color:var(--smf-line)!important;padding:24px!important;gap:14px!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-kpi > div[style*="radial-gradient"] {opacity:0!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-kpi-label {
+  font-family:var(--smf-font)!important;font-size:11px!important;
+  font-weight:500!important;letter-spacing:.065em!important;line-height:1.5!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-kpi .smf-kpi-label {
+  color:#dce6cf!important;-webkit-text-fill-color:#dce6cf!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-value {
+  font-family:var(--smf-font)!important;font-size:58px!important;font-weight:600!important;
+  color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
+  letter-spacing:-.05em!important;line-height:1!important;font-variant-numeric:tabular-nums;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-base {color:#e5ecdc!important;gap:8px!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-base span {
+  color:#e5ecdc!important;-webkit-text-fill-color:#e5ecdc!important;
+  font-weight:500!important;font-variant-numeric:tabular-nums;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-base span:nth-child(2) {font-size:12px!important;opacity:1!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-clean-base span:last-child {font-size:10px!important;text-transform:none!important;letter-spacing:0!important;opacity:1!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-kpi-number {
+  font-family:var(--smf-font)!important;font-weight:600!important;
+  font-variant-numeric:tabular-nums;letter-spacing:-.035em!important;line-height:1.1!important;
+}
+html.smtinel-fusion-soft body #yieldflow-section .smf-kpi-detail-grid {border-color:var(--smf-line)!important;}
+html.smtinel-fusion-soft body #yieldflow-section .smf-kpi-detail-grid > div {border-color:var(--smf-line)!important;}
+
+/* Common neutral surfaces and typography. No blanket recoloring of charts, badges or cells. */
+html.smtinel-fusion-soft body :is(#yieldflow-section,#results-section,#boardimpact-section) :is(.tcard,.pf-card,.traceops-panel,.traceops-kpi-card,.traceops-focus-side-panel,.traceops-focus-metric-card),
+html.smtinel-fusion-soft body :is(.smt-exec-kpi,.smt-exec-panel) {
+  border-radius:10px!important;border-color:var(--smf-line)!important;box-shadow:var(--smf-shadow)!important;
+}
+html.smtinel-fusion-soft body :is(.smt-exec-kpi-value,.traceops-kpi-value,.pf-stat-val,.kval) {
+  font-family:var(--smf-font)!important;font-weight:600!important;font-variant-numeric:tabular-nums;letter-spacing:-.025em!important;
+}
+html.smtinel-fusion-soft body :is(.traceops-kpi-label,.smt-exec-kpi-label) {
+  font-family:var(--smf-font)!important;font-weight:500!important;font-size:11px!important;letter-spacing:.045em!important;
+}
+html.smtinel-fusion-soft body :is(#yieldflow-section,#boardimpact-section,#results-section) :is(.thdr h3,.pf-hdr h3,.traceops-panel-title) {font-weight:600!important;letter-spacing:-.02em!important;}
+html.smtinel-fusion-soft body :is(#yieldflow-section,#boardimpact-section) .tscroll th {
+  font-family:var(--smf-font)!important;font-size:11px!important;font-weight:600!important;
+  letter-spacing:.015em!important;line-height:1.4!important;padding:10px 12px!important;
+}
+html.smtinel-fusion-soft body :is(#yieldflow-section,#boardimpact-section) .tscroll td {
+  font-family:var(--smf-font)!important;font-size:12px!important;line-height:1.45!important;
+  padding:9px 12px!important;font-variant-numeric:tabular-nums;
+}
+html.smtinel-fusion-soft body :is(#yieldflow-section,#boardimpact-section) .tscroll :is(td[style*="monospace"],td code) {font-family:var(--smf-mono)!important;}
+html.smtinel-fusion-soft body #exportcenter-section :is(.report-preview-head,.export-action-panel) {
+  border-radius:10px!important;border-color:var(--smf-line)!important;box-shadow:var(--smf-shadow)!important;
+}
+html.smtinel-fusion-soft body :is(.smtinel-side-btn,.smtinel-side-toggle,.smtinel-tab,.saas-header-btn,.smf-week-pill):focus-visible {
+  outline:2px solid var(--smf-olive)!important;outline-offset:2px!important;
+}
+
+@media(max-width:1100px) {
+  html.smtinel-fusion-soft body #yieldflow-section .smf-filter-grid {grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header {grid-template-columns:minmax(0,1fr)!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-context {justify-content:flex-start!important;}
+}
+@media(max-width:760px) {
+  html.smtinel-fusion-soft body.traceops-premium-shell .saas-topbar {padding:7px 12px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-filter-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:14px!important;gap:13px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header {padding:16px!important;gap:13px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-title {font-size:22px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header .smf-yield-title {font-size:22px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-filter-field :is(input,select) {font-size:16px!important;height:44px!important;min-height:44px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-clean-kpi {padding:22px!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-clean-value {font-size:50px!important;}
+  html.smtinel-fusion-soft body .smtinel-tab {font-size:10px!important;}
+}
+@media(max-width:440px) {
+  html.smtinel-fusion-soft body #yieldflow-section .smf-filter-grid {grid-template-columns:minmax(0,1fr)!important;}
+  html.smtinel-fusion-soft body #yieldflow-section .smf-yield-header .smf-yield-context {gap:6px!important;}
 }
 @media(prefers-reduced-motion:reduce) {
-  html.smtinel-fusion-soft body.traceops-premium-shell .sidebar-btn{transition:none!important;}
+  html.smtinel-fusion-soft body :is(.smtinel-side-btn,.sidebar-btn,.smtinel-tab,.saas-header-btn,.smf-week-pill) {transition:none!important;}
 }
+
 </style>
 </body>
 </html>
