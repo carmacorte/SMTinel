@@ -1,3 +1,5 @@
+<!-- SMTinel Yokoten V8.1: Affected Items list in deviation cards; explicit vs mentioned PN distinguished. -->
+<!-- SMTinel V20.16: ECO source master + BU/PCBA exact revision screening, OLD->NEW traceability, PN-only review separated. -->
 <!-- SMTinel V20.8: export generator script termination fixed. Stable main app from V20.6. -->
 <!-- Server deploy: replace the public /index.html with this complete file; retaining the V20.5 /index.html will reproduce error at line 78597. -->
 <!-- SMTinel V20.2 · Cross-Product Component Trend / Shainin Red X · Focused runtime: Yield Flow + Board Impact + Bonepile + Export Center · Red X palette -->
@@ -77478,13 +77480,13 @@ function normalize(wb){
     }
     return /^\d{4}-\d\d-\d\d/.test(raw)?raw.slice(0,10):'';
   }
-  var ccRegister=sh('Change Register'),ccScopes=sh('Change Applicability'),ccInstructions=sh('Deviation Instructions'),ccRadar={},ccMaster=null;
+  var ccRegister=sh('Change Register'),ccScopes=sh('Change Applicability'),ccInstructions=sh('Deviation Instructions'),ccEcoItems=sh('ECO Items'),ccRadar={},ccMaster=null;
   sh('Deviation Radar').forEach(function(r){var key=val(r,['CTAN Number']);if(key)ccRadar[key]=r;});
   if(ccRegister.length&&ccScopes.length){
     var docs=ccRegister.map(function(r){var ctan=val(r,['Related Document']),rd=ccRadar[ctan]||{};return{
       id:val(r,['Change ID']),type:up(val(r,['Document Type'])),number:val(r,['Document Number']),revision:val(r,['Document Revision']),ctan:ctan,
       bu:val(r,['BU']),description:val(r,['Change Description']),workflow:val(rd,['Workflow Status (source)']),
-      releasedSource:ccDate(rd['Date Released (source)']),effectiveFrom:ccDate(r['Effective From']),effectiveUntil:ccDate(r['Effective Until']),
+      releasedSource:ccDate(r['ECO Release Date (source)'])||ccDate(rd['Date Released (source)']),bomDate:ccDate(r['ECO BOM Date (source, single only)']),implementationType:val(r,['ECO Implementation Type (source)']),effectiveFrom:ccDate(r['Effective From']),effectiveUntil:ccDate(r['Effective Until']),
       approval:val(r,['Approval Status']),documentState:val(r,['Document State']),conflicts:val(rd,['Source Conflicts']),sourceRows:val(rd,['CSV Rows']),
       officialUrl:val(r,['Official Source URL']),active:val(r,['Active'])
     }});
@@ -77494,8 +77496,23 @@ function normalize(wb){
       woFrom:val(r,['WO From']),woUntil:val(r,['WO Until']),class:val(r,['Applicability Class']),action:val(r,['Required Action']),
       curation:val(r,['Curation Status']),active:val(r,['Active']),dateFrom:ccDate(r['Scope Effective From']),dateUntil:ccDate(r['Scope Effective Until']),
       componentOld:val(r,['Component CPN Old']),componentNew:val(r,['Component CPN New']),refdes:val(r,['RefDes']),
+      sourceOldRev:val(r,['Source Old Rev']),sourceNewRev:val(r,['Source New Rev']),revisionPolicy:val(r,['Revision Match Policy']),bomEffectiveDate:val(r,['BOM Effective Date (source)']),ecoReleaseDate:val(r,['ECO Release Date (source)']),
       validation:val(r,['Validation Method']),evidence:val(r,['Evidence Required'])
     }});
+    // ECO Affected Items come from explicit CSV columns, never inferred from the prose.
+    var ecoAffectedById=Object.create(null);
+    ccEcoItems.forEach(function(r){
+      var eco=up(val(r,['ECO # (source)']));
+      if(!/^(?:EA|CA)\d{5,}$/.test(eco))return;
+      var part=up(val(r,['Affected Item PN (source)']));
+      if(!part)return;
+      var oldRev=val(r,['Old Rev (literal)']),newRev=val(r,['New Rev (literal)']);
+      var revNote=oldRev&&newRev?('Rev '+oldRev+' → '+newRev):(newRev?'Rev nueva '+newRev:'Revision no informada');
+      var type=val(r,['Item classification']),bu=val(r,['BU normalized']);
+      var item={pn:part,type:type,description:revNote+(bu?' · '+bu:' · BU por verificar'),oldRev:oldRev,newRev:newRev,source:'ECO Items'};
+      (ecoAffectedById['ECO-'+eco]||(ecoAffectedById['ECO-'+eco]=[])).push(item);
+    });
+    docs.forEach(function(d){if(d.type==='ECO')d.affectedItems=ecoAffectedById[d.id]||[];});
     var instructions=ccInstructions.map(function(r){return{
       ctan:val(r,['CTAN Number']),number:val(r,['Customer Deviation#']),sku:val(r,['SKU (document text)']),boardPn:val(r,['Target PN']),
       refdes:val(r,['RefDes']),operation:val(r,['Change Operation']),old:val(r,['Old / Remove CPN']),new:val(r,['New / Add CPN']),
@@ -77503,7 +77520,7 @@ function normalize(wb){
     }});
     var types={ECN:0,ECO:0,DEVIATION:0};docs.forEach(function(d){if(types[d.type]!=null)types[d.type]++;});
     ccMaster={schema:'smtinel.customer-change-screening.v6',loaded:true,
-      source:'GitHub · SMTinel_Yokoten_Knowledge_DB.xlsx (Change Register / Change Applicability)',
+      source:'GitHub · SMTinel_Yokoten_Knowledge_DB.xlsx (Change Register / Change Applicability / ECO Items)',
       documents:docs,scopes:scopes,instructions:instructions,
       importState:{ECN:types.ECN?'SOURCE_REVIEW':'MASTER_PENDING',ECO:types.ECO?'SOURCE_REVIEW':'MASTER_PENDING',DEVIATION:types.DEVIATION?'SOURCE_SCREENING_ONLY':'MASTER_PENDING'}
     };
@@ -79508,7 +79525,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
   'use strict';
   if (window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__) return;
   window.__SMTINEL_YOKOTEN_CUSTOMER_CHANGE_V6__ = true;
-  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V8.0-UNIQUE-DOCUMENTS';
+  var BUILD = 'YOKOTEN-CUSTOMER-CHANGE-V8.1-AFFECTED-ITEMS';
   var cachedSeed = null;
   function t(v) { return String(v == null ? '' : v).trim(); }
   function up(v) { return t(v).toUpperCase(); }
@@ -79527,9 +79544,11 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     if (up(s.curation) === 'REJECTED' || up(s.curation) === 'EXCLUDED') return false;
     if (s.plant && ['FJZ', 'GLOBAL_AVL', 'MULTI_SITE'].indexOf(up(s.plant)) < 0) return false;
     if (pn(s.sku) && /^\d{2}-\d/.test(pn(s.sku)) && pn(s.sku) !== pn(r.sku)) return false;
-    if (up(s.bu) && up(s.bu) !== up(r.bu)) return false;
+    if (!up(s.bu) || up(s.bu) !== up(r.bu)) return false;
     if (line(s.line) && line(s.line) !== line(r.line)) return false;
-    if (up(s.rev) && up(s.rev) !== 'ANY' && up(r.rev) && up(r.rev) !== 'N/D' && up(s.rev) !== up(r.rev)) return false;
+    if (up(s.rev)==='ANY' && !(up(s.curation)==='VERIFIED' && up(s.active)==='Y')) return false;
+    if (up(s.rev) && up(s.rev)!=='ANY' && (!up(r.rev) || up(r.rev)==='N/D' || up(s.rev)!==up(r.rev))) return false;
+    if (!up(s.rev) && /^ECO-/.test(up(s.changeId))) return false;
     if (s.woExact && normWo(s.woExact) !== normWo(r.wo)) return false;
     if (!validRange(r.wo, s.woFrom, s.woUntil)) return false;
     if (pn(r.sku) === '73-19152-02' || pn(r.sku) === '17-15768-01') return false;
@@ -79577,7 +79596,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
         if (!screenScope(s, r)) return;
         var d = docs[up(s.changeId)];
         if (!d || !['ECN', 'ECO', 'DEVIATION'].includes(up(d.type))) return;
-        var key = up(d.id) + '|' + pn(s.boardPn), obj = found[key];
+        var key = up(d.id) + '|' + pn(s.boardPn) + '|' + up(s.rev) + '|' + up(s.id), obj = found[key];
         if (!obj) obj = found[key] = { doc: d, scope: s, boardPn: s.boardPn, runs: [], seenRuns: Object.create(null), instructions: [] };
         var rk = [up(r.wo), up(r.rev), line(r.line)].join('|');
         if (!obj.seenRuns[rk]) { obj.seenRuns[rk] = true; obj.runs.push(r); }
@@ -79630,7 +79649,11 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     .cc-status{font-size:10.5px;color:#69727e}.cc-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}.cc-doc{border:1px solid #e1e3e7;border-left:3px solid #b77837;border-radius:9px;background:#fff;min-width:0;overflow:hidden}.cc-doc summary{list-style:none;cursor:pointer;padding:11px;display:grid;gap:7px}.cc-doc summary::-webkit-details-marker{display:none}.cc-doc summary:focus-visible,.cc-tab:focus-visible{outline:3px solid #bc2641;outline-offset:2px}
     .cc-doc-title{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.cc-doc-title strong{font-size:14px;color:#222f38}.cc-pill{display:inline-flex;border:1px solid #e2d0b9;background:#fff6eb;color:#83502d;border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800}.cc-pill.neutral{border-color:#dce0e5;background:#f4f6f8;color:#475462}.cc-pill.warn{background:#fff0f0;border-color:#ecc4c4;color:#922f34}
     .cc-doc-summary{font-size:11.5px;color:#27313a;line-height:1.4}.cc-doc-meta{font-size:10px;color:#6b747c}.cc-detail{border-top:1px solid #e2e3e6;background:#fcfcfd;padding:12px}.cc-detail p{margin:7px 0;font-size:11px;line-height:1.55;overflow-wrap:anywhere}.cc-table{border-collapse:collapse;width:100%;font-size:10.5px;margin:9px 0}.cc-table th,.cc-table td{border:1px solid #dce0e4;padding:7px;text-align:left;overflow-wrap:anywhere;white-space:normal;vertical-align:top}.cc-table th{background:#eef0f3}
-    .cc-table-scroll{max-width:100%;overflow:auto}.cc-table-scroll .cc-table{min-width:580px}.cc-wo-detail{margin-top:3px;color:#704758;max-width:240px;overflow-wrap:anywhere}.cc-wo-detail summary{cursor:pointer;font-weight:750}.cc-source-text summary{cursor:pointer;font-weight:750;color:#704758}
+    .cc-table-scroll{max-width:100%;overflow:auto}.cc-table-scroll .cc-table{min-width:790px}.cc-wo-detail{margin-top:3px;color:#704758;max-width:240px;overflow-wrap:anywhere}.cc-wo-detail summary{cursor:pointer;font-weight:750}.cc-source-text summary{cursor:pointer;font-weight:750;color:#704758}
+    .cc-aff-preview{padding:8px 10px;border-radius:8px;border:1px solid #dbe5df;background:#f6faf7;display:grid;gap:5px;min-width:0}
+    .cc-aff-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.cc-aff-head b{font-size:10px;color:#2c5645}.cc-aff-head small{font-size:9px;font-weight:750;color:#52695e}
+    .cc-aff-list{margin:0;padding:0;list-style:none;display:grid;gap:4px}.cc-aff-list li{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap;font-size:10px;line-height:1.4;color:#586960}.cc-aff-list code{font:800 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#245449;white-space:nowrap}.cc-aff-list span{flex:1 1 175px;min-width:0;overflow-wrap:anywhere}
+    .cc-aff-more{font-size:9px;font-weight:750;color:#6d6b54}.cc-aff-empty{font-style:italic;color:#78847c!important}.cc-aff-detail{margin:11px 0;padding:11px;border:1px solid #dbe5df;border-radius:9px;background:#f7faf8;overflow-wrap:anywhere}.cc-aff-detail .cc-aff-head b{font-size:11px}.cc-aff-detail .cc-aff-caution{font-size:10px;color:#68766b;margin:6px 0 8px}.cc-aff-table{margin:7px 0 0!important;min-width:460px}.cc-aff-table td:first-child{color:#255446;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.cc-aff-table td:nth-child(2){white-space:nowrap}
     .cc-row-meta{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 7px}.cc-data-source{color:#737d84;font-size:10px;border-top:1px solid #eceef0;margin-top:13px;padding-top:10px;overflow-wrap:anywhere}.cc-blank{padding:17px;background:#f6f6f8;border:1px solid #e3e4e7;border-radius:9px;color:#626a75;font-size:12px;grid-column:1/-1}
     .cc-pages{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.cc-pages button{background:#fff;color:#7b2940;border:1px solid #dbdce0;padding:8px 14px;border-radius:8px;cursor:pointer}.cc-pages button:disabled{opacity:.35;cursor:default}
     .cc-cell-notice{display:inline-flex;gap:4px;align-items:center;margin-top:6px;padding:3px 6px;color:#8d4b1e;background:#fff4e8;border:1px solid #e9cba9;border-radius:5px;font-size:10px;font-weight:800;text-decoration:none}
@@ -79655,9 +79678,11 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       if(!PN(s.boardPn)||PN(s.boardPn)!==PN(r.sku)||U(s.curation)==='REJECTED'||U(s.curation)==='EXCLUDED')return false;
       if(s.plant&&['FJZ','GLOBAL_AVL','MULTI_SITE'].indexOf(U(s.plant))<0)return false;
       if(PN(s.sku)&&/^\d{2}-\d/.test(PN(s.sku))&&PN(s.sku)!==PN(r.sku))return false;
-      if(U(s.bu)&&U(s.bu)!==U(r.bu))return false;
+      if(!U(s.bu)||U(s.bu)!==U(r.bu))return false;
       if(LN(s.line)&&LN(s.line)!==LN(r.line))return false;
-      if(U(s.rev)&&U(s.rev)!=='ANY'&&U(r.rev)&&U(r.rev)!=='N/D'&&U(s.rev)!==U(r.rev))return false;
+      if(U(s.rev)==='ANY'&&!(U(s.curation)==='VERIFIED'&&U(s.active)==='Y'))return false;
+      if(U(s.rev)&&U(s.rev)!=='ANY'&&(!U(r.rev)||U(r.rev)==='N/D'||U(s.rev)!==U(r.rev)))return false;
+      if(!U(s.rev)&&/^ECO-/.test(U(s.changeId)))return false;
       if(s.woExact&&W(s.woExact)!==W(r.wo))return false;
       if((s.woFrom||s.woUntil)&&/^\d+$/.test(W(r.wo))){
         var number=BigInt(W(r.wo));
@@ -79687,7 +79712,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       runs.forEach(function(r){(byBoard[PN(r.sku)]||[]).forEach(function(s){
         if(!matchesScope(s,r))return;
         var d=byId[U(s.changeId)];if(!d)return;
-        var key=U(d.id)+'|'+PN(s.boardPn), item=grouped[key];
+        var key=U(d.id)+'|'+PN(s.boardPn)+'|'+U(s.rev)+'|'+U(s.id), item=grouped[key];
         if(!item)item=grouped[key]={doc:d,scope:s,boardPn:s.boardPn,runs:[],seen:Object.create(null),instructions:[]};
         var k=U(r.wo)+'|'+U(r.rev)+'|'+LN(r.line);
         if(!item.seen[k]){item.seen[k]=true;item.runs.push(r);}
@@ -79703,9 +79728,16 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     function dateNow(){
       try{var p={};new Intl.DateTimeFormat('en-US',{timeZone:'America/Ciudad_Juarez',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});return p.year+'-'+p.month+'-'+p.day;}catch(_){return new Date().toISOString().slice(0,10);}
     }
-    var now=dateNow(),tab='ALL',phrase='',rangeMode='all',page=0,pageSize=12;
+    var now=dateNow(),tab='ALL',phrase='',rangeMode='all',revisionMode='exact',page=0,pageSize=12;
     function windowClass(h){
       var until=T(h.doc.effectiveUntil),dates=h.runs.map(function(r){return T(r.start).slice(0,10);}).filter(Boolean);
+      if(U(h.doc.type)==='ECO'){
+        var bom=T(h.scope&&h.scope.bomEffectiveDate||h.doc.bomDate);
+        if(!bom)return {value:'ECO: fecha BOM / WO por verificar',tone:'neutral'};
+        if(!dates.length)return {value:'ECO: fecha de corrida pendiente',tone:'neutral'};
+        var pre=dates.some(function(d){return d<bom;}),post=dates.some(function(d){return d>=bom;});
+        return {value:pre&&post?'ECO: corridas antes y después de fecha BOM':pre?'ECO: corridas previas a fecha BOM':'ECO: corridas en/después de fecha BOM',tone:'neutral'};
+      }
       if(!until)return {value:'Fecha fin no confirmada',tone:'neutral'};
       if(!dates.length)return {value:'Fecha de corrida pendiente',tone:'neutral'};
       var inside=dates.some(function(d){return d<=until;}),after=dates.some(function(d){return d>until;});
@@ -79743,6 +79775,73 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       return out;
     }
     function uniqueValues(list){return Array.from(new Set(list.filter(function(v){return T(v);})));}
+    // Itemes de la desviacion: tomar primero la seccion literal "Affected Items".
+    // Si no existe, exponer los PN citados como referencias, nunca como alcance aprobado.
+    var affectedCache=Object.create(null);
+    function extractAffectedItems(d){
+      var key=U(d.id||d.ctan||d.number);
+      if(Object.prototype.hasOwnProperty.call(affectedCache,key))return affectedCache[key];
+      var direct=Array.isArray(d.affectedItems)?d.affectedItems:(Array.isArray(d.affected_items)?d.affected_items:[]);
+      if(direct.length){
+        var structured=[],used=Object.create(null);
+        direct.forEach(function(v){
+          var item=typeof v==='string'?{pn:v}:v||{},code=PN(item.pn||item.partNumber||item.part_number||item.item||item.cpn);
+          var changeKey=code+'|'+U(item.oldRev)+'|'+U(item.newRev);
+          if(!/^\d{2,3}-\d{3,6}-\d{2}$/.test(code)||used[changeKey])return;
+          used[changeKey]=1;
+          structured.push({pn:code,type:T(item.type||item.category||item.itemType),detail:T(item.description||item.detail||item.name)});
+        });
+        if(structured.length)return affectedCache[key]={declared:true,source:U(d.type)==='ECO'?'ECO Items':'Structured',items:structured};
+      }
+      var description=T(d.description),mark=/affected\s+item(?:s|\(s\))?\s*[:\)\-]?\s*/i.exec(description);
+      var declared=!!mark,part=mark?description.slice(mark.index+mark[0].length):description;
+      if(declared){
+        // La fuente CSV aplano los saltos de linea: conservar solo el bloque Affected Items.
+        var stop=/(?:test\s*build\s+instruction|testbuild\s+instruction|rework\s+instruction|risk\s+buy\s+instruction|deviation\s+instruction|deviation(?:\s*[:\-]|FJZ)|additional\s+(?:comments?|information)|cisco\s+contact\s*:|comment\s*:|background\s*[:\-]|build\s+qty\s*:|ref\s*des\s*:)/i.exec(part);
+        if(stop)part=part.slice(0,stop.index);
+      }
+      var found=[],re=/(?:\d{2,3}-\d{3,6}-\d{2})(?![\d-])/g,match;
+      while((match=re.exec(part))!==null&&found.length<100){
+        var start=match.index,end=start+match[0].length;
+        if(start>0&&part.charAt(start-1)==='('&&part.charAt(end)===')')continue;
+        found.push({pn:match[0],start:start,end:end});
+      }
+      var used=Object.create(null),items=[];
+      found.forEach(function(hit,i){
+        var code=PN(hit.pn);if(used[code])return;used[code]=1;
+        var raw=part.slice(hit.end,i+1<found.length?found[i+1].start:part.length);
+        raw=raw.replace(/^[\s;:,\-–]+/,'').replace(/[\s;:,\-–]+$/,'').replace(/\s+/g,' ').trim();
+        raw=raw.replace(/\b(?:CPN|MPN|MFR\s*NAME)\s*:\s*$/i,'').trim();
+        var type='',tag=/^(PCBA|PCBFAB|PCA|ASY-[A-Z0-9-]+|E\/M_ASSY_MECH|IC-[A-Z0-9-]+|TPASY-[A-Z0-9-]+|AUDIO|SWT|MODULE)\s*(?:;|\b)/i.exec(raw);
+        if(tag){type=tag[1].toUpperCase();raw=raw.slice(tag[0].length).replace(/^[\s;:,\-–]+/,'').trim();}
+        if(!type&&/(?:CPN\s*:\s*)$/i.test(part.slice(Math.max(0,hit.start-15),hit.start)))type='CPN';
+        if(!declared){
+          // Sin campo Affected Items, no asociar texto narrativo a un PN como si fuera su descripcion.
+          type=/(?:CPN)\s*(?:[:=])?\s*$/i.test(part.slice(Math.max(0,hit.start-18),hit.start))?'CPN citado':'PN citado';
+          raw='';
+        }
+        if(raw.length>190)raw=raw.slice(0,187).trim()+'...';
+        items.push({pn:code,type:type,detail:raw});
+      });
+      // Texto explicito sin PN estructurados se reporta como no disponible.
+      return affectedCache[key]={declared:declared&&items.length>0,items:items};
+    }
+    function affectedPreview(a){
+      var label=a.source==='ECO Items'?'ECO Affected Items · revisiones origen → destino':(a.declared?'Affected Items declarados':'PN mencionados · alcance no confirmado');
+      var rows=a.items.slice(0,3).map(function(v){
+        var hint=[v.type,v.detail].filter(Boolean).join(' · ');
+        return '<li><code>'+E(v.pn)+'</code>'+(hint?'<span>'+E(hint.slice(0,96))+(hint.length>96?'...':'')+'</span>':'')+'</li>';
+      }).join('');
+      if(!rows)rows='<li class="cc-aff-empty">No se identifica una lista de ítems en la descripción de origen.</li>';
+      return '<div class="cc-aff-preview"><div class="cc-aff-head"><b>'+E(label)+'</b><small>'+a.items.length+' ítems</small></div><ul class="cc-aff-list">'+rows+'</ul>'+(a.items.length>3?'<div class="cc-aff-more">+'+(a.items.length-3)+' ítems al expandir la tarjeta</div>':'')+'</div>';
+    }
+    function affectedDetail(a){
+      var label=a.source==='ECO Items'?'Affected Items (maestro EngineeringChangeOrder.csv)':(a.declared?'Affected Items (texto declarado en fuente)':'PN citados en descripción (sin sección Affected Items)');
+      var note=a.source==='ECO Items'?'PN y revisiones extraídos de ECO Items. Alcance candidato por fuente CSV; validar ECO firmado y WO/BU/fecha SAP.':(a.declared?'Lista extraída del apartado Affected Items. Verificar contra el documento customer firmado.':'La fuente NO identifica estos PN como Affected Items de forma explícita. Son solo referencias mencionadas, no un alcance confirmado.');
+      if(!a.items.length)return '<div class="cc-aff-detail"><b>Affected Items:</b> No disponible en la descripción de origen. Consultar documento oficial.</div>';
+      var limit=140,rows=a.items.slice(0,limit).map(function(v){return '<tr><td><b>'+E(v.pn)+'</b></td><td>'+E(v.type||'No indicado')+'</td><td>'+E(v.detail||'Sin descripción separada')+'</td></tr>';}).join('');
+      return '<div class="cc-aff-detail"><div class="cc-aff-head"><b>'+E(label)+'</b><small>'+a.items.length+' PN</small></div><p class="cc-aff-caution">'+E(note)+'</p><div class="cc-table-scroll"><table class="cc-table cc-aff-table"><thead><tr><th>Número de parte</th><th>Tipo en fuente</th><th>Detalle disponible</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+(a.items.length>140?'<p>Mostrando 140 de '+a.items.length+' ítems. La lista completa se conserva en la pestaña ECO Items del Knowledge DB.</p>':'')+'</div>';
+    }
     function renderCards(hits){
       var docs=groupDocuments(hits),show=docs.filter(function(g){
         var d=g.doc;
@@ -79770,7 +79869,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       if(next)next.disabled=page>=pages-1;
       if(!out)return;
       if(!show.length){
-        var typeMessage=(tab==='ECN'||tab==='ECO')&&masterFlag(tab)===0?'No se ha incorporado el maestro de '+tab+'. Las menciones dentro de una desviacion no son documentos '+tab+' independientes.':'No hay documentos '+(tab==='ALL'?'ECN, ECO o desviaciones':tab)+' asociados a las corridas y filtros actuales.';
+        var typeMessage=(tab==='ECN'||tab==='ECO')&&masterFlag(tab)===0?'No se ha incorporado el maestro de '+tab+'. Las menciones dentro de una desviacion no son documentos '+tab+' independientes.':(revisionMode==='exact'&&tab==='DEVIATION'?'Las desviaciones fuente no declaran revisión PCBA confirmada. Cambia el filtro a «Incluir candidatos PN (rev N/D)» para revisar coincidencias por PN sin atribuirles alcance por revisión.':'No hay documentos '+(tab==='ALL'?'ECN, ECO o desviaciones':tab)+' con coincidencia documental en los filtros actuales.');
         out.innerHTML='<div class="cc-blank">'+E(typeMessage)+'</div>';
         return;
       }
@@ -79781,16 +79880,20 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
           var br=h.runs||[],brRev=uniqueValues(br.map(function(r){return r.rev;})),brLines=uniqueValues(br.map(function(r){return r.line;})).sort(),brWo=uniqueValues(br.map(function(r){return W(r.wo);}));
           var dates=uniqueValues(br.map(function(r){return T(r.start).slice(0,10);})).sort();
           var windowText=dates.length?(dates[0]+(dates.length>1?' a '+dates[dates.length-1]:'')):'Fecha no disponible';
-          return '<tr><td><b>'+E(h.boardPn)+'</b></td><td>'+E(brRev.join(', ')||h.scope.rev||'Por verificar')+'</td><td>'+E(brLines.join(', ')||'N/D')+'</td><td>'+brWo.length+'<details class="cc-wo-detail"><summary>Ver WO</summary>'+E(brWo.join(', ')||'N/D')+'</details></td><td>'+E(windowText)+'</td><td>'+E(h.scope.curation||'Por verificar')+'</td></tr>';
+          var sc=h.scope||{},specified=U(sc.rev),declared=specified&&specified!=='ANY';
+          var transition=U(d.type)==='ECO'?([T(sc.sourceOldRev)||'N/D',T(sc.sourceNewRev)||T(sc.rev)||'N/D'].join(' → ')):(declared?T(sc.rev):'No declarada');
+          var quality=declared?('PN + REV EXACTA ('+specified+')'):'SOLO PN · REV POR VALIDAR';
+          return '<tr><td><b>'+E(h.boardPn)+'</b></td><td>'+E(brRev.join(', ')||'N/D')+'</td><td><b>'+E(transition)+'</b></td><td>'+E(quality)+'</td><td>'+E(brLines.join(', ')||'N/D')+'</td><td>'+brWo.length+'<details class="cc-wo-detail"><summary>Ver WO</summary>'+E(brWo.join(', ')||'N/D')+'</details></td><td>'+E(windowText)+'</td><td>'+E(sc.curation||'Por verificar')+'</td></tr>';
         }).join('');
-        var boardsTable='<p><b>Alcance por PCBA, con sus corridas reales:</b></p><div class="cc-table-scroll"><table class="cc-table"><thead><tr><th>PCBA PN</th><th>Rev corrida</th><th>Lineas</th><th>WO</th><th>Inicio de corridas</th><th>Revision documental</th></tr></thead><tbody>'+boardRows+'</tbody></table></div>';
+        var boardsTable='<p><b>Alcance por PCBA, con sus corridas reales:</b></p><div class="cc-table-scroll"><table class="cc-table"><thead><tr><th>PCBA PN</th><th>Rev observada (Common DB)</th><th>Rev origen → destino (documento)</th><th>Calidad del match</th><th>Líneas</th><th>WO</th><th>Inicio corridas</th><th>Estado de revisión</th></tr></thead><tbody>'+boardRows+'</tbody></table></div>';
         var instructions=g.instructions.length?'<p><b>Instrucciones CPN documentadas, SIN AUTORIZAR:</b></p><div class="cc-table-scroll"><table class="cc-table"><thead><tr><th>PN objetivo</th><th>RefDes</th><th>Operacion</th><th>CPN anterior</th><th>CPN propuesto</th><th>Validacion</th></tr></thead><tbody>'+g.instructions.map(function(i){
           return '<tr><td><b>'+E(i.boardPn||'N/D')+'</b></td><td><b>'+E(i.refdes||'No indicado')+'</b></td><td>'+E(i.operation)+'</td><td>'+E(i.old||'No indicado')+'</td><td>'+E(i.new||'No indicado')+'</td><td>'+E(i.validation||'Validar documentacion')+'</td></tr>';
         }).join('')+'</tbody></table></div><details class="cc-source-text"><summary>Ver texto de origen</summary>'+g.instructions.map(function(i){return '<p>'+E(i.boardPn||'')+' · '+E(i.evidence||'')+'</p>';}).join('')+'</details>':'';
         var sourceLink=/^https:\/\//i.test(T(d.officialUrl))?'<a href="'+E(d.officialUrl)+'" target="_blank" rel="noopener">Documento oficial</a>':'Documento oficial firmado: no adjuntado';
-        var allScope=uniqueValues(g.boards.map(function(h){return T(h.scope&&h.scope.plant);}));
+        var allScope=uniqueValues(g.boards.map(function(h){return T(h.scope&&h.scope.plant);}));var exactGrade=g.boards.every(function(h){return U(h.scope&&h.scope.rev)&&U(h.scope.rev)!=='ANY';});
         var chips=boardPns.slice(0,3).map(function(b){return '<span class="cc-pill neutral">'+E(b)+'</span>';}).join('')+(boardPns.length>3?'<span class="cc-pill neutral">+'+(boardPns.length-3)+' PCBAs</span>':'');
-        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(U(d.type))+'</span><span class="cc-pill">Por validar</span>'+(g.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta">'+chips+'<span class="cc-pill neutral">'+E(lines.join(', ')||'Sin linea')+'</span><span class="cc-pill">'+E(d.workflow||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+boardPns.length+' PCBA'+(boardPns.length===1?'':'s')+' · '+workOrders.length+' WO · '+E(wc.value)+' · Fin reportado: '+E(day||'N/D')+'</div></summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan||d.id)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Origen:</b> '+E(d.workflow||'Sin estado')+'</p><p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · Fecha fin (origen) '+E(day||'N/D')+' · <b>Effective From y aprobacion no comprobados</b></p>'+boardsTable+'<p><b>Sitio documentado:</b> '+E(allScope.join(', ')||'FJZ por confirmar mediante Common DB y documento firmado')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instructions+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
+        var affected=(U(d.type)==='DEVIATION'||U(d.type)==='ECO')?extractAffectedItems(d):null,affectedCard=affected?affectedPreview(affected):'',affectedTable=affected?affectedDetail(affected):'';
+        return '<details class="cc-doc"><summary><div class="cc-doc-title"><strong>'+E(d.number||d.ctan||d.id)+'</strong><span class="cc-pill neutral">'+E(U(d.type))+'</span><span class="cc-pill">Por validar</span><span class="cc-pill '+(exactGrade?'neutral':'warn')+'">'+(exactGrade?'PN + Rev exactas':'PN candidato · Rev N/D')+'</span>'+(g.instructions.length?'<span class="cc-pill warn">Cambio CPN</span>':'')+'</div><div class="cc-doc-summary">'+E(short||'Descripcion no proporcionada')+'</div><div class="cc-row-meta">'+chips+'<span class="cc-pill neutral">'+E(lines.join(', ')||'Sin linea')+'</span><span class="cc-pill">'+E(d.workflow||d.documentState||'Estado no proporcionado')+'</span></div><div class="cc-doc-meta">'+boardPns.length+' PCBA'+(boardPns.length===1?'':'s')+' · '+workOrders.length+' WO · '+E(wc.value)+' · '+E(U(d.type)==='ECO'?('BOM efectiva (fuente): '+(d.bomDate||'por verificar')):('Fin reportado: '+(day||'N/D')))+'</div>'+affectedCard+'</summary><div class="cc-detail"><p><b>Documento:</b> '+E(d.ctan||d.id)+' · <b>BU fuente:</b> '+E(d.bu||'N/D')+' · <b>Agile / CTAN relacionado:</b> '+E(d.ctan||'N/D')+' · <b>Estado de fuente:</b> '+E(d.workflow||d.documentState||'Sin estado')+'</p>'+affectedTable+'<p><b>Descripcion:</b> '+E(description||'Sin descripcion en maestro')+'</p><p><b>Fechas:</b> Released (origen) '+E(d.releasedSource||'N/D')+' · '+E(U(d.type)==='ECO'?'BOM effective (fuente) '+(d.bomDate||'variable / N/D'): 'Fecha fin (origen) '+(day||'N/D'))+' · <b>Vigencia y aprobación firmada no comprobadas</b></p>'+boardsTable+'<p><b>Sitio documentado:</b> '+E(allScope.join(', ')||'FJZ por confirmar mediante Common DB y documento firmado')+'</p>'+(d.conflicts?'<p><b>Conflictos en fuente:</b> '+E(d.conflicts)+'</p>':'')+instructions+'<p><b>Accion necesaria:</b> validar documento customer firmado, aplicabilidad FJZ, revision exacta, WO, BOM/AVL e implementacion antes de cambiar material.</p><p>'+sourceLink+'</p></div></details>';
       }).join('');
     }
     function signalCells(hits){
@@ -79798,7 +79901,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       hits.forEach(function(h){h.runs.forEach(function(r){
         // Screen noisy historic matches out of the line badge. They remain searchable below.
         var state=U(h.doc.workflow),until=T(h.doc.effectiveUntil),runDay=T(r.start).slice(0,10);
-        if(/EXPIRED|CLOSED|CANCELLED|SUPERSEDED/.test(state)||!until||!runDay||runDay>until)return;
+        if(/EXPIRED|CLOSED|CANCELLED|SUPERSEDED/.test(state)||(!until&&U(h.doc.type)!=='ECO')||!runDay||(until&&runDay>until))return;
         var k=[U(r.bu),U(r.model),PN(r.sku),U(r.rev),LN(r.line)].join('|');
         (counts[k]||(counts[k]=new Set())).add(h.doc.id);
       });});
@@ -79816,9 +79919,12 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       });
     }
     function update(){
-      var runs=selectedRuns(),hits=collect(runs),ids=new Set(hits.map(function(h){return h.doc.id;}));
+      var runs=selectedRuns(),rawHits=collect(runs),hits=rawHits.filter(function(h){
+        var specified=U(h.scope&&h.scope.rev),exact=!!specified&&specified!=='ANY';
+        return revisionMode==='all'||(revisionMode==='exact'?exact:!exact);
+      }),ids=new Set(hits.map(function(h){return h.doc.id;}));
       var byType={ECN:new Set(),ECO:new Set(),DEVIATION:new Set()};hits.forEach(function(h){var type=U(h.doc.type);if(byType[type])byType[type].add(h.doc.id);});
-      var stat=el('[data-cc-state]');if(stat)stat.textContent=ids.size+' documentos candidatos · '+runs.length+' corridas seleccionadas · 0 autorizaciones comprobadas';
+      var stat=el('[data-cc-state]');if(stat)stat.textContent=ids.size+' documentos en vista '+(revisionMode==='exact'?'PN + Rev exactos':(revisionMode==='pending'?'PN sin revisión documental':'mixta'))+' · '+runs.length+' corridas seleccionadas · 0 autorizaciones comprobadas';
       var m1=el('[data-cc-metric-pn]'),m2=el('[data-cc-metric-doc]'),m3=el('[data-cc-metric-actions]'),m4=el('[data-cc-metric-approved]');
       if(m1)m1.textContent=new Set(hits.map(function(h){return PN(h.boardPn);})).size;
       if(m2)m2.textContent=ids.size;
@@ -79840,9 +79946,10 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
       });
       var search=el('[data-cc-search]');if(search)search.addEventListener('input',function(){phrase=U(this.value);page=0;later();});
       var view=el('[data-cc-view]');if(view)view.addEventListener('change',function(){rangeMode=this.value;page=0;later();});
+      var revision=el('[data-cc-revision]');if(revision)revision.addEventListener('change',function(){revisionMode=this.value;page=0;later();});
     }
-    R.addEventListener('change',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],#yk-change-control-v6'))return;page=0;later();});
-    R.addEventListener('input',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],#yk-change-control-v6'))return;page=0;later();});
+    R.addEventListener('change',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],[data-cc-revision],#yk-change-control-v6'))return;page=0;later();});
+    R.addEventListener('input',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],[data-cc-revision],#yk-change-control-v6'))return;page=0;later();});
     var matrix=el('[data-yk-matrix]');if(matrix&&typeof MutationObserver!=='undefined')new MutationObserver(later).observe(matrix,{childList:true,subtree:true});
     update();
   }
@@ -79870,8 +79977,8 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     panel.innerHTML = '<div class="cc-head"><div><h2>Customer Change Control · ECN / ECO / Desviaciones</h2><p>Alertas documentales vinculadas a SKU / PCBA PN, revision, linea y WO ya cargados en Yield Flow.</p></div><span class="cc-label">REVISION DOCUMENTAL · NO AUTORIZA MATERIAL</span></div>'+
       '<div class="cc-explain">Las coincidencias del maestro de desviaciones son <b>candidatas</b>. Fecha fin posterior no significa vigencia aprobada. Faltan validacion firmada del customer, revision/WO de alcance y confirmacion FJZ. Los ECN y ECO aun requieren su archivo maestro.</div>'+
       '<div class="cc-metrics"><div class="cc-metric"><small>PCBA candidatos</small><b data-cc-metric-pn>0</b></div><div class="cc-metric"><small>Documentos por revisar</small><b data-cc-metric-doc>0</b></div><div class="cc-metric"><small>Operaciones CPN documentadas</small><b data-cc-metric-actions>0</b></div><div class="cc-metric"><small>Autorizaciones verificadas</small><b data-cc-metric-approved>0</b></div></div>'+
-      '<div class="cc-bar"><div class="cc-tabs" role="group" aria-label="Tipo de cambio"><button type="button" class="cc-tab" data-cc-type="ALL" aria-pressed="true">Todos</button><button type="button" class="cc-tab" data-cc-type="ECN" aria-pressed="false">ECN</button><button type="button" class="cc-tab" data-cc-type="ECO" aria-pressed="false">ECO</button><button type="button" class="cc-tab" data-cc-type="DEVIATION" aria-pressed="false">Desviaciones</button></div><input class="cc-search" type="search" data-cc-search aria-label="Buscar documento, WO, CPN o RefDes" placeholder="Documento, CTAN, PCBA, RefDes, CPN..."><select class="cc-select" data-cc-view aria-label="Filtro temporal"><option value="all">Todos los historicos</option><option value="future">Fin posterior a hoy (sin aprobar)</option><option value="instructions">Con operaciones CPN</option></select></div>'+
-      '<p class="cc-status" data-cc-state>Evaluando coincidencias...</p><div class="cc-status" data-cc-results></div><div class="cc-list" data-cc-items></div><div class="cc-pages" data-cc-pages hidden><button type="button" data-cc-prev>Anterior</button><span data-cc-page-label></span><button type="button" data-cc-next>Siguiente</button></div>'+
+      '<div class="cc-bar"><div class="cc-tabs" role="group" aria-label="Tipo de cambio"><button type="button" class="cc-tab" data-cc-type="ALL" aria-pressed="true">Todos</button><button type="button" class="cc-tab" data-cc-type="ECN" aria-pressed="false">ECN</button><button type="button" class="cc-tab" data-cc-type="ECO" aria-pressed="false">ECO</button><button type="button" class="cc-tab" data-cc-type="DEVIATION" aria-pressed="false">Desviaciones</button></div><input class="cc-search" type="search" data-cc-search aria-label="Buscar documento, WO, CPN o RefDes" placeholder="Documento, CTAN, PCBA, RefDes, CPN..."><select class="cc-select" data-cc-view aria-label="Filtro temporal"><option value="all">Todos los historicos</option><option value="future">Fin posterior a hoy (sin aprobar)</option><option value="instructions">Con operaciones CPN</option></select><select class="cc-select" data-cc-revision aria-label="Criterio de revisión documental"><option value="exact">Solo PN + revisión exacta</option><option value="all">Incluir candidatos PN (rev N/D)</option><option value="pending">Solo candidatos sin revisión</option></select></div>'+
+      +'<p class="cc-status"><b>Regla documental:</b> la revisión NEW del ECO se compara exactamente con la revisión de la corrida. La revisión OLD solo describe la transición. Las desviaciones sin Rev declarada se muestran únicamente activando candidatos PN. Sin PDF firmado ni WO validada, ningún registro autoriza uso de material.</p><p class="cc-status" data-cc-state>Evaluando coincidencias...</p><div class="cc-status" data-cc-results></div><div class="cc-list" data-cc-items></div><div class="cc-pages" data-cc-pages hidden><button type="button" data-cc-prev>Anterior</button><span data-cc-page-label></span><button type="button" data-cc-next>Siguiente</button></div>'+
       '<p class="cc-data-source"><b>Origen:</b> '+esc(S.customerChanges.source)+' · '+(S.customerChanges.masterCounts.ECN||0)+' ECN / '+(S.customerChanges.masterCounts.ECO||0)+' ECO / '+(S.customerChanges.masterCounts.DEVIATION||0)+' desviaciones registrados en esta version. La base se conserva como dato de revision; solo el documento oficial puede autorizar implementacion.</p>';
     var main=doc.querySelector('.yk-main'),evidence=doc.getElementById('yk-evidence-v5');
     if(evidence&&evidence.parentNode)evidence.parentNode.insertBefore(panel,evidence.nextSibling);
