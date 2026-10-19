@@ -42526,10 +42526,34 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   }
   function reportHtml(){var a=api(),f=filters();if(!f.bu)return'';if(!a)return'';var k=key();if(k===fullHtmlKey&&fullHtmlCache)return fullHtmlCache;var raw='';try{if(typeof a.reportHtmlFor==='function')raw=a.reportHtmlFor(f);else if(typeof a.reportHtml==='function')raw=a.reportHtml();}catch(err){try{console.error('[SMTinel Test Export] report generation failed',err)}catch(_){}throw err}if(!raw)return'';fullHtmlCache=decorateReport(raw);fullHtmlKey=k;return fullHtmlCache;}
   function render(reason,force){if(!isTest())return false;fillOptions(false);var preview=document.getElementById('emailPreview');if(!preview)return false;var k=key();if(!force&&k===lastTestKey&&preview.querySelector('iframe[data-test-report-preview]'))return true;var a=api();if(!a||!a.computeFor){preview.innerHTML='<div style="padding:18px;color:#E8E8E6;border:1px solid #3A3A3A;background:#111;border-radius:12px"><b>Test Performance engine is not ready.</b><br>Load the same Yield Flow source package, then reopen Export Center.</div>';return false}var html=quickPreviewHtml();preview.innerHTML='';var frame=document.createElement('iframe');frame.setAttribute('data-test-report-preview',TEST_BUILD);frame.title='Test Performance fast preview';frame.style.cssText='width:100%;height:640px;border:0;border-radius:10px;background:#fff;display:block';frame.srcdoc=html;preview.appendChild(frame);lastTestKey=k;return true}
-  function scheduleRender(reason){clearTimeout(previewTimer);previewTimer=setTimeout(function(){render(reason,false)},140)}
+  // P2: Explicit analysis only. Filter changes invalidate the preview, but never recompute 30 days of Cesium automatically.
+  function showPending(reason){
+    var p=document.getElementById('emailPreview');if(!p||!isTest())return;
+    if(p.getAttribute('data-tp-pending')==='1')return;
+    p.setAttribute('data-tp-pending','1');
+    p.innerHTML='<div style="padding:28px;max-width:750px;margin:26px auto;border:1px solid #cbdad0;border-radius:18px;background:#fff;color:#243b2c;font-family:Segoe UI,Arial,sans-serif"><b style="font-size:21px">Test Performance listo para analizar</b><p style="line-height:1.6;color:#576b5d">Configura BU, fechas, modelo, estación y modo de falla. Pulsa <b>Analizar filtros</b> para calcular la vista previa. Cambiar filtros ya no recalcula automáticamente miles de registros.</p><small>El HTML completo se genera solamente al exportar. Los resultados no se modifican.</small></div>';
+  }
+  function scheduleRender(reason){clearTimeout(previewTimer);lastTestKey='';fullHtmlKey='';fullHtmlCache='';showPending(reason)}
+  function analyzeNow(){
+    var p=document.getElementById('emailPreview'),btn=document.getElementById('testPerfAnalyzeNow');
+    if(!isTest()||!p)return;
+    if(btn){btn.disabled=true;btn.textContent='Analizando...'}
+    p.setAttribute('data-tp-pending','0');p.innerHTML='<div style="padding:24px;font-family:Segoe UI,Arial;color:#274633">Calculando el alcance seleccionado... Puede tardar según la población cargada.</div>';
+    // Paint status before starting synchronous legacy FPY engine.
+    previewTimer=setTimeout(function(){try{render('manual',true)}catch(e){p.textContent='Error de análisis: '+String(e&&e.message||e)}finally{if(btn){btn.disabled=false;btn.textContent='Analizar filtros'}}},60);
+  }
+  document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('#testPerfAnalyzeNow');if(!b)return;e.preventDefault();analyzeNow()},true);
+  function addAnalyzeButton(){
+    var c=controls();if(!c||document.getElementById('testPerfAnalyzeNow'))return;
+    var bar=document.createElement('div');bar.className='smtinel-tp-manual-actions';
+    bar.innerHTML='<button type="button" id="testPerfAnalyzeNow" class="btn good" style="padding:11px 18px;font-weight:850">Analizar filtros</button><span style="font-size:11px;color:#697a6d">Análisis bajo demanda · sin recálculo automático</span>';
+    c.insertBefore(bar,c.firstChild);
+  }
+  setTimeout(addAnalyzeButton,0);
+
   function downloadBlob(name,content,type){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:type||'text/plain;charset=utf-8'}));a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},800)}
   function filenameBase(){var f=filters(),scope=(f.from||'all')+(f.to&&f.to!==f.from?'_to_'+f.to:'');return 'SMTinel_Test_Performance_'+String(f.bu||'BU').replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+scope}
-  function downloadHtml(){var f=filters(),btn=document.getElementById('downloadEmail');if(!f.bu){try{alert('Select a BU before generating Test Performance.')}catch(_){}return false}var old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Generating Test HTML...'}try{var html=reportHtml();if(!html){try{alert('Test Performance could not generate the HTML. The Test engine is loaded for preview, but the full report renderer is not ready. Reopen Export Center and try again.')}catch(_){}return false}downloadBlob(filenameBase()+'.html',html,'text/html;charset=utf-8');return true}catch(err){try{console.error('[SMTinel Test Export] export failed',err)}catch(_){}try{alert('Test HTML export failed: '+String(err&&err.message||err))}catch(_){}return false}finally{if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}}}
+  function downloadHtml(){var f=filters(),btn=document.getElementById('downloadEmail');if(!f.bu){try{alert('Select a BU before generating Test Performance.')}catch(_){}return false}var old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Generating Test HTML...'}try{setTimeout(function(){try{var html=reportHtml();if(!html)throw new Error('No se pudo generar el HTML completo. Verifica que Yield Flow tenga los datos cargados.');downloadBlob(filenameBase()+'.html',html,'text/html;charset=utf-8')}catch(err){try{console.error('[SMTinel Test Export] export failed',err)}catch(_){}try{alert('Test HTML export failed: '+String(err&&err.message||err))}catch(_){}}finally{if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}}},70);return true}catch(err){if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}return false}}
   function downloadCsv(){if(!filters().bu){try{alert('Select a BU before exporting Test Performance.')}catch(_){}return}var a=api();if(!a||!a.csvTextFor)return;downloadBlob(filenameBase()+'.csv',a.csvTextFor(filters()),'text/csv;charset=utf-8')}
   function plainText(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerText:''}
   function bodyHtml(){var doc=new DOMParser().parseFromString(reportHtml(),'text/html');return doc&&doc.body?doc.body.innerHTML:''}
@@ -42542,7 +42566,7 @@ window.addEventListener('message',function(event){var data=event&&event.data;if(
   var searchTimer=null;document.addEventListener('input',function(e){var t=e&&e.target;if(!isTest()||!t||t.id!=='testPerfSearch')return;clearTimeout(searchTimer);searchTimer=setTimeout(function(){lastTestKey='';fullHtmlKey='';fullHtmlCache='';scheduleRender('search')},260)},true);
   document.addEventListener('click',function(e){var t=e&&e.target;if(!isTest()||!t||t.id!=='testPerfReset')return;e.preventDefault();var ids=['testPerfSearch'];ids.forEach(function(id){var x=document.getElementById(id);if(x)x.value=''});['testPerfLine','testPerfModel','testPerfSku','testPerfWo','testPerfWeek','testPerfArea','testPerfFailure','testPerfShift','testPerfPreset'].forEach(function(id){var x=document.getElementById(id);if(x)x.value=(id==='testPerfPreset'?'day':'ALL')});var bu=(document.getElementById('testPerfBu')||{}).value||'',a=api(),m=a&&a.meta?a.meta(bu):null,from=document.getElementById('testPerfFrom'),to=document.getElementById('testPerfTo');if(m&&m.latestDate){if(from)from.value=m.latestDate;if(to)to.value=m.latestDate}lastTestKey='';fullHtmlKey='';fullHtmlCache='';scheduleRender('reset')},true);
   document.addEventListener('click',function(e){if(!isTest())return;var t=e&&e.target;if(!t)return;var b=t.closest?t.closest('#downloadEmail,#downloadTestCsv,#copyHtml,#copyPlain'):t;if(!b)return;if(b.id==='downloadEmail'){e.preventDefault();e.stopImmediatePropagation();downloadHtml()}else if(b.id==='downloadTestCsv'){e.preventDefault();e.stopImmediatePropagation();downloadCsv()}else if(b.id==='copyHtml'){e.preventDefault();e.stopImmediatePropagation();fallbackCopyHtml(bodyHtml())}else if(b.id==='copyPlain'){e.preventDefault();e.stopImmediatePropagation();copyText(plainText())}},true);
-  setInterval(function(){try{if(isTest()){fillOptions(false);var k=key();if(k!==lastTestKey)scheduleRender('watch')}}catch(_){ }},5000);
+  // P2: no periodic compute / iframe regeneration; metadata refreshed only when the user opens the workspace.
 })();
 
 /* Export Center mode isolation: each report owns its title, controls and download action. */
@@ -80447,6 +80471,51 @@ try{if('PerformanceObserver' in window){var observer=new PerformanceObserver(fun
 window.addEventListener('smtinel:import-complete',function(e){if(active&&active.kind==='import')finish('done','Importación completada')});
 window.addEventListener('smtinel:data-ready',function(e){lastYield=now()});
 window.SMTinelProcessingEngine={version:'P1.0',start:begin,progress:progress,finish:finish,getHistory:function(){return history.map(function(j){return Object.assign({},j)})},getDiagnostics:function(){return {longTasks:longTasks,longTaskMs:Math.round(longMs),lastYieldReady:lastYield,workerAvailable:typeof Worker==='function',active:!!active}},open:function(){if(!ready)boot();panel.classList.add('smpe-open');display()},yieldToBrowser:function(){return new Promise(function(resolve){setTimeout(resolve,0)})}};
+})();
+</script>
+<!-- SMTinel Test Performance standalone workspace P2.1 -->
+<style id="smtinel-test-standalone-style">
+#smtinel-tp-module-open{position:fixed;right:18px;bottom:78px;z-index:95;border:1px solid #829c89;background:#294735;color:#fff;border-radius:15px;padding:12px 17px;font:800 12px Segoe UI,Arial,sans-serif;box-shadow:0 12px 30px rgba(19,40,26,.22);cursor:pointer}
+#smtinel-tp-module-open:hover{background:#385e45}
+#emailModal.smtinel-tp-workspace{background:#edf2ec!important;padding:0!important;z-index:110!important}
+#emailModal.smtinel-tp-workspace .dialog.export-dialog{width:100vw!important;max-width:none!important;height:100vh!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#emailModal.smtinel-tp-workspace #exportBack{display:none!important}
+#emailModal.smtinel-tp-workspace #reportType{pointer-events:none!important;opacity:.72}
+#emailModal.smtinel-tp-workspace .report-builder{grid-template-columns:minmax(310px,390px) minmax(0,1fr)!important}
+#emailModal.smtinel-tp-workspace .report-builder-sidebar{background:#f8faf7!important}
+#emailModal.smtinel-tp-workspace #reportModalTitle:before{content:'MÓDULO · ';color:#86a897}
+.smtinel-tp-manual-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:10px;border:1px solid #d0dfd1;border-radius:12px;background:#eef5ee}
+@media(max-width:800px){#emailModal.smtinel-tp-workspace .report-builder{grid-template-columns:1fr!important;overflow:auto}#emailModal.smtinel-tp-workspace .report-builder-sidebar{max-height:55vh}}
+</style>
+<script id="smtinel-test-standalone-module-p21">
+(function(){
+'use strict';
+if(window.__SMTINEL_TEST_STANDALONE_P21__)return;window.__SMTINEL_TEST_STANDALONE_P21__=true;
+function modal(){return document.getElementById('emailModal')}
+function open(){
+ var m=modal();if(!m)return false;
+ // Avoid Export Center openEmail(), which unnecessarily refreshes Bonepile and other reports.
+ m.classList.add('open');m.classList.add('smtinel-tp-workspace');
+ try{if(typeof window.SMTinelShowReportBuilder!=='function'||!window.SMTinelShowReportBuilder('TEST'))throw new Error('El generador Test Performance no está disponible');}
+ catch(e){m.classList.remove('smtinel-tp-workspace');alert(String(e&&e.message||e));return false}
+ var title=document.getElementById('reportModalTitle');if(title)title.textContent='Test Performance · Analytics';
+ var button=document.getElementById('testPerfAnalyzeNow');if(button)button.style.display='inline-flex';
+ return true;
+}
+window.SMTinelOpenTestPerformance=open;
+function boot(){
+ if(document.getElementById('smtinel-tp-module-open'))return;
+ var btn=document.createElement('button');btn.type='button';btn.id='smtinel-tp-module-open';btn.textContent='▤  Test Performance';btn.title='Abrir módulo independiente Test Performance';btn.onclick=open;
+ document.body.appendChild(btn);
+ var card=document.querySelector('#exportLanding [data-report-type="TEST"]');if(card)card.style.display='none';
+ var sel=document.getElementById('reportType');if(sel){var o=sel.querySelector('option[value="TEST"]');if(o)o.hidden=true}
+ var close=document.getElementById('closeEmail');if(close)close.addEventListener('click',function(){var m=modal();if(m)m.classList.remove('smtinel-tp-workspace')});
+ // Returning to Export Center must always restore its original layout.
+ var prior=window.SMTinelOpenExportCenter;
+ if(typeof prior==='function')window.SMTinelOpenExportCenter=function(){var m=modal();if(m)m.classList.remove('smtinel-tp-workspace');return prior.apply(this,arguments)};
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'){var m=modal();if(m&&!m.classList.contains('open'))m.classList.remove('smtinel-tp-workspace')}});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
 </body>
