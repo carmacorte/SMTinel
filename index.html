@@ -80397,5 +80397,57 @@ html.smtinel-fusion-soft body :is(.smtinel-side-btn,.smtinel-side-toggle,.smtine
 }
 
 </style>
+<!-- SMTinel Processing Engine P1: monitor, real import progress, long-task diagnostics. -->
+<style id="smtinel-processing-engine-p1-css">
+#smpe-pill{position:fixed;right:16px;bottom:82px;z-index:2147480000;background:#202b31;color:#f2f7f6;border:1px solid #4b636b;border-radius:24px;padding:9px 14px;box-shadow:0 8px 26px #0004;display:none;align-items:center;gap:9px;font:600 12px system-ui;cursor:pointer;max-width:calc(100vw - 30px)}
+#smpe-pill.smpe-show{display:flex}#smpe-pill .smpe-spin{width:14px;height:14px;border:2px solid #668e9e;border-top-color:#c9e9ff;border-radius:50%;animation:smpe-spin .9s linear infinite;flex-shrink:0}
+#smpe-pill.smpe-done .smpe-spin{animation:none;border-color:#7fd3a2;background:#7fd3a2}#smpe-pill.smpe-fail .smpe-spin{animation:none;border-color:#e4a18d;background:#e4a18d}
+@keyframes smpe-spin{to{transform:rotate(360deg)}}
+#smpe-panel{position:fixed;right:16px;bottom:132px;z-index:2147480001;width:min(420px,calc(100vw - 30px));max-height:min(70vh,540px);overflow:auto;background:#1d282e;color:#f0f6f6;border:1px solid #47606a;border-radius:16px;box-shadow:0 18px 50px #0007;padding:17px;font:13px/1.5 system-ui;display:none}
+#smpe-panel.smpe-open{display:block}#smpe-panel h3{font-size:15px;margin:0 0 4px}#smpe-panel .smpe-muted{color:#aec0c7;font-size:11px}#smpe-panel button{background:#31454d;border:1px solid #54707c;color:white;border-radius:7px;padding:5px 10px;cursor:pointer}
+#smpe-panel .smpe-line{display:flex;justify-content:space-between;gap:12px;margin:8px 0}#smpe-panel .smpe-track{height:6px;background:#344750;border-radius:6px;overflow:hidden;margin:10px 0}#smpe-panel .smpe-fill{height:100%;background:#83b9d6;transition:width .2s}
+#smpe-panel .smpe-item{padding:9px 0;border-top:1px solid #3c5058;overflow-wrap:anywhere}#smpe-panel .smpe-error{color:#f4b0a1}
+@media(prefers-reduced-motion:reduce){#smpe-pill .smpe-spin{animation:none}#smpe-panel .smpe-fill{transition:none}}
+</style>
+<script id="smtinel-processing-engine-p1">
+(function(){
+'use strict';
+if(window.SMTinelProcessingEngine)return;
+var history=[],active=null,seq=0,longTasks=0,longMs=0,lastYield=0,ready=false;
+var pill,panel,txt,stage,bar,meta,list,stats;
+function now(){return Date.now()}
+function safeText(v){return String(v==null?'':v)}
+function store(){try{sessionStorage.setItem('smtinel:processing:jobs:v1',JSON.stringify(history.slice(0,25)))}catch(_){}}
+try{history=JSON.parse(sessionStorage.getItem('smtinel:processing:jobs:v1')||'[]');if(!Array.isArray(history))history=[];history=history.slice(0,25);history.forEach(function(j){if(j.status==='running'){j.status='interrupted';j.finished=now()}})}catch(_){history=[]}
+function display(){if(!ready)return;
+ var j=active; if(j){pill.className='smpe-show';pill.classList.remove('smpe-done','smpe-fail');txt.textContent=(j.percent===null?'':j.percent+'% · ')+j.label;stage.textContent=j.phase||'Procesando';bar.style.width=(j.percent===null?0:j.percent)+'%';meta.textContent='Tarea #'+j.id+' · '+Math.round((now()-j.started)/1000)+' s';}
+ else{var prev=history[0];pill.className=prev?'smpe-show '+(prev.status==='error'?'smpe-fail':'smpe-done'):'';txt.textContent=prev?(prev.status==='error'?'Error: ':'Última tarea: ')+prev.label:'Monitor';stage.textContent=prev?(prev.status==='done'?'Completada':prev.status):'Sin tareas';bar.style.width=prev?(prev.status==='done'?'100%':(prev.percent||0)+'%'):'0%';meta.textContent=prev?new Date(prev.started).toLocaleString():'';}
+ stats.textContent='Bloqueos del hilo principal observados: '+longTasks+' · '+Math.round(longMs)+' ms acumulados. Esta métrica no incluye bloqueos no reportados por Chrome.';
+ list.textContent='';history.slice(0,10).forEach(function(j){var item=document.createElement('div');item.className='smpe-item';item.textContent='#'+j.id+' · '+j.label+' · '+j.status+' · '+(j.finished?Math.round((j.finished-j.started)/1000)+' s':'en curso');list.appendChild(item)});
+}
+function begin(label,kind){if(active){finish('interrupted','Se inició una nueva operación')}var j={id:++seq,label:safeText(label),kind:kind||'manual',phase:'Preparando',percent:null,status:'running',started:now(),finished:null};active=j;history.unshift(j);history=history.slice(0,25);store();display();return j.id}
+function progress(p,phase,message){if(!active)begin('Carga de datos','import');if(Number.isFinite(Number(p)))active.percent=Math.max(0,Math.min(100,Math.round(Number(p))));if(phase)active.phase=safeText(phase);if(message)active.message=safeText(message);store();display()}
+function finish(status,message){if(!active)return;active.status=status||'done';active.finished=now();active.phase=message||active.phase;if(active.status==='done')active.percent=100;active=null;store();display()}
+function boot(){if(ready)return;ready=true;
+ pill=document.createElement('button');pill.type='button';pill.id='smpe-pill';pill.setAttribute('aria-label','Abrir monitor de procesamiento');pill.innerHTML='<span class="smpe-spin" aria-hidden="true"></span><span id="smpe-pill-text">Monitor</span>';txt=pill.querySelector('#smpe-pill-text');
+ panel=document.createElement('section');panel.id='smpe-panel';panel.setAttribute('aria-label','Monitor de procesamiento');panel.innerHTML='<div class="smpe-line"><h3>SMTinel · Monitor de procesos</h3><button type="button" id="smpe-close">Cerrar</button></div><div class="smpe-muted">Etapas reportadas por el importador. No son porcentajes de tiempo estimado.</div><div class="smpe-line"><strong id="smpe-stage">Sin tareas</strong><span id="smpe-meta" class="smpe-muted"></span></div><div class="smpe-track"><div id="smpe-bar" class="smpe-fill" style="width:0%"></div></div><div class="smpe-muted" id="smpe-stats"></div><div class="smpe-line"><strong>Historial de esta pestaña</strong><button type="button" id="smpe-clear">Limpiar</button></div><div id="smpe-history"></div><div class="smpe-muted">Las tareas en esta versión se ejecutan en el navegador. El historial no conserva archivos ni datos de producción. Cerrar la pestaña puede interrumpir el proceso.</div>';
+ document.body.appendChild(pill);document.body.appendChild(panel);stage=panel.querySelector('#smpe-stage');bar=panel.querySelector('#smpe-bar');meta=panel.querySelector('#smpe-meta');list=panel.querySelector('#smpe-history');stats=panel.querySelector('#smpe-stats');
+ pill.addEventListener('click',function(){panel.classList.toggle('smpe-open');display()});panel.querySelector('#smpe-close').addEventListener('click',function(){panel.classList.remove('smpe-open')});panel.querySelector('#smpe-clear').addEventListener('click',function(){if(active)history=[active];else history=[];store();display()});display();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+// Hook existing Yield Flow progress UI; keep original functionality intact.
+function wrapWait(){
+ var show=window.smtinelZipWaitShow,hide=window.smtinelZipWaitHide;
+ if(typeof show==='function'&&!show.__smpe){var w=function(p,phase,message){try{if(!active)begin('Importación Yield Flow','import');progress(p,phase,message)}catch(_){ }return show.apply(this,arguments)};w.__smpe=true;window.smtinelZipWaitShow=w}
+ if(typeof hide==='function'&&!hide.__smpe){var h=function(){try{if(active)finish(active.percent>=100?'done':'interrupted',active.percent>=100?'Importación completada':'Importación finalizada')}catch(_){ }return hide.apply(this,arguments)};h.__smpe=true;window.smtinelZipWaitHide=h}
+}
+wrapWait();var attempts=0;var wrapTimer=setInterval(function(){wrapWait();if(++attempts>120)clearInterval(wrapTimer)},1000);
+// Browser diagnostic API. A long task is an observation, not proof of a failure.
+try{if('PerformanceObserver' in window){var observer=new PerformanceObserver(function(list){list.getEntries().forEach(function(entry){longTasks++;longMs+=entry.duration});if(panel&&panel.classList.contains('smpe-open'))display()});observer.observe({entryTypes:['longtask']})}}catch(_){ }
+window.addEventListener('smtinel:import-complete',function(e){if(active&&active.kind==='import')finish('done','Importación completada')});
+window.addEventListener('smtinel:data-ready',function(e){lastYield=now()});
+window.SMTinelProcessingEngine={version:'P1.0',start:begin,progress:progress,finish:finish,getHistory:function(){return history.map(function(j){return Object.assign({},j)})},getDiagnostics:function(){return {longTasks:longTasks,longTaskMs:Math.round(longMs),lastYieldReady:lastYield,workerAvailable:typeof Worker==='function',active:!!active}},open:function(){if(!ready)boot();panel.classList.add('smpe-open');display()},yieldToBrowser:function(){return new Promise(function(resolve){setTimeout(resolve,0)})}};
+})();
+</script>
 </body>
 </html>
