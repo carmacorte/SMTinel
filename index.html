@@ -75898,7 +75898,7 @@ initControls();['tprFLine','tprFModel','tprFSku','tprFWo','tprFWeek','tprFArea',
     var mark=doc.querySelector('.tpr-mark');if(mark){mark.innerHTML='<img alt="SMTinel" src="'+LOGO+'">';mark.setAttribute('title','SMTinel');}
     var st=doc.querySelector('style');if(st)st.textContent+=cssExtra();
     var oldFilters=doc.getElementById('sec-filters');if(oldFilters){var w=doc.createElement('div');w.innerHTML=filterControlsHtml(filters);oldFilters.replaceWith(w.firstElementChild);}
-    var payload={build:BUILD,bu:filters.bu,filters:filters,columns:['timeMs','opDate','shift','logicalKey','logicalUnit','testSn','parentSn','partSn','boxSn','station','kind','failure','model','sku','cesiumSku','uutType','week','wo','line','sfcSn','sfcBox','bridgeCount','machine','runTime'],rows:(rows||[]).map(compactRow)};
+    var payload={build:BUILD,bu:filters.bu,filters:filters,columns:['timeMs','opDate','shift','logicalKey','logicalUnit','testSn','parentSn','partSn','boxSn','station','kind','failure','model','sku','cesiumSku','uutType','week','wo','line','sfcSn','sfcBox','bridgeCount','machine','runTime'],rows:(rows||[]).filter(function(r){var d=String(r&&r.opDate||'').slice(0,10);if(!d&&r&&r.timeMs){try{d=new Date(Number(r.timeMs)).toISOString().slice(0,10)}catch(_){}}return (!filters.from||!!d&&d>=filters.from)&&(!filters.to||!!d&&d<=filters.to)}).map(compactRow)};
     var data=doc.createElement('script');data.id='tprStandaloneData';data.type='application/json';data.textContent=JSON.stringify(payload).replace(/</g,'\\u003c');doc.body.appendChild(data);
     var holder=doc.createElement('div');holder.innerHTML=standaloneRuntime();var run=holder.firstElementChild;if(run)doc.body.appendChild(run);
     doc.title='SMTinel Test Performance Review · '+BUILD;
@@ -76005,7 +76005,7 @@ setTimeout(function(){
   else start();
 },500);
 })();`+'</scr'+'ipt>'}
-  function enhance(html,filters,rows){var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;var old=doc.getElementById('tprStandaloneData');if(!old)return html;var p;try{p=JSON.parse(old.textContent||'{}')}catch(_){return html}var enc=encodePayload(p),cal=collectCalendar(),reps=collectRepairs(rows||[]),acts=collectActions();enc.calendar=cal;enc.repairs=reps;enc.actions=acts;old.textContent=JSON.stringify(enc).replace(/</g,'\\u003c');var oldRun=doc.getElementById('tpr-standalone-runtime-v160');if(oldRun)oldRun.remove();var holder=doc.createElement('div');holder.innerHTML=runtime();if(holder.firstElementChild)doc.body.appendChild(holder.firstElementChild);var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();doc.title='SMTinel Test Performance Review · '+BUILD;return '<!doctype html>\n'+doc.documentElement.outerHTML}
+  function enhance(html,filters,rows){var doc=new DOMParser().parseFromString(String(html||''),'text/html');if(!doc||!doc.documentElement)return html;var old=doc.getElementById('tprStandaloneData');if(!old)return html;var p;try{p=JSON.parse(old.textContent||'{}')}catch(_){return html}var enc=encodePayload(p),cal=collectCalendar(),reps=collectRepairs((rows||[]).filter(function(r){var d=String(r&&r.opDate||'').slice(0,10);if(!d&&r&&r.timeMs){try{d=new Date(Number(r.timeMs)).toISOString().slice(0,10)}catch(_){}}return (!filters.from||!!d&&d>=filters.from)&&(!filters.to||!!d&&d<=filters.to)})),acts=collectActions();enc.calendar=cal;enc.repairs=reps;enc.actions=acts;old.textContent=JSON.stringify(enc).replace(/</g,'\\u003c');var oldRun=doc.getElementById('tpr-standalone-runtime-v160');if(oldRun)oldRun.remove();var holder=doc.createElement('div');holder.innerHTML=runtime();if(holder.firstElementChild)doc.body.appendChild(holder.firstElementChild);var hero=doc.querySelector('.tpr-hero span');if(hero)hero.textContent=BUILD+' · Generated '+new Date().toLocaleString();doc.title='SMTinel Test Performance Review · '+BUILD;return '<!doctype html>\n'+doc.documentElement.outerHTML}
   function install(){var api=window.SMTINEL_TEST_PERF_API;if(!api||typeof api.reportHtmlFor!=='function'||typeof api.rowsForBu!=='function')return false;if(api.reportHtmlFor.__smtinelStandaloneInteractiveV161)return true;var prev=api.reportHtmlFor;var wrapped=function(filters){filters=filters||{};var html=prev.call(api,filters);if(!filters.bu||filters.bu==='ALL')return html;var rows=[];try{rows=api.rowsForBu(filters.bu)||[]}catch(_){}return enhance(html,filters,rows)};wrapped.__smtinelStandaloneInteractiveV161=true;wrapped.__base=prev;api.reportHtmlFor=wrapped;api.build=BUILD;window.SMTINEL_TEST_PERF_EXPORT_BUILD=BUILD;window.SMTINEL_BUILD_VERSION='SMTinel V13.16.62 - Test Performance v1.6.1 Evidence Fix - 2026-09-19';return true}
   if(!install()){var tries=0,timer=setInterval(function(){tries++;if(install()||tries>120)clearInterval(timer)},100)}
 })();
@@ -80580,6 +80580,103 @@ function boot(){
  setTimeout(render,600);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+<script id="smtinel-test-performance-compact-offline-v23">
+(function(){
+'use strict';
+if(window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__)return;
+window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__=true;
+var LABEL='HTML compacto · offline · fecha estricta';
+var BOOT=String.raw`(async function(){
+'use strict';
+var state=document.getElementById('smtinel-compressed-state');
+try{
+ if(typeof DecompressionStream!=='function')throw new Error('Este navegador no admite gzip nativo. Exporta de nuevo desde un navegador actualizado.');
+ var el=document.getElementById('smtinel-compressed-payload');
+ if(!el)throw new Error('Faltan los datos comprimidos.');
+ var base=el.textContent.trim();
+ var chunks=[];for(var i=0;i<base.length;i+=65536){var bin=atob(base.slice(i,i+65536)),b=new Uint8Array(bin.length);for(var j=0;j<bin.length;j++)b[j]=bin.charCodeAt(j);chunks.push(b)}
+ var stream=new Blob(chunks).stream().pipeThrough(new DecompressionStream('gzip'));
+ var raw=await new Response(stream).text();
+ var target=document.getElementById('tprStandaloneData');if(!target)throw new Error('No existe el contenedor de evidencia.');
+ target.textContent=raw;el.remove();
+ var scripts=Array.from(document.querySelectorAll('script[type="application/x-smtinel-deferred"]'));
+ for(var k=0;k<scripts.length;k++){
+  var old=scripts[k],next=document.createElement('script');
+  for(var a=0;a<old.attributes.length;a++){var at=old.attributes[a];if(at.name!=='type')next.setAttribute(at.name,at.value)}
+  next.textContent=old.textContent;old.replaceWith(next);
+ }
+ if(state)state.remove();window.__SMTINEL_COMPRESSED_REPORT_READY__=true;
+}catch(err){console.error('[SMTinel Test Performance]',err);if(state){state.textContent='Error al abrir reporte: '+String(err&&err.message||err);state.style.background='#fff0f0'}}
+})();`;
+function v(id,def){var x=document.getElementById(id);return x?String(x.value||''):def}
+function filters(){return {search:v('testPerfSearch',''),from:v('testPerfFrom',''),to:v('testPerfTo',''),shift:v('testPerfShift','ALL'),bu:v('testPerfBu',''),line:v('testPerfLine','ALL'),week:v('testPerfWeek','ALL'),model:v('testPerfModel','ALL'),sku:v('testPerfSku','ALL'),wo:v('testPerfWo','ALL'),area:v('testPerfArea','ALL'),failure:v('testPerfFailure','ALL'),target:v('testPerfTarget','')}}
+function isTest(){var r=document.getElementById('reportType');return !!(r&&r.value==='TEST')}
+function safeName(x){return String(x||'BU').replace(/[^A-Za-z0-9_-]+/g,'_')}
+function name(f){return 'SMTinel_Test_Performance_'+safeName(f.bu)+'_'+(f.from||'all')+(f.to&&f.to!==f.from?'_to_'+f.to:'')+'_Compacto_Offline.html'}
+function note(){
+ var host=document.getElementById('testPerformanceControls');if(!host)return;
+ var el=document.getElementById('smtinelTpCompactNoteV23');
+ if(!el){el=document.createElement('div');el.id='smtinelTpCompactNoteV23';el.style.cssText='margin:10px 0;padding:9px 12px;border:1px solid #a6c1b0;border-left:4px solid #315e87;border-radius:9px;background:#f1f7f3;color:#294335;font:600 11px/1.5 Segoe UI,Arial,sans-serif';host.appendChild(el)}
+ el.textContent='Exportación optimizada: '+LABEL+'. Solo se incrustan eventos Cesium dentro de las fechas seleccionadas. El análisis FPY mantiene sus reglas actuales.';
+}
+function deferReport(html){
+ var doc=new DOMParser().parseFromString(html,'text/html');
+ var data=doc.getElementById('tprStandaloneData');if(!data)throw new Error('El exportable no contiene evidencia independiente.');
+ var raw=data.textContent||'';if(!raw||raw==='{}')throw new Error('No se encontraron registros en el exportable.');
+ var scripts=Array.from(doc.querySelectorAll('script'));var found=false;
+ scripts.forEach(function(el){if(el===data){found=true;return}if(!found)return;
+  var type=String(el.getAttribute('type')||'').toLowerCase();
+  if(!type||type==='text/javascript'||type==='application/javascript')el.setAttribute('type','application/x-smtinel-deferred');
+ });
+ data.textContent='{}';
+ return {doc:doc,raw:raw};
+}
+async function compress(raw){
+ var input=new Blob([raw],{type:'application/json'});
+ var zipped=await new Response(input.stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
+ var bytes=new Uint8Array(zipped),parts=[];
+ for(var i=0;i<bytes.length;i+=49152){parts.push(btoa(String.fromCharCode.apply(null,bytes.subarray(i,i+49152))))}
+ return parts.join('');
+}
+async function compact(html){
+ var x=deferReport(html),doc=x.doc;
+ var b64=await compress(x.raw);
+ var data=doc.createElement('script');data.id='smtinel-compressed-payload';data.type='application/octet-stream';data.textContent=b64;doc.body.appendChild(data);
+ var state=doc.createElement('div');state.id='smtinel-compressed-state';state.style.cssText='position:fixed;inset:0;background:#f6f8f7;color:#263b36;z-index:999999;display:flex;align-items:center;justify-content:center;font:600 17px system-ui;padding:20px;text-align:center';state.textContent='Preparando Test Performance...';doc.body.appendChild(state);
+ var boot=doc.createElement('script');boot.id='smtinel-compressed-report-bootstrap';boot.textContent=BOOT;doc.body.appendChild(boot);
+ return '<!doctype html>\n'+doc.documentElement.outerHTML;
+}
+function download(filename,html){var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},45000)}
+var busy=false;
+async function run(){
+ if(busy)return;
+ var f=filters(),api=window.SMTINEL_TEST_PERF_API;
+ if(!f.bu||f.bu==='ALL'){alert('Selecciona una BU antes de exportar Test Performance.');return}
+ if(f.from&&f.to&&f.from>f.to){alert('La fecha inicial es posterior a la fecha final.');return}
+ if(!api||typeof api.reportHtmlFor!=='function'){alert('Test Performance no está disponible. Carga los archivos en Yield Flow.');return}
+ busy=true;var btn=document.getElementById('downloadEmail'),old=btn&&btn.textContent;
+ if(btn){btn.disabled=true;btn.textContent='Preparando HTML compacto...'}
+ try{
+  await new Promise(function(resolve){setTimeout(resolve,70)});
+  var raw=api.reportHtmlFor(f);
+  if(!raw||raw.indexOf('id="tprStandaloneData"')<0)throw new Error('No se generó el paquete de evidencia de Test Performance.');
+  if(btn)btn.textContent='Comprimiendo evidencia...';
+  await new Promise(function(resolve){setTimeout(resolve,35)});
+  var result;
+  if(typeof CompressionStream==='function'&&typeof DecompressionStream==='function')result=await compact(raw);
+  else {result=raw;console.warn('CompressionStream no disponible; se exporta HTML sin compresión.');}
+  download(name(f),result);
+  window.__SMTINEL_TP_LAST_EXPORT__={bu:f.bu,from:f.from,to:f.to,rawBytes:new Blob([raw]).size,outputBytes:new Blob([result]).size,compressed:result!==raw};
+ }catch(err){console.error('[SMTinel Compact Export]',err);alert('No se pudo generar el reporte: '+String(err&&err.message||err))}
+ finally{busy=false;if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}}
+}
+// Window capture fires before legacy document-level Test Performance download listeners.
+window.addEventListener('click',function(ev){var target=ev.target&&ev.target.closest&&ev.target.closest('#downloadEmail');if(!target||!isTest())return;ev.preventDefault();ev.stopImmediatePropagation();run()},true);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',note);else note();
+var observer=new MutationObserver(function(){if(isTest()&&!document.getElementById('smtinelTpCompactNoteV23'))note()});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){observer.observe(document.getElementById('emailModal')||document.body,{childList:true,subtree:true})});else observer.observe(document.getElementById('emailModal')||document.body,{childList:true,subtree:true});
 })();
 </script>
 </body>
