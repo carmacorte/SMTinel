@@ -80587,7 +80587,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 'use strict';
 if(window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__)return;
 window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__=true;
-var LABEL='HTML compacto · offline · fecha estricta';
+var LABEL='HTML compacto V24 · offline · fecha estricta';
 var BOOT=String.raw`(async function(){
 'use strict';
 var state=document.getElementById('smtinel-compressed-state');
@@ -80622,16 +80622,23 @@ function note(){
  el.textContent='Exportación optimizada: '+LABEL+'. Solo se incrustan eventos Cesium dentro de las fechas seleccionadas. El análisis FPY mantiene sus reglas actuales.';
 }
 function deferReport(html){
- var doc=new DOMParser().parseFromString(html,'text/html');
- var data=doc.getElementById('tprStandaloneData');if(!data)throw new Error('El exportable no contiene evidencia independiente.');
- var raw=data.textContent||'';if(!raw||raw==='{}')throw new Error('No se encontraron registros en el exportable.');
- var scripts=Array.from(doc.querySelectorAll('script'));var found=false;
- scripts.forEach(function(el){if(el===data){found=true;return}if(!found)return;
-  var type=String(el.getAttribute('type')||'').toLowerCase();
-  if(!type||type==='text/javascript'||type==='application/javascript')el.setAttribute('type','application/x-smtinel-deferred');
+ // Avoid DOMParser + full-document serialization of a 20+ MB report on iPhone.
+ var mark=html.indexOf('id="tprStandaloneData"');
+ if(mark<0)throw new Error('El exportable no contiene evidencia independiente.');
+ var open=html.indexOf('>',mark),close=html.indexOf('</scr'+'ipt>',open);
+ if(open<0||close<0)throw new Error('Contenedor de evidencia incompleto.');
+ var raw=html.slice(open+1,close);
+ if(!raw||raw==='{}')throw new Error('No se encontraron registros en el exportable.');
+ var front=html.slice(0,open+1)+'{}'+html.slice(close,close+9);
+ var tail=html.slice(close+9);
+ // Scripts following the payload must wait for gzip restoration.
+ tail=tail.replace(/<script\b([^>]*)>/gi,function(full,attrs){
+  var type=/\btype\s*=\s*["']?([^\s"'>]+)/i.exec(attrs);
+  if(type&&type[1].toLowerCase()!=='text/javascript'&&type[1].toLowerCase()!=='application/javascript')return full;
+  var clean=attrs.replace(/\s+type\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'');
+  return '<script type="application/x-smtinel-deferred"'+clean+'>';
  });
- data.textContent='{}';
- return {doc:doc,raw:raw};
+ return {html:front+tail,raw:raw};
 }
 async function compress(raw){
  var input=new Blob([raw],{type:'application/json'});
@@ -80641,12 +80648,14 @@ async function compress(raw){
  return parts.join('');
 }
 async function compact(html){
- var x=deferReport(html),doc=x.doc;
+ var x=deferReport(html);
  var b64=await compress(x.raw);
- var data=doc.createElement('script');data.id='smtinel-compressed-payload';data.type='application/octet-stream';data.textContent=b64;doc.body.appendChild(data);
- var state=doc.createElement('div');state.id='smtinel-compressed-state';state.style.cssText='position:fixed;inset:0;background:#f6f8f7;color:#263b36;z-index:999999;display:flex;align-items:center;justify-content:center;font:600 17px system-ui;padding:20px;text-align:center';state.textContent='Preparando Test Performance...';doc.body.appendChild(state);
- var boot=doc.createElement('script');boot.id='smtinel-compressed-report-bootstrap';boot.textContent=BOOT;doc.body.appendChild(boot);
- return '<!doctype html>\n'+doc.documentElement.outerHTML;
+ var extras='<script id="smtinel-compressed-payload" type="application/octet-stream">'+b64+'</scr'+'ipt>'+ 
+  '<div id="smtinel-compressed-state" style="position:fixed;inset:0;background:#f6f8f7;color:#263b36;z-index:999999;display:flex;align-items:center;justify-content:center;font:600 17px system-ui;padding:20px;text-align:center">Preparando Test Performance...</div>'+
+  '<script id="smtinel-compressed-report-bootstrap">'+BOOT+'</scr'+'ipt>';
+ var end=x.html.lastIndexOf('</body>');
+ if(end<0)throw new Error('El HTML del reporte está incompleto.');
+ return x.html.slice(0,end)+extras+x.html.slice(end);
 }
 function download(filename,html){var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},45000)}
 var busy=false;
@@ -80660,15 +80669,19 @@ async function run(){
  if(btn){btn.disabled=true;btn.textContent='Preparando HTML compacto...'}
  try{
   await new Promise(function(resolve){setTimeout(resolve,70)});
+  var t0=performance.now();
   var raw=api.reportHtmlFor(f);
+  var generateMs=performance.now()-t0;
   if(!raw||raw.indexOf('id="tprStandaloneData"')<0)throw new Error('No se generó el paquete de evidencia de Test Performance.');
   if(btn)btn.textContent='Comprimiendo evidencia...';
   await new Promise(function(resolve){setTimeout(resolve,35)});
+  var t1=performance.now();
   var result;
   if(typeof CompressionStream==='function'&&typeof DecompressionStream==='function')result=await compact(raw);
   else {result=raw;console.warn('CompressionStream no disponible; se exporta HTML sin compresión.');}
   download(name(f),result);
-  window.__SMTINEL_TP_LAST_EXPORT__={bu:f.bu,from:f.from,to:f.to,rawBytes:new Blob([raw]).size,outputBytes:new Blob([result]).size,compressed:result!==raw};
+  window.__SMTINEL_TP_LAST_EXPORT__={bu:f.bu,from:f.from,to:f.to,rawBytes:new Blob([raw]).size,outputBytes:new Blob([result]).size,compressed:result!==raw,generationSeconds:Math.round(generateMs/1000),compressionSeconds:Math.round((performance.now()-t1)/1000)};
+  var info=document.getElementById("smtinelTpCompactNoteV23");if(info)info.textContent="V24 · HTML compacto generado · Cálculo: "+window.__SMTINEL_TP_LAST_EXPORT__.generationSeconds+" s · Compresión: "+window.__SMTINEL_TP_LAST_EXPORT__.compressionSeconds+" s · Tamaño: "+(window.__SMTINEL_TP_LAST_EXPORT__.outputBytes/1048576).toFixed(1)+" MB";
  }catch(err){console.error('[SMTinel Compact Export]',err);alert('No se pudo generar el reporte: '+String(err&&err.message||err))}
  finally{busy=false;if(btn){btn.disabled=false;btn.textContent=old||'Export Test HTML'}}
 }
@@ -80677,6 +80690,53 @@ window.addEventListener('click',function(ev){var target=ev.target&&ev.target.clo
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',note);else note();
 var observer=new MutationObserver(function(){if(isTest()&&!document.getElementById('smtinelTpCompactNoteV23'))note()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){observer.observe(document.getElementById('emailModal')||document.body,{childList:true,subtree:true})});else observer.observe(document.getElementById('emailModal')||document.body,{childList:true,subtree:true});
+})();
+</script>
+<script id="smtinel-test-machine-runtime-visible-v24">
+(function(){
+'use strict';
+if(window.__SMTINEL_TP_MACHINE_VISIBLE_V24__)return;
+window.__SMTINEL_TP_MACHINE_VISIBLE_V24__=true;
+var JUMP=String.raw`(function(){
+'use strict';
+function attach(){
+ var dest=document.getElementById('tprMachineHomeV24'),node=document.getElementById('tprMachineRuntime');
+ if(!dest)return false;
+ if(node){dest.textContent='';dest.appendChild(node);dest.setAttribute('data-ready','1');return true}
+ return false;
+}
+if(!attach()){
+ var count=0;
+ var timer=setInterval(function(){if(attach()||++count>40){clearInterval(timer);if(count>40){var e=document.getElementById('tprMachineHomeV24');if(e)e.textContent='No se cargó la matriz Machine × Run Time. Verifica que el archivo se haya generado con datos Cesium y el módulo V24.'}}},250);
+}
+})();`;
+function enhance(html){
+ if(!html||html.indexOf('id="tprStandaloneData"')<0)return html;
+ if(html.indexOf('id="sec-machine"')>=0)return html;
+ var section='<section class="tpr-section" id="sec-machine" style="border:2px solid #315e87;scroll-margin-top:100px">'+
+ '<div class="tpr-section-head" style="background:#e8f2f7;color:#20445d"><span class="tpr-num">M</span><div><b>Machine × Run Time</b><small>Cesium · Modos de falla por equipo y duración · Primer intento, sin retest</small></div></div>'+
+ '<div class="tpr-section-body" style="padding:10px"><div id="tprMachineHomeV24" style="padding:12px">Cargando matriz Machine × Run Time...</div></div></section>';
+ var p=html.indexOf('<section class="tpr-section" id="sec-cover"');
+ if(p<0)p=html.indexOf('<section class="tpr-section" id="sec-model"');
+ if(p<0)p=html.indexOf('<section class="tpr-section"');
+ if(p<0)return html;
+ html=html.slice(0,p)+section+html.slice(p);
+ var top=html.indexOf('<body');
+ if(top>=0){var pos=html.indexOf('>',top)+1;html=html.slice(0,pos)+'<a href="#sec-machine" style="position:fixed;right:14px;bottom:20px;z-index:99999;background:#315e87;color:white;border-radius:12px;padding:11px 14px;font:bold 13px system-ui;box-shadow:0 4px 16px #0004;text-decoration:none">Machine + Run Time ↗</a>'+html.slice(pos)}
+ var script='<scr'+'ipt id="tpr-machine-home-v24">'+JUMP+'</scr'+'ipt>';
+ var end=html.lastIndexOf('</body>');if(end>=0)html=html.slice(0,end)+script+html.slice(end);
+ return html;
+}
+function install(){var a=window.SMTINEL_TEST_PERF_API;
+ if(!a||typeof a.reportHtmlFor!=='function')return false;
+ if(a.reportHtmlFor.__smtinelMachineVisibleV24)return true;
+ var prev=a.reportHtmlFor;
+ var wrap=function(f){return enhance(prev.call(a,f||{}))};
+ try{Object.keys(prev).forEach(function(k){wrap[k]=prev[k]})}catch(_){}
+ wrap.__smtinelMachineVisibleV24=true;wrap.__base=prev;
+ a.reportHtmlFor=wrap;return true;
+}
+install();setTimeout(install,0);setTimeout(install,250);setTimeout(install,1000);
 })();
 </script>
 </body>
