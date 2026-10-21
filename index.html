@@ -80739,5 +80739,107 @@ function install(){var a=window.SMTINEL_TEST_PERF_API;
 install();setTimeout(install,0);setTimeout(install,250);setTimeout(install,1000);
 })();
 </script>
+<style id="smtinel-ppr-export-style">
+#smtinel-ppr-launch{position:fixed;bottom:92px;right:16px;z-index:2100;border:1px solid #688276;border-radius:12px;background:#244b3b;color:#fff;padding:10px 14px;font:700 12px system-ui;box-shadow:0 6px 22px #0003;cursor:pointer}
+#smtinel-ppr-overlay{position:fixed;inset:0;z-index:25000;background:#071b16aa;display:none;align-items:center;justify-content:center;padding:15px;font:13px system-ui}
+#smtinel-ppr-overlay.open{display:flex}
+#smtinel-ppr-dialog{background:#fff;color:#23362e;border-radius:16px;padding:22px;width:min(560px,100%);max-height:94vh;overflow:auto;box-shadow:0 22px 60px #0004}
+#smtinel-ppr-dialog h2{font-size:21px;margin:0 0 5px}#smtinel-ppr-dialog p{color:#526459;line-height:1.5}
+#smtinel-ppr-dialog .ppr-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+#smtinel-ppr-dialog label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
+#smtinel-ppr-dialog select,#smtinel-ppr-dialog input{padding:9px;border:1px solid #cbd7d1;border-radius:7px;width:100%;box-sizing:border-box}
+#smtinel-ppr-dialog button{padding:10px 15px;border:1px solid #aebdb5;border-radius:8px;cursor:pointer;background:#f5f8f6}
+#smtinel-ppr-dialog #smtinel-ppr-generate{background:#244b3b;color:#fff;border-color:#244b3b}
+#smtinel-ppr-status{white-space:pre-wrap;font-size:12px;color:#365a49;margin-top:12px}
+@media(max-width:550px){#smtinel-ppr-dialog .ppr-form{grid-template-columns:1fr}}
+</style>
+<script id="smtinel-product-performance-ppr-export-v28">
+(function(){
+'use strict';
+if(window.__SMTINEL_PPR_EXPORT_V28__)return;
+window.__SMTINEL_PPR_EXPORT_V28__=true;
+var EVIDENCE_CHUNK=25000;
+function byId(x){return document.getElementById(x)}
+function str(x){return String(x==null?'':x).trim()}
+function safe(x){return str(x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function clean(x){return str(x).replace(/[^A-Za-z0-9_-]/g,'_').slice(0,40)}
+function api(){return window.SMTINEL_TEST_PERF_API||null}
+function status(t){var e=byId('smtinel-ppr-status');if(e)e.textContent=t}
+function all(){return api()&&typeof api().meta==='function'?api().meta():null}
+function make(){
+ if(byId('smtinel-ppr-launch'))return;
+ var launch=document.createElement('button');launch.id='smtinel-ppr-launch';launch.type='button';launch.textContent='Product Performance · PPR';launch.onclick=open;document.body.appendChild(launch);
+ var wrap=document.createElement('div');wrap.id='smtinel-ppr-overlay';wrap.innerHTML='<div id="smtinel-ppr-dialog" role="dialog" aria-modal="true" aria-label="Product Performance PPR"><h2>Product Performance · PPR</h2><p>Exportador de evidencia para CFT: modo de falla, serial, estación y máquina. Root Cause, Corrective Action, Owner y Due Date se llenan manualmente en Excel.</p><div class="ppr-form"><label>Business Unit<select id="smtinel-ppr-bu"></select></label><label>Estación / área<select id="smtinel-ppr-area"><option value="ALL">Todas</option></select></label><label>Desde<input id="smtinel-ppr-from" type="date"></label><label>Hasta<input id="smtinel-ppr-to" type="date"></label></div><p style="font-size:11px">Incluye Top Fail con columnas editables para Root Cause y Corrective Action, plantilla manual de CFT y evidencia de todos los SN en hojas de hasta 25,000 filas. No se autogeneran causas ni acciones.</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="smtinel-ppr-close">Cerrar</button><button type="button" id="smtinel-ppr-generate">Exportar PPR XLSX</button></div><div id="smtinel-ppr-status" aria-live="polite"></div></div>';
+ document.body.appendChild(wrap);
+ byId('smtinel-ppr-close').onclick=function(){wrap.classList.remove('open')};
+ wrap.addEventListener('click',function(e){if(e.target===wrap)wrap.classList.remove('open')});
+ byId('smtinel-ppr-generate').onclick=generate;
+}
+function open(){make();var a=api(),m=all();if(!a||!m||!m.rowCount){status('No hay datos Cesium cargados. Primero carga los ZIP en Yield Flow.');byId('smtinel-ppr-overlay').classList.add('open');return}
+ var bu=byId('smtinel-ppr-bu'),prev=bu.value;bu.innerHTML=(m.bus||[]).map(function(x){return '<option value="'+safe(x)+'">'+safe(x)+'</option>'}).join('');if(prev&&Array.from(bu.options).some(function(o){return o.value===prev}))bu.value=prev;else if((m.bus||[]).indexOf('CRBU')>=0)bu.value='CRBU';
+ var area=byId('smtinel-ppr-area');area.innerHTML='<option value="ALL">Todas las estaciones</option>'+(m.areas||[]).map(function(x){return '<option value="'+safe(x)+'">'+safe(x)+'</option>'}).join('');
+ if(!byId('smtinel-ppr-to').value&&m.latestDate)byId('smtinel-ppr-to').value=m.latestDate;
+ status(m.rowCount.toLocaleString()+' registros disponibles. BU obligatorio para evitar mezclar productos.');byId('smtinel-ppr-overlay').classList.add('open');
+}
+function sheet(wb,name,headers,rows){var ws=wb.addWorksheet(name);ws.addRow(headers);rows.forEach(function(r){ws.addRow(r)});ws.views=[{state:'frozen',ySplit:1}];ws.autoFilter={from:{row:1,column:1},to:{row:Math.max(1,rows.length+1),column:headers.length}};ws.getRow(1).height=26;ws.getRow(1).eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF244B3B'}};c.font={bold:true,color:{argb:'FFFFFFFF'},size:10};c.alignment={wrapText:true,vertical:'middle'}});headers.forEach(function(h,i){ws.getColumn(i+1).width=Math.min(45,Math.max(14,str(h).length+4))});return ws}
+function downloadBlob(blob,name){var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},5000)}
+function dateOK(e,f){return (!f.from||str(e.opDate)>=f.from)&&(!f.to||str(e.opDate)<=f.to)&&(!f.area||f.area==='ALL'||str(e.station)===f.area)}
+function timeSec(s){s=str(s);var x=s.split(':').map(Number);if(x.length===3&&x.every(Number.isFinite))return x[0]*3600+x[1]*60+x[2];if(x.length===2&&x.every(Number.isFinite))return x[0]*60+x[1];return null}
+function pct(x){return typeof x==='number'&&isFinite(x)?x/100:null}
+async function generate(){
+ var btn=byId('smtinel-ppr-generate');if(btn.disabled)return;
+ var a=api(),bu=byId('smtinel-ppr-bu').value,f={bu:bu,from:byId('smtinel-ppr-from').value,to:byId('smtinel-ppr-to').value,area:byId('smtinel-ppr-area').value};
+ if(!a||!bu){status('Selecciona una BU y carga los ZIP de Cesium.');return}
+ if(f.from&&f.to&&f.from>f.to){status('El inicio no puede ser posterior al fin.');return}
+ btn.disabled=true;btn.textContent='Preparando...';status('Calculando FPY y evidencia de primera falla...');
+ try{
+  await new Promise(function(r){setTimeout(r,30)});
+  var m=a.computeFor(f),rows=a.rowsForBu(bu),machines={},evidence=[],evSeen={},totalEvidence=0;
+  (m.failures||[]).forEach(function(group){(group.rows||[]).forEach(function(e){
+   if(!dateOK(e,f))return;
+   var k=str(e.logicalKey||e.logicalUnit||e.testSn)+'|'+str(e.station)+'|'+str(e.failure);
+   if(evSeen[k])return;evSeen[k]=1;totalEvidence++;
+   var machine=str(e.machine)||'SIN MACHINE',station=str(e.station)||'N/D',mk=machine+'\u001f'+station,rec=machines[mk];
+   if(!rec)rec=machines[mk]={machine:machine,station:station,unique:{},failureModes:{},durations:[],firstFail:0};
+   rec.unique[str(e.logicalKey||e.logicalUnit||e.testSn)]=1;rec.failureModes[str(e.failure)||'N/D']=(rec.failureModes[str(e.failure)||'N/D']||0)+1;rec.firstFail++;
+   var secs=timeSec(e.runTime);if(secs!=null)rec.durations.push(secs);
+   evidence.push([str(e.opDate),str(e.week),bu,str(e.model),str(e.sku),station,machine,str(e.failure),str(e.testSn),str(e.parentSn),str(e.logicalUnit),str(e.runTime),str(e.wo),str(e.line)]);
+  })});
+  var machineRows=Object.keys(machines).map(function(k){var x=machines[k],d=x.durations.sort(function(a,b){return a-b}),mid=d.length?d[Math.floor((d.length-1)/2)]:null;return [x.machine,x.station,Object.keys(x.unique).length,x.firstFail,Object.keys(x.failureModes).length,Object.keys(x.failureModes).sort(function(a,b){return x.failureModes[b]-x.failureModes[a]}).slice(0,5).map(function(v){return v+' ('+x.failureModes[v]+')'}).join(' | '),mid==null?'':Math.round(mid/60*10)/10] }).sort(function(a,b){return b[2]-a[2]});
+  status('Creando libro XLSX...');await new Promise(function(r){setTimeout(r,30)});
+  if(typeof window.ensureExcelTools==='function')await window.ensureExcelTools();
+  if(!window.ExcelJS)throw new Error('ExcelJS no disponible. Se requiere conexión para cargar la biblioteca de Excel.');
+  var wb=new window.ExcelJS.Workbook();wb.creator='SMTinel';wb.subject='PPR CFT data feeder';
+  sheet(wb,'00_README',['Campo','Valor / regla'],[
+   ['BU',bu],['Desde',f.from||'Sin límite'],['Hasta',f.to||'Sin límite'],['Estación',f.area||'ALL'],['Generado',new Date().toISOString()],['Fuente','SMTinel / Cesium / Test Performance API'],['FPY','Motor oficial de Test Performance; no contar retest como nueva falla'],['Machine','Equipo registrado en Cesium; no implica causalidad de equipo'],['Top Fail','Primer intento fallido por SN lógico y estación'],['Alcance','Paquete de alimentación PPR; NO sustituye automáticamente el archivo original CFT'],['Registros normalizados BU',rows.length],['Evidencia SN exportada',evidence.length],['Evidencia SN total',totalEvidence],['Evidencia','Completa; dividida en hojas de '+EVIDENCE_CHUNK+' registros'],['Campos manuales','Root Cause, Corrective Action, Owner, Due Date, Status y Comments quedan vacíos para CFT'],['Limitación','Costos, ORT, capacidad, MRB y 8D requieren otras fuentes']]);
+  sheet(wb,'01_KPI',['Indicador','Valor'],[['BU',bu],['SN con actividad',m.activity],['Test runs',m.testRuns],['ETE tested',m.eteTested],['ETE first pass',m.etePass],['ETE first fail',m.eteFail],['ETE FPY',pct(m.fpy)],['Carry-in',m.carryIn],['Retest runs',m.retestRuns],['Recovered',m.recovered],['Open NG',m.openNg]]);
+  sheet(wb,'02_FPY_Modelo',['Modelo','SKUs observados','Actividad SN','FPY Tested SN','Pass','Fail','FPY','Retest runs','Carry-in','Recovered','Open NG'],(m.byModel||[]).map(function(x){return [x.name,(x.skus||[]).join(' | '),x.activity,x.tested,x.pass,x.fail,pct(x.fpy),x.retestRuns,x.carryIn,x.recovered,x.openNg]}));
+  sheet(wb,'03_FPY_Estacion',['Test Area','Actividad SN','FPY Tested SN','Pass','Fail','FPY','Retest runs','Carry-in','Recovered','Open NG'],(m.byArea||[]).map(function(x){return [x.name,x.activity,x.tested,x.pass,x.fail,pct(x.fpy),x.retestRuns,x.carryIn,x.recovered,x.openNg]}));
+  var failRows=(m.failures||[]).map(function(x){return [x.station,x.failure,x.affected,x.stationTested,pct(x.failureRate),(x.models||[]).join(' | '),(x.skus||[]).join(' | '),'','','','','','']});
+  var top=sheet(wb,'04_Top_Fail',['Test Area','Failure Mode','SN afectados','SN probados en área','DFR área','Modelos','SKUs','Root Cause (CFT)','Corrective Action (CFT)','Owner (CFT)','Due Date (CFT)','Status (CFT)','Comments (CFT)'],failRows);
+  for(var rr=2;rr<=top.rowCount;rr++){for(var cc=8;cc<=13;cc++){var cell=top.getRow(rr).getCell(cc);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEFF5FF'}};cell.font={color:{argb:'FF2054A2'}}}}
+  [8,9,10,11,12,13].forEach(function(cc){top.getColumn(cc).width=cc===8||cc===9?36:20});
+  sheet(wb,'05_Machine_Station',['Machine','Test Area','SN fallidos únicos','Primeros fallos','Modos distintos','Top 5 modos','Mediana Run Time (min)'],machineRows);
+  var snHeaders=['Fecha operativa','Fiscal Week','BU','Modelo','SKU','Test Area','Machine','Failure Mode','Test SN','Parent SN','Logical SN','Run Time','WO','SMT Line'];
+  for(var start=0,part=1;start<evidence.length;start+=EVIDENCE_CHUNK,part++){
+   sheet(wb,'06_Evidencia_SN_'+part,snHeaders,evidence.slice(start,start+EVIDENCE_CHUNK));
+  }
+  if(!evidence.length)sheet(wb,'06_Evidencia_SN_1',snHeaders,[]);
+  var manual=sheet(wb,'08_CFT_Manual',['BU','Test Area','Failure Mode','SN afectados','Root Cause (manual)','Corrective Action (manual)','Owner (manual)','Due Date (manual)','Status (manual)','Comments (manual)'],(m.failures||[]).map(function(x){return [bu,x.station,x.failure,x.affected,'','','','','','']}));
+  for(var ri=2;ri<=manual.rowCount;ri++){for(var ci=5;ci<=10;ci++){var cell=manual.getRow(ri).getCell(ci);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEFF5FF'}};cell.font={color:{argb:'FF2054A2'}}}}
+  [5,6].forEach(function(ci){manual.getColumn(ci).width=40});
+  sheet(wb,'07_Cobertura_CFT',['PPR original','Fuente SMTinel','Estado','Nota'],[
+   ['Q4W- ICT CRBU 8000','Test Performance','PARCIAL','Solo si se confirma equivalencia de estaciones ICT'],['Q4W- ETE CRBU 8000','Test Performance','DISPONIBLE','Cruzar producto/estación/semana antes de pegar'],['Top Fail','Test Performance','DISPONIBLE','Primer intento; no retest'],['Action Tracker','Action Tracker / Yokoten','PENDIENTE','Acciones y due dates deben provenir del tracker vigente'],['CRBU bonepile','Bonepile Visualizer','PENDIENTE','Requiere conciliación de WIP y edad'],['ETE Cycle Time','Cesium Run Time','PARCIAL','Run Time de prueba no equivale al ETE completo'],['ECO Devs','ECN/ECO/Deviations','PENDIENTE','Verificar aplicabilidad BU y revisión'],['Scrap & Rework cost','SKU cost / Repair','PENDIENTE','Costo requiere fuente y validación'],['ORT','ORT fuente externa','NO DISPONIBLE','No inferir'],['MRB','MRB fuente externa','NO DISPONIBLE','No inferir'],['Attendance List','CFT','MANUAL','Sin fuente en Cesium'],['PPR Metrics','CFT','MANUAL','Agenda y responsables requieren actualización']]);
+  wb.getWorksheet('01_KPI').getCell('B8').numFmt='0.0%';
+  ['02_FPY_Modelo','03_FPY_Estacion','04_Top_Fail'].forEach(function(n){var w=wb.getWorksheet(n);var col=n==='02_FPY_Modelo'?7:n==='03_FPY_Estacion'?6:5;w.getColumn(col).numFmt='0.0%'});
+  var b=await wb.xlsx.writeBuffer();downloadBlob(new Blob([b],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'SMTinel_PPR_Evidencia_CFT_'+clean(bu)+'_'+clean(f.from||'all')+'_to_'+clean(f.to||'latest')+'.xlsx');
+  status('Exportado: '+(m.byModel||[]).length+' modelos, '+(m.failures||[]).length+' modos por estación, '+machineRows.length+' máquinas/estación y '+evidence.length+' SN de evidencia. Root Cause y Corrective Action permanecen vacíos para CFT.');
+ }catch(e){status('No se pudo exportar: '+str(e&&e.message||e));console.error('[SMTinel PPR]',e)}finally{btn.disabled=false;btn.textContent='Exportar PPR XLSX'}
+}
+window.SMTinelOpenPPR=open;
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',make);else make();
+})();
+</script>
+
 </body>
 </html>
