@@ -80740,7 +80740,7 @@ install();setTimeout(install,0);setTimeout(install,250);setTimeout(install,1000)
 })();
 </script>
 <style id="smtinel-ppr-export-style">
-#smtinel-ppr-launch{position:fixed;bottom:92px;right:16px;z-index:2100;border:1px solid #688276;border-radius:12px;background:#244b3b;color:#fff;padding:10px 14px;font:700 12px system-ui;box-shadow:0 6px 22px #0003;cursor:pointer}
+#smtinel-ppr-launch{position:fixed;bottom:145px;right:18px;z-index:2100;border:1px solid #688276;border-radius:12px;background:#244b3b;color:#fff;padding:10px 14px;font:700 12px system-ui;box-shadow:0 6px 22px #0003;cursor:pointer}
 #smtinel-ppr-overlay{position:fixed;inset:0;z-index:25000;background:#071b16aa;display:none;align-items:center;justify-content:center;padding:15px;font:13px system-ui}
 #smtinel-ppr-overlay.open{display:flex}
 #smtinel-ppr-dialog{background:#fff;color:#23362e;border-radius:16px;padding:22px;width:min(560px,100%);max-height:94vh;overflow:auto;box-shadow:0 22px 60px #0004}
@@ -80768,7 +80768,7 @@ function status(t){var e=byId('smtinel-ppr-status');if(e)e.textContent=t}
 function all(){return api()&&typeof api().meta==='function'?api().meta():null}
 function make(){
  if(byId('smtinel-ppr-launch'))return;
- var launch=document.createElement('button');launch.id='smtinel-ppr-launch';launch.type='button';launch.textContent='Product Performance · PPR';launch.onclick=open;document.body.appendChild(launch);
+ var launch=document.createElement('button');launch.id='smtinel-ppr-launch';launch.type='button';launch.textContent='⬇ Exportar Excel PPR';launch.onclick=open;document.body.appendChild(launch);
  var wrap=document.createElement('div');wrap.id='smtinel-ppr-overlay';wrap.innerHTML='<div id="smtinel-ppr-dialog" role="dialog" aria-modal="true" aria-label="Product Performance PPR"><h2>Product Performance · PPR</h2><p>Exportador de evidencia para CFT: modo de falla, serial, estación y máquina. Root Cause, Corrective Action, Owner y Due Date se llenan manualmente en Excel.</p><div class="ppr-form"><label>Business Unit<select id="smtinel-ppr-bu"></select></label><label>Estación / área<select id="smtinel-ppr-area"><option value="ALL">Todas</option></select></label><label>Desde<input id="smtinel-ppr-from" type="date"></label><label>Hasta<input id="smtinel-ppr-to" type="date"></label></div><p style="font-size:11px">Incluye Top Fail con columnas editables para Root Cause y Corrective Action, plantilla manual de CFT y evidencia de todos los SN en hojas de hasta 25,000 filas. No se autogeneran causas ni acciones.</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="smtinel-ppr-close">Cerrar</button><button type="button" id="smtinel-ppr-generate">Exportar PPR XLSX</button></div><div id="smtinel-ppr-status" aria-live="polite"></div></div>';
  document.body.appendChild(wrap);
  byId('smtinel-ppr-close').onclick=function(){wrap.classList.remove('open')};
@@ -80841,5 +80841,39 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<!-- PPR V29: exportador visible dentro de Test Performance -->
+<style id="smtinel-ppr-v29-style">
+#smtinel-ppr-launch{background:#1d664b!important;border:2px solid #b7e2c9!important;font-size:13px!important;box-shadow:0 6px 25px #0005!important}
+.smtinel-ppr-inline-btn{background:#216c4d!important;color:#fff!important;border:1px solid #1b5b40!important;border-radius:9px!important;padding:10px 14px!important;font:750 12px system-ui!important;cursor:pointer!important;white-space:nowrap!important;box-shadow:0 2px 8px #0002!important}
+.smtinel-ppr-inline-btn:hover{background:#174c36!important}
+#smtinel-ppr-inline-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 10px;margin:8px 0;border:1px solid #c4d9cb;border-radius:11px;background:#eaf4ec}
+#smtinel-ppr-inline-bar small{font-size:11px;color:#425b4c}
+</style>
+<script id="smtinel-ppr-v29-visible-entry">
+(function(){
+'use strict';
+if(window.__SMTINEL_PPR_V29_VISIBLE__)return;
+window.__SMTINEL_PPR_V29_VISIBLE__=true;
+function openPpr(e){if(e){e.preventDefault();e.stopPropagation()}if(typeof window.SMTinelOpenPPR==='function')window.SMTinelOpenPPR();else alert('El exportador PPR no está disponible en esta vista. Abre el index completo de SMTinel.');}
+function add(){
+ var controls=document.getElementById('testPerformanceControls');
+ if(controls&&!document.getElementById('smtinel-ppr-inline-bar')){
+  var bar=document.createElement('div');bar.id='smtinel-ppr-inline-bar';
+  var btn=document.createElement('button');btn.type='button';btn.className='smtinel-ppr-inline-btn';btn.id='smtinel-ppr-inline-export';btn.textContent='⬇ Exportar Excel PPR';btn.onclick=openPpr;
+  var note=document.createElement('small');note.textContent='Fallas, SN, estación y máquina automáticos · Root Cause y Corrective Action manuales';
+  bar.appendChild(btn);bar.appendChild(note);controls.insertBefore(bar,controls.firstChild);
+ }
+ var head=document.querySelector('#emailModal .dialog-head');
+ if(head&&!document.getElementById('smtinel-ppr-header-export')){
+  var hbtn=document.createElement('button');hbtn.type='button';hbtn.id='smtinel-ppr-header-export';hbtn.className='smtinel-ppr-inline-btn';hbtn.textContent='⬇ Excel PPR';hbtn.onclick=openPpr;head.appendChild(hbtn);
+ }
+ var launch=document.getElementById('smtinel-ppr-launch');if(launch){launch.title='Generar Excel de evidencia para CFT (PPR)';}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add);else add();
+window.addEventListener('load',add);
+var tries=0,t=setInterval(function(){add();if(++tries>40)clearInterval(t)},750);
+})();
+</script>
 </body>
 </html>
