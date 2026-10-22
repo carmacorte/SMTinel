@@ -46,6 +46,17 @@
     });
     if(rows.length) return rows.slice(-13);
 
+    // V30: Earlier export layers may have replaced the source .tpr-week-row
+    // elements with an already rendered, fully grounded 13-week SVG.
+    // Recover the exact weekly counts from that SVG, not from fabricated history.
+    Array.prototype.forEach.call(d.querySelectorAll('#sec-trend .tpr-authority-svg g title, #sec-cover .tpr-authority-svg g title'),function(n){
+      var raw=tx(n.textContent),m=raw.match(/^(.+?)\s*\|\s*Tested\s+([\d,]+)\s*\|\s*Pass\s+([\d,]+)\s*\|\s*Fail\s+([\d,]+)\s*\|\s*Yield\s+([\d.]+)%/i);
+      if(!m)return;
+      var week=tx(m[1]);if(rows.some(function(r){return r.week===week;}))return;
+      rows.push({week:week,tested:Number(m[2].replace(/,/g,'')),pass:Number(m[3].replace(/,/g,'')),fail:Number(m[4].replace(/,/g,'')),yield:Number(m[5])});
+    });
+    if(rows.length)return rows.slice(-13);
+
     var data=d.getElementById('tprStandaloneData');
     if(data){
       try{
@@ -139,6 +150,10 @@
       }
 
       var cover=d.getElementById('sec-cover'),coverChart=cover&&cover.querySelector('.tpr-cover-chart');
+      if(coverChart&&!rows.length){
+        var existing=d.querySelector('#sec-trend .tpr-authority-chart');
+        if(existing){coverChart.className='tpr-cover-chart tpr-chart-authority';coverChart.innerHTML=existing.outerHTML;}
+      }
       if(coverChart&&rows.length){
         coverChart.className='tpr-cover-chart tpr-chart-authority';
         coverChart.setAttribute('data-chart-authority','factory-health-static-v206');
