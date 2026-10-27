@@ -80602,7 +80602,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 'use strict';
 if(window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__)return;
 window.__SMTINEL_TEST_COMPACT_OFFLINE_V23__=true;
-var LABEL='HTML compacto V24 · offline · fecha estricta';
+var LABEL='HTML directo V40 · PPR estable · offline';
 var BOOT=String.raw`(async function(){
 'use strict';
 var state=document.getElementById('smtinel-compressed-state');
@@ -80676,7 +80676,7 @@ async function compact(html){
  var recovery=String.raw`(function(){
  'use strict';
  var attempts=0;
- function mark(ok,message){var m=document.getElementById('smtinel-ppr-v39-marker');if(!m)return;
+ function mark(ok,message){var m=document.getElementById('smtinel-ppr-v40-marker');if(!m)return;
   m.textContent=message;m.style.background=ok?'#e8f3ed':'#fff1f0';m.style.color=ok?'#174e37':'#a21e28';}
  function check(){
   if(!window.__SMTINEL_COMPRESSED_REPORT_READY__){if(++attempts<300){setTimeout(check,100);return;}mark(false,'PPR V39 · ERROR al restaurar reporte');return;}
@@ -80721,7 +80721,7 @@ async function run(){
   if(typeof window.__SMTINEL_PPR_ENHANCE_V37__==='function'){
     raw=window.__SMTINEL_PPR_ENHANCE_V37__(raw);
   }
-  if(!/id="smtinel-ppr-v(?:29|33)-report-addon"/.test(raw)||raw.indexOf('id="smtinel-ppr-v39-marker"')<0){
+  if(!/id="smtinel-ppr-v(?:29|33)-report-addon"/.test(raw)||raw.indexOf('id="smtinel-ppr-v40-marker"')<0){
     throw new Error('No se incorporo el exportador Excel PPR al HTML. Revisa el instalador PPR.');
   }
   var generateMs=performance.now()-t0;
@@ -80730,9 +80730,9 @@ async function run(){
   await new Promise(function(resolve){setTimeout(resolve,35)});
   var t1=performance.now();
   var result;
-  if(typeof CompressionStream==='function'&&typeof DecompressionStream==='function')result=await compact(raw);
-  else {result=raw;console.warn('CompressionStream no disponible; se exporta HTML sin compresión.');}
-  if(result.indexOf('smtinel-ppr-v39-marker')<0||result.indexOf('smtinel-ppr-v33-report-addon')<0||result.indexOf('smtinel-ppr-v39-recovery-loader')<0){throw new Error('PPR V39: el reporte compacto perdio los controles. No se descargara un reporte incompleto.');}
+  result=raw; // V40: preserve script execution order and PPR initialization.
+  console.info('[SMTinel PPR V40] Exportación HTML directa, sin aplazamiento de scripts.');
+  if(result.indexOf('smtinel-ppr-v40-marker')<0||result.indexOf('smtinel-ppr-v33-report-addon')<0){throw new Error('PPR V39: el reporte compacto perdio los controles. No se descargara un reporte incompleto.');}
   download(name(f),result);
   window.__SMTINEL_TP_LAST_EXPORT__={bu:f.bu,from:f.from,to:f.to,rawBytes:new Blob([raw]).size,outputBytes:new Blob([result]).size,compressed:result!==raw,generationSeconds:Math.round(generateMs/1000),compressionSeconds:Math.round((performance.now()-t1)/1000)};
   var info=document.getElementById("smtinelTpCompactNoteV23");if(info)info.textContent="V24 · HTML compacto generado · Cálculo: "+window.__SMTINEL_TP_LAST_EXPORT__.generationSeconds+" s · Compresión: "+window.__SMTINEL_TP_LAST_EXPORT__.compressionSeconds+" s · Tamaño: "+(window.__SMTINEL_TP_LAST_EXPORT__.outputBytes/1048576).toFixed(1)+" MB";
@@ -80910,13 +80910,29 @@ var css="#tprPprExportV29{background:#6b2143;color:white;border:1px solid #6b214
 function enhance(html){
  if(typeof html!=='string'||html.indexOf('id="tprStandaloneData"')<0)return html;
  // V38: a visible export marker distinguishes a NEW generated report from older downloads.
- if(html.indexOf('id="smtinel-ppr-v39-marker"')<0){
-  var marker='<span id="smtinel-ppr-v39-marker" style="display:inline-flex;align-items:center;background:#e8f3ed;color:#174e37;border:1px solid #b4d2bf;border-radius:6px;padding:6px 9px;margin:0 9px;font:800 11px system-ui">PPR V39 · Preparando Excel</span>';
+ if(html.indexOf('id="smtinel-ppr-v40-marker"')<0){
+  var marker='<span id="smtinel-ppr-v40-marker" style="display:inline-flex;align-items:center;background:#e8f3ed;color:#174e37;border:1px solid #b4d2bf;border-radius:6px;padding:6px 9px;margin:0 9px;font:800 11px system-ui">PPR V40 · Cargando exportador</span>';
   if(/<\/header>/i.test(html))html=html.replace(/<\/header>/i,marker+'</header>');
   else html=html.replace(/<body[^>]*>/i,function(x){return x+marker});
  }
- if(html.indexOf('smtinel-ppr-v29-report-addon')>=0||html.indexOf('smtinel-ppr-v33-report-addon')>=0)return html;
- var content='<style id="smtinel-ppr-v29-report-css">'+css+'</style><script id="smtinel-ppr-v33-report-addon">'+addon+'</scr'+'ipt>';
+ // V40: Always replace older addon if present to ensure direct check is installed.
+ html=html.replace(/<script[^>]*id="smtinel-ppr-v33-report-addon"[^>]*>[\s\S]*?<\/script>/i,'');
+ var directCheck=String.raw`(function(){
+ var attempt=0, started=false;
+ function status(msg,err){var el=document.getElementById('smtinel-ppr-v40-marker');if(!el)return;el.textContent=msg;el.style.color=err?'#a21e28':'#174e37';el.style.background=err?'#fff1f0':'#e8f3ed';}
+ function run(){
+  var b=document.getElementById('tprPprExportV29'),f=document.querySelector('input[type=file][accept*=xlsx]');
+  if(b&&f){status('PPR V40 · Excel habilitado',false);return;}
+  if(!started&&document.getElementById('tprStandaloneData')){
+   started=true;
+   try{window.__SMTINEL_PPR_REPORT_V29__=false;var el=document.getElementById('smtinel-ppr-v33-report-addon');if(el){var x=document.createElement('script');x.textContent=el.textContent;document.body.appendChild(x)}}catch(e){console.error('[SMTinel PPR V40]',e)}
+  }
+  if(++attempt<60)setTimeout(run,250);
+  else status('PPR V40 · ERROR: revisa consola del navegador',true);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+})();`;
+ var content='<style id="smtinel-ppr-v29-report-css">'+css+'</style><script id="smtinel-ppr-v33-report-addon">'+addon+'</scr'+'ipt>'+'<script id="smtinel-ppr-v40-direct-check">'+directCheck+'</scr'+'ipt>';
  return /<\/body>/i.test(html)?html.replace(/<\/body>/i,content+'</body>'):html+content;
 }
 window.__SMTINEL_PPR_ADDON_SOURCE_V39__=addon;
