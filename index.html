@@ -80731,7 +80731,7 @@ async function run(){
   var t1=performance.now();
   var result;
   result=raw; // V40: preserve script execution order and PPR initialization.
-  console.info('[SMTinel PPR V41] Exportación HTML directa, sin aplazamiento de scripts.');
+  console.info('[SMTinel PPR V42] Exportación HTML directa, sin aplazamiento de scripts.');
   if(result.indexOf('smtinel-ppr-v41-marker')<0||result.indexOf('smtinel-ppr-v41-source')<0){throw new Error('PPR V41: el reporte perdio el modulo Excel. No se descargara un reporte incompleto.');}
   download(name(f),result);
   window.__SMTINEL_TP_LAST_EXPORT__={bu:f.bu,from:f.from,to:f.to,rawBytes:new Blob([raw]).size,outputBytes:new Blob([result]).size,compressed:result!==raw,generationSeconds:Math.round(generateMs/1000),compressionSeconds:Math.round((performance.now()-t1)/1000)};
@@ -80913,7 +80913,7 @@ function enhance(html){
  // contain script-adjacent payloads that can terminate a raw inline script.
  // The small bootstrap decodes and executes only after the report DOM exists.
  if(html.indexOf('id="smtinel-ppr-v41-marker"')<0){
-  var marker='<span id="smtinel-ppr-v41-marker" style="display:inline-flex;align-items:center;background:#e8f3ed;color:#174e37;border:1px solid #b4d2bf;border-radius:6px;padding:6px 9px;margin:0 9px;font:800 11px system-ui">PPR V41 · Preparando Excel</span>';
+  var marker='<span id="smtinel-ppr-v41-marker" style="display:inline-flex;align-items:center;background:#e8f3ed;color:#174e37;border:1px solid #b4d2bf;border-radius:6px;padding:6px 9px;margin:0 9px;font:800 11px system-ui">PPR V42 · Preparando Excel</span>';
   if(/<\/header>/i.test(html))html=html.replace(/<\/header>/i,marker+'</header>');
   else html=html.replace(/<body[^>]*>/i,function(x){return x+marker});
  }
@@ -80928,12 +80928,12 @@ function enhance(html){
  var attempts=0,launched=false,lastError='';
  function marker(ok,msg){var m=document.getElementById('smtinel-ppr-v41-marker');if(!m)return;m.textContent=msg;m.style.color=ok?'#174e37':'#a21e28';m.style.background=ok?'#e8f3ed':'#fff1f0';m.title=lastError||'';}
  function decode(){var el=document.getElementById('smtinel-ppr-v41-source');if(!el)throw new Error('Fuente PPR V41 no encontrada');var bin=atob((el.textContent||'').replace(/\\s+/g,'')),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new TextDecoder('utf-8').decode(bytes);}
- function launch(){if(launched)return;launched=true;try{window.__SMTINEL_PPR_REPORT_V29__=false;var src=decode();(0,eval)(src);}catch(e){lastError=String(e&&e.stack||e&&e.message||e);console.error('[SMTinel PPR V41 bootstrap]',e);marker(false,'PPR V41 · ERROR: '+String(e&&e.message||e));}}
- function check(){var b=document.getElementById('tprPprExportV29'),f=document.querySelector('#tprV31LogUpload input[type=file], input[type=file][accept*=xlsx]');if(b&&f){marker(true,'PPR V41 · Excel habilitado');return;}if(!launched&&document.getElementById('tprStandaloneData'))launch();if(++attempts<160){setTimeout(check,125);return;}if(!lastError)lastError='El modulo PPR no creo los controles despues de '+attempts+' intentos.';console.error('[SMTinel PPR V41]',lastError);marker(false,'PPR V41 · ERROR: controles no inicializados');}
+ function launch(){if(launched)return;launched=true;try{window.__SMTINEL_PPR_REPORT_V29__=false;var src=decode();(0,eval)(src);}catch(e){lastError=String(e&&e.stack||e&&e.message||e);console.error('[SMTinel PPR V42 bootstrap]',e);marker(false,'PPR V42 · ERROR: '+String(e&&e.message||e));}}
+ function check(){var b=document.getElementById('tprPprExportV29'),f=document.querySelector('#tprV31LogUpload input[type=file], input[type=file][accept*=xlsx]');if(b&&f){marker(true,'PPR V42 · Excel habilitado');return;}if(!launched&&document.getElementById('tprStandaloneData'))launch();if(++attempts<160){setTimeout(check,125);return;}if(!lastError)lastError='El modulo PPR no creo los controles despues de '+attempts+' intentos.';console.error('[SMTinel PPR V42]',lastError);marker(false,'PPR V42 · ERROR: controles no inicializados');}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(check,0)});else setTimeout(check,0);
 })();`;
  var payload='<script id="smtinel-ppr-v41-source" type="application/octet-stream">'+source64+'</scr'+'ipt>'+'<script id="smtinel-ppr-v41-bootstrap">'+bootstrap+'</scr'+'ipt>';
- content='<style id="smtinel-ppr-v29-report-css">'+css+'</style>'+payload;
+ var content='<style id="smtinel-ppr-v29-report-css">'+css+'</style>'+payload;
  return /<\/body>/i.test(html)?html.replace(/<\/body>/i,content+'</body>'):html+content;
 }
 window.__SMTINEL_PPR_ADDON_SOURCE_V39__=addon;
