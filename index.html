@@ -80108,7 +80108,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     return Promise.resolve(w.SMTinelReloadYokotenKnowledge()).then(function(v){if(!v||!v.loaded)throw new Error('No se cargo el Knowledge DB del repositorio.');return v;});
   }
   function download(w, html) {
-    var blob=new w.Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Yokoten_Corridas_BOM_DFM_RefDes_V15_'+sourceDate()+'.html',url=w.URL.createObjectURL(blob),a=w.document.createElement('a');
+    var blob=new w.Blob([html],{type:'text/html;charset=utf-8'}),name='SMTinel_Yokoten_Corridas_BOM_DFM_RefDes_V17_'+sourceDate()+'.html',url=w.URL.createObjectURL(blob),a=w.document.createElement('a');
     a.download=name;a.href=url;a.style.display='none';w.document.body.appendChild(a);a.click();
     w.__SMTINEL_LAST_YOKOTEN_EXPORT__={at:new Date().toISOString(),bytes:blob.size,name:name,method:'download-requested',build:BUILD,changeSource:t(dataSource(w).source),authorization:'unverified'};
     w.setTimeout(function(){try{a.remove();w.URL.revokeObjectURL(url);}catch(_){}},120000);
@@ -80125,9 +80125,43 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     w.SMTinelDownloadYokotenHtml=function(){
       if(w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__)return true;
       w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__=1;
-      ensureKnowledge(w).then(function(){var latest=w.SMTinelBuildYokotenExportHtml;if(typeof latest!=="function"||!latest.__smtinelEcoPrepV13)throw new Error("Generador DFM V15 no conectado. Recargue index.html actualizado.");var html=latest();if(typeof html!=="string"||html.indexOf('id="yk-prep-knowledge-v13"')<0||html.indexOf('id="yp-export-refdelta"')<0)throw new Error("Exportacion incompleta: no incluye BOM Delta / SMT Preparation. No se descargara V8.");return download(w,html);}).catch(function(err){
-        console.error('[Yokoten Change V6] Export',err);
-        if(typeof w.alert==='function')w.alert('No se exporto Yokoten: '+t(err&&err.message||err));
+      ensureKnowledge(w).then(function(){
+        // V17. Detect the actual sections of the export, not properties of layered wrapper functions.
+        // Older wrappers can drop __smtinelEcoPrepV13 while retaining their download callback.
+        var latest=w.SMTinelBuildYokotenExportHtml;
+        if(typeof latest!=="function")throw new Error("Generador de Matriz de corridas no disponible.");
+        var html=latest();
+        if(typeof html!=="string"||html.length<500)throw new Error("El generador produjo un reporte vacio.");
+        function has(id){
+          var d=new DOMParser().parseFromString(html,'text/html');
+          return !!(d&&d.getElementById(id));
+        }
+        if(html.indexOf('data-yk-runs-root')<0)throw new Error("Falta el motor de corridas o su estructura principal; no se puede reconstruir un reporte valido.");
+        // Apply V5, V6 and DFM only when their actual exported section is absent.
+        if(!has('yk-evidence-v5')){
+          if(!w.SMTinelYokotenYieldKnowledgeV5||typeof w.SMTinelYokotenYieldKnowledgeV5.buildHtml!=="function")throw new Error("Modulo Knowledge/Yokoten V5 no disponible.");
+          html=w.SMTinelYokotenYieldKnowledgeV5.buildHtml(html,w);
+        }
+        if(!has('yk-evidence-v5'))throw new Error("No se genero la evidencia Yokoten V5; revise snapshot Common DB.");
+        if(!has('yk-change-control-v6')){
+          if(!w.SMTinelCustomerChangeV6||typeof w.SMTinelCustomerChangeV6.buildHtml!=="function")throw new Error("Modulo ECO/ECN/Desviaciones V6 no disponible.");
+          html=w.SMTinelCustomerChangeV6.buildHtml(html,w);
+        }
+        if(!has('yk-change-control-v6'))throw new Error("No se genero Customer Change Control V6.");
+        if(!has('yk-prep-knowledge-v13')){
+          if(!w.SMTinelYokotenEcoPreparationV13||typeof w.SMTinelYokotenEcoPreparationV13.build!=="function")throw new Error("Modulo SMT Preparation / BOM Delta no disponible.");
+          html=w.SMTinelYokotenEcoPreparationV13.build(html);
+        }
+        if(!has('yk-prep-knowledge-v13')||!has('yp-export-refdelta'))throw new Error("Preparacion SMT o Delta RefDes no fueron incluidos en el HTML final.");
+        if(typeof w.SMTinelCleanYokotenV204==="function")html=w.SMTinelCleanYokotenV204(html);
+        w.__SMTINEL_YOKOTEN_V17_VALIDATION__={
+          at:new Date().toISOString(), v5:true,v6:true,dfm:true,deltaRefdes:true,
+          source:(w.SMTINEL_YOKOTEN_KNOWLEDGE&&w.SMTINEL_YOKOTEN_KNOWLEDGE.source)||"Knowledge DB"
+        };
+        return download(w,html);
+      }).catch(function(err){
+        console.error('[Yokoten V17 Export Pipeline] Export',err);
+        if(typeof w.alert==='function')w.alert('Exportacion Yokoten V17 cancelada: '+t(err&&err.message||err));
       }).finally(function(){w.__SMTINEL_YOKOTEN_EXPORT_ACTIVE_V196__=0;});
       return true;
     };
