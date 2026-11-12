@@ -81120,5 +81120,310 @@ if(!install()){
 }
 })();
 </script>
+
+<!-- SMTinel Test Performance V2 | Global SN Search + Offline Excel Tables + Favicon -->
+<script id="smtinel-tpr-search-excel-icon-export-v2">
+(function(){
+ 'use strict';
+ if(window.__SMTINEL_TPR_SEARCH_EXCEL_ICON_EXPORT_V2__)return;
+ window.__SMTINEL_TPR_SEARCH_EXCEL_ICON_EXPORT_V2__=true;
+ var STYLE="/* SMTinel Test Performance \u00b7 search inside embedded serial histories */\n.tpr-smart-find{position:relative;z-index:52;padding:5px 12px 7px;background:#f9fbf9;border-top:1px solid #dce5dc;box-shadow:0 2px 6px rgba(21,40,29,.05);font:11px/1.35 Segoe UI,Arial,sans-serif}\n.tpr-smart-find-line{display:flex;align-items:center;gap:8px;max-width:1260px;margin:0 auto}\n.tpr-smart-find-line label{color:#284735;font-weight:850;white-space:nowrap}\n.tpr-smart-find input{min-width:140px;flex:1;padding:8px 10px;min-height:34px;border:1px solid #aabfaf;background:#fff;border-radius:7px;color:#192e22;font:12px Consolas,Segoe UI,Arial,sans-serif}\n.tpr-smart-find-line button{padding:7px 12px;min-height:34px;border-radius:7px;border:1px solid #355943;font-weight:850;background:#315340;color:#fff;cursor:pointer}\n#tprSmartFindClose{padding:6px 10px;background:#fff;color:#45604e;border-color:#cbd8ce;font-size:16px}\n#tprSmartFindStatus{max-width:1260px;margin:3px auto 0;font-size:10px;color:#51695b}\n#tprSmartFindStatus[data-error=\"1\"]{color:#a43d32}\n.tpr-smart-results{position:absolute;left:max(12px,calc((100% - 1260px)/2));right:max(12px,calc((100% - 1260px)/2));top:calc(100% - 2px);max-height:360px;overflow:auto;border:1px solid #c3d4c7;border-radius:0 0 9px 9px;box-shadow:0 12px 27px rgba(23,43,30,.18);background:#fff;z-index:100}\n.tpr-smart-results[hidden]{display:none!important}\n.tpr-smart-hits-head,.tpr-smart-hits-note{padding:9px 11px;background:#eef5ef;color:#385443;font-size:11px;font-weight:850}\n.tpr-smart-hits-note{background:#fff7e7;color:#8d5b20;font-weight:650}\n.tpr-smart-hit{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:16px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid #e6eee7;color:#24392c;background:#fff;cursor:pointer;font:11px Segoe UI,Arial,sans-serif}\n.tpr-smart-hit:hover,.tpr-smart-hit:focus{background:#edf5ee;outline:1px solid #a3bfa8}\n.tpr-smart-hit strong{font:800 12px Consolas,Segoe UI,Arial,sans-serif;white-space:nowrap}\n.tpr-smart-hit span{font-size:10px;color:#637569;text-align:right}\n#tprSnResults.tpr-smart-current{outline:2px solid #a8c6ae;outline-offset:3px}\n#sec-repair{scroll-margin-top:145px!important}\n@media(max-width:700px){.tpr-smart-find{padding:7px}.tpr-smart-find-line{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:5px}.tpr-smart-find-line label{grid-column:1/-1}.tpr-smart-find input{width:100%;min-width:0}.tpr-smart-find-line button{padding:7px 10px}.tpr-smart-hit{align-items:flex-start;flex-direction:column;gap:4px}.tpr-smart-hit span{text-align:left}.tpr-smart-results{left:7px;right:7px}}\n@media print{.tpr-smart-find{display:none!important}}\n\n/* Offline XLSX exporter, no CDN required. */\n.tpr-xlsx-tools{display:flex;justify-content:flex-end;align-items:center;gap:5px;margin:1px 0 5px;min-height:24px}\n.tpr-excel-btn{font:800 9px/1.2 Segoe UI,Arial,sans-serif;cursor:pointer;white-space:nowrap;border:1px solid #b5cfbc;color:#1f6136;background:#eef7ef;border-radius:6px;padding:4px 9px;min-height:23px}\n.tpr-excel-btn:before{content:'X';display:inline-grid;place-items:center;font-size:9px;font-weight:900;color:#fff;background:#217346;width:14px;height:14px;margin-right:5px;border-radius:3px}\n.tpr-excel-btn:hover,.tpr-excel-btn:focus{border-color:#43835b;background:#e0f3e3}\n#tprExcelAllTables{border-color:#52906a;background:#eef8f0;color:#1a5d30}\n@media print{.tpr-xlsx-tools,#tprExcelAllTables{display:none!important}}\n";
+ var ICON="<link rel=\"icon\" type=\"image/png\" sizes=\"64x64\" href=\"data:image/png;base64,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\">";
+ function smtinelTestReportSmartFindRuntime(){
+'use strict';
+if(window.__SMTINEL_TPR_SMART_FIND_V1__)return;
+window.__SMTINEL_TPR_SMART_FIND_V1__=true;
+var source=document.getElementById('tprStandaloneData');
+if(!source)return;
+var searchFields=['testSn','logicalKey','logicalUnit','parentSn','partSn','boxSn','sfcSn','sfcBox','wo','model','sku','cesiumSku','uutType','failure','station','machine'];
+var serialFields={testSn:1,logicalKey:1,logicalUnit:1,parentSn:1,partSn:1,boxSn:1,sfcSn:1,sfcBox:1};
+var parsed=null,columns=null,dict=[],upperDict=[],numeric={},rows=[],results=[];
+var byId=function(id){return document.getElementById(id);};
+var normalized=function(v){return String(v==null?'':v).trim().toUpperCase();};
+var esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+function data(){
+ if(parsed)return true;
+ try{parsed=JSON.parse(source.textContent||'{}');}catch(e){status('No se pudo leer el historial embebido: '+(e.message||e),true);return false;}
+ columns=Object.create(null);(parsed.columns||[]).forEach(function(k,i){columns[k]=i;});
+ dict=parsed.dict||[];upperDict=dict.map(normalized);rows=parsed.rows||[];
+ (parsed.numeric||[]).forEach(function(k){numeric[k]=true;});
+ return true;
+}
+function get(r,k,upper){
+ var i=columns[k];if(i==null||!r)return '';
+ var raw=r[i];if(parsed.format==='dict-v1'&&!numeric[k])return (upper?upperDict:dict)[raw]||'';
+ return upper?normalized(raw):(raw==null?'':String(raw));
+}
+function status(message,error){var t=byId('tprSmartFindStatus');if(t){t.textContent=message;t.dataset.error=error?'1':'0';}}
+function showList(show){var p=byId('tprSmartFindResults');if(p)p.hidden=!show;}
+function search(q){
+ q=normalized(q);results=[];var panel=byId('tprSmartFindResults');
+ if(q.length<3){status('Introduce al menos 3 caracteres. Busca por SN, Parent SN, WO, modelo, estación o falla.',true);showList(false);return;}
+ if(!data())return;
+ var grouped=Object.create(null),matchedRows=0;
+ for(var i=0;i<rows.length;i++){
+  var a=rows[i],hit='',matched='';
+  for(var j=0;j<searchFields.length;j++){
+   var field=searchFields[j],value=get(a,field,true);
+   if(value&&value.indexOf(q)!==-1){hit=field;matched=get(a,field,false);break;}
+  }
+  if(!hit)continue;
+  matchedRows++;
+  var id=get(a,'logicalKey',true)||get(a,'logicalUnit',true)||get(a,'testSn',true)||('RECORD-'+i);
+  var alias=serialFields[hit]?matched:(get(a,'testSn',false)||get(a,'logicalUnit',false)||get(a,'logicalKey',false));
+  var score=serialFields[hit]?(normalized(matched)===q?100:(normalized(matched).indexOf(q)===0?85:65)):(normalized(matched)===q?50:25);
+  var item=grouped[id];
+  if(!item){item=grouped[id]={id:id,alias:alias,score:score,matched:matched,field:hit,model:get(a,'model',false),wo:get(a,'wo',false),serial:get(a,'testSn',false)||get(a,'logicalUnit',false),stations:Object.create(null),count:0};}
+  item.count++;
+  var st=get(a,'station',false);if(st)item.stations[st]=1;
+  if(!item.wo)item.wo=get(a,'wo',false);
+  if(!item.model)item.model=get(a,'model',false);
+  if(score>item.score){item.score=score;item.alias=alias;item.matched=matched;item.field=hit;}
+ }
+ results=Object.keys(grouped).map(function(k){return grouped[k];}).sort(function(a,b){return b.score-a.score||b.count-a.count||a.id.localeCompare(b.id);});
+ if(!results.length){status('Sin coincidencias en este HTML. No significa que el SN no exista en MES o en otros ZIP.',true);showList(false);return;}
+ var shown=results.slice(0,50);
+ panel.innerHTML='<div class="tpr-smart-hits-head">'+results.length+' unidad(es) relacionadas · '+matchedRows+' registro(s) · mostrando '+shown.length+'</div>'+shown.map(function(r,i){
+  var related=Object.keys(r.stations).slice(0,4).join(' / ');
+  return '<button type="button" class="tpr-smart-hit" data-tpr-smart-index="'+i+'"><strong>'+esc(r.alias||r.serial||r.id)+'</strong><span>'+esc(r.field)+' · '+esc(r.model||'Modelo N/D')+(r.wo?' · WO '+esc(r.wo):'')+(related?' · '+esc(related):'')+'</span></button>';
+ }).join('')+(results.length>50?'<div class="tpr-smart-hits-note">Refina la búsqueda para localizar el SN entre todos los resultados.</div>':'');
+ status(results.length+' unidad(es) · '+matchedRows+' registro(s) en el historial embebido. Selecciona para abrir Test / Repair.',false);
+ showList(true);
+ if(results.length===1&&results[0].score>=85){openResult(results[0]);}
+}
+function openResult(result){
+ if(!result)return;
+ var section=byId('sec-repair');
+ if(section){section.classList.remove('is-collapsed');var icon=section.querySelector('.tpr-section-head i');if(icon)icon.textContent='−';}
+ var field=byId('tprSnBulk'),button=byId('tprSnSearchBtn'),mode=byId('tprSnMode');
+ if(!field||!button){status('Se encontró el SN, pero falta el panel de historial Test/Repair.',true);return;}
+ field.value=result.alias||result.serial||result.id;
+ if(mode)mode.value='';
+ button.click();
+ showList(false);
+ status('SN '+(result.alias||result.serial)+' encontrado. Abriendo historial Test / Repair.',false);
+ setTimeout(function(){
+  var detail=byId('tprSnResults')||section;
+  if(detail){detail.scrollIntoView({behavior:'smooth',block:'center'});detail.classList.add('tpr-smart-current');}
+ },100);
+}
+function mount(){
+ if(byId('tprSmartFindInput'))return;
+ var top=document.querySelector('.tpr-top');if(!top)return;
+ var shell=document.createElement('div');shell.className='tpr-smart-find';shell.innerHTML='<div class="tpr-smart-find-line"><label for="tprSmartFindInput">Buscar en Test Performance</label><input id="tprSmartFindInput" type="search" autocomplete="off" spellcheck="false" placeholder="SN, Parent SN, WO, modelo o modo de falla..." aria-label="Buscar serial en el historial completo"><button type="button" id="tprSmartFindGo">Buscar</button><button type="button" id="tprSmartFindClose" title="Limpiar búsqueda">×</button></div><div id="tprSmartFindStatus" role="status" aria-live="polite">Busca también dentro de los datos no visibles al navegador (Ctrl+F).</div><div id="tprSmartFindResults" class="tpr-smart-results" hidden></div>';
+ top.appendChild(shell);
+ var input=byId('tprSmartFindInput'),panel=byId('tprSmartFindResults');
+ byId('tprSmartFindGo').addEventListener('click',function(){search(input.value);});
+ input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();search(input.value);}else if(e.key==='Escape'){showList(false);}});
+ byId('tprSmartFindClose').addEventListener('click',function(){input.value='';showList(false);status('Búsqueda limpia. El historial del reporte permanece intacto.',false);});
+ panel.addEventListener('click',function(e){var hit=e.target.closest('[data-tpr-smart-index]');if(!hit)return;openResult(results[Number(hit.dataset.tprSmartIndex)]);});
+ document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&String(e.key||'').toLowerCase()==='f'&&!e.shiftKey){
+   e.preventDefault();input.focus();input.select();
+  }else if(e.key==='Escape'&&document.activeElement!==input){showList(false);}
+ },true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+}
+ function smtinelTestReportExcelRuntimeV2(){
+ 'use strict';
+ if(window.__SMTINEL_TPR_EXCEL_V2__) return;
+ window.__SMTINEL_TPR_EXCEL_V2__=true;
+ var NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+ var tables=[],observer=null,scheduled=false;
+ function txt(x){return String(x==null?'':x).replace(/\s+/g,' ').trim();}
+ function xml(x){return String(x==null?'':x).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+ function bytes(s){return new TextEncoder().encode(s);}
+ function u16(v,n,x){v.setUint16(n,x,true);}
+ function u32(v,n,x){v.setUint32(n,x>>>0,true);}
+ var crcTable=(function(){var a=[];for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=c&1?0xedb88320^(c>>>1):c>>>1;a[i]=c>>>0;}return a;})();
+ function crc32(b){var c=0xffffffff;for(var i=0;i<b.length;i++)c=crcTable[(c^b[i])&255]^(c>>>8);return(c^0xffffffff)>>>0;}
+ function zip(files){
+  var local=[],central=[],offset=0,totLocal=0,totCentral=0;
+  files.forEach(function(entry){
+   var name=bytes(entry[0]),data=bytes(entry[1]),crc=crc32(data);
+   var l=new Uint8Array(30+name.length);var lv=new DataView(l.buffer);
+   u32(lv,0,0x04034b50);u16(lv,4,20);u16(lv,6,0x0800);u16(lv,8,0);u32(lv,14,crc);u32(lv,18,data.length);u32(lv,22,data.length);u16(lv,26,name.length);l.set(name,30);
+   local.push(l,data);
+   var c=new Uint8Array(46+name.length);var cv=new DataView(c.buffer);
+   u32(cv,0,0x02014b50);u16(cv,4,20);u16(cv,6,20);u16(cv,8,0x0800);u16(cv,10,0);
+   u32(cv,16,crc);u32(cv,20,data.length);u32(cv,24,data.length);u16(cv,28,name.length);u32(cv,42,offset);c.set(name,46);
+   central.push(c);offset+=l.length+data.length;totLocal+=l.length+data.length;totCentral+=c.length;
+  });
+  var end=new Uint8Array(22),ev=new DataView(end.buffer);u32(ev,0,0x06054b50);u16(ev,8,files.length);u16(ev,10,files.length);u32(ev,12,totCentral);u32(ev,16,totLocal);
+  return new Blob(local.concat(central,[end]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ }
+ function val(cell){
+  if(!cell)return '';
+  var txtValue=txt(cell.textContent||'');
+  var fields=Array.prototype.slice.call(cell.querySelectorAll('input:not([type="hidden"]),textarea,select'));
+  fields.forEach(function(e){if(e.type==='checkbox'||e.type==='radio'){if(e.checked)txtValue+=' SI';return;}var v=txt(e.value);if(v&&txtValue.indexOf(v)<0)txtValue+=' '+v;});
+  var raw=cell.getAttribute('data-export-value')||cell.getAttribute('data-full-value');
+  return raw!=null?String(raw):txtValue;
+ }
+ function excluded(tr){
+  if(tr.hidden||tr.getAttribute('aria-hidden')==='true')return true;
+  if(tr.style&&tr.style.display==='none')return true;
+  if(window.getComputedStyle&&getComputedStyle(tr).display==='none')return true;
+  return false;
+ }
+ function titleFor(table){
+  var card=table.closest('.tpr-card,.tpr-section,.tpr-filter-snapshot,#tpr-sn-investigator');
+  var h=card&&card.querySelector('.tpr-card-title,.tpr-section-head b,.tpr-sn-title');
+  var text=txt(h&&h.textContent);
+  if(!text){var row=table.querySelector('thead tr');text=txt(row&&row.textContent).slice(0,55);}
+  return text||'Tabla del reporte';
+ }
+ function tableData(table){
+  var hRows=Array.prototype.slice.call(table.querySelectorAll('thead tr'));
+  var header=hRows.length?hRows[hRows.length-1]:null;
+  var h=header?Array.prototype.slice.call(header.children).filter(function(x){return /^(TH|TD)$/.test(x.tagName);}).map(val):[];
+  var body=table.tBodies&&table.tBodies[0];
+  var data=body?Array.prototype.slice.call(body.rows).filter(function(tr){return !excluded(tr);}).map(function(tr){
+   var row=[];Array.prototype.forEach.call(tr.children,function(cell){if(!/^(TD|TH)$/.test(cell.tagName))return;row.push(val(cell));var cs=Math.max(1,Math.min(20,Number(cell.colSpan)||1));for(var i=1;i<cs;i++)row.push('');});return row;
+  }):[];
+  var max=Math.max(h.length,data.reduce(function(n,r){return Math.max(n,r.length);},0));
+  if(!h.length){h=Array.from({length:max},function(_,i){return 'Columna '+(i+1);});}
+  for(var z=h.length;z<max;z++)h.push('Columna '+(z+1));
+  return [h].concat(data);
+ }
+ function sheetName(str,used){
+  var s=txt(str).replace(/[\\/?*\[\]:]/g,'-').replace(/^'+|'+$/g,'').slice(0,31)||'Datos';
+  var root=s,n=1;while(used[s.toUpperCase()]){n++;s=root.slice(0,31-String(n).length-1)+' '+n;}
+  used[s.toUpperCase()]=1;return s;
+ }
+ function excelColumn(n){var s='';while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}return s;}
+ function numberType(raw,head){
+  var s=txt(raw),name=txt(head).toUpperCase();
+  if(!s||s.length>40||/\b(SN|SERIAL|WO|PART|PN|SKU|REFDES|BARCODE|ID|LOT|REV|MODEL|MODELO|MACHINE|ESTACION|STATION|CODIGO|CODE)\b/.test(name))return null;
+  if(/^[-+]?\d+(?:[.,]\d+)?%$/.test(s)){var v=Number(s.replace('%','').replace(',','.'));return isFinite(v)?{n:v/100,s:2}:null;}
+  if(!/^[+-]?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?$/.test(s))return null;
+  var plain=s.replace(/,/g,'');if(/^[-+]?0\d+/.test(plain))return null;
+  var v=Number(plain);return isFinite(v)?{n:v,s:0}:null;
+ }
+ function sheetXml(grid){
+  grid=grid||[[]];var cols=Math.max(1,grid.reduce(function(n,r){return Math.max(n,r.length);},0)),last=excelColumn(cols),lastRow=Math.max(1,grid.length);
+  var output=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>','<worksheet xmlns="'+NS+'"><dimension ref="A1:'+last+lastRow+'"/>','<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>','<sheetFormatPr defaultRowHeight="16"/><cols>'];
+  for(var col=1;col<=cols;col++){
+   var len=10;for(var r=0;r<Math.min(grid.length,80);r++){var v=grid[r][col-1];if(v!=null)len=Math.max(len,Math.min(54,String(v).length+2));}
+   output.push('<col min="'+col+'" max="'+col+'" width="'+Math.min(55,len)+'" customWidth="1"/>');
+  }
+  output.push('</cols><sheetData>');
+  for(var ri=0;ri<grid.length;ri++){
+   var row=grid[ri]||[];output.push('<row r="'+(ri+1)+'">');
+   for(var ci=0;ci<row.length;ci++){
+    var s=row[ci]==null?'':String(row[ci]),cell=excelColumn(ci+1)+(ri+1),num=ri?numberType(s,(grid[0]||[])[ci]):null;
+    if(num){output.push('<c r="'+cell+'" s="'+num.s+'"><v>'+num.n+'</v></c>');}
+    else{var safe=xml(s.slice(0,32767));output.push('<c r="'+cell+'" s="'+(ri===0?1:0)+'" t="inlineStr"><is><t xml:space="preserve">'+safe+'</t></is></c>');}
+   }
+   output.push('</row>');
+  }
+  output.push('</sheetData><autoFilter ref="A1:'+last+lastRow+'"/></worksheet>');return output.join('');
+ }
+ function workbook(sheets){
+  var used={},items=sheets.map(function(x){return{name:sheetName(x.name,used),rows:x.rows};});
+  var types=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'];
+  var w=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>','<workbook xmlns="'+NS+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets>'];
+  var wrels=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'];
+  var files=[];
+  items.forEach(function(item,i){
+   var n=i+1;types.push('<Override PartName="/xl/worksheets/sheet'+n+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');
+   w.push('<sheet name="'+xml(item.name)+'" sheetId="'+n+'" r:id="rId'+n+'"/>');
+   wrels.push('<Relationship Id="rId'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+n+'.xml"/>');
+   files.push(['xl/worksheets/sheet'+n+'.xml',sheetXml(item.rows)]);
+  });
+  types.push('</Types>');w.push('</sheets></workbook>');wrels.push('<Relationship Id="rId'+(items.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="'+NS+'"><fonts count="2"><font><sz val="10"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="10"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF33472D"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  files=files.concat([['[Content_Types].xml',types.join('')],['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],['xl/workbook.xml',w.join('')],['xl/_rels/workbook.xml.rels',wrels.join('')],['xl/styles.xml',styles]]);
+  return zip(files);
+ }
+ function info(){return {name:'SMTinel Info',rows:[['Campo','Valor'],['Reporte',document.title],['BU',document.querySelector('#tprStandaloneData')?'Datos embebidos del reporte':'N/D'],['Generado (UTC)',new Date().toISOString()],['Nota','Las tablas muestran el snapshot y filtros de este HTML; filas ocultas por filtros no se exportan.']]};}
+ function download(blob,filename){var a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000);}
+ function filePart(s){return txt(s).replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,55)||'tabla';}
+ function exportExcel(table){
+  var rows=tableData(table),title=titleFor(table),blob=workbook([{name:title,rows:rows},info()]);
+  download(blob,'SMTinel_Test_Performance_'+filePart(title)+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+ }
+ function exportAll(){
+  var sheets=tables.filter(function(t){return document.contains(t);}).map(function(t){return {name:titleFor(t),rows:tableData(t)};});
+  if(!sheets.length){alert('No hay tablas para exportar.');return;}
+  sheets.push(info());
+  download(workbook(sheets),'SMTinel_Test_Performance_Todas_Las_Tablas_'+new Date().toISOString().slice(0,10)+'.xlsx');
+ }
+ function refresh(){
+  var main=document.querySelector('.tpr-main');if(!main)return;
+  tables=Array.prototype.slice.call(main.querySelectorAll('table')).filter(function(t){return !!t.querySelector('tbody tr');});
+  tables.forEach(function(t){
+   var old=t.__tprExcelToolV2;
+   if(old&&old.isConnected)return;
+   var tool=document.createElement('div');tool.className='tpr-xlsx-tools';
+   var b=document.createElement('button');b.type='button';b.className='tpr-excel-btn';b.textContent='Excel';b.title='Exportar esta tabla a Excel (.xlsx)';b.setAttribute('aria-label','Exportar '+titleFor(t)+' a Excel');
+   b.addEventListener('click',function(){try{exportExcel(t);}catch(e){alert('Error al exportar Excel: '+(e.message||e));}});
+   tool.appendChild(b);
+   var wrap=t.closest('.tpr-scroll,.tpr-scroll-window,.tpr-sn-scroll,.tpr-issue-wrap,.tpr-db-matrix-scroll')||t;
+   if(wrap.parentNode){wrap.parentNode.insertBefore(tool,wrap);t.__tprExcelToolV2=tool;}
+  });
+  var top=document.querySelector('.tpr-actions')||document.querySelector('.tpr-top-inner');
+  if(top&&!document.getElementById('tprExcelAllTables')){
+   var all=document.createElement('button');all.type='button';all.id='tprExcelAllTables';all.textContent='Exportar tablas Excel';all.title='Descargar un XLSX con una hoja por tabla';
+   all.addEventListener('click',function(){try{refresh();exportAll();}catch(e){alert('Error al exportar Excel: '+(e.message||e));}});top.appendChild(all);
+  }
+ }
+ function mount(){
+  var main=document.querySelector('.tpr-main');if(!main)return;
+  refresh();
+  window.SMTINEL_TPR_EXCEL={tables:function(){return tables.length;},exportAll:function(){refresh();exportAll();},exportTable:function(i){refresh();if(tables[i])exportExcel(tables[i]);}};
+  if(window.MutationObserver){
+   observer=new MutationObserver(function(mutations){
+    if(scheduled)return;
+    var relevant=mutations.some(function(m){
+     return Array.prototype.some.call(m.addedNodes,function(n){return n.nodeType===1&&((n.matches&&n.matches('table,.tpr-scroll,.tpr-card,.tpr-section-body,.tpr-db-matrix-scroll'))||(n.querySelector&&n.querySelector('table')));})||
+            Array.prototype.some.call(m.removedNodes,function(n){return n.nodeType===1&&((n.matches&&n.matches('table,.tpr-xlsx-tools,.tpr-scroll,.tpr-section-body'))||(n.querySelector&&n.querySelector('table')));});
+    });
+    if(!relevant)return;
+    scheduled=true;setTimeout(function(){scheduled=false;refresh();},120);
+   });
+   observer.observe(main,{childList:true,subtree:true});
+  }
+  setTimeout(refresh,300);setTimeout(refresh,1200);setTimeout(refresh,3000);setTimeout(refresh,6500);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+}
+ function augment(html){
+  html=String(html||'');
+  if(html.indexOf('id="tpr-excel-table-export-v2"')>=0)return html;
+  if(!/<html\b/i.test(html))return html;
+  var head='<style id="tpr-search-excel-style-v2">'+STYLE+'</style>';
+  if(!/<link\s+[^>]*rel=["\'](?:shortcut )?icon["\']/i.test(html))head=ICON+head;
+  html=html.replace(/<\/head>/i,function(x){return head+x;});
+  var runtime='<script id="tpr-excel-table-export-v2">('+smtinelTestReportExcelRuntimeV2.toString()+')();<'+'/script>';
+  if(html.indexOf('id="tprStandaloneData"')>=0 && html.indexOf('id="tpr-sn-investigator"')>=0){
+   runtime='<script id="tpr-global-sn-find-v2">('+smtinelTestReportSmartFindRuntime.toString()+')();<'+'/script>'+runtime;
+  }
+  html=html.replace(/<\/body>/i,function(x){return runtime+x;});
+  return html;
+ }
+ window.SMTINEL_TPR_SEARCH_EXCEL_ICON_AUGMENT=augment;
+ function install(){
+  var api=window.SMTINEL_TEST_PERF_API;
+  if(!api||typeof api.reportHtmlFor!=='function')return false;
+  var base=api.reportHtmlFor;
+  if(base.__smtinelSearchExcelIconV2)return true;
+  function wrapped(filters){return augment(base.call(api,filters||{}));}
+  try{Object.keys(base).forEach(function(k){wrapped[k]=base[k];});}catch(_){ }
+  wrapped.__smtinelSearchExcelIconV2=true;
+  wrapped.__base=base;
+  api.reportHtmlFor=wrapped;
+  return true;
+ }
+ install();
+ var attempts=0,watch=setInterval(function(){
+  attempts++;
+  install();
+  if(attempts>=120)clearInterval(watch);
+ },250);
+ window.addEventListener('load',install);
+})();
+</script>
 </body>
 </html>
