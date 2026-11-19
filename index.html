@@ -77545,7 +77545,8 @@ function normalize(wb){
       bu:val(r,['BU']),description:val(r,['Change Description']),workflow:val(rd,['Workflow Status (source)']),
       releasedSource:ccDate(r['ECO Release Date (source)'])||ccDate(rd['Date Released (source)']),bomDate:ccDate(r['ECO BOM Date (source, single only)']),implementationType:val(r,['ECO Implementation Type (source)']),effectiveFrom:ccDate(r['Effective From']),effectiveUntil:ccDate(r['Effective Until']),
       approval:val(r,['Approval Status']),documentState:val(r,['Document State']),conflicts:val(rd,['Source Conflicts']),sourceRows:val(rd,['CSV Rows']),
-      officialUrl:val(r,['Official Source URL']),active:val(r,['Active'])
+      officialUrl:val(r,['Official Source URL']),active:val(r,['Active']),
+      visibility:val(r,['Yokoten Visibility']),reviewScope:val(r,['Yokoten Reviewed Scope']),reviewNote:val(r,['Yokoten Review Note']),reviewedAt:ccDate(r['Yokoten Reviewed At'])
     }});
     var scopes=ccScopes.map(function(r){return{
       id:val(r,['Applicability ID']),changeId:val(r,['Change ID']),sku:val(r,['SKU']),boardPn:val(r,['PCBA Part Number']),
@@ -79723,6 +79724,45 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     @media print{.cc-bar,.cc-pages,.cc-cell-notice{display:none}.cc-list{grid-template-columns:1fr 1fr}.cc-doc{break-inside:avoid}.cc-doc summary{font-size:10px}}
     `;
   }
+  function triageStyleText(){return `
+#yk-change-triage-v1{margin:18px 0;background:#fff;border:1px solid #dce2dc;border-radius:15px;overflow:hidden;box-shadow:0 4px 20px rgba(29,44,32,.045);color:#25332c}
+#yk-change-triage-v1 *{box-sizing:border-box}
+#yk-change-triage-v1 .ykt-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;padding:19px 21px 12px;border-top:3px solid #526c50}
+#yk-change-triage-v1 h2{font-size:17px;line-height:1.2;font-weight:800;margin:0 0 7px;color:#233b2a}
+#yk-change-triage-v1 p{font-size:11.5px;line-height:1.55;color:#65766a;margin:0}
+#yk-change-triage-v1 .ykt-export{border:1px solid #486c56;background:#446d54;color:#fff;padding:9px 13px;border-radius:9px;font-weight:700;cursor:pointer}
+#yk-change-triage-v1 .ykt-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 21px 14px}
+#yk-change-triage-v1 .ykt-metric{background:#f6f8f5;border:1px solid #e1e9df;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+#yk-change-triage-v1 .ykt-metric b{font-size:23px;color:#314f3b;font-variant-numeric:tabular-nums}
+#yk-change-triage-v1 .ykt-metric span{font-size:10px;color:#697b6e}
+#yk-change-triage-v1 .ykt-filters{display:flex;gap:8px;flex-wrap:wrap;padding:11px 21px;background:#f8faf8;border-top:1px solid #e6ece6;border-bottom:1px solid #e6ece6}
+#yk-change-triage-v1 .ykt-filters input,#yk-change-triage-v1 .ykt-filters select{font:500 11px Inter,Segoe UI,Arial,sans-serif;min-height:35px;background:#fff;color:#253b2a;border:1px solid #d4dfd4;border-radius:8px;padding:7px 11px;max-width:100%}
+#yk-change-triage-v1 .ykt-filters input{flex:1;min-width:195px}
+#yk-change-triage-v1 .ykt-scroll{max-height:465px;overflow:auto;overscroll-behavior:contain}
+#yk-change-triage-v1 table{width:100%;min-width:1370px;border-collapse:collapse;table-layout:auto;font-size:10.5px}
+#yk-change-triage-v1 th{position:sticky;top:0;z-index:3;background:#edf3ed;color:#405a47;font-size:9px;padding:10px 8px;border-bottom:1px solid #cad7cc;text-align:left;white-space:nowrap}
+#yk-change-triage-v1 th button{font:inherit;font-weight:800;letter-spacing:.02em;background:transparent;border:0;color:inherit;cursor:pointer;padding:0}
+#yk-change-triage-v1 th button[aria-sort="ascending"]:after{content:' ↑'}#yk-change-triage-v1 th button[aria-sort="descending"]:after{content:' ↓'}
+#yk-change-triage-v1 td{padding:9px 8px;vertical-align:top;border-bottom:1px solid #e7ece6;line-height:1.4}
+#yk-change-triage-v1 tr:hover td{background:#f8faf7}
+#yk-change-triage-v1 td b{font-weight:800;white-space:nowrap}
+#yk-change-triage-v1 td small{display:block;margin-top:3px;color:#6d7b72;font-size:9px;line-height:1.3;max-width:240px;overflow-wrap:anywhere}
+#yk-change-triage-v1 [data-ykt-num]{text-align:right;font-variant-numeric:tabular-nums}
+#yk-change-triage-v1 .ykt-reason{font-size:9px;display:inline-block;max-width:240px;padding:5px 7px;line-height:1.3;border-radius:7px;background:#edf4ef;color:#345842;border:1px solid #dce7de}
+#yk-change-triage-v1 .ykt-reason.candidate{background:#fff8e9;color:#92691e;border-color:#eedbbb}
+#yk-change-triage-v1 .ykt-reason.priority{background:#fff0ec;color:#a84b3f;border-color:#f0d1c7}
+#yk-change-triage-v1 td select,#yk-change-triage-v1 td input{max-width:210px;min-height:32px;border:1px solid #d1dbd2;border-radius:7px;background:#fff;color:#273b2d;padding:6px;font-size:10px}
+#yk-change-triage-v1 td input{min-width:180px}
+#yk-change-triage-v1 td button{background:#fff;border:1px solid #b7cbb9;border-radius:7px;color:#305641;padding:6px 10px;font-weight:700;cursor:pointer}
+#yk-change-triage-v1 .ykt-empty{text-align:center;padding:28px 16px;color:#69786d}
+#yk-change-triage-v1 .ykt-footer{padding:12px 21px;border-top:1px solid #e7ece6;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#yk-change-triage-v1 .ykt-footer button{padding:7px 11px;border:1px solid #cbd8cc;border-radius:7px;background:#fff;cursor:pointer;color:#35543e}
+#yk-change-triage-v1 .ykt-footer button:disabled{opacity:.35;cursor:default}
+#yk-change-triage-v1 .ykt-disclaimer{padding:11px 21px;border-top:1px dashed #dfe5de;background:#f8faf8;font-size:10px;line-height:1.5;color:#657667}
+@media(max-width:770px){#yk-change-triage-v1 .ykt-top{padding:14px}#yk-change-triage-v1 .ykt-metrics{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 14px 12px}#yk-change-triage-v1 .ykt-filters{padding:10px 14px}#yk-change-triage-v1 .ykt-scroll{max-height:480px}#yk-change-triage-v1 .ykt-footer{padding:10px 14px}}
+@media print{#yk-change-triage-v1 .ykt-filters,#yk-change-triage-v1 .ykt-export,#yk-change-triage-v1 .ykt-footer button{display:none!important}#yk-change-triage-v1 .ykt-scroll{max-height:none;overflow:visible}#yk-change-triage-v1 table{min-width:0;font-size:7px}}
+`;}
+
   function reportRuntime() {
     'use strict';
     var S = window.__YK_RUNS__ || {}, D = S.customerChanges || {}, R = document.querySelector('[data-yk-runs-root]');
@@ -79834,6 +79874,159 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
         });
       });
       return out;
+    }
+    // Yokoten document triage: visibility only, never changes engineering release validity.
+    var TRIAGE_STORAGE='smtinel_yokoten_document_triage_v1', triageSaved=(function(){
+      try{var x=JSON.parse(localStorage.getItem(TRIAGE_STORAGE)||'{}');return x&&typeof x==='object'&&!Array.isArray(x)?x:{};}catch(_){return{};}
+    })();
+    var triageHits=[],triageGroups=[],triageFilterType='ALL',triageFilterView='IN_VIEW',triageFilterMatch='ALL',triageSearch='',triageSortKey='recommendation',triageSortDir=1,triagePage=0,triagePerPage=60;
+    function triagePnCandidates(runs, strict){
+      // Wider PN lookup (separate from production-applicability matching).
+      // Never treat ECO affected-item mentions or revision mismatches as approval.
+      var strong=Object.create(null),out=Object.create(null),byAffected=Object.create(null);
+      strict.forEach(function(h){(h.runs||[]).forEach(function(r){strong[[U(h.doc.id),PN(h.boardPn),U(r.bu),U(r.rev),W(r.wo)].join('|')]=1;});});
+      (D.documents||[]).forEach(function(d){
+        if(U(d.type)!=='ECO'||!Array.isArray(d.affectedItems))return;
+        d.affectedItems.forEach(function(item){
+          var pn=PN(item.pn);if(!pn)return;
+          (byAffected[pn]||(byAffected[pn]=[])).push({doc:d,item:item});
+        });
+      });
+      (runs||[]).forEach(function(r){
+        var board=PN(r.sku);if(board==='73-19152-02'||board==='17-15768-01')return;
+        (byBoard[board]||[]).forEach(function(sc){
+          var d=byId[U(sc.changeId)],id=d&&U(d.id),key=[id,board,U(r.bu),U(r.rev),W(r.wo)].join('|');
+          if(!d||!id||strong[key]||U(sc.bu)!==U(r.bu)||!['ECO','ECN','DEVIATION'].includes(U(d.type)))return;
+          if(U(sc.curation)==='REJECTED'||U(sc.curation)==='EXCLUDED')return;
+          if(sc.plant&&['FJZ','GLOBAL_AVL','MULTI_SITE'].indexOf(U(sc.plant))<0)return;
+          if(matchesScope(sc,r))return;
+          var agg=out[key];
+          if(!agg)agg=out[key]={doc:d,scope:sc,boardPn:sc.boardPn,runs:[],instructions:[],candidateOnly:true};
+          if(!agg.runs.some(function(x){return W(x.wo)===W(r.wo)&&U(x.rev)===U(r.rev);}))agg.runs.push(r);
+        });
+        (byAffected[board]||[]).forEach(function(x){
+          var d=x.doc,id=U(d.id),key=[id,board,U(r.bu),U(r.rev),W(r.wo)].join('|');
+          if(strong[key]||out[key]||U(d.bu)!==U(r.bu))return;
+          out[key]={doc:d,scope:{bu:r.bu,boardPn:board,rev:T(x.item.newRev),curation:'Pending Review'},boardPn:board,runs:[r],instructions:[],candidateOnly:true,affectedSource:'ECO Items'};
+        });
+      });
+      return Object.keys(out).map(function(k){return out[k];});
+    }
+    function triageId(d){return U(d&&((d.id||d.number||d.ctan))||'');}
+    function triageScopes(h){
+      var s=h&&h.scope||{},runs=h&&h.runs||[],scopeValues=runs.map(function(r){return [U(r.bu||s.bu||h.doc&&h.doc.bu),PN(h.boardPn),U(r.rev)||'REV_ND'].join('|');});
+      if(!scopeValues.length)scopeValues.push([U(s.bu||h.doc&&h.doc.bu),PN(h.boardPn),'REV_ND'].join('|'));
+      return Array.from(new Set(scopeValues));
+    }
+    function triageReview(g){
+      var d=g.doc||{},id=triageId(d),local=triageSaved[id];
+      if(local&&typeof local==='object')return local;
+      return{state:U(d.visibility)||'VISIBLE',scopeKeys:T(d.reviewScope).split(';').map(function(x){return T(x);}).filter(Boolean),note:T(d.reviewNote),reviewedAt:T(d.reviewedAt),source:'Knowledge DB'};
+    }
+    function triageStoredState(g){
+      var z=triageReview(g),state=U(z.state),keys=Array.isArray(z.scopeKeys)?z.scopeKeys:[];
+      if(state==='ARCHIVED'){
+        if(!keys.length)return'REVIEW';
+        var known={};keys.forEach(function(x){known[U(x)]=1;});
+        if((g.boards||[]).some(function(h){return triageScopes(h).some(function(k){return !known[k];});}))return'REVIEW';
+        return'ARCHIVED';
+      }
+      return state==='REVIEW'?'REVIEW':'VISIBLE';
+    }
+    function triageHiddenHit(h){
+      var z=triageReview({doc:h.doc,boards:[h]}),keys=Array.isArray(z.scopeKeys)?z.scopeKeys:[];
+      var known={};keys.forEach(function(k){known[U(k)]=1;});return U(z.state)==='ARCHIVED'&&keys.length>0&&triageScopes(h).every(function(k){return known[k];});
+    }
+    function triageAssess(g){
+      var d=g.doc||{},state=U(d.workflow+' '+d.documentState),until=T(d.effectiveUntil).slice(0,10),exact=(g.boards||[]).every(function(h){var rv=U(h.scope&&h.scope.rev);return !!rv&&rv!=='ANY';}),dates=(g.runs||[]).map(function(r){return T(r.start).slice(0,10);}).filter(Boolean),bom=T(d.bomDate).slice(0,10);
+      var reviewed=triageReview(g);
+      if(U(reviewed.state)==='ARCHIVED'&&triageStoredState(g)!=='ARCHIVED')return{label:'Nuevo PN/Rev o falta alcance revisado; revalidar',code:'NEW_SCOPE',rank:0};
+      if((g.boards||[]).some(function(h){return !!h.candidateOnly;}))return{label:'PN del maestro relacionado; Rev / WO por validar',code:'PN_CANDIDATE',rank:1};
+      if(U(d.type)==='DEVIATION'&&((until&&until<now)||/EXPIRED|CANCELLED|SUPERSEDED/.test(state)))return{label:'Histórico / vencido: revisar antes de ocultar',code:'HISTORICAL',rank:1};
+      if(/CANCELLED|SUPERSEDED|REJECTED/.test(state))return{label:'Cancelado / sustituido: validar alcance',code:'SOURCE_STATE',rank:1};
+      if(!exact)return{label:'Solo PN: revisión y vigencia por confirmar',code:'PN_ONLY',rank:2};
+      if(U(d.type)==='ECO'&&bom&&dates.length&&dates.every(function(x){return x<bom;}))return{label:'Corridas anteriores a fecha BOM; revisar',code:'PRE_BOM',rank:3};
+      return{label:'Coincidencia PN + revisión; validar documento',code:'MATCH',rank:4};
+    }
+    function triageGridRows(){return triageGroups.map(function(g){
+      var d=g.doc||{},r=triageReview(g),state=triageStoredState(g),rec=triageAssess(g),pns=uniqueValues((g.boards||[]).map(function(h){return PN(h.boardPn);})).sort(),revs=uniqueValues((g.runs||[]).map(function(r){return U(r.rev);})).sort(),lines=uniqueValues((g.runs||[]).map(function(r){return LN(r.line);})).sort(),wo=uniqueValues((g.runs||[]).map(function(r){return W(r.wo);})).sort(),exact=(g.boards||[]).every(function(h){var v=U(h.scope&&h.scope.rev);return !h.candidateOnly&&v&&v!=='ANY';});
+      var agile=U(d.type)==='ECO'&&/^FCNJZ\d{6,}$/.test(U(d.ctan))?U(d.ctan):'';
+      return{g:g,id:triageId(d),type:U(d.type),number:T(d.number||d.id),agile:agile,ctan:T(d.ctan),pns:pns,revs:revs,lines:lines,wo:wo,exact:exact,source:T(d.workflow||d.documentState),until:T(d.effectiveUntil),state:state,review:r,recommendation:rec};
+    });}
+    function triageCsv(rows){
+      function clean(v){var s=T(v);return /^[=+@\-\t\r]/.test(s)?"'"+s:s;}
+      function q(v){return '"'+clean(v).replace(/"/g,'""')+'"';}
+      return '\ufeff'+rows.map(function(r){return r.map(q).join(',');}).join('\r\n');
+    }
+    function triageExport(){
+      var rows=[['Change ID','Document Type','Document Number','Agile ECN (reference only)','CTAN / Related Document','Matched PN','Observed Rev','Lines','WO Count','Source Status','Effective Until','Match Quality','Recommendation','Yokoten Visibility','Yokoten Reviewed Scope','Yokoten Review Note','Yokoten Reviewed At']];
+      triageGridRows().forEach(function(x){rows.push([x.id,x.type,x.number,x.agile,x.ctan,x.pns.join('; '),x.revs.join('; '),x.lines.join('; '),x.wo.length,x.source,x.until,x.exact?'PN+Rev':'PN ONLY',x.recommendation.label,x.state,(x.review.scopeKeys||[]).join(';'),x.review.note||'',x.review.reviewedAt||'']);});
+      var text=triageCsv(rows),blob=new Blob([text],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='SMTinel_Yokoten_ECN_ECO_DEV_Depuracion_'+now+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1500);
+    }
+    function triageCompare(a,b){
+      var k=triageSortKey,av=k==='recommendation'?a.recommendation.rank:k==='pns'?a.pns.join(' '):k==='wo'?a.wo.length:k==='revs'?a.revs.join(' '):k==='lines'?a.lines.join(' '):a[k],bv=k==='recommendation'?b.recommendation.rank:k==='pns'?b.pns.join(' '):k==='wo'?b.wo.length:k==='revs'?b.revs.join(' '):k==='lines'?b.lines.join(' '):b[k];
+      if(typeof av==='number'||typeof bv==='number')return triageSortDir*(Number(av||0)-Number(bv||0));
+      return triageSortDir*String(av||'').localeCompare(String(bv||''),'es',{numeric:true});
+    }
+    function renderTriage(hits){
+      var root=el('#yk-change-triage-v1');if(!root)return;
+      triageHits=hits||[];triageGroups=groupDocuments(triageHits);
+      var all=triageGridRows(),visible=all.filter(function(x){return x.state!=='ARCHIVED';}).length,archived=all.length-visible,pending=all.filter(function(x){return x.state==='REVIEW'||x.recommendation.rank<4;}).length;
+      var m=root.querySelector('[data-ykt-total]');if(m)m.textContent=all.length;
+      m=root.querySelector('[data-ykt-visible]');if(m)m.textContent=visible;
+      m=root.querySelector('[data-ykt-review]');if(m)m.textContent=pending;
+      m=root.querySelector('[data-ykt-archive]');if(m)m.textContent=archived;
+      var subset=all.filter(function(x){
+        if(triageFilterType!=='ALL'&&x.type!==triageFilterType&&!(triageFilterType==='ECN_REF'&&x.agile))return false;
+        if(triageFilterView==='IN_VIEW'&&x.state==='ARCHIVED')return false;
+        if(triageFilterView==='ARCHIVED'&&x.state!=='ARCHIVED')return false;
+        if(triageFilterView==='REVIEW'&&x.state!=='REVIEW'&&x.recommendation.rank>=4)return false;
+        if(triageFilterMatch==='EXACT'&&!x.exact)return false;
+        if(triageFilterMatch==='PN_ONLY'&&x.exact)return false;
+        if(triageSearch){var q=U([x.number,x.agile,x.ctan,x.pns.join(' '),x.revs.join(' '),x.lines.join(' '),x.wo.join(' '),x.source,x.g.doc.description,x.review.note].join(' '));if(q.indexOf(triageSearch)<0)return false;}
+        return true;
+      }).sort(triageCompare);
+      var pages=Math.max(1,Math.ceil(subset.length/triagePerPage));triagePage=Math.min(triagePage,pages-1);
+      var body=root.querySelector('[data-ykt-rows]');if(!body)return;
+      body.innerHTML=subset.slice(triagePage*triagePerPage,(triagePage+1)*triagePerPage).map(function(x){
+        var cls=x.recommendation.rank<2?'priority':x.recommendation.rank<4?'candidate':'regular';
+        return '<tr data-ykt-id="'+E(x.id)+'"><td><b>'+E(x.number)+'</b><small>'+E(x.id)+'</small>'+(x.agile?'<small>Agile ECN: '+E(x.agile)+' (referencia)</small>':'')+'</td><td>'+E(x.type==='DEVIATION'?'Desviación':x.type)+'</td><td><b>'+E(x.pns.join(', '))+'</b><small>Rev observadas: '+E(x.revs.join(', ')||'N/D')+'</small></td><td>'+E(x.exact?'PN + Rev exacta':'Solo PN · Rev N/D')+'</td><td>'+E(x.lines.join(', ')||'N/D')+'</td><td data-ykt-num>'+x.wo.length+'</td><td>'+E(x.source||'No informado')+'<small>'+E(x.until?'Fin: '+x.until:'Sin fecha fin documentada')+'</small></td><td><span class="ykt-reason '+cls+'">'+E(x.recommendation.label)+'</span></td><td><select data-ykt-decision aria-label="Decisión de visualización para '+E(x.number)+'"><option value="VISIBLE"'+(x.state==='VISIBLE'?' selected':'')+'>En vista</option><option value="REVIEW"'+(x.state==='REVIEW'?' selected':'')+'>En revisión</option><option value="ARCHIVED"'+(x.state==='ARCHIVED'?' selected':'')+'>Oculto (archivado)</option></select></td><td><input data-ykt-note aria-label="Justificación para '+E(x.number)+'" value="'+E(x.review.note||'')+'" placeholder="Motivo / evidencia"></td><td><button type="button" data-ykt-open>Ver</button></td></tr>';
+      }).join('')||'<tr><td colspan="11" class="ykt-empty">No hay cambios coincidentes con los filtros y la cuadrícula actual. No significa que un documento esté formalmente fuera de alcance.</td></tr>';
+      m=root.querySelector('[data-ykt-page]');if(m)m.textContent='Mostrando '+(subset.length?triagePage*triagePerPage+1:0)+'–'+Math.min(subset.length,(triagePage+1)*triagePerPage)+' de '+subset.length+' · página '+(triagePage+1)+'/'+pages;
+      m=root.querySelector('[data-ykt-prev]');if(m)m.disabled=triagePage===0;
+      m=root.querySelector('[data-ykt-next]');if(m)m.disabled=triagePage>=pages-1;
+      root.querySelectorAll('[data-ykt-sort]').forEach(function(h){h.setAttribute('aria-sort',h.getAttribute('data-ykt-sort')===triageSortKey?(triageSortDir>0?'ascending':'descending'):'none');});
+    }
+    function triageSave(row,newState,newNote){
+      var old=triageReview(row.g),rec={state:newState||U(old.state)||'VISIBLE',scopeKeys:newState==='ARCHIVED'?Array.from(new Set((old.scopeKeys||[]).concat(row.g.boards.reduce(function(out,h){return out.concat(triageScopes(h));},[])))):(old.scopeKeys||[]),note:newNote===undefined?T(old.note):T(newNote),reviewedAt:now,source:'Manual Yokoten review'};
+      triageSaved[row.id]=rec;try{localStorage.setItem(TRIAGE_STORAGE,JSON.stringify(triageSaved));}catch(_){ }
+    }
+    function wireTriage(){
+      var root=el('#yk-change-triage-v1');if(!root)return;
+      root.addEventListener('input',function(e){var x=e.target;if(x.matches('[data-ykt-search]')){triageSearch=U(x.value);triagePage=0;renderTriage(triageHits);}});
+      root.addEventListener('change',function(e){
+        var x=e.target;
+        if(x.matches('[data-ykt-type]')){triageFilterType=x.value;triagePage=0;renderTriage(triageHits);return;}
+        if(x.matches('[data-ykt-view]')){triageFilterView=x.value;triagePage=0;renderTriage(triageHits);return;}
+        if(x.matches('[data-ykt-match]')){triageFilterMatch=x.value;triagePage=0;renderTriage(triageHits);return;}
+        var tr=x.closest('[data-ykt-id]');if(!tr)return;
+        var id=U(tr.getAttribute('data-ykt-id')),row=triageGridRows().find(function(z){return z.id===id;});if(!row)return;
+        if(x.matches('[data-ykt-decision]')){triageSave(row,U(x.value),T(tr.querySelector('[data-ykt-note]')&&tr.querySelector('[data-ykt-note]').value));update();return;}
+        if(x.matches('[data-ykt-note]')){triageSave(row,row.state,T(x.value));update();return;}
+      });
+      root.addEventListener('click',function(e){
+        var h=e.target.closest('[data-ykt-sort]');if(h){var name=h.getAttribute('data-ykt-sort');triageSortDir=triageSortKey===name?-triageSortDir:1;triageSortKey=name;triagePage=0;renderTriage(triageHits);return;}
+        if(e.target.closest('[data-ykt-prev]')){triagePage--;renderTriage(triageHits);return;}
+        if(e.target.closest('[data-ykt-next]')){triagePage++;renderTriage(triageHits);return;}
+        if(e.target.closest('[data-ykt-export]')){triageExport();return;}
+        var link=e.target.closest('[data-ykt-open]'),tr=link&&link.closest('[data-ykt-id]');if(!tr)return;
+        var row=triageGridRows().find(function(z){return z.id===U(tr.getAttribute('data-ykt-id'));});if(!row)return;
+        if(row.state==='ARCHIVED'){triageSave(row,'REVIEW');}
+        var search=el('[data-cc-search]'),rev=el('[data-cc-revision]'),type=el('[data-cc-type="ALL"]');
+        if(type)type.click();if(rev){rev.value='all';rev.dispatchEvent(new Event('change',{bubbles:true}));}
+        if(search){search.value=row.number;search.dispatchEvent(new Event('input',{bubbles:true}));}
+        update();var target=el('#yk-change-control-v6');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+      });
     }
     function agileReference(doc){
       if(!doc||U(doc.type)!=='ECO')return '';
@@ -80025,8 +80218,9 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     function update(){
       var runs=selectedRuns(),rawHits=collect(runs),hits=rawHits.filter(function(h){
         var specified=U(h.scope&&h.scope.rev),exact=!!specified&&specified!=='ANY';
-        return revisionMode==='all'||(revisionMode==='exact'?exact:!exact);
+        return !triageHiddenHit(h)&&(revisionMode==='all'||(revisionMode==='exact'?exact:!exact));
       }),ids=new Set(hits.map(function(h){return h.doc.id;}));
+      renderTriage(rawHits.concat(triagePnCandidates(runs,rawHits)));
       var byType={ECN:new Set(),ECO:new Set(),DEVIATION:new Set()};hits.forEach(function(h){var type=U(h.doc.type);if(byType[type])byType[type].add(h.doc.id);});
       var stat=el('[data-cc-state]');if(stat)stat.textContent=(tab==='ECN'?(new Set(hits.map(function(h){return agileReference(h.doc);}).filter(Boolean)).size+' referencias Agile ECN desde ECO y '+byType.ECN.size+' documentos ECN independientes coincidentes'):(ids.size+' documentos en vista'))+' '+(revisionMode==='exact'?'PN + Rev exactos':(revisionMode==='pending'?'PN sin revisión documental':'mixta'))+' · '+runs.length+' corridas seleccionadas · 0 autorizaciones comprobadas';
       var m1=el('[data-cc-metric-pn]'),m2=el('[data-cc-metric-doc]'),m3=el('[data-cc-metric-actions]'),m4=el('[data-cc-metric-approved]');
@@ -80060,6 +80254,7 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     R.addEventListener('change',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],[data-cc-revision],#yk-change-control-v6'))return;page=0;later();});
     R.addEventListener('input',function(e){if(e.target.closest('[data-cc-search],[data-cc-view],[data-cc-revision],#yk-change-control-v6'))return;page=0;later();});
     var matrix=el('[data-yk-matrix]');if(matrix&&typeof MutationObserver!=='undefined')new MutationObserver(later).observe(matrix,{childList:true,subtree:true});
+    wireTriage();
     update();
   }
   function getSnapshot(doc) {
@@ -80092,8 +80287,17 @@ if(!install()){var i=0,t=setInterval(function(){i++;if(install()||i>120)clearInt
     var main=doc.querySelector('.yk-main'),evidence=doc.getElementById('yk-evidence-v5');
     if(evidence&&evidence.parentNode)evidence.parentNode.insertBefore(panel,evidence.nextSibling);
     else if(main)main.appendChild(panel);
+    // Document triage is a presentation/worklist, not a release or approval workflow.
+    var triagePanel=doc.createElement('section');triagePanel.id='yk-change-triage-v1';triagePanel.setAttribute('aria-label','Lista de relevancia ECN ECO y desviaciones');
+    triagePanel.innerHTML='<div class="ykt-top"><div><h2>Lista automática de ECN / ECO / desviaciones vinculadas a la cuadrícula</h2><p>Relaciona PCBA PN y BU de la cuadrícula. Separa coincidencias PN+Rev de candidatos PN con revisión/WO por validar. No cambia aprobaciones ni historial.</p></div><button type="button" class="ykt-export" data-ykt-export>Exportar lista y decisiones CSV</button></div>'+ 
+      '<div class="ykt-metrics"><div class="ykt-metric"><b data-ykt-total>0</b><span>Documentos relacionados</span></div><div class="ykt-metric"><b data-ykt-visible>0</b><span>Actualmente en vista</span></div><div class="ykt-metric"><b data-ykt-review>0</b><span>Para revisar / posible histórico</span></div><div class="ykt-metric"><b data-ykt-archive>0</b><span>Ocultos (recuperables)</span></div></div>'+ 
+      '<div class="ykt-filters"><input type="search" data-ykt-search placeholder="Buscar documento, ECN, PN, Rev, línea, WO..."><select data-ykt-type aria-label="Tipo documento"><option value="ALL">Todos los tipos</option><option value="ECN">ECN independientes</option><option value="ECN_REF">Agile ECN vinculados a ECO</option><option value="ECO">ECO</option><option value="DEVIATION">Desviaciones</option></select><select data-ykt-view aria-label="Vista de decisión"><option value="IN_VIEW">En vista (no ocultos)</option><option value="REVIEW">Sugeridos para revisión</option><option value="ARCHIVED">Ocultos / archivados</option><option value="ALL">Todos, incluso ocultos</option></select><select data-ykt-match aria-label="Nivel de coincidencia"><option value="ALL">PN exacto y candidatos</option><option value="EXACT">PN + revisión exacta</option><option value="PN_ONLY">Solo PN / revisión pendiente</option></select></div>'+ 
+      '<div class="ykt-scroll"><table><thead><tr><th><button type="button" data-ykt-sort="number">Documento</button></th><th><button type="button" data-ykt-sort="type">Tipo</button></th><th><button type="button" data-ykt-sort="pns">PCBA coincidente</button></th><th><button type="button" data-ykt-sort="exact">Match</button></th><th><button type="button" data-ykt-sort="lines">Líneas</button></th><th><button type="button" data-ykt-sort="wo">WO</button></th><th><button type="button" data-ykt-sort="source">Estado de origen</button></th><th><button type="button" data-ykt-sort="recommendation">Motivo de revisión</button></th><th><button type="button" data-ykt-sort="state">Decisión</button></th><th>Justificación</th><th>Detalle</th></tr></thead><tbody data-ykt-rows></tbody></table></div>'+ 
+      '<div class="ykt-footer"><span data-ykt-page>No se han evaluado corridas</span><div><button type="button" data-ykt-prev>Anterior</button> <button type="button" data-ykt-next>Siguiente</button></div></div><p class="ykt-disclaimer">Ocultar conserva el ECO/ECN/DEV en el maestro y en esta lista; solo lo excluye de las tarjetas y alertas de esta vista para el PN/Rev revisado, cuando exista coincidencia estricta. Si aparece un PN/Rev nuevo, exige reevaluación. Las decisiones locales pueden exportarse a CSV para incorporar su estado a Change Register. Ninguna coincidencia confirma aprobación FJZ ni sustitución autorizada.</p>';
+    panel.parentNode.insertBefore(triagePanel,panel);
+    var triageCss=doc.createElement('style');triageCss.id='smtinel-yokoten-change-triage-style-v1';triageCss.textContent=triageStyleText();doc.head.appendChild(triageCss);
     var head=doc.querySelector('.yk-head p');
-    if(head){var link=doc.createElement('a');link.className='cc-navlink';link.href='#yk-change-control-v6';link.textContent='Consultar ECN / ECO / Desviaciones';head.parentNode.appendChild(link);}
+    if(head){var link=doc.createElement('a');link.className='cc-navlink';link.href='#yk-change-control-v6';link.textContent='Consultar ECN / ECO / Desviaciones';head.parentNode.appendChild(link);var shortlist=doc.createElement('a');shortlist.className='cc-navlink';shortlist.href='#yk-change-triage-v1';shortlist.textContent='Depurar documentos visibles';head.parentNode.appendChild(shortlist);}
     var js=doc.createElement('script');js.id='smtinel-yokoten-customer-change-runtime-v6';js.textContent='('+reportRuntime.toString()+')();';doc.body.appendChild(js);
     // Soft Fusion V7 is bundled with the standalone report, including local/offline export.
     var fusionStyle=doc.createElement('style');
